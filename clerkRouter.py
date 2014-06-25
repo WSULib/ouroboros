@@ -1,16 +1,13 @@
 import xmltodict, json
 from lib.FOXML2Solr.FOXML2Solr import FOXML2Solr
 from lib.WSUAPI.WSUAPImain import WSUAPImain
-from lib.eventNotify import eventNotify
 from lib.imageServer.imageServerMain import imageWork
 from lib.Projects.ProjectsMain import ProjectsMain
 
 class clerkRouter:
 	
 	# handles events in Fedora Commons as reported by JSM
-	def fedConsumer(self,**kwargs):		
-
-		eventNotify.prettyPrint('fedEvent detected')
+	def fedConsumer(self,**kwargs):			
 		msg = kwargs['msg']		
 
 		# create dictionary from XML string
@@ -38,8 +35,7 @@ class clerkRouter:
 			print str(e)		
 
 	# handles WSUAPI requests
-	def WSUAPI(self,**kwargs):
-		eventNotify.prettyPrint('WSUAPI event detected')
+	def WSUAPI(self,**kwargs):		
 		getParams = kwargs['getParams']
 
 		# # run WSUAPImain(), return results to fedClerk
@@ -51,8 +47,7 @@ class clerkRouter:
 			return '{{"WSUAPIstatus":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))		
 
 	# handles requests for images
-	def imageServer(self,**kwargs):
-		eventNotify.prettyPrint('imageServer request detected')
+	def imageServer(self,**kwargs):		
 		getParams = kwargs['getParams']
 
 		try:
@@ -64,8 +59,7 @@ class clerkRouter:
 
 	# handles events in Fedora Commons as reported by JSM
 	def Projects(self,**kwargs):
-		response = {}
-		eventNotify.prettyPrint('Projects event detected')
+		response = {}		
 		getParams = kwargs['getParams']
 		requestPath = kwargs['requestPath']
 

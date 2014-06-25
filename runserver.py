@@ -40,8 +40,7 @@ class WSUAPIListener(resource.Resource):
 		# response 
 		request.setHeader('Access-Control-Allow-Origin', '*')
 		request.setHeader('Access-Control-Allow-Methods', 'GET, POST')
-		request.setHeader('Access-Control-Allow-Headers',
-						   'x-prototype-version,x-requested-with')
+		request.setHeader('Access-Control-Allow-Headers', 'x-prototype-version,x-requested-with')
 		request.setHeader('Access-Control-Max-Age', 2520)
 		request.setHeader("content-type", "application/json")
 		request.setHeader('Connection', 'Close')
@@ -96,7 +95,7 @@ class imageServerListener(resource.Resource):
 	def _delayedImageServer(self,request):
 		getParams = request.args
 
-		# send to clearkRouter, retrieve JSON string from WSUAPImain()
+		# send to clearkRouter
 		worker = clerkRouter()
 		# response = worker.imageServer(getParams=getParams)
 		###################################
@@ -106,15 +105,12 @@ class imageServerListener(resource.Resource):
 		# response 
 		request.setHeader('Access-Control-Allow-Origin', '*')
 		request.setHeader('Access-Control-Allow-Methods', 'GET, POST')
-		request.setHeader('Access-Control-Allow-Headers',
-						   'x-prototype-version,x-requested-with')
+		request.setHeader('Access-Control-Allow-Headers','x-prototype-version,x-requested-with')
 		request.setHeader('Access-Control-Max-Age', 2520)                
 		request.setHeader('Content-Type', 'image/{mime}'.format(mime=image_dict['mime']))
 		request.setHeader('Connection', 'Close')
 		request.write(image_dict['img_binary'])
 		request.finish()
-		
-
 
 	def render_GET(self, request):                
 		d = deferLater(reactor, .01, lambda: request)
@@ -166,7 +162,8 @@ if __name__ == '__main__':
 	reactor.listenTCP(WSUAPIListener_port, server.Site(WSUAPIListener()))
 	print "Starting imageServer..."
 	reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))
-	# print "Starting JSM listener..."
-	# fedConsumer().run()
+	print "Starting JSM listener..."
+	if fedConsumerFire == True:
+		fedConsumer().run()
 	print "<--ouroboros running-->"
 	reactor.run()

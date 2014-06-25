@@ -1,0 +1,12 @@
+{% include 'header.html' %}
+
+<p>All jobs for {{username}}<p>
+<p style="color:red;">Will be moved to jquery datatables format, like PID management</p>
+
+<ul>
+	{% for job in return_package %}
+		<li>{{job.job_num}} - {{job.status}}</li>
+	{% endfor %}
+</ul>
+
+{% include 'footer.html' %}

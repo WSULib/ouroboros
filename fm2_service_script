@@ -1,0 +1,50 @@
+#service name
+SERVICE_NAME=fedoraManager2
+
+usage()
+{
+        echo "-----------------------"
+        echo "Usage: $0 (stop|start|restart)"
+        echo "-----------------------"
+}
+
+if [ -z $1 ]; then
+        usage
+fi
+
+service_start()
+{
+        echo "Starting service '${SERVICE_NAME}'..."        
+        #start 
+        cd /var/opt/sandbox/fedoraManager2
+        ./start_fm2.sh
+        echo "Service '${SERVICE_NAME}' started successfully"
+}
+
+service_stop()
+{
+        echo "Stopping service '${SERVICE_NAME}'..."
+
+        #stop Twisted / Flask server
+        kill $(lsof -i :5001 | grep 'python' | awk '{ print $2 }')
+
+        #stop Celery
+        kill $(ps aux | grep celery | awk '{ print $2 }')
+        echo "Service '${SERVICE_NAME}' stopped"
+}
+
+case $1 in
+        stop)
+                service_stop
+        ;;
+        start)
+                service_start
+        ;;
+        restart)
+                service_stop
+                service_start
+        ;;
+        *)
+                usage
+esac
+exit 0

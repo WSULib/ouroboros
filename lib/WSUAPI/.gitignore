@@ -1,0 +1,3 @@
+#that which shall be ignored
+*.pyc
+sensitive.py

@@ -1,0 +1,56 @@
+{% include 'header.html' %}
+
+<h3>Solr Query & Select</h3>
+
+<div id="solr_form">
+    <form method="POST" action="/PIDSolr">
+        <p>------ Native Solr Fields --------</p>
+        {{ form.csrf_token }}    
+        {{ form.q.label }} {{ form.q(size=60) }}<br>
+        {{ form.fq.label }} {{ form.fq(size=60) }}<br>
+        {{ form.fl.label }} {{ form.fl(size=60) }}<br>  
+        <p>------ Fedora Relationships --------</p>       
+
+        <!-- forms attempt -->
+        {{ form.collection_object.label }} {{ form.collection_object }} <br>
+        {{ form.content_model.label }} {{ form.content_model }} <br>
+
+        <p>------------------------------------</p>
+        <input type="submit" value="Go">
+    </form>
+</div>
+
+<div id="actions"   >
+    <h2>actions</h2>
+    <button id="sendSelPIDs">Send Selected to User PIDs</button>
+    <button id="sendAllPIDs">Send all to User PIDs</button>
+    <span> /// </span>
+    <button id="removeSelPIDs">Remove Selected from User PIDs</button>
+    <button id="removeAllPIDs">Remove All from User PIDs</button><br>
+    Group name: <input id="group_name"></input>
+</div>
+
+<h2>results</h2>
+
+{% if q_results %}
+<table id="PIDtable" class="display" cellspacing="0" width="100%">
+    <thead>
+        <tr>
+            <th>PID</th>
+            <th>dc_title</th>            
+        </tr>
+    </thead>
+</table>
+{% endif %}
+
+<script type="text/javascript" src="{{ url_for('static',filename='PIDSolr.js')}}"></script>
+{% if json_output %}
+<script type="text/javascript">
+    $(document).ready(function(){        
+        var json_output = {{json_output|safe}};        
+        paintTable(json_output);
+    });    
+</script>
+{% endif %}
+
+{% include 'footer.html' %}

@@ -1,0 +1,25 @@
+{% include 'header.html' %}
+<!-- User Page -->
+<h1>Welcome {{userData.username}}, great fm2 bounty awaits!</h1>
+<p><span style="color:green;">*username "{{userData.username}}" set to session</span></p>
+<ul>
+	<li><h2>Tasks</h2></li>
+	<ul>		
+		<li><a href="/fireTask/sampleTask">sampleTask - small delay</a></li>
+		<li><a href="/fireTask/sampleFastTask">sampleTask - no delay, <strong>fast</strong></a></li>
+		<li><a href="/fireTask/fileWrite">fileWrite - .25 delay</a></li>
+	</ul>
+	<li><h2>PID Selection</h2></li>
+	<ul>		
+		<!-- <li><a href="/PIDselection">Object Slection Home</a></li>		 -->
+		<!-- <li><a href="/PIDenter">Enter PIDs</a></li> -->
+		<li><a href="/PIDSolr">Solr</a></li>
+		<li><a href="/PIDmanage">Manage PIDs</a></li>	
+	</ul>
+	<li><h2>User Jobs</h2></li>
+	<ul>
+		<li><a href="/userJobs">Running Jobs</a></li>
+		<li><a href="/userAllJobs">Manage All Jobs</a></li>
+	</ul>
+</ul>
+{% include 'footer.html' %}

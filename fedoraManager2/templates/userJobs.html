@@ -1,0 +1,13 @@
+{% include 'header.html' %}
+
+<p>Currently running jobs for {{username}}<p>
+<p style="color:red;">Will be moved to jquery datatables format, like PID management</p>
+<ul id="job_list"></ul>
+
+<!-- script to long-poll update above, proof of concept -->
+<script type="text/javascript" src="{{ url_for('static',filename='userJobs.js')}}"></script>
+<script type="text/javascript">	
+	// automatic start
+	poll(2000);
+</script>
+{% include 'footer.html' %}

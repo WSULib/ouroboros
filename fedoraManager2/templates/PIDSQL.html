@@ -1,0 +1,68 @@
+{% include 'header.html' %}
+
+<h1>Welcome <span style="color:green;">{{username}}</span>, the PIDs you have requested!</h1>
+<h2>Pid Actions</h2>
+<ul>
+    <li><a href="#" onclick="PIDmanageAction('s_all'); return false;">Select All</a></li>      
+    <li><a href="#" onclick="PIDmanageAction('s_none'); return false;">Select None</a></li>    
+    <li><a href="#" onclick="PIDmanageAction('s_toggle'); return false;">Toggle All</a></li>  
+    <!-- <li>
+        <form action="/PIDmanageAction/group_toggle" method="POST">
+            Toggle Group:
+            <select name="group_name" onchange="this.form.submit()">
+                <option>Select a group...</option>
+                {% for group_name in group_names %}
+                    <option value="{{group_name}}">{{group_name}}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </li> -->
+    <li>        
+        Toggle Group:
+        <select id="group_name" name="group_name" onchange="PIDmanageAction('group_toggle'); return false;">
+            <option>Select a group...</option>
+            {% for group_name in group_names %}
+                <option value="{{group_name}}">{{group_name}}</option>
+            {% endfor %}
+        </select>        
+    </li>
+    <li><a href="#" onclick="PIDmanageAction('s_del'); return false;">Delete Selected</a></li>
+</ul>
+<hr>
+<select id="group_filter" name="group_filter" onchange="filterGroup();">
+    <option value="">Filter by group...</option>
+    {% for group_name in group_names %}
+        <option value="{{group_name}}">{{group_name}}</option>
+    {% endfor %}
+</select>
+<table id="PIDtable" class="display" cellspacing="0" width="100%">
+    <thead>
+        <tr>            
+            <th>id</th>
+            <th>PID</th>
+            <th>username</th>    
+            <th>status</th>
+            <th id="group_name_col">group</th>
+            <th>actions</th>                  
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>            
+            <th>id</th>
+            <th>PID</th>
+            <th>username</th>    
+            <th>status</th>
+            <th>group</th>
+            <th>actions</th>                  
+        </tr>
+    </tfoot>
+</table>
+
+
+<script type="text/javascript" src="{{ url_for('static',filename='PIDmanage.js')}}"></script>
+<script type="text/javascript">
+    $(document).ready(function(){
+        paintTable("{{username}}");
+    });    
+</script>
+{% include 'footer.html' %}

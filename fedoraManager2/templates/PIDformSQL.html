@@ -1,0 +1,8 @@
+{% include 'header.html' %}
+<p>Choose wisely for MySQL...</p>
+<form method="POST" action="/PIDenter">
+    {{ form.csrf_token }}    
+    {{ form.PID.label }} {{ form.PID(size=20) }}<br>    
+    <input type="submit" value="Go">
+</form>
+{% include 'footer.html' %}

@@ -34,6 +34,9 @@ import jobs
 import forms
 from redisHandles import *
 
+# localConfig
+import localConfig
+
 # solr handles
 from solrHandles import solr_handle
 
@@ -230,7 +233,7 @@ def userJobs():
 		resp.headers['Content-Type'] = 'application/json'
 		return resp
 	else:
-		return render_template("userJobs.html",username=session['username'])
+		return render_template("userJobs.html",username=session['username'],localConfig=localConfig)
 
 
 @app.route("/userAllJobs")
@@ -302,7 +305,7 @@ def PIDmanage():
 	group_names = [each.group_name.encode('ascii','ignore') for each in user_pid_groups]	
 
 	# pass the current PIDs to page as list	
-	return render_template("PIDSQL.html",username=username, group_names=group_names)
+	return render_template("PIDSQL.html",username=username, group_names=group_names, localConfig=localConfig)
 
 
 

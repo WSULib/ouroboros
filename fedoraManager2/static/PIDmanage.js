@@ -2,11 +2,11 @@
 
 var table_handle = "";
 
-function paintTable(username){
+function paintTable(username,DT_target){
 
 	table_handle = $('#PIDtable').DataTable( {		
 	    "serverSide": true,			    	    
-		"ajax": 'http://162.243.93.130/cgi-bin/php_simple.php',		
+		"ajax": DT_target,		
 		"columns": [
 			{ 	"searchable": true, 
 				"name":"id" 

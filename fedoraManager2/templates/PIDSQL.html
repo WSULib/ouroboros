@@ -6,17 +6,7 @@
     <li><a href="#" onclick="PIDmanageAction('s_all'); return false;">Select All</a></li>      
     <li><a href="#" onclick="PIDmanageAction('s_none'); return false;">Select None</a></li>    
     <li><a href="#" onclick="PIDmanageAction('s_toggle'); return false;">Toggle All</a></li>  
-    <!-- <li>
-        <form action="/PIDmanageAction/group_toggle" method="POST">
-            Toggle Group:
-            <select name="group_name" onchange="this.form.submit()">
-                <option>Select a group...</option>
-                {% for group_name in group_names %}
-                    <option value="{{group_name}}">{{group_name}}</option>
-                {% endfor %}
-            </select>
-        </form>
-    </li> -->
+   
     <li>        
         Toggle Group:
         <select id="group_name" name="group_name" onchange="PIDmanageAction('group_toggle'); return false;">
@@ -62,7 +52,7 @@
 <script type="text/javascript" src="{{ url_for('static',filename='PIDmanage.js')}}"></script>
 <script type="text/javascript">
     $(document).ready(function(){
-        paintTable("{{username}}");
+        paintTable("{{username}}","{{localConfig.dataTables_handle}}");
     });    
 </script>
 {% include 'footer.html' %}

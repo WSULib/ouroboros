@@ -3,5 +3,5 @@ import requests
 
 # set connection through requests
 session = requests.Session()
-solr_handle = Solr('http://localhost:8080/solr/search', make_request=session)
+solr_handle = Solr('http://localhost/solr4/search', make_request=session)
 

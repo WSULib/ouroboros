@@ -12,7 +12,7 @@ import sys
 
 # import tasks
 from fedoraManager2.actions.fileWrite.fileWrite import fileWrite
-from fedoraManager2.actions.sampleTasks import sampleTask, sampleFastTask
+from fedoraManager2.actions.sampleTasks import sampleTask, sampleFastTask, checksumTest
 
 # Fires *after* task is complete
 class postTask(Task):

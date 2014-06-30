@@ -5,14 +5,15 @@
 <ul>
 	<li><h2>Tasks</h2></li>
 	<ul>		
+		<li>-----------------------------------</li>
 		{% for task in tasks_list%}
 			<li><a href="/fireTask/{{task.0}}"><strong>{{task.0}}</a></li>
 		{% endfor %}		
+		<li>-----------------------------------</li>
+		<li><a href="/viewTask/editRELS"><strong>edit RELS-EXT</a></li>
 	</ul>
 	<li><h2>PID Selection</h2></li>
 	<ul>		
-		<!-- <li><a href="/PIDselection">Object Slection Home</a></li>		 -->
-		<!-- <li><a href="/PIDenter">Enter PIDs</a></li> -->
 		<li><a href="/PIDSolr">Solr</a></li>
 		<li><a href="/PIDmanage">Manage PIDs</a></li>	
 	</ul>

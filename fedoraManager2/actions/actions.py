@@ -65,10 +65,8 @@ def celeryTaskFactory(**kwargs):
 		
 	# iterate through PIDs 	
 	for PID in PIDlist:
-		time.sleep(.001)		
-
-		# OLD, WORKING
-		# print "Operating on PID:",PID," / Step:",step		
+		time.sleep(.001)
+					
 		job_package['step'] = step	
 		job_package['PID'] = PID		
 		# fire off async task via taskWrapper		

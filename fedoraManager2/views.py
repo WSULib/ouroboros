@@ -86,10 +86,9 @@ def userPage(username):
 
 # JOB MANAGEMENT
 #########################################################################################################
-
 # fireTask is the factory that begins tasks from fedoraManager2.actions
 # epecting task function name from actions module, e.g. "sampleTask"
-@app.route("/fireTask/<task_name>")
+@app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
 def fireTask(task_name):
 	print "Starting task request..."
 	
@@ -128,13 +127,14 @@ def fireTask(task_name):
 	# set estimated
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
 
-	# create job_package
+	# create job_package, passing request along
 	job_package = {		
 		"username":username,
 		"job_num":job_num,
-		"jobHand":jobHand		
+		"jobHand":jobHand,
+		"request":request	
 	}
-
+	
 	# grab task from actions/tasks.py based on URL "task_name" parameter, using getattr	
 	task_handle = getattr(tasks, task_name)
 
@@ -472,6 +472,24 @@ def updatePIDsfromSolr(update_type):
 
 	return "Update Complete."
 	
+
+
+
+# TASK VIEWS
+####################################################################################
+# PID check for user
+@app.route("/viewTask/editRELS", methods=['POST', 'GET'])
+def viewTask():
+	username = session['username']
+	'''
+	Create a form, figure out an elegant way to pass that info to fireTask
+	'''
+
+
+	return render_template("editRELS.html",username=username)
+
+
+
 
 
 

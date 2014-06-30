@@ -4,12 +4,20 @@ from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2.actions import actions
 from fedoraManager2 import redisHandles
+from fedoraManager2 import login_manager
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response
 from flask.ext.sqlalchemy import SQLAlchemy
 
 import utilities
+
+# login
+from flask import flash, url_for, abort, g
+from flask.ext.login import login_user, logout_user, current_user, login_required
+
+# models
+from models import User, ROLE_USER, ROLE_ADMIN
 
 # forms
 from flask_wtf import Form
@@ -38,6 +46,9 @@ import localConfig
 from solrHandles import solr_handle
 
 
+
+
+
 # fake session data
 ####################################
 # set the secret key
@@ -51,10 +62,10 @@ app.secret_key = 'ShoppingHorse'
 def index():
 	if "username" in session:
 		username = session['username']
-	else:
+	# else:
 		username = "User not set."
 	return render_template("index.html",username=username)
-
+	# return render_template("index.html")
 
 @app.route('/userPage/<username>')
 def userPage(username):
@@ -78,6 +89,58 @@ def userPage(username):
 # 	userData['username'] = username
 # 	return render_template("userPage.html",userData=userData)
 
+
+# LOGIN
+#########################################################################################################
+# Use @login_required when you want to lock down a page
+
+@app.before_request
+def before_request():
+    g.user = current_user
+    print 'current_user: %s, g.user: %s, leaving bef_req' % (current_user, g.user)
+
+
+@app.route('/register', methods=['GET', 'POST'])
+# @app.before_request
+def register():
+	if request.method == 'POST':
+	    user = User(request.form['username'] , request.form['password'], request.form['email'])
+	    db.session.add(user)
+	    db.session.commit()
+	    flash('User successfully registered')
+	    return redirect(url_for('login'))
+
+	elif request.method == 'GET': 
+		# form = RegistrationForm()
+		return render_template('register.html')
+
+@login_manager.user_loader
+def user_loader(user_id):
+    # """Given *user_id*, return the associated User object.
+    # :param unicode user_id: user_id (email) user to retrieve
+    # """
+    return User.query.get(user_id)
+    print Users.query.get(user_id)
+
+@app.route('/login', methods=['GET', 'POST'])
+# @app.before_request
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+    username = request.form['username']
+    password = request.form['password']
+    registered_user = User.query.filter_by(username=username,password=password).first()
+    if registered_user is None:
+        flash('Username or Password is invalid' , 'error')
+        return redirect(url_for('login'))
+    login_user(registered_user)
+    flash('Logged in successfully')
+    return redirect(request.args.get('next') or url_for('index'))
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 # JOB MANAGEMENT
 #########################################################################################################

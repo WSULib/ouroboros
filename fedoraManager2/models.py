@@ -52,3 +52,34 @@ class user_jobs(db.Model):
 
 	def __repr__(self):    	
 		return '<Job# {job_num}, username: {username}, status: {status}>'.format(job_num=self.job_num,username=self.username, status=self.status)
+
+
+ROLE_USER = 0
+ROLE_ADMIN = 1
+
+class User(db.Model):
+    id = db.Column('id', db.Integer, primary_key = True)
+    username = db.Column('username', db.String(64), index = True, unique = True)
+    email = db.Column('email', db.String(120), index = True, unique = True)
+    password = db.Column('password', db.String(120))
+    role = db.Column('role', db.SmallInteger, default = ROLE_USER)
+
+    def __init__(self , username ,password , email):
+        self.username = username
+        self.password = password
+        self.email = email
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return unicode(self.id)
+
+    def __repr__(self):
+        return '<User %r>' % (self.username)

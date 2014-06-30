@@ -157,7 +157,7 @@ site = Site(resource)
 
 if __name__ == '__main__':
 	print "Starting fedoraManager2 server..."
-	reactor.listenTCP( fedoraManager_port, site )
+	reactor.listenTCP( fedoraManager2_port, site )
 	# print "Starting WSUAPI..."
 	# reactor.listenTCP(WSUAPIListener_port, server.Site(WSUAPIListener()))
 	# print "Starting imageServer..."
@@ -165,5 +165,5 @@ if __name__ == '__main__':
 	# if fedConsumerFire == True:
 	# 	print "Starting JSM listener..."
 	# 	fedConsumer().run()
-	print "<--ouroboros running-->"
+	print "<--ouroboros says hissss-->"
 	reactor.run()

@@ -2,6 +2,7 @@
 from flask import Flask, render_template, g
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
+from flask.ext.login import LoginManager
 
 # create app
 app = Flask(__name__)
@@ -14,6 +15,10 @@ engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=Tr
 metadata = MetaData(bind=engine)
 db_con = engine.connect()
 
+# start up login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # get handlers
 import views

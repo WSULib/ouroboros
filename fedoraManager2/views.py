@@ -12,12 +12,9 @@ from flask.ext.sqlalchemy import SQLAlchemy
 import utilities
 
 # forms
-# OLD (mitten)
 from flask_wtf import Form
 from wtforms import TextField
-# NEW (silo)
-# from flask.ext.wtf import Form
-# from wtforms.fields import TextField, BooleanField
+
 
 # python modules
 import time
@@ -57,6 +54,7 @@ def index():
 	else:
 		username = "User not set."
 	return render_template("index.html",username=username)
+
 
 @app.route('/userPage/<username>')
 def userPage(username):

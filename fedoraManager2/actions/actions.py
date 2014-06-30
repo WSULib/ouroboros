@@ -11,8 +11,9 @@ import time
 import sys
 
 # import tasks
-from fedoraManager2.actions.fileWrite.fileWrite import fileWrite
-from fedoraManager2.actions.sampleTasks import sampleTask, sampleFastTask, checksumTest
+from fedoraManager2.actions.tasks import *
+
+
 
 # Fires *after* task is complete
 class postTask(Task):
@@ -54,7 +55,7 @@ def celeryTaskFactory(**kwargs):
 	PIDlist = kwargs['PIDlist']	
 
 	# task function for taskWrapper	
-	job_package['task_function'] = kwargs['task_function']
+	job_package['task_handle'] = kwargs['task_handle']
 	
 	#set step counter
 	step = 1		
@@ -101,7 +102,7 @@ def taskWrapper(self,job_package,*args, **kwargs):
 	else:
 		redisHandles.r_PIDlock.set(job_package['PID'],1)	
 		# execute function
-		funcName = job_package['task_function']	
+		funcName = job_package['task_handle']	
 		return funcName(job_package)
 
 	

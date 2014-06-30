@@ -132,12 +132,12 @@ def fireTask(task_name):
 	}
 
 	# grab task from actions based on URL "task_name" parameter, using getattr	
-	task_function = getattr(actions, task_name)
+	task_handle = getattr(actions, task_name)
 
 	# send to celeryTaskFactory in actions.py
 	# iterates through PIDs and creates secondary async tasks for each
-	# passing username, task_name, task_function as imported above, and job_package containing all the update handles		
-	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,task_function=task_function,job_package=job_package,PIDlist=PIDlist)
+	# passing username, task_name, task_handle as imported above, and job_package containing all the update handles		
+	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,task_handle=task_handle,job_package=job_package,PIDlist=PIDlist)
 
 	# preliminary update
 	jobs.jobUpdate(jobHand)		

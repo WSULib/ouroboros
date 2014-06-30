@@ -4,7 +4,8 @@ from celery import Celery
 
 # instantiate Celery object
 celery = Celery(backend='redis://localhost:6379/1',include=[
-                         'fedoraManager2.actions.actions'
+                         'fedoraManager2.actions.actions',
+                         'lib.FOXML2Solr.FOXML2Solr'
                         ])
 
 # import celery config file

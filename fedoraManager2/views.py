@@ -80,6 +80,7 @@ def userPage(username):
 # 	userData['username'] = username
 # 	return render_template("userPage.html",userData=userData)
 
+
 # JOB MANAGEMENT
 #########################################################################################################
 
@@ -269,30 +270,9 @@ def task_status(task_id):
 	
 	return json.dumps(response_data)	
 
+
 # PID MANAGEMENT
 ####################################################################################
-
-# @app.route("/PIDselection")
-# def PIDselection():
-# 	# get username from session
-# 	username = session['username']
-# 	return render_template('PIDselection.html', username=username)
-
-
-# @app.route("/PIDenter", methods=['POST', 'GET'])
-# def PIDenter():	
-
-# 	# get username from session
-# 	username = session['username']
-# 	form = forms.PIDselection(request.form)
-
-# 	if request.method == 'POST':		 
-# 		PID = form.PID.data				
-# 		jobs.sendUserPIDs(username,PID)
-# 		return redirect("/PIDmanage")		
-
-# 	return render_template('PIDformSQL.html', username=username, form=form)# PID selection sandboxing
-
 
 # PID check for user
 @app.route("/PIDmanage")

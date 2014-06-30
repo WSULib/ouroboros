@@ -162,8 +162,8 @@ if __name__ == '__main__':
 	# reactor.listenTCP(WSUAPIListener_port, server.Site(WSUAPIListener()))
 	# print "Starting imageServer..."
 	# reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))	
-	# if fedConsumerFire == True:
-	# 	print "Starting JSM listener..."
-	# 	fedConsumer().run()
+	if fedConsumerFire == True:
+		print "Starting JSM listener..."
+		fedConsumer().run()
 	print "<--ouroboros running-->"
 	reactor.run()

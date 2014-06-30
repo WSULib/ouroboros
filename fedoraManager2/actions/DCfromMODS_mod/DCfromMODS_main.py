@@ -10,6 +10,8 @@ import datetime
 from lxml import etree
 
 def DCfromMODS(PID):
+	# dev
+	print os.getcwd()
 
 	# 1) download MODS datastream
 	##################################################################################################################	
@@ -23,7 +25,7 @@ def DCfromMODS(PID):
 	##################################################################################################################		
 	print "XSLT Transforming:",PID,"..."
 	# Saxon transformation
-	XSLhand = open('inc/MODS_to_DC.xsl','r')		
+	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 	xslt_tree = etree.parse(XSLhand)
 	transform = etree.XSLT(xslt_tree)
 	DC = transform(XMLroot)

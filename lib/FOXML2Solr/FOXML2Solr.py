@@ -11,28 +11,14 @@ import time
 import datetime
 from lxml import etree
 
+from cl.cl import celery
+from celery import Task
+
 from augmentCore import augmentCore
 
-'''
-To Do
--------
 
-Small
-1) add counter to checking augmentCore
-
-Big
-1) optimize getting all PIDs, whole process might need to be chunked
-2) check the augment for each PID?  Seems unfortunate to run through 6,000+, then do it again checking their content models
-'''
-
-
-def FOXML2Solr(fedEvent,PID):
-
-	# set working directory
-	abspath = os.path.abspath(__file__)
-	dname = os.path.dirname(abspath)
-	print "Setting Working Dir to:",dname
-	os.chdir(dname)
+@celery.task()
+def FOXML2Solr(fedEvent,PID):	
 
 	#Get DT Threshold
 	def getLastFedoraIndexDate():	
@@ -89,19 +75,19 @@ def FOXML2Solr(fedEvent,PID):
 				XMLroot = etree.fromstring(FOXML)		
 			except:
 				print "Could not DOWNLOAD FOXML for",PID
-				fhand_exceptions = open(Outputs.downloadExcepts,'a')
+				fhand_exceptions = open(Outputs['downloadExcepts'],'a')
 				fhand_exceptions.write(str(PID)+"\n")
 				fhand_exceptions.close()
 
 			#get XSL doc, parse as XSL, transform FOXML as Solr add-doc
 			try:			
-				XSLhand = open('xsl/FOXML_to_Solr.xsl','r')		
+				XSLhand = open('inc/xsl/FOXML_to_Solr.xsl','r')		
 				xslt_tree = etree.parse(XSLhand)
 		  		transform = etree.XSLT(xslt_tree)
 				SolrXML = transform(XMLroot)
 			except:
 				print "Could not TRANSFORM FOXML for",PID
-				fhand_exceptions = open(Outputs.transformExcepts,'a')
+				fhand_exceptions = open(Outputs['transformExcepts'],'a')
 				fhand_exceptions.write(str(PID)+"\n")
 				fhand_exceptions.close()
 
@@ -113,7 +99,7 @@ def FOXML2Solr(fedEvent,PID):
 				print r.text
 			except:
 				print "Could not INDEX FOXML for",PID
-				fhand_exceptions = open(Outputs.indexExcepts,'a')
+				fhand_exceptions = open(Outputs['indexExcepts'],'a')
 				fhand_exceptions.write(str(PID)+"\n")
 				fhand_exceptions.close()	
 	
@@ -145,36 +131,32 @@ def FOXML2Solr(fedEvent,PID):
 		r = requests.post(updateURL, data=dateUpdateXML, headers=headers)
 		print r.text
 
-	def removeFOXMLinSolr(toUpdate):
-		for PID in toUpdate:
-			print "*** Removing document from Solr ***"
-			# escapes colon in PID
-			PID = PID.replace(":","\:")
-			updateURL = "http://localhost/solr4/fedobjs/update/"			
-			deleteXML = "<delete><query>id:{PID}</query></delete>".format(PID=PID)
-			headers = {'Content-Type': 'application/xml'}
-			r = requests.post(updateURL, data=deleteXML, headers=headers)
-			print r.text
+	def removeFOXMLinSolr(PID):		
+		
+		print "*** Removing document from Solr ***"		
+		PID = PID.replace(":","\:")
+		updateURL = "http://localhost/solr4/fedobjs/update/"			
+		deleteXML = "<delete><query>id:{PID}</query></delete>".format(PID=PID)
+		headers = {'Content-Type': 'application/xml'}
+		r = requests.post(updateURL, data=deleteXML, headers=headers)
+		print r.text
 
 
 
 	# determine Solr action
 	#################################################################################################################	
+	#Set output filenames
+	now = datetime.datetime.now().isoformat()
+	Outputs = {}
+	Outputs['downloadExcepts'] = './reports/'+now+'_downloadExcepts.csv'
+	Outputs['transformExcepts'] = './reports/'+now+'_transformExcepts.csv'
+	Outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
+
 	if fedEvent == "timestampIndex":
 		print "Indexing all Fedora items since last full index."
 		
 		#Globals
-		toUpdate = []
-		now = datetime.datetime.now().isoformat()
-
-		#Set output filenames
-		class Outputs:
-			pass
-		if os.path.dirname(__file__) != '':
-			os.chdir(os.path.dirname(__file__))
-		Outputs.downloadExcepts = './reports/'+now+'_downloadExcepts.csv'
-		Outputs.transformExcepts = './reports/'+now+'_transformExcepts.csv'
-		Outputs.indexExcepts = './reports/'+now+'_indexExcepts.csv'
+		toUpdate = []				
 
 		#start timer
 		startTime = int(time.time())
@@ -212,8 +194,8 @@ def FOXML2Solr(fedEvent,PID):
 	# Index single item per fedEvent
 	if fedEvent == "modifyDatastreamByValue" or fedEvent == "ingest" or fedEvent == "modifyObject":
 
-		# wait ten seconds
-		time.sleep(1)
+		# pause
+		# time.sleep(1)
 
 		print "Updating / Indexing",PID
 		toUpdate = [PID]
@@ -231,9 +213,8 @@ def FOXML2Solr(fedEvent,PID):
 
 	# Remove Object from Solr Index on Purge
 	if fedEvent == "purgeObject":
-		print "Removing the following from Solr Index",PID
-		toUpdate = [PID]
-		removeFOXMLinSolr(toUpdate)
+		print "Removing the following from Solr Index",PID		
+		removeFOXMLinSolr(PID)
 		# commit changes
 		commitSolrChanges()
 		# replicate changes to /search core

@@ -2,7 +2,7 @@
 from fedoraManager2 import app
 from fedoraManager2 import models
 from fedoraManager2 import db
-from fedoraManager2.actions import actions
+from fedoraManager2.actions import actions, tasks
 from fedoraManager2 import redisHandles
 
 # flask proper
@@ -37,6 +37,8 @@ import localConfig
 # solr handles
 from solrHandles import solr_handle
 
+from inspect import getmembers, isfunction
+
 
 # fake session data
 ####################################
@@ -61,10 +63,13 @@ def userPage(username):
 	# set username in session
 	session['username'] = username	
 
+	# get available tasks
+	tasks_list = getmembers(tasks, isfunction)	
+
 	# info to render page
 	userData = {}
 	userData['username'] = username
-	return render_template("userPage.html",userData=userData)
+	return render_template("userPage.html",userData=userData, tasks_list=tasks_list)
 
 
 # MIGHT WORK WHEN WE HAVE USER LOGIN PAGE...
@@ -130,8 +135,8 @@ def fireTask(task_name):
 		"jobHand":jobHand		
 	}
 
-	# grab task from actions based on URL "task_name" parameter, using getattr	
-	task_handle = getattr(actions, task_name)
+	# grab task from actions/tasks.py based on URL "task_name" parameter, using getattr	
+	task_handle = getattr(tasks, task_name)
 
 	# send to celeryTaskFactory in actions.py
 	# iterates through PIDs and creates secondary async tasks for each

@@ -10,9 +10,12 @@ import fedoraManager2.models as models
 import time
 import sys
 
-# import tasks
-from fedoraManager2.actions.tasks import *
-
+'''
+This file's primary function is to fire off the specific tasks for a job asynchronously.
+views.py, using getattr(), grabs the function as a handle that is passed to this.
+Thus, this file does not need to import tasks from tasks.py, merely fire them off via
+their handle using celery.
+'''
 
 
 # Fires *after* task is complete

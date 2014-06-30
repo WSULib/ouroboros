@@ -5,10 +5,9 @@
 <ul>
 	<li><h2>Tasks</h2></li>
 	<ul>		
-		<li><a href="/fireTask/sampleTask">sampleTask - small delay</a></li>
-		<li><a href="/fireTask/sampleFastTask">sampleTask - no delay, <strong>fast</strong></a></li>
-		<li>------------------------------------</li>
-		<li><a href="/fireTask/DCfromMODS"><strong>fedora testing</a></li>
+		{% for task in tasks_list%}
+			<li><a href="/fireTask/{{task.0}}"><strong>{{task.0}}</a></li>
+		{% endfor %}		
 	</ul>
 	<li><h2>PID Selection</h2></li>
 	<ul>		

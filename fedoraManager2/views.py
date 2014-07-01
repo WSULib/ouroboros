@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # fm2
 from fedoraManager2 import app
 from fedoraManager2 import models
@@ -5,11 +6,27 @@ from fedoraManager2 import db
 from fedoraManager2.actions import actions, tasks
 from fedoraManager2 import redisHandles
 from fedoraManager2 import login_manager
+=======
+# python modules
+import time
+import json
+import pickle
+import sys
+from uuid import uuid4
+import json
+import unicodedata
+>>>>>>> taskmodules
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response
 from flask.ext.sqlalchemy import SQLAlchemy
 
+# fm2
+from fedoraManager2 import app
+from fedoraManager2 import models
+from fedoraManager2 import db
+from fedoraManager2.actions import actions
+from fedoraManager2 import redisHandles
 import utilities
 
 # login
@@ -23,16 +40,6 @@ from models import User, ROLE_USER, ROLE_ADMIN
 from flask_wtf import Form
 from wtforms import TextField
 
-
-# python modules
-import time
-import json
-import pickle
-import sys
-from uuid import uuid4
-import json
-import unicodedata
-
 # get celery instance / handle
 from cl.cl import celery
 import jobs
@@ -42,10 +49,10 @@ from redisHandles import *
 # localConfig
 import localConfig
 
-# solr handles
+# DB handles
 from solrHandles import solr_handle
 
-from inspect import getmembers, isfunction
+
 
 
 
@@ -70,24 +77,18 @@ def index():
 		username = "User not set."
 		return render_template("index.html",username=username)
 
+
 @app.route('/userPage/')
 @login_required
 def userPage():
 	# set username in session
 	username = session['username']
 
-	# get available tasks
-	tasks_list = getmembers(tasks, isfunction)	
-
 	# info to render page
 	userData = {}
 	userData['username'] = username
-	return render_template("userPage.html",userData=userData, tasks_list=tasks_list)
+	return render_template("userPage.html",userData=userData)
 
-	# # info to render page
-	# userData = {}
-	# userData['username'] = username
-	# return render_template("userPage.html",userData=userData)
 
 
 # LOGIN
@@ -150,20 +151,17 @@ def logout():
 # JOB MANAGEMENT
 #########################################################################################################
 # fireTask is the factory that begins tasks from fedoraManager2.actions
-# epecting task function name from actions module, e.g. "sampleTask"
 @app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
 def fireTask(task_name):
 	print "Starting task request..."
 	
 	# get username from session (will pull from user auth session later)
 	username = session['username']	
-	# get total SELECTED PIDs associated with user
-	# # start timer
+
+	# get total SELECTED PIDs associated with user	
 	stime = time.time()
 	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status="selected")	
-	PIDlist = []
-	for PID in userSelectedPIDs:
-		PIDlist.append(PID.PID)
+	PIDlist = [PID.PID for PID in userSelectedPIDs]	
 	etime = time.time()
 	ttime = (etime - stime) * 1000
 	print "Took this long to create list from SQL query",ttime,"ms"
@@ -173,8 +171,7 @@ def fireTask(task_name):
 		return "<p>No PIDs selected, try again.  Try selecting <a href='/PIDmanage'>here</a>.</p>"
 
 	# instatiate jobHand object with incrementing job_num
-	jobInit = jobs.jobStart()
-	
+	jobInit = jobs.jobStart()	
 	jobHand = jobInit['jobHand']
 	taskHand = jobInit['taskHand']
 
@@ -185,26 +182,22 @@ def fireTask(task_name):
 	db.session.add(models.user_jobs(job_num,username, "init"))	
 	db.session.commit() 
 	
-	# begin job
-	print "Antipcating",userSelectedPIDs.count(),"tasks...."
-	# set estimated
+	# begin job and set estimated
+	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
 
-	# create job_package, passing request along
+	# create job_package	
 	job_package = {		
 		"username":username,
 		"job_num":job_num,
 		"jobHand":jobHand,
-		"request":request	
+		"form_data":request.form
 	}
-	
-	# grab task from actions/tasks.py based on URL "task_name" parameter, using getattr	
-	task_handle = getattr(tasks, task_name)
 
 	# send to celeryTaskFactory in actions.py
 	# iterates through PIDs and creates secondary async tasks for each
-	# passing username, task_name, task_handle as imported above, and job_package containing all the update handles		
-	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,task_handle=task_handle,job_package=job_package,PIDlist=PIDlist)
+	# passing username, task_name, and job_package containing all the update handles		
+	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)
 
 	# preliminary update
 	jobs.jobUpdate(jobHand)		

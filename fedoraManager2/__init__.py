@@ -1,3 +1,5 @@
+# root file, app instantiator
+
 # modules / packages import
 from flask import Flask, render_template, g
 from flask.ext.sqlalchemy import SQLAlchemy

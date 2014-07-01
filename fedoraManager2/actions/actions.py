@@ -5,17 +5,30 @@ import redis
 import fedoraManager2.jobs as jobs
 import fedoraManager2.redisHandles as redisHandles
 import fedoraManager2.models as models
+from fedoraManager2 import app
 
 # local dependecies
 import time
 import sys
+
 
 '''
 This file's primary function is to fire off the specific tasks for a job asynchronously.
 views.py, using getattr(), grabs the function as a handle that is passed to this.
 Thus, this file does not need to import tasks from tasks.py, merely fire them off via
 their handle using celery.
+
+It is also to load specific task blueprints.
 '''
+
+
+
+# register blueprints
+tasks_URL_prefix = "/tasks"
+
+from editRELS import editRELS, editRELS_worker
+app.register_blueprint(editRELS, url_prefix=tasks_URL_prefix)
+
 
 
 # Fires *after* task is complete
@@ -45,8 +58,7 @@ class postTask(Task):
 def celeryTaskFactory(**kwargs):	
 	
 	# create job_package
-	job_package = kwargs['job_package']
-	print job_package['jobHand'].assigned_tasks
+	job_package = kwargs['job_package']	
 
 	# get username
 	username = job_package['username']
@@ -57,8 +69,8 @@ def celeryTaskFactory(**kwargs):
 	# get and iterate through user selectedPIDs			
 	PIDlist = kwargs['PIDlist']	
 
-	# task function for taskWrapper	
-	job_package['task_handle'] = kwargs['task_handle']
+	# task function for taskWrapper		
+	job_package['task_name'] = kwargs['task_name']
 	
 	#set step counter
 	step = 1		
@@ -102,9 +114,11 @@ def taskWrapper(self,job_package,*args, **kwargs):
 		raise self.retry(countdown=3)
 	else:
 		redisHandles.r_PIDlock.set(job_package['PID'],1)	
-		# execute function
-		funcName = job_package['task_handle']	
-		return funcName(job_package)
+		
+		# execute function				
+		return globals()[job_package['task_name']](job_package)
+		 
+		
 
 	
 

@@ -26,8 +26,13 @@ It is also to load specific task blueprints.
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#editRELS
 from editRELS import editRELS, editRELS_worker
 app.register_blueprint(editRELS, url_prefix=tasks_URL_prefix)
+
+#editRELS
+from DCfromMODS import DCfromMODS, DCfromMODS_worker
+app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
 
 
 

@@ -6,11 +6,14 @@ from fedoraManager2.fedoraHandles import fedora_handle
 from flask import Blueprint, render_template, abort
 
 
-editRELS = Blueprint('editRELS', __name__, template_folder='templates')
+editRELS = Blueprint('editRELS', __name__, template_folder='templates', static_folder="static")
 
 
 @editRELS.route('/editRELS')
 def index():
+	'''
+	USE FLASK FORMS
+	'''
 	return render_template("editRELS_index.html")
 
 
@@ -20,7 +23,7 @@ def fire():
 
 
 def editRELS_worker(job_package):
-	PID= job_package['PID']		
+	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)
 
 	form_data = job_package['form_data']	

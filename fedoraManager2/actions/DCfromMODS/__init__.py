@@ -22,14 +22,14 @@ def DCfromMODS_worker(job_package):
 
 	# 1) download MODS datastream
 	##################################################################################################################	
-	print "Downloading:",PID,"MODS datastream..."
+	print "Downloading: {PID} MODS datastream...".format(PID=PID)
 	response = urllib.urlopen("http://localhost/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID))	
 	MODS = response.read()
 	XMLroot = etree.fromstring(MODS)
 
 	# 2) transform downloaded MODS to DC with LOC stylesheet
 	##################################################################################################################		
-	print "XSLT Transforming:",PID,"..."
+	print "XSLT Transforming: {PID}".format(PID=PID)
 	# Saxon transformation
 	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 	xslt_tree = etree.parse(XSLhand)
@@ -44,7 +44,7 @@ def DCfromMODS_worker(job_package):
 
 	# unesacpe PID
 	PID = PID.replace("\:", ":")		
-	print "Creating Datastream for:",PID,"..."
+	print "Creating Datastream for: {PID}".format(PID=PID)
 
 	#baseURL
  	baseFedoraURL = "http://localhost/fedora/objects/{PID}/datastreams/DC?".format(PID=PID)
@@ -61,3 +61,5 @@ def DCfromMODS_worker(job_package):
 	response = requests.post(baseFedoraURL, auth=('fedoraAdmin', 'cowp00p2012'), params=fedoraParams, data=str(DC), headers=headers)
  	if response.status_code == 201:
  		print "DC from MODS derivation successful"
+	else:
+		print "Unsuccessful transformation.  Need to elevate this to exception..."

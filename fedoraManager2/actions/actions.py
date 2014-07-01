@@ -30,9 +30,13 @@ tasks_URL_prefix = "/tasks"
 from editRELS import editRELS, editRELS_worker
 app.register_blueprint(editRELS, url_prefix=tasks_URL_prefix)
 
-#editRELS
+#DCfromMODS
 from DCfromMODS import DCfromMODS, DCfromMODS_worker
 app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
+
+#addDS
+from addDS import addDS, addDS_worker
+app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 
 
 

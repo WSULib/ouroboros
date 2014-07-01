@@ -2,7 +2,7 @@
 from fedoraManager2 import app
 from fedoraManager2 import models
 from fedoraManager2 import db
-from fedoraManager2.actions import actions
+from fedoraManager2.actions import actions, tasks
 from fedoraManager2 import redisHandles
 from fedoraManager2 import login_manager
 
@@ -45,6 +45,8 @@ import localConfig
 # solr handles
 from solrHandles import solr_handle
 
+from inspect import getmembers, isfunction
+
 
 
 
@@ -72,10 +74,13 @@ def userPage(username):
 	# set username in session
 	session['username'] = username	
 
+	# get available tasks
+	tasks_list = getmembers(tasks, isfunction)	
+
 	# info to render page
 	userData = {}
 	userData['username'] = username
-	return render_template("userPage.html",userData=userData)
+	return render_template("userPage.html",userData=userData, tasks_list=tasks_list)
 
 
 # MIGHT WORK WHEN WE HAVE USER LOGIN PAGE...
@@ -144,10 +149,9 @@ def logout():
 
 # JOB MANAGEMENT
 #########################################################################################################
-
 # fireTask is the factory that begins tasks from fedoraManager2.actions
 # epecting task function name from actions module, e.g. "sampleTask"
-@app.route("/fireTask/<task_name>")
+@app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
 def fireTask(task_name):
 	print "Starting task request..."
 	
@@ -186,15 +190,16 @@ def fireTask(task_name):
 	# set estimated
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
 
-	# create job_package
+	# create job_package, passing request along
 	job_package = {		
 		"username":username,
 		"job_num":job_num,
-		"jobHand":jobHand		
+		"jobHand":jobHand,
+		"request":request	
 	}
-
-	# grab task from actions based on URL "task_name" parameter, using getattr	
-	task_handle = getattr(actions, task_name)
+	
+	# grab task from actions/tasks.py based on URL "task_name" parameter, using getattr	
+	task_handle = getattr(tasks, task_name)
 
 	# send to celeryTaskFactory in actions.py
 	# iterates through PIDs and creates secondary async tasks for each
@@ -530,6 +535,24 @@ def updatePIDsfromSolr(update_type):
 
 	return "Update Complete."
 	
+
+
+
+# TASK VIEWS
+####################################################################################
+# PID check for user
+@app.route("/viewTask/editRELS", methods=['POST', 'GET'])
+def viewTask():
+	username = session['username']
+	'''
+	Create a form, figure out an elegant way to pass that info to fireTask
+	'''
+
+
+	return render_template("editRELS.html",username=username)
+
+
+
 
 
 

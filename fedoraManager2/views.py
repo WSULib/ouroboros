@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # fm2
 from fedoraManager2 import app
 from fedoraManager2 import models
@@ -6,7 +5,7 @@ from fedoraManager2 import db
 from fedoraManager2.actions import actions, tasks
 from fedoraManager2 import redisHandles
 from fedoraManager2 import login_manager
-=======
+
 # python modules
 import time
 import json
@@ -15,7 +14,6 @@ import sys
 from uuid import uuid4
 import json
 import unicodedata
->>>>>>> taskmodules
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response

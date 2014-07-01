@@ -1,3 +1,4 @@
 #that which shall be ignored
 localConfig.py
 *.out
+*.pyc

@@ -68,8 +68,7 @@ app.secret_key = 'ShoppingHorse'
 @app.route("/")
 def index():
 	if "username" in session:
-		username = session['username']
-		print username
+		username = session['username']		
 		return redirect("userPage")
 	else:
 		username = "User not set."
@@ -95,13 +94,13 @@ def userPage():
 
 @login_manager.user_loader
 def user_loader(userid):
-    # """Flask-Login user_loader callback.
-    # The user_loader function asks this function to get a User Object or return 
-    # None based on the userid.
-    # The userid was stored in the session environment by Flask-Login.  
-    # user_loader stores the returned User object in current_user during every 
-    # flask request. 
-    # """
+	# """Flask-Login user_loader callback.
+	# The user_loader function asks this function to get a User Object or return 
+	# None based on the userid.
+	# The userid was stored in the session environment by Flask-Login.  
+	# user_loader stores the returned User object in current_user during every 
+	# flask request. 
+	# """
 	return User.query.get(int(userid))
 
 @app.before_request
@@ -184,17 +183,31 @@ def fireTask(task_name):
 	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
 
+	# debug request object
+	# app.logger.debug(request)
+	# app.logger.debug(request.data)
+	# app.logger.debug(request.stream)
+	# app.logger.debug(request.files)
+	# app.logger.debug(request.form)	
+
 	# create job_package	
 	job_package = {		
 		"username":username,
 		"job_num":job_num,
 		"jobHand":jobHand,
-		"form_data":request.form
+		"form_data":request.form		
 	}
 
+	# include file if uploaded
+	if 'upload' in request.files:
+		job_package['upload_data'] = request.files['upload'].read()
+
+
 	# send to celeryTaskFactory in actions.py
-	# iterates through PIDs and creates secondary async tasks for each
-	# passing username, task_name, and job_package containing all the update handles		
+	'''
+	iterates through PIDs and creates secondary async tasks for each
+	passing username, task_name, and job_package containing all the update handles		
+	'''
 	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)
 
 	# preliminary update
@@ -202,7 +215,6 @@ def fireTask(task_name):
 	jobs.taskUpdate(taskHand)
 
 	print "Started job #",jobHand.job_num
-
 	return redirect("/userJobs")
 
 

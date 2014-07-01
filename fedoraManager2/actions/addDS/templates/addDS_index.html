@@ -1,0 +1,18 @@
+{% include 'header.html' %}
+<h1>Add Datastream</h1>
+
+
+<form method="POST" action="/fireTask/addDS_worker" enctype="multipart/form-data">
+	{{ form.csrf_token }} 
+	{{ form.dsID.label }} {{ form.dsID(size=60) }}<br>
+	{{ form.altIDs.label }} {{ form.altIDs(size=60) }}<br>
+	{{ form.dsLabel.label }} {{ form.dsLabel(size=60) }}<br>
+	{{ form.MIMEType.label }} {{ form.MIMEType(size=60) }}<br>
+	{{ form.dsLocation.label }} {{ form.dsLocation(size=60) }}<br>
+	{{ form.controlGroup.label }} {{ form.controlGroup }} <br>
+	{{ form.content.label }} {{ form.content }}<br>
+	{{ form.upload.label }} {{ form.upload }}<br>
+	<!-- <input type='file' name='upload_file' /> -->
+	<input type="submit" value="Go">
+</form>
+

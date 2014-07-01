@@ -11,6 +11,18 @@
 </head>
 
 <body>
+	<div class="nav-collapse collapse">
+		<ul class="nav">
+			<li class="active"><a href="/">Home</a></li>
+				{% if g.user.is_authenticated()%}
+			<li><a href="{{ url_for('logout') }}">Logout</a></li>
+			<li><a href="{{ url_for('register') }}">Create New Account</a></li>
+				{% endif %}
+				{% if not g.user.is_authenticated()%}
+			<li><a href="{{ url_for('login') }}">Login</a></li>
+				{% endif %}
+		</ul>
+	</div>
 	{% if username %}
-		<p><a href="/userPage/{{username}}">{{username}} home</a></p>
+		<p><a href="/userPage">{{username}} home</a></p>
 	{% endif %}

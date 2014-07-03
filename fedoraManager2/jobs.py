@@ -8,6 +8,7 @@ import time
 import models
 from redisHandles import *
 from fedoraManager2 import db, db_con
+from flask import session
 
 # Job Management
 ############################################################################################################
@@ -91,10 +92,11 @@ def removeUserPIDs(username,PIDs):
 	print "PIDs removed"	
 
 
-
-
-
-
+def getSelPIDs():
+	username = session['username']
+	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status="selected")	
+	PIDlist = [PID.PID for PID in userSelectedPIDs]
+	return PIDlist
 
 
 

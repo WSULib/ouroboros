@@ -47,11 +47,11 @@ from redisHandles import *
 # localConfig
 import localConfig
 
-# DB handles
+# Solr
 from solrHandles import solr_handle
 
-
-
+# Fedora
+from fedoraHandles import fedora_handle
 
 
 
@@ -151,6 +151,12 @@ def logout():
 @app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
 def fireTask(task_name):
 	print "Starting task request..."
+
+	# check if task in available tasks, else abort
+	try:
+		task_handle = getattr(actions, task_name)
+	except:		 
+		return render_template("taskError.html")
 	
 	# get username from session (will pull from user auth session later)
 	username = session['username']	
@@ -222,8 +228,7 @@ def fireTask(task_name):
 def jobStatus(job_num):	
 	'''
 	Look into making this more detailed for the job, perhaps this is where the logs will be monitored
-	This could be breakdown of success and errors too...
-	COPY FROM USERJOBS, PREVIOUS CODE IS TOO OLD
+	This could be breakdown of success and errors too...	
 	'''
 	pass	
 

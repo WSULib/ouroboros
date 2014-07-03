@@ -1,8 +1,30 @@
 {% include 'header.html' %}
 <h1>RELS-EXT editing</h1>
 
-<form action="/fireTask/editRELS_worker" method="POST" >
-	<span>predicate:</span><input name="predicate" type="text"></input>
-	<span>object:</span><input name="object" type="text"></input>
+<h2 style="color:orange;">Edit RDF triples for PIDs</h2>
+<p style="color:red;">(warning: representative triples are from first PID in set only, <strong>{{PID}}</strong>)</p>
+<form action="/fireTask/editRELS_edit_worker" method="POST" >
+	<ul>
+	{% for p,o in riquery_filtered %}
+		<li><input name="predicate" value="{{p}}" size="150"><input name="object" value="{{o}}" size="150"></li>
+	{% endfor %}
+	</ul>
+
+	<h3>Raw RDF / RELS-EXT XML</h3>
+	<textarea name="raw_xml" cols="100" rows="20">{{raw_xml}}</textarea><br>
+	<!-- {{ form.raw_xml(cols="100", rows="20")|safe}}<br> -->
 	<button type="submit">go!</button>
 </form>
+
+<h2 style="color:green;">Add RDF triple to PIDs</h2>
+<form action="/fireTask/editRELS_add_worker" method="POST" >
+	{{ form.predicate.label }} {{ form.predicate }} {{ form.obj.label }} {{ form.obj(size=100) }}	
+	<button type="submit">go!</button>
+</form>
+
+<h2>Remove defined RDF triple from PIDs</h2>
+<p>(soon...)</p>
+<!-- <form action="/fireTask/editRELS_remove_worker" method="POST" >
+	{{ form.predicate.label }} {{ form.predicate }} {{ form.obj.label }} {{ form.obj(size=100) }}
+	<button type="submit">go!</button>
+</form> -->

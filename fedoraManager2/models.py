@@ -83,3 +83,21 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r>' % (self.username)
+
+
+class job_rollback(db.Model):
+	job_num = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=False)
+	username = db.Column(db.String(255))
+	taskname = db.Column(db.String(255))
+	rollback_content = db.Column(db.String(10000))
+	
+
+	def __init__(self, job_num, username, taskname, rollback_content):
+		self.job_num = job_num
+		self.username = username
+		self.taskname = taskname
+		self.rollback_content = rollback_content
+		
+
+	def __repr__(self):    	
+		return '<Job# {job_num}, username: {username}>'.format(job_num=self.job_num,username=self.username)

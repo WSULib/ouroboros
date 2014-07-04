@@ -28,8 +28,10 @@ def FOXML2Solr(fedEvent,PID):
 		print "Last Indexing of FOXML in Solr:",LastFedoraIndexDate,"\n"
 		return LastFedoraIndexDate
 
+
 	#Get Objects/Datastreams modified on or after this date
 	def getToUpdate(LastFedoraIndexDate):
+		print LastFedoraIndexDate
 		# Pulls date last time Fedora was indexed in Solr
 		# FYI, this line will limit to only objects: and $object<info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/wayne:collectionBMC>
 		# This will need to be paginate, broken up, something - quite slow at even 6,000+
@@ -45,6 +47,10 @@ def FOXML2Solr(fedEvent,PID):
 			})
 		risearch_host = "http://{username}:{password}@localhost/fedora/risearch?".format(username=username,password=password)
 
+		print "********************DEBUG****************************"
+		print risearch_query
+		print risearch_host
+
 		modified_PIDs = urllib.urlopen(risearch_host,risearch_params)	
 		iterPIDs = iter(modified_PIDs)	
 		next(iterPIDs)	
@@ -59,7 +65,11 @@ def FOXML2Solr(fedEvent,PID):
 		#exit if nothing to update
 		if len(toUpdate) < 1:
 			print "It does not appear any Fedora Objects have been modified since last Solr Indexing.  You may also enter a date stamp argument, formatted thusly '1969-12-31T12:59:59.265Z', when running FOXML2Solr as stand-alone script to index all records modified after that date."
-			exit()
+			
+			return False
+
+		else:
+			return True
 
 	def indexFOXMLinSolr(toUpdate):
 
@@ -163,17 +173,44 @@ def FOXML2Solr(fedEvent,PID):
 
 		#run funcs
 		LastFedoraIndexDate = getLastFedoraIndexDate()
-
-		#checks for retro-timestamp to index forward from, one being the 1970 "epoch"
-		if len(sys.argv) > 1:
-			if sys.argv[1] == "epoch":
-				LastFedoraIndexDate = "1969-12-31T12:59:59.265Z"
-			else:	
-				LastFedoraIndexDate = sys.argv[1]
-
 		
 		# generate list of PIDs to update
-		getToUpdate(LastFedoraIndexDate)		
+		result = getToUpdate(LastFedoraIndexDate)		
+		
+		if result == True:
+			# index PIDs in Solr
+			indexFOXMLinSolr(toUpdate)
+			# augment documents - from augmentCore.py
+			augmentCore(toUpdate)	
+			# update timestamp in Solr		
+			updateLastFedoraIndexDate()
+			# commit changes
+			commitSolrChanges()
+			# replicate changes to /search core
+			replicateToSearch()			
+
+			#end timer
+			endTime = int(time.time())
+			totalTime = endTime - startTime
+			print "Total seconds elapsed",totalTime	
+
+		else:
+			print "Nothing to do. Finis."
+
+	if fedEvent == "fullIndex":
+		print "Indexing ALL Fedora items."
+		
+		#Globals
+		toUpdate = []				
+
+		#start timer
+		startTime = int(time.time())		
+
+		LastFedoraIndexDate = "1969-12-31T12:59:59.265Z"
+		
+		# generate list of PIDs to update
+		result = getToUpdate(LastFedoraIndexDate)		
+		
 		# index PIDs in Solr
 		indexFOXMLinSolr(toUpdate)
 		# augment documents - from augmentCore.py
@@ -188,7 +225,8 @@ def FOXML2Solr(fedEvent,PID):
 		#end timer
 		endTime = int(time.time())
 		totalTime = endTime - startTime
-		print "Total seconds elapsed",totalTime	
+		print "Total seconds elapsed",totalTime
+		
 		
 
 	# Index single item per fedEvent
@@ -220,7 +258,6 @@ def FOXML2Solr(fedEvent,PID):
 		# replicate changes to /search core
 		replicateToSearch()
 		return
-
 
 	#################################################################################################################
 

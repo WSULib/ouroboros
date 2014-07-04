@@ -1,0 +1,30 @@
+body {	
+	font-family: 'Droid Sans', sans-serif;	
+}
+
+ul.nav {
+	list-style-type: none;
+}
+
+ul.nav li {
+	display:inline;
+	padding-right:5px;
+	border-right: 2px solid #ccc;
+}
+
+.nav li:last-child { 
+   border-right: 0px solid #ccc;
+}
+
+#rdf_triples {
+   border-collapse:collapse;
+}
+
+#rdf_triples tr.headers {
+   text-align:center;
+}
+
+#rdf_triples td {
+	padding:5px 20px 5px 5px;	
+	border-bottom: 1px solid black;
+}

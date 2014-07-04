@@ -14,6 +14,7 @@ import sys
 from uuid import uuid4
 import json
 import unicodedata
+import shlex, subprocess
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response
@@ -52,9 +53,6 @@ from solrHandles import solr_handle
 
 # Fedora
 from fedoraHandles import fedora_handle
-
-
-
 
 # fake session data
 ####################################
@@ -124,7 +122,6 @@ def register():
 
 
 @app.route('/login', methods=['GET', 'POST'])
-
 def login():
 	if request.method == 'GET':
 		return render_template('login.html')
@@ -144,6 +141,7 @@ def logout():
 	session["username"] = ""
 	logout_user()
 	return redirect(url_for('index'))
+
 
 # JOB MANAGEMENT
 #########################################################################################################
@@ -343,6 +341,7 @@ def task_status(task_id):
 	response_data = dict(id=task_id, status=state, result=retval)
 	
 	return json.dumps(response_data)	
+
 
 
 # PID MANAGEMENT
@@ -545,22 +544,22 @@ def updatePIDsfromSolr(update_type):
 	
 
 
-
-# TASK VIEWS
+# BOUTIQUE SERVICES
 ####################################################################################
-# PID check for user
-@app.route("/viewTask/editRELS", methods=['POST', 'GET'])
-def viewTask():
-	username = session['username']
-	'''
-	Create a form, figure out an elegant way to pass that info to fireTask
-	'''
+@app.route("/freshenSolr", methods=['POST', 'GET'])
+def freshenSolr():	
+
+	from lib.FOXML2Solr.FOXML2Solr import FOXML2Solr
+	
+	if request.args.get("type") == "fullIndex":				
+		index_handle = FOXML2Solr.delay('fullIndex','')
 
 
-	return render_template("editRELS.html",username=username)
+	if request.args.get("type") == "timestamp":		
+		index_handle = FOXML2Solr.delay('timestampIndex','')
 
-
-
+	# pass the current PIDs to page as list	
+	return render_template("freshenSolr.html",type=request.args.get("type"))
 
 
 

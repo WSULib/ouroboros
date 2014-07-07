@@ -156,14 +156,17 @@ resource = WSGIResource(reactor, reactor.getThreadPool(), app)
 site = Site(resource)
 
 if __name__ == '__main__':
-	print "Starting fedoraManager2 server..."
-	reactor.listenTCP( fedoraManager2_port, site )
-	# print "Starting WSUAPI..."
-	# reactor.listenTCP(WSUAPIListener_port, server.Site(WSUAPIListener()))
-	# print "Starting imageServer..."
-	# reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))	
-	# if fedConsumerFire == True:
-	# 	print "Starting JSM listener..."
-	# 	fedConsumer().run()
+	if fm2Fire == True:
+		print "Starting fedoraManager2 server..."
+		reactor.listenTCP( fedoraManager2_port, site )
+	if WSUAPIFire == True:
+		print "Starting WSUAPI..."
+		reactor.listenTCP(WSUAPIListener_port, server.Site(WSUAPIListener()))
+	if imageServerFire == True:
+		print "Starting imageServer..."
+		reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))	
+	if fedConsumerFire == True:
+		print "Starting JSM listener..."
+		fedConsumer().run()
 	print "<--ouroboros says hissss-->"
 	reactor.run()

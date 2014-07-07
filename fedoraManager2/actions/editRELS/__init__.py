@@ -11,6 +11,7 @@ from flask import Blueprint, render_template, abort, request
 
 #python modules
 from lxml import etree
+import re
 
 # eulfedora
 import eulfedora
@@ -52,9 +53,42 @@ def index():
 	# get raw RDF XML for raw_xml field
 	obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])	
 	raw_xml = obj_ohandle.rels_ext.content.serialize()
+
+	# extract namespace / declaration for NS editing
+	encoded_xml = raw_xml.encode('utf-8')
+	parser = etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+	XMLroot = etree.fromstring(encoded_xml, parser=parser)
+
 	
 	return render_template("editRELS_index.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,form=form,raw_xml=raw_xml)
 
+
+@editRELS.route('/editRELS/regexConfirm', methods=['POST', 'GET'])
+def regexConfirm():
+		
+	# get PIDs	
+	PIDs = getSelPIDs()			
+	form_data = request.form	
+
+	# search / replace
+	orig_string = request.form['raw_xml']
+	regex_search = request.form['regex_search'].encode('utf-8')
+	regex_replace = request.form['regex_replace'].encode('utf-8')
+	new_string = re.sub(regex_search,regex_replace,orig_string)	
+		
+	#debug
+	return_package = {
+		"orig_string":orig_string,
+		"new_string":new_string,
+		"regex_search":regex_search,
+		"regex_replace":regex_replace		
+	}	
+
+	# check diff - if ratio == 100, XML is identical, simply reordered by RDF query
+	if orig_string == new_string:
+		return_package['string_match'] = True	
+	
+	return render_template("editRELS_regexConfirm.html",return_package=return_package)
 
 
 def editRELS_add_worker(job_package):
@@ -75,7 +109,7 @@ def editRELS_edit_worker(job_package):
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)
 
-	# get unmodified XML	
+	# get unmodified XML		
 	pre_mod_xml = obj_ohandle.rels_ext.content.serialize()
 
 	# get modified XML
@@ -116,6 +150,28 @@ def editRELS_edit_worker(job_package):
 
 		# save constructed object
 		print newDS.save()
+
+def editRELS_regex_worker(job_package):		
+	
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)
+	
+	# get modified XML
+	form_data = job_package['form_data']	
+	new_string = form_data['new_string']
+	orig_string = form_data['orig_string']	
+
+	# similar to addDS functionality
+	# initialized DS object
+	newDS = eulfedora.models.DatastreamObject(obj_ohandle, "RELS-EXT", "RELS-EXT", control_group="X")	
+
+	# construct DS object	
+	newDS.mimetype = "application/rdf+xml"
+	# content		
+	newDS.content = new_string	
+
+	# save constructed object
+	print newDS.save()
 
 def editRELS_remove_worker(job_package):
 	pass

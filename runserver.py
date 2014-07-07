@@ -120,14 +120,14 @@ class imageServerListener(resource.Resource):
 
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
-Prod: Connected to JSM Messaging service on :61616, routes 'fedEvents' to clerkRouter function from clerkRouter.py
+Prod: Connected to JSM Messaging service on :fedConsumer_port (usually 61616), routes 'fedEvents' to clerkRouter function from clerkRouter.py
 Dev: Disabled
 '''
-class fedConsumer(object):
+class fedoraConsumerWorker(object):
     QUEUE = "/topic/fedora.apim.update"
     def __init__(self, config=None):
         if config is None:
-            config = StompConfig('tcp://localhost:61616')
+            config = StompConfig('tcp://localhost:{fedConsumer_port}'.format(fedConsumer_port=fedConsumer_port))
         self.config = config
 
     @defer.inlineCallbacks
@@ -146,7 +146,7 @@ class fedConsumer(object):
 
         #send to clearkRouter        
         worker = clerkRouter()
-        worker.fedConsumer(msg=frame.body)
+        worker.fedoraConsumer(msg=frame.body)
 
 
 
@@ -167,6 +167,6 @@ if __name__ == '__main__':
 		reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))	
 	if fedConsumerFire == True:
 		print "Starting JSM listener..."
-		fedConsumer().run()
+		fedoraConsumerWorker().run()
 	print "<--ouroboros says hissss-->"
 	reactor.run()

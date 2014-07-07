@@ -43,7 +43,9 @@ class RDF_edit(Form):
 		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/contentisDiscoverable', 'isDiscoverable'),
 		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/contentpreferredContentModel', 'preferredContentModel')])
 	obj = StringField('object')
-	raw_xml = TextAreaField('Raw XML')
+	raw_xml = TextAreaField('Raw XML')	
+	regex_search = StringField('regex search')
+	regex_replace = StringField('regex replace')
 
 
 

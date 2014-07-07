@@ -155,23 +155,27 @@ def editRELS_regex_worker(job_package):
 	
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)
+
+	'''
+	NOT QUITE RIGHT: Need to actually run regex on the things!  Just replacing now.  But close...
+	'''
 	
-	# get modified XML
-	form_data = job_package['form_data']	
-	new_string = form_data['new_string']
-	orig_string = form_data['orig_string']	
+	# # get modified XML
+	# form_data = job_package['form_data']	
+	# new_string = form_data['new_string']
+	# orig_string = form_data['orig_string']	
 
-	# similar to addDS functionality
-	# initialized DS object
-	newDS = eulfedora.models.DatastreamObject(obj_ohandle, "RELS-EXT", "RELS-EXT", control_group="X")	
+	# # similar to addDS functionality
+	# # initialized DS object
+	# newDS = eulfedora.models.DatastreamObject(obj_ohandle, "RELS-EXT", "RELS-EXT", control_group="X")	
 
-	# construct DS object	
-	newDS.mimetype = "application/rdf+xml"
-	# content		
-	newDS.content = new_string	
+	# # construct DS object	
+	# newDS.mimetype = "application/rdf+xml"
+	# # content		
+	# newDS.content = new_string	
 
-	# save constructed object
-	print newDS.save()
+	# # save constructed object
+	# print newDS.save()
 
 def editRELS_remove_worker(job_package):
 	pass

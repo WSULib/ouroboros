@@ -54,9 +54,8 @@ from solrHandles import solr_handle
 # Fedora
 from fedoraHandles import fedora_handle
 
-# fake session data
+# session data secret key
 ####################################
-# set the secret key
 app.secret_key = 'ShoppingHorse'
 ####################################
 

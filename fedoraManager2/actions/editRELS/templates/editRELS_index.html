@@ -24,15 +24,22 @@
 </table>
 
 <form action="/fireTask/editRELS_edit_worker" method="POST" >
-	<!-- <ul>
-	{% for p,o in riquery_filtered %}
-		<li><input name="predicate" value="{{p}}" size="150"><input name="object" value="{{o}}" size="150"></li>
-	{% endfor %}
-	</ul> -->
-
+	
 	<h3>Raw RDF / RELS-EXT XML</h3>
+	<textarea name="raw_xml" cols="100" rows="20">{{raw_xml}}</textarea><br>	
+	<button type="submit">go!</button>
+</form>
+
+<h2>Regex: Edit RDF / RELS-EXT XML with Regular Expressions</h2> 
+<p>Provide <strong>search</strong> and <strong>replace</strong> strings to perform a regex search & replace on the RELS-EXT datastream XML</p>
+
+<form action="/tasks/editRELS/regexConfirm" method="POST" >
+	
+	<h3>RDF / RELS-EXT Regex Editing</h3>
 	<textarea name="raw_xml" cols="100" rows="20">{{raw_xml}}</textarea><br>
-	<!-- {{ form.raw_xml(cols="100", rows="20")|safe}}<br> -->
+	{{ form.regex_search.label }} {{ form.regex_search(size=150) }}<br>
+	{{ form.regex_replace.label }} {{ form.regex_replace(size=150) }}<br>
+	
 	<button type="submit">go!</button>
 </form>
 

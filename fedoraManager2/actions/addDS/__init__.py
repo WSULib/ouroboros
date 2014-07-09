@@ -20,11 +20,6 @@ def index():
 
 def addDS_worker(job_package):
 	
-	'''
-	Improvements:
-		- automatically detect MIMEType if file uploaded
-	'''
-	
 	form_data = job_package['form_data']
 	print form_data
 	
@@ -43,8 +38,10 @@ def addDS_worker(job_package):
 	# content
 	if 'upload_data' in job_package:		
 		newDS.content = job_package['upload_data']
-	if form_data['content'] != '':
+	elif form_data['content'] != '':
 		newDS.content = form_data['content']
+
+	print newDS.content
 
 	# save constructed object
 	newDS.save()

@@ -39,15 +39,21 @@ class RDF_edit(Form):
 		('info:fedora/fedora-system:def/relations-external#isMemberOfCollection', 'isMemberOfCollection'),
 		('info:fedora/fedora-system:def/relations-external#isMemberOf', 'isMemberOf'),
 		('info:fedora/fedora-system:def/relations-external#isPartOf', 'isPartOf'),
-		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/contenthasSecurityPolicy', 'hasSecurityPolicy'),
-		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/contentisDiscoverable', 'isDiscoverable'),
-		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/contentpreferredContentModel', 'preferredContentModel')])
+		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy', 'hasSecurityPolicy'),
+		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable', 'isDiscoverable'),
+		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel', 'preferredContentModel')])
 	obj = StringField('object')
 	raw_xml = TextAreaField('Raw XML')	
 	regex_search = StringField('regex search')
 	regex_replace = StringField('regex replace')
 
 
+# form for adding Datastreams
+class batchIngestForm(Form):	
+	name = StringField('Name of XSL Transformation:')
+	description = StringField('Description:')
+	content = TextAreaField('Paste Content (usually XML, and trumps file upload)')
+	upload = FileField('Upload Content')
 
 		
 

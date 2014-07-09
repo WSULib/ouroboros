@@ -54,11 +54,6 @@ def index():
 	obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])	
 	raw_xml = obj_ohandle.rels_ext.content.serialize()
 
-	# extract namespace / declaration for NS editing
-	encoded_xml = raw_xml.encode('utf-8')
-	parser = etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
-	XMLroot = etree.fromstring(encoded_xml, parser=parser)
-
 	
 	return render_template("editRELS_index.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,form=form,raw_xml=raw_xml)
 
@@ -105,7 +100,8 @@ def editRELS_add_worker(job_package):
 def editRELS_edit_worker(job_package):		
 	'''
 	Takes modified raw RDF XML, applies to all PIDs in job.	
-	'''
+	'''	
+
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)
 
@@ -154,28 +150,29 @@ def editRELS_edit_worker(job_package):
 def editRELS_regex_worker(job_package):		
 	
 	PID = job_package['PID']		
-	obj_ohandle = fedora_handle.get_object(PID)
-
-	'''
-	NOT QUITE RIGHT: Need to actually run regex on the things!  Just replacing now.  But close...
-	'''
+	obj_ohandle = fedora_handle.get_object(PID)	
 	
-	# # get modified XML
-	# form_data = job_package['form_data']	
-	# new_string = form_data['new_string']
-	# orig_string = form_data['orig_string']	
+	# get original RELS-EXT to modify
+	orig_string = obj_ohandle.rels_ext.content.serialize()
+	
+	# get regex parameters
+	form_data = job_package['form_data']	
 
-	# # similar to addDS functionality
-	# # initialized DS object
-	# newDS = eulfedora.models.DatastreamObject(obj_ohandle, "RELS-EXT", "RELS-EXT", control_group="X")	
+	# search / replace	
+	regex_search = form_data['regex_search'].encode('utf-8')
+	regex_replace = form_data['regex_replace'].encode('utf-8')
+	new_string = re.sub(regex_search,regex_replace,orig_string)		
 
-	# # construct DS object	
-	# newDS.mimetype = "application/rdf+xml"
-	# # content		
-	# newDS.content = new_string	
+	# similar to addDS functionality	
+	newDS = eulfedora.models.DatastreamObject(obj_ohandle, "RELS-EXT", "RELS-EXT", control_group="X")	
 
-	# # save constructed object
-	# print newDS.save()
+	# construct DS object	
+	newDS.mimetype = "application/rdf+xml"
+	# content		
+	newDS.content = new_string	
+
+	# save constructed object
+	print newDS.save()
 
 def editRELS_remove_worker(job_package):
 	pass

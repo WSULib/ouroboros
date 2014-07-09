@@ -2,26 +2,27 @@
 <!-- User Page -->
 <h1>Welcome {{userData.username}}, great fm2 bounty awaits!</h1>
 <p><span style="color:green;">*username "{{userData.username}}" set to session</span></p>
-<ul>
-	<li><h2>Tasks</h2></li>
-	<ul>
-		<li><a href="/tasks/editRELS"><strong>RDF modeling</a></li>
-		<li><a href="/tasks/DCfromMODS"><strong>derive DC from MODS (need confirmation moment...)</a></li>
-		<li><a href="/tasks/addDS"><strong>add Datastream</a></li>
-	</ul>
-	<li><h2>Repository Wide</h2></li>
-	<ul>
-		<li><a href="/freshenSolr"><strong>freshen Solr</a></li>		
-	</ul>
+<ul>		
 	<li><h2>PID Selection</h2></li>
 	<ul>		
 		<li><a href="/PIDSolr">Solr</a></li>
 		<li><a href="/PIDmanage">Manage PIDs</a></li>	
 	</ul>
+	<li><h2>Tasks</h2></li>
+	<ul>
+		<li><a href="/tasks/editRELS"><strong>RDF modeling</a></li>
+		<li><a href="/tasks/DCfromMODS"><strong>derive DC from MODS (<span style="color:red;">note: fires immeditately</span>)</a></li>
+		<li><a href="/tasks/addDS"><strong>add Datastream</a></li>
+		<li><a href="/tasks/batchIngest"><strong>Batch Ingest</a></li>
+	</ul>
 	<li><h2>User Jobs</h2></li>
 	<ul>
 		<li><a href="/userJobs">Running Jobs</a></li>
 		<li><a href="/userAllJobs">Manage All Jobs</a></li>
+	</ul>
+	<li><h2>Repository Utilities</h2></li>
+	<ul>
+		<li><a href="/freshenSolr"><strong>freshen Solr</a></li>		
 	</ul>
 </ul>
 {% include 'footer.html' %}

@@ -1,7 +1,11 @@
 {% include 'header.html' %}
 
 <h1>Welcome <span style="color:green;">{{username}}</span>, the PIDs you have requested!</h1>
-<h2>Pid Actions</h2>
+<h2>PID Selection</h2>
+<ul>
+    <li><a href="/PIDSolr">Solr</a></li>
+</ul>
+<h2>PID Actions</h2>
 <ul>
     <li><a href="#" onclick="PIDmanageAction('s_all'); return false;">Select All</a></li>      
     <li><a href="#" onclick="PIDmanageAction('s_none'); return false;">Select None</a></li>    

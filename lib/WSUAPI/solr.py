@@ -451,7 +451,7 @@ def createUserAccount(getParams):
 	return jsonString
 
 
-def solrAddDoc(getParams):
+def addFavorite(getParams):
 # function to take jsonAddString, index in Solr, and return confirmation code
 ######################################################################################################################	
 	solrString = getParams['raw'][0]
@@ -467,7 +467,7 @@ def solrAddDoc(getParams):
 	return jsonString
 
 
-def solrRemoveDoc(getParams):
+def removeFavorite(getParams):
 # function to take jsonAddString, remove from Solr, and return confirmation code
 ######################################################################################################################	
 	returnDict = {}
@@ -533,12 +533,8 @@ def solrTranslationHash(args):
 def pubStore(getParams):
 	urlsuff = getParams['urlsuff'][0]
 	solrString = getParams['json'][0]	
-
-	# print solrString
-
-	baseURL = "http://localhost/solr4/pubstore/{urlsuff}".format(urlsuff=urlsuff)
-	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
-	# print "Going to this URL:",baseURL
+	
+	baseURL = "http://localhost/solr4/pubstore/{urlsuff}".format(urlsuff=urlsuff)	
 	
 	# json post
 	if "update" in urlsuff:

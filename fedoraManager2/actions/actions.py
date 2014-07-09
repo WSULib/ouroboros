@@ -38,6 +38,9 @@ app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
 from addDS import addDS, addDS_worker
 app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 
+#batchIngest
+from batchIngest import batchIngest, batchIngest_worker
+app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
 
 
 # Fires *after* task is complete

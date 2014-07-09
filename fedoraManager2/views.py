@@ -184,14 +184,7 @@ def fireTask(task_name):
 	
 	# begin job and set estimated
 	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
-	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
-
-	# debug request object
-	# app.logger.debug(request)
-	# app.logger.debug(request.data)
-	# app.logger.debug(request.stream)
-	# app.logger.debug(request.files)
-	# app.logger.debug(request.form)	
+	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())	
 
 	# create job_package	
 	job_package = {		
@@ -201,8 +194,8 @@ def fireTask(task_name):
 		"form_data":request.form		
 	}
 
-	# include file if uploaded
-	if 'upload' in request.files:
+	# pass along binary uploaded data if included in job task
+	if 'upload' in request.files and request.files['upload'].filename != '':
 		job_package['upload_data'] = request.files['upload'].read()
 
 
@@ -357,7 +350,7 @@ def PIDmanage():
 	group_names = [each.group_name.encode('ascii','ignore') for each in user_pid_groups]	
 
 	# pass the current PIDs to page as list	
-	return render_template("PIDSQL.html",username=username, group_names=group_names, localConfig=localConfig)
+	return render_template("PIDManage.html",username=username, group_names=group_names, localConfig=localConfig)
 
 
 

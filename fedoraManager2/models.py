@@ -101,3 +101,45 @@ class job_rollback(db.Model):
 
 	def __repr__(self):    	
 		return '<Job# {job_num}, username: {username}>'.format(job_num=self.job_num,username=self.username)
+
+
+class xsl_transformations(db.Model):
+	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)	
+	name = db.Column(db.String(255))
+	description = db.Column(db.String(1000))
+	xsl_content = db.Column(db.Text)	
+
+	def __init__(self, name, description, xsl_content):		
+		self.name = name
+		self.description = description
+		self.xsl_content = xsl_content
+		
+
+	def __repr__(self):    	
+		return '<Name: {name}, Description: {description}>'.format(name=self.name,description=self.description)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

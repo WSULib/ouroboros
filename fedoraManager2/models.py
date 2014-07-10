@@ -1,4 +1,6 @@
 from fedoraManager2 import db
+from datetime import datetime
+import sqlalchemy
 
 
 class jobBlob:
@@ -107,7 +109,7 @@ class xsl_transformations(db.Model):
 	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)	
 	name = db.Column(db.String(255))
 	description = db.Column(db.String(1000))
-	xsl_content = db.Column(db.Text)	
+	xsl_content = db.Column(db.Text(4294967295), nullable=False) #must be Text(4294967295) to work	
 
 	def __init__(self, name, description, xsl_content):		
 		self.name = name
@@ -117,6 +119,23 @@ class xsl_transformations(db.Model):
 
 	def __repr__(self):    	
 		return '<Name: {name}, Description: {description}>'.format(name=self.name,description=self.description)
+
+
+class ingest_MODS(db.Model):
+	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)	
+	name = db.Column(db.String(255))
+	created = db.Column(db.DateTime, default=datetime.now)
+	xsl_transform_key = db.Column(db.Integer) # id of xsl_transform, might come in handy...	
+	MODS_content = db.Column(db.Text(4294967295), nullable=False) #must be Text(4294967295) to work	
+
+	def __init__(self, name, xsl_transform_key, MODS_content):		
+		self.name = name
+		self.xsl_transform_key = xsl_transform_key
+		self.MODS_content = MODS_content
+		
+
+	def __repr__(self):    	
+		return '<Name: {name}>, ID: {id}>'.format(name=self.name, id=self.id)
 
 
 

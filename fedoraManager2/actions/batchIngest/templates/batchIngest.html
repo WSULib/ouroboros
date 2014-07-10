@@ -6,7 +6,7 @@
 	{{ form.name.label }} {{ form.name(size=60) }}<br>
 	{{ form.description.label }} {{ form.description(size=60) }}<br>
 	<label>Paste XSL content here:</label><br>
-	<textarea name="content" cols="80" rows="20" placeholder="Paste MODS here"></textarea><br>	
+	<textarea name="content" cols="80" rows="20" placeholder="Paste XSL here"></textarea><br>	
 	{{ form.upload.label }} {{ form.upload }}<br>	
 	<input type="submit" value="Go">
 </form>
@@ -24,12 +24,15 @@
 </form>
 
 <h2>c) Batch Ingest from MODS</h2>
-<form method="POST" action="/tasks/batchIngest/previewIngest" enctype="multipart/form-data">	
-	<p style="color:green;">Step 1: Provide MODS collection &lt;mods:collection&gt;</p>	
+<form method="POST" action="/tasks/batchIngest/previewIngest" enctype="multipart/form-data">
+	<p style="color:green;">Step 1: Give batch ingest job a name</p>	
+	<label>Ingest Set Name:</input>
+	<input name="name" size="100"/>
+	<p style="color:green;">Step 2: Provide MODS collection &lt;mods:collection&gt;</p>	
 	<label>Paste MODS file here:</label><br>
-	<textarea name="content" cols="80" rows="20" placeholder="Paste XSL here"></textarea><br>	
+	<textarea name="MODS_content" cols="80" rows="20" placeholder="Paste MODS here"></textarea><br>	
 	{{ form.upload.label }} {{ form.upload }}<br>	
-	<p style="color:green;">Step 2: Select XSL Transformation (or apprpriate one not available, upload above):</p>
+	<p style="color:green;">Step 3: Select XSL Transformation (or apprpriate one not available, upload above):</p>
 	<select id="xsl_trans" name="xsl_trans">
         <option>Select an XSL transformation...</option>
         {% for id,name,description in xsl_transformations_list %}

@@ -61,5 +61,9 @@ def DCfromMODS_worker(job_package):
 	response = requests.post(baseFedoraURL, auth=('fedoraAdmin', 'cowp00p2012'), params=fedoraParams, data=str(DC), headers=headers)
  	if response.status_code == 201:
  		print "DC from MODS derivation successful"
+ 		return "success"
 	else:
 		print "Unsuccessful transformation.  Need to elevate this to exception..."
+		return "fail"
+
+

@@ -23,6 +23,9 @@ It is also to load specific task blueprints.
 
 
 
+# blueprints
+###########################################################################
+
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
@@ -43,6 +46,10 @@ from batchIngest import batchIngest, ingestFOXML_worker
 app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
 
 
+
+# task firing
+###########################################################################
+
 # Fires *after* task is complete
 class postTask(Task):
 	abstract = True
@@ -59,8 +66,13 @@ class postTask(Task):
 		# release PID from PIDlock
 		redisHandles.r_PIDlock.delete(PID)		
 
-		# update job with task completion				
-		redisHandles.r_job_handle.set("task{step}_job_num{job_num}".format(step=step,job_num=job_num), status)	
+		# update job with task completion		
+		'''
+		CONSIDER NAMING THIS WITH THE task_id
+		redisHandles.r_job_handle.set("task{step}_job_num{job_num_id{task_id}}".format(step=step,job_num=job_num,task_id=task_id), status)			
+		'''
+
+		redisHandles.r_job_handle.set("task{step}_job_num{job_num}".format(step=step,job_num=job_num), "({status},{task_id})".format(status=status,task_id=task_id))	
 	
 		# increments completed tasks
 		jobs.jobUpdateCompletedCount(job_num)
@@ -96,6 +108,9 @@ def celeryTaskFactory(**kwargs):
 		# fire off async task via taskWrapper		
 		result = taskWrapper.delay(job_package)		
 		task_id = result.id		
+		'''
+		Currently not doing anything with task_id!  This prevents checking status of anything after the fact.
+		'''
 		redisHandles.r_job_handle.set("task{step}_job_num{job_num}".format(step=job_package['step'],job_num=job_package['job_num']), "FIRED")
 			
 		# update incrementer for total assigned

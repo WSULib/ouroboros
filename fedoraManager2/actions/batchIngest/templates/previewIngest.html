@@ -1,2 +1,12 @@
 {% include 'header.html' %}
 <h1>Preview Ingest</h1>
+
+<form action="/fireTask/ingestFOXML_worker" enctype="multipart/form-data" method="POST">
+	<p>Ingest set name: <strong>{{form_data.name}}</strong></p>
+	<input type="hidden" name="MODS_id" value="{{MODS_id}}"/>
+	<p>XSL transformation name: <strong>{{xsl_trans_name}}</strong></p>
+	<input type="hidden" name="xsl_trans_id" value="{{form_data.xsl_trans}}"/>
+	<p>Preview:</p>
+	<code>{{FOXML_preview}}</code>
+	<input type="submit" value="Looks Good! Let's do it.">
+</form>

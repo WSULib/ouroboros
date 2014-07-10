@@ -39,7 +39,7 @@ from addDS import addDS, addDS_worker
 app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 
 #batchIngest
-from batchIngest import batchIngest, batchIngest_worker
+from batchIngest import batchIngest, ingestFOXML_worker
 app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
 
 

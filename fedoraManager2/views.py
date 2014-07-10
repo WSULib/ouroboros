@@ -328,11 +328,18 @@ def userAllJobs():
 def task_status(task_id):
 	
 	# global way to surgically pick task out of celery memory		
-	result = actions.celery.AsyncResult(task_id)	
+	result = celery.AsyncResult(task_id)	
 	state, retval = result.state, result.result
 	response_data = dict(id=task_id, status=state, result=retval)
 	
-	return json.dumps(response_data)	
+	return json.dumps(response_data)
+
+
+# Details of a given job
+@app.route("/jobDetails")
+def jobDetails():
+	pass
+
 
 
 

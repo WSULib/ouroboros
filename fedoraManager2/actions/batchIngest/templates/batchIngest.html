@@ -32,9 +32,16 @@
 	<label>Paste MODS file here:</label><br>
 	<textarea name="MODS_content" cols="80" rows="20" placeholder="Paste MODS here"></textarea><br>	
 	{{ form.upload.label }} {{ form.upload }}<br>	
+	<p>Or select from previously uploaded MODS sets:</p>
+	<select id="MODS_id" name="MODS_id">
+	<option>Select a MODS set</option>
+        {% for id,name in MODS_list %}
+            <option value="{{id}}">{{name}}</option>
+        {% endfor %}
+    </select>
 	<p style="color:green;">Step 3: Select XSL Transformation (or apprpriate one not available, upload above):</p>
 	<select id="xsl_trans" name="xsl_trans">
-        <option>Select an XSL transformation...</option>
+        <option>Select an XSL transformation</option>
         {% for id,name,description in xsl_transformations_list %}
             <option value="{{id}}">{{name}}</option>
         {% endfor %}

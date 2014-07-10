@@ -18,20 +18,11 @@ import re
 import eulfedora
 
 
-
+# create blueprint
 batchIngest = Blueprint('batchIngest', __name__, template_folder='templates', static_folder="static")
 
 
-'''
-- Upon upload of <mods:collection> file...
-	1) select XSL transformation to use 
-	2) break on <mods:mods>, grab XML
-		- run sub-ingest, celery function?
-	3) transform to FOXML
-	4) index.
-'''
-
-
+# main view
 @batchIngest.route('/batchIngest', methods=['POST', 'GET'])
 def index():
 
@@ -41,9 +32,14 @@ def index():
 	xsl_transformations = db.session.query(models.xsl_transformations)
 	xsl_transformations_list = [(each.id,each.name.encode('ascii','ignore'),each.description.encode('ascii','ignore')) for each in xsl_transformations]	
 
-	return render_template("batchIngest.html",form=form,xsl_transformations_list=xsl_transformations_list)
+	# get MODS deposits
+	MODS = db.session.query(models.ingest_MODS)
+	MODS_list = [(each.id,each.name.encode('ascii','ignore')) for each in MODS]	
+
+	return render_template("batchIngest.html",form=form,xsl_transformations_list=xsl_transformations_list,MODS_list=MODS_list)
 
 
+# add XSL transformation
 @batchIngest.route('/batchIngest/addXSLTrans', methods=['POST', 'GET'])
 def addXSL():
 	print "Adding XSL transformation to MySQL"
@@ -63,7 +59,11 @@ def addXSL():
 	db.session.add(models.xsl_transformations(form_data['name'], form_data['description'], xsl_content ))	
 	db.session.commit()
 
-	return "All Done."
+	# General Message
+	#############################################################################
+	nav_to = "/tasks/batchIngest"
+	message = "Complete"
+	return render_template("genMessage.html",nav_to=nav_to,message=message)
 
 
 
@@ -114,22 +114,31 @@ def previewIngest():
 		- preview and ingest *could* share a function to generate the FOXML		
 	'''
 
-	form_data = request.form	
+	form_data = request.form		
 
 	# grab uploaded content	
-	if 'upload' in request.files and request.files['upload'].filename != '':		
+	if "MODS_id" in form_data and form_data['MODS_id'] != 'Select a MODS set':
+		MODS_handle = db.session.query(models.ingest_MODS).filter_by(id=form_data['MODS_id']).first()	
+		MODS = MODS_handle.MODS_content.encode('utf-8')
+		MODS_upload = False
+	elif 'upload' in request.files and request.files['upload'].filename != '':		
+		MODS_upload = True
 		MODS = request.files['upload'].read()
-	elif 'MODS_content' in form_data:		
+	elif 'MODS_content' in form_data and form_data['MODS_content'] != '':		
+		MODS_upload = True
 		MODS = form_data['MODS_content'].encode('utf-8')
 	else:
 		return "No uploaded or pasted content found, try again."
 	
 	# upload to DB
-	MODS_injection = models.ingest_MODS(form_data['name'], form_data['xsl_trans'], MODS)	
-	db.session.add(MODS_injection)
-	db.session.flush()
-	MODS_id = MODS_injection.id	
-	db.session.commit()	
+	if MODS_upload == True:
+		MODS_injection = models.ingest_MODS(form_data['name'], form_data['xsl_trans'], MODS)	
+		db.session.add(MODS_injection)
+		db.session.flush()
+		MODS_id = MODS_injection.id	
+		db.session.commit()
+	else:
+		MODS_id = form_data['MODS_id']
 
 	# get xslt transformation name
 	xsl_handle = db.session.query(models.xsl_transformations).filter_by(id=form_data['xsl_trans']).first()	
@@ -142,27 +151,21 @@ def previewIngest():
 
 
 
-
-@batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
-def ingestFOXML():
-
-	form_data = request.form
-	print form_data
-
-	
-
-	
 def ingestFOXML_worker(job_package):		
 
 	form_data = job_package['form_data']
-	print form_data
+	print "Beginning bulk ingest"
+
 
 	# get FOXML
 	FOXMLs_serialized = genFOXML("retrieve", form_data['MODS_id'], form_data['xsl_trans_id'])
 	
 	# ingest in Fedora
-	for FOXML in FOXMLs_serialized:
+	count = 0
+	for FOXML in FOXMLs_serialized:		
 		print fedora_handle.ingest(FOXML)
+		print "Ingested {count} / {total}".format(count=count,total=len(FOXMLs_serialized))
+		count = count + 1
 
 
 

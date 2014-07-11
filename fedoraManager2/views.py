@@ -213,14 +213,6 @@ def fireTask(task_name):
 	return redirect("/userJobs")
 
 
-@app.route("/jobStatus/<job_num>")
-def jobStatus(job_num):	
-	'''
-	Look into making this more detailed for the job, perhaps this is where the logs will be monitored
-	This could be breakdown of success and errors too...	
-	'''
-	pass	
-
 
 @app.route("/userJobs")
 def userJobs():
@@ -331,22 +323,6 @@ def userAllJobs():
 	return render_template("userAllJobs.html",username=session['username'],return_package=return_package)
 
 
-@app.route("/task_status/<task_id>")
-def task_status(task_id):
-	'''
-	Can get task id from redisHandles.r_job_handle, grab taskid:
-		key form: "step[#]_jobnum[#]_taskid[#]""
-	'''
-
-
-	
-	# global way to surgically pick task out of celery memory		
-	result = celery.AsyncResult(task_id)	
-	state, retval = result.state, result.result
-	response_data = dict(id=task_id, status=state, result=retval)
-	
-	return json.dumps(response_data)
-
 
 # Details of a given job
 @app.route("/jobDetails/<job_num>")
@@ -362,28 +338,22 @@ def jobDetails(job_num):
 	task_step = 1
 	while task_step <= job_task_num:
 		task = redisHandles.r_job_handle.get( "{job_num},{task_step}".format(job_num=job_num,task_step=task_step) ).split(",")
-		tasks_package[task[0]].append(task[1]) 
-		
-		task_step += 1
+		tasks_package[task[0]].append([task[1],job_num,task_step,]) 
+		# bump counter
+		task_step += 1	
 
-	print tasks_package
-	
-
-	return render_template("jobDetails.html",tasks_package=tasks_package)
+	return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)
 
 	
 # Details of a given job
-@app.route("/taskDetails/<task_id>")
-def taskDetails(task_id):
+@app.route("/taskDetails/<task_id>/<job_num>/<task_num>")
+def taskDetails(task_id,job_num,task_num):
 	
-	task_package = jobs.getTaskDetails(task_id)	
+	task_async = jobs.getTaskDetails(task_id)	
+	task_job_handle = redisHandles.r_job_handle.get( "{job_num},{task_num}".format(job_num=job_num,task_num=task_num) ).split(",")	
+	PID = task_job_handle[2]	
 
-	return render_template("taskDetails.html",task_package=task_package)
-	
-
-	
-
-
+	return render_template("taskDetails.html",task_async=task_async,PID=PID)
 
 
 

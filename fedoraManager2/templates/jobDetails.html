@@ -1,17 +1,17 @@
 {% include 'header.html' %}
 
-<h1>Job Details</h1>
+<h1>Job Details: # {{job_num}}</h1>
 
 <h2 style="color:green;">Success!</h2>
 <ul>
 	{% for task in tasks_package.SUCCESS %}
-		<li><a href="/taskDetails/{{task}}">{{task}}</li>
+		<li><a href="/taskDetails/{{task[0]}}/{{job_num}}/{{task[2]}}">{{task[0]}} - tasknum {{task[2]}} </a></li>
 	{% endfor %}
 </ul>
 
 <h2 style="color:red;">Failure.</h2>
 <ul>
 	{% for task in tasks_package.FAILURE %}
-		<li><a href="/taskDetails/{{task}}">{{task}}</li>
+		<li><a href="/taskDetails/{{task[0]}}/{{job_num}}/{{task[2]}}">{{task[0]}} - tasknum {{task[2]}}</a></li>
 	{% endfor %}
 </ul>

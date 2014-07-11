@@ -67,14 +67,14 @@ class postTask(Task):
 		redisHandles.r_PIDlock.delete(PID)		
 
 		# update job with task completion		
-		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},{task_id}".format(status=status,task_id=task_id))		
+		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},{task_id},{PID}".format(status=status,task_id=task_id,PID=PID))		
 	
 		# increments completed tasks
 		if status == "SUCCESS":
 			jobs.jobUpdateCompletedCount(job_num)		
 
 
-@celery.task()
+@celery.task(name="celeryTaskFactory")
 def celeryTaskFactory(**kwargs):	
 	
 	# create job_package
@@ -107,7 +107,7 @@ def celeryTaskFactory(**kwargs):
 		'''
 		Currently not doing anything with task_id!  This prevents checking status of anything after the fact.
 		'''
-		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id}".format(task_id=task_id))
+		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id},{PID}".format(task_id=task_id,PID=PID))
 			
 		# update incrementer for total assigned
 		jobs.jobUpdateAssignedCount(job_num)
@@ -125,7 +125,7 @@ max_retries = 100
 countdown defaulting to 3 seconds
 	- stressed with same PID 50+ times over, seems pretty resilient to exceptions
 '''
-@celery.task(base=postTask,bind=True,max_retries=100)
+@celery.task(base=postTask,bind=True,max_retries=100,name="taskWrapper")
 def taskWrapper(self,job_package,*args, **kwargs):
 	
 	# check PIDlock
@@ -139,6 +139,9 @@ def taskWrapper(self,job_package,*args, **kwargs):
 		redisHandles.r_PIDlock.set(job_package['PID'],1)	
 		
 		# execute function				
+		'''
+		For the most part, this fires functions that were imported directly from blueprints
+		'''
 		return globals()[job_package['task_name']](job_package)
 		 
 		

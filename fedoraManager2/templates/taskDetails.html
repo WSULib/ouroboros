@@ -3,12 +3,15 @@
 <h1>Task Details</h1>
 
 <ul>
-	<li><h3>Celery Status:</h3> {{task_package.status}}</li>
-	<li><h3>Task Result / Output:</h3> {{task_package.result}}</li>
-	{% if task_package.task_name %}
-	<li><h3>Task Name:</h3> {{task_package.task_name}}</li>
+	<li><h3>Celery Status:</h3> {{task_async.status}}</li>
+	<li><h3>Task Result / Output:</h3> {{task_async.result}}</li>
+	{% if PID %}
+	<li><h3>PID:</h3> {{PID}}</li>
 	{% endif %}
-	{% if task_package.traceback %}
-	<li><h3>Traceback:</h3> {{task_package.traceback}}</li>
+	{% if task_async.task_name %}
+	<li><h3>Task Name:</h3> {{task_async.task_name}}</li>
+	{% endif %}
+	{% if task_async.traceback %}
+	<li><h3>Traceback:</h3> {{task_async.traceback}}</li>
 	{% endif %}
 </ul>

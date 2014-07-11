@@ -104,9 +104,7 @@ def celeryTaskFactory(**kwargs):
 		# fire off async task via taskWrapper		
 		result = taskWrapper.delay(job_package)		
 		task_id = result.id		
-		'''
-		Currently not doing anything with task_id!  This prevents checking status of anything after the fact.
-		'''
+		
 		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id},{PID}".format(task_id=task_id,PID=PID))
 			
 		# update incrementer for total assigned
@@ -117,6 +115,10 @@ def celeryTaskFactory(**kwargs):
 
 	print "Finished assigning tasks"
 
+
+'''
+Consider creating one that is for non-PID related jobs, a factory of sorts...
+'''
 
 #TASKS
 ##################################################################

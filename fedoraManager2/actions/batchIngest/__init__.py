@@ -1,14 +1,19 @@
 # utility for Batch Ingest
 
+# celery
+from cl.cl import celery
+
 # handles
 from fedoraManager2.forms import RDF_edit
 from fedoraManager2.solrHandles import solr_handle
 from fedoraManager2.fedoraHandles import fedora_handle
-from fedoraManager2.jobs import getSelPIDs
+from fedoraManager2 import redisHandles
+from fedoraManager2 import jobs
 from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2.forms import batchIngestForm
-from flask import Blueprint, render_template, abort, request
+import fedoraManager2.actions as actions
+from flask import Blueprint, render_template, abort, request, redirect
 
 #python modules
 from lxml import etree
@@ -16,6 +21,8 @@ import re
 
 # eulfedora
 import eulfedora
+
+
 
 
 # create blueprint
@@ -150,23 +157,131 @@ def previewIngest():
 	return render_template("previewIngest.html",form_data=form_data,xsl_trans_name=xsl_trans_name,MODS_id=MODS_id,FOXML_preview=FOXMLs_serialized[0])	
 
 
+# ################################################################################################
+# # Local Task
+# ################################################################################################
+# '''
+# Approach here...
 
-def ingestFOXML_worker(job_package):		
+# have the routed function "ingestFOXML()" start the job, then run the interating ingest function ingestFOXML_worker()
+# 	- good option, speedy / instant return to user
 
-	form_data = job_package['form_data']
-	print "Beginning bulk ingest"
+# this one runs everything through this one
+# '''
+# @batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
+# def ingestFOXML():
+# 	form_data = request.form
 
+# 	# register local job
+# 	new_job_package = jobs.startLocalJob()	
+
+# 	print "Beginning bulk ingest, Job #:",new_job_package['job_num']
+
+# 	# fire ingester
+# 	ingestFOXML_worker.delay(form_data['MODS_id'], form_data['xsl_trans_id'], job_num=new_job_package['job_num'])
+
+# 	return redirect("/userJobs")
+
+
+# @celery.task()
+# def ingestFOXML_worker(MODS_id, xsl_trans_id, job_num):	
+# 	print MODS_id,xsl_trans_id,job_num
+
+# 	# get FOXML
+# 	FOXMLs_serialized = genFOXML("retrieve", MODS_id, xsl_trans_id)
+
+# 	# update job info
+# 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),len(FOXMLs_serialized))
+
+	
+# 	# ingest in Fedora
+# 	step = 1
+# 	for FOXML in FOXMLs_serialized:		
+# 		jobs.jobUpdateAssignedCount(job_num)
+# 		try:
+# 			# ingest
+# 			ingest_result = fedora_handle.ingest(FOXML)
+# 			status = "SUCCESS"
+# 			print "Ingested {step} / {total}".format(step=step,total=len(FOXMLs_serialized))
+# 		except:
+# 			status = "FAILURE"
+# 			print "Error {step} / {total}".format(step=step,total=len(FOXMLs_serialized))		
+
+# 		# update job info		
+# 		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},NULL,NULL".format(status=status))
+
+# 		if status == "SUCCESS":
+# 			jobs.jobUpdateCompletedCount(job_num)
+
+
+# 		# bump		
+# 		step = step + 1
+
+# 	return "Ingest finished."
+# ################################################################################################
+
+################################################################################################
+# Local Task V2
+################################################################################################
+'''
+Approach here...
+
+have the routed function "ingestFOXML()" start the job, then run the interating ingest function ingestFOXML_worker()
+	- good option, speedy / instant return to user
+
+this one runs everything through this one
+'''
+@batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
+def ingestFOXML():
+	form_data = request.form
+
+	# register local job
+	job_package = jobs.startLocalJob()	
+	job_num = job_package['job_num']
+
+	print "Beginning bulk ingest, Job #:",job_num
 
 	# get FOXML
 	FOXMLs_serialized = genFOXML("retrieve", form_data['MODS_id'], form_data['xsl_trans_id'])
-	
-	# ingest in Fedora
-	count = 0
-	for FOXML in FOXMLs_serialized:		
-		print fedora_handle.ingest(FOXML)
-		print "Ingested {count} / {total}".format(count=count,total=len(FOXMLs_serialized))
-		count = count + 1
 
+	# update job info
+	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),len(FOXMLs_serialized))
+
+	job_package['task_name'] = "ingestFOXML_worker"
+
+	# ingest in Fedora
+	step = 1
+	for FOXML in FOXMLs_serialized:		
+
+		job_package['PID'] = "N/A"
+		job_package['step'] = step		
+		job_package['FOXML'] = FOXML
+
+		# fire ingester
+		result = actions.actions.taskWrapper.delay(job_package)
+
+		task_id = result.id		
+		
+		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id},{PID}".format(task_id=task_id,PID=job_package['PID']))
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_num)
+
+		# bump step
+		step += 1
+
+	return redirect("/userJobs")
+
+
+
+def ingestFOXML_worker(job_package):	
+
+	FOXML = job_package['FOXML']	
+	ingest_result = fedora_handle.ingest(FOXML)
+	return ingest_result	
+
+	
+################################################################################################
 
 
 def genFOXML(MODS_type, MODS, xsl_trans):

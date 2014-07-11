@@ -170,16 +170,9 @@ def fireTask(task_name):
 	if userSelectedPIDs.count() == 0:
 		return "<p>No PIDs selected, try again.  Try selecting <a href='/PIDmanage'>here</a>.</p>"
 
-	# instatiate jobHand object with incrementing job_num
-	'''
-	Consider getting job num from MySQL...
-	'''
-	jobInit = jobs.jobStart()	
-	jobHand = jobInit['jobHand']
-	taskHand = jobInit['taskHand']
-
-	# get new job number
-	job_num = jobHand.job_num
+	# get job number
+	# pulling from incrementing redis counter, considering MySQL	
+	job_num = jobs.jobStart()	
 
 	# send job to user_jobs SQL table
 	db.session.add(models.user_jobs(job_num,username, "init"))	
@@ -192,8 +185,7 @@ def fireTask(task_name):
 	# create job_package	
 	job_package = {		
 		"username":username,
-		"job_num":job_num,
-		"jobHand":jobHand,
+		"job_num":job_num,		
 		"form_data":request.form		
 	}
 
@@ -209,7 +201,7 @@ def fireTask(task_name):
 	'''
 	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)
 
-	print "Started job #",jobHand.job_num
+	print "Started job #",job_num
 	return redirect("/userJobs")
 
 
@@ -235,7 +227,7 @@ def userJobs():
 		status_package["job_num"] = job_num #this is pulled from SQL table
 		
 		# get estimated tasks
-		job_est_count = redisHandles.r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num))
+		job_est_count = redisHandles.r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num))		
 		
 		# get assigned tasks
 		job_assign_count = redisHandles.r_job_handle.get("job_{job_num}_assign_count".format(job_num=job_num))
@@ -248,8 +240,10 @@ def userJobs():
 			job_complete_count = 0
 
 		# compute percentage complete
-		comp_percent = '{0:.0%}'.format(float(job_complete_count) / float(job_est_count))
-
+		if job_est_count != None:
+			comp_percent = '{0:.0%}'.format(float(job_complete_count) / float(job_est_count))
+		else:
+			comp_percent = 'N/A'
 
 		# spooling, works on stable jobHand object
 		if job_assign_count > 0 and job_assign_count < job_est_count :
@@ -337,8 +331,11 @@ def jobDetails(job_num):
 	tasks_package['FAILURE'] = []
 	task_step = 1
 	while task_step <= job_task_num:
-		task = redisHandles.r_job_handle.get( "{job_num},{task_step}".format(job_num=job_num,task_step=task_step) ).split(",")
-		tasks_package[task[0]].append([task[1],job_num,task_step,]) 
+		task = redisHandles.r_job_handle.get( "{job_num},{task_step}".format(job_num=job_num,task_step=task_step) )	
+		print task	
+		task_split = task.split(",")
+		tasks_package[task_split[0]].append([task_split[1],job_num,task_step]) 		
+
 		# bump counter
 		task_step += 1	
 
@@ -348,10 +345,19 @@ def jobDetails(job_num):
 # Details of a given job
 @app.route("/taskDetails/<task_id>/<job_num>/<task_num>")
 def taskDetails(task_id,job_num,task_num):
-	
-	task_async = jobs.getTaskDetails(task_id)	
-	task_job_handle = redisHandles.r_job_handle.get( "{job_num},{task_num}".format(job_num=job_num,task_num=task_num) ).split(",")	
-	PID = task_job_handle[2]	
+
+	if task_id != "NULL":	
+		task_async = jobs.getTaskDetails(task_id)	
+		task_job_handle = redisHandles.r_job_handle.get( "{job_num},{task_num}".format(job_num=job_num,task_num=task_num) ).split(",")	
+		PID = task_job_handle[2]	
+
+	else:
+		print "We're dealing with a local job, not celeried"
+		PID = "N/A"
+		task_async = {
+			"status":"N/A",
+			"result":"N/A"
+		}
 
 	return render_template("taskDetails.html",task_async=task_async,PID=PID)
 

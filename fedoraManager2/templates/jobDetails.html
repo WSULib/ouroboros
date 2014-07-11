@@ -1,0 +1,17 @@
+{% include 'header.html' %}
+
+<h1>Job Details</h1>
+
+<h2 style="color:green;">Success!</h2>
+<ul>
+	{% for task in tasks_package.SUCCESS %}
+		<li><a href="/taskDetails/{{task}}">{{task}}</li>
+	{% endfor %}
+</ul>
+
+<h2 style="color:red;">Failure.</h2>
+<ul>
+	{% for task in tasks_package.FAILURE %}
+		<li><a href="/taskDetails/{{task}}">{{task}}</li>
+	{% endfor %}
+</ul>

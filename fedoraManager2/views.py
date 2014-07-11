@@ -171,6 +171,9 @@ def fireTask(task_name):
 		return "<p>No PIDs selected, try again.  Try selecting <a href='/PIDmanage'>here</a>.</p>"
 
 	# instatiate jobHand object with incrementing job_num
+	'''
+	Consider getting job num from MySQL...
+	'''
 	jobInit = jobs.jobStart()	
 	jobHand = jobInit['jobHand']
 	taskHand = jobInit['taskHand']
@@ -206,10 +209,6 @@ def fireTask(task_name):
 	'''
 	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)
 
-	# preliminary update
-	jobs.jobUpdate(jobHand)		
-	jobs.taskUpdate(taskHand)
-
 	print "Started job #",jobHand.job_num
 	return redirect("/userJobs")
 
@@ -236,6 +235,7 @@ def userJobs():
 
 	for job in user_jobs_list:
 
+		# get job num
 		job_num = job.job_num
 
 		# create package
@@ -244,14 +244,20 @@ def userJobs():
 		
 		# get estimated tasks
 		job_est_count = redisHandles.r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num))
+		
 		# get assigned tasks
 		job_assign_count = redisHandles.r_job_handle.get("job_{job_num}_assign_count".format(job_num=job_num))
 		if job_assign_count == None:
 			job_assign_count = 0
+		
 		# get completed tasks
 		job_complete_count = redisHandles.r_job_handle.get("job_{job_num}_complete_count".format(job_num=job_num))
 		if job_complete_count == None:
 			job_complete_count = 0
+
+		# compute percentage complete
+		comp_percent = '{0:.0%}'.format(float(job_complete_count) / float(job_est_count))
+
 
 		# spooling, works on stable jobHand object
 		if job_assign_count > 0 and job_assign_count < job_est_count :
@@ -282,7 +288,8 @@ def userJobs():
 			"job_status":status_package['job_status'],
 			"assigned_tasks":job_assign_count,
 			"completed_tasks":job_complete_count,
-			"estimated_tasks":job_est_count
+			"estimated_tasks":job_est_count,
+			"comp_percent":comp_percent
 		}
 
 		# return_package[status_package["job_num"]] = response_dict		
@@ -326,6 +333,12 @@ def userAllJobs():
 
 @app.route("/task_status/<task_id>")
 def task_status(task_id):
+	'''
+	Can get task id from redisHandles.r_job_handle, grab taskid:
+		key form: "step[#]_jobnum[#]_taskid[#]""
+	'''
+
+
 	
 	# global way to surgically pick task out of celery memory		
 	result = celery.AsyncResult(task_id)	
@@ -336,9 +349,41 @@ def task_status(task_id):
 
 
 # Details of a given job
-@app.route("/jobDetails")
-def jobDetails():
-	pass
+@app.route("/jobDetails/<job_num>")
+def jobDetails(job_num):
+	
+	# get number of estimate tasks
+	job_task_num = int(redisHandles.r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num)))
+
+	# get tasks
+	tasks_package = {}
+	tasks_package['SUCCESS'] = []
+	tasks_package['FAILURE'] = []
+	task_step = 1
+	while task_step <= job_task_num:
+		task = redisHandles.r_job_handle.get( "{job_num},{task_step}".format(job_num=job_num,task_step=task_step) ).split(",")
+		tasks_package[task[0]].append(task[1]) 
+		
+		task_step += 1
+
+	print tasks_package
+	
+
+	return render_template("jobDetails.html",tasks_package=tasks_package)
+
+	
+# Details of a given job
+@app.route("/taskDetails/<task_id>")
+def taskDetails(task_id):
+	
+	task_package = jobs.getTaskDetails(task_id)	
+
+	return render_template("taskDetails.html",task_package=task_package)
+	
+
+	
+
+
 
 
 

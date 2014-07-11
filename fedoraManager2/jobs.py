@@ -8,11 +8,15 @@ import time
 import models
 from redisHandles import *
 from fedoraManager2 import db, db_con
+from cl.cl import celery
 from flask import session
 
 # Job Management
 ############################################################################################################
 def jobStart():
+	'''
+	Consider MySQL, might be more enduring?
+	'''
 	# increment and get job num
 	job_num = r_job_handle.incr("job_num")
 	print "Beginning job #",job_num
@@ -22,36 +26,37 @@ def jobStart():
 	taskHand = models.taskBlob(job_num)
 	return {"jobHand":jobHand,"taskHand":taskHand}
 
-
-# job objects
-def jobUpdate(jobHand):
-	jobHand_pickled = pickle.dumps(jobHand)
-	r_job_handle.set("job_{job_num}".format(job_num=jobHand.job_num),jobHand_pickled)
-
-def jobGet(job_num):	
-	# IDEA: could query redis for r_job_handle.keys(job_num matching)!
-	jobHand_pickled = r_job_handle.get("job_{job_num}".format(job_num=job_num))
-	jobHand = pickle.loads(jobHand_pickled)	
-	return jobHand
-
 def jobUpdateAssignedCount(job_num):
 	r_job_handle.incr("job_{job_num}_assign_count".format(job_num=job_num))
 
 def jobUpdateCompletedCount(job_num):
 	r_job_handle.incr("job_{job_num}_complete_count".format(job_num=job_num))
 
-# task objects
-def taskUpdate(taskHand):		
-	taskHand_pickled = pickle.dumps(taskHand)				
-	r_job_handle.set("taskStatus_{job_num}".format(job_num=taskHand.job_num),taskHand_pickled)	
+def getTaskDetails(task_id):
+	return celery.AsyncResult(task_id)
 
-def taskGet(job_num):
-	taskHand_pickled = r_job_handle.get("taskStatus_{job_num}".format(job_num=job_num))
-	taskHand = pickle.loads(taskHand_pickled)	
-	# this is key, loads all tasks for a given job number
-	completed_tasks = r_job_handle.keys("task*job_num{job_num}".format(job_num=job_num))
-	taskHand.completed_tasks = 	completed_tasks	
-	return taskHand
+# job objects
+# def jobUpdate(jobHand):
+# 	jobHand_pickled = pickle.dumps(jobHand)
+# 	r_job_handle.set("job_{job_num}".format(job_num=jobHand.job_num),jobHand_pickled)
+
+# def jobGet(job_num):		
+# 	jobHand_pickled = r_job_handle.get("job_{job_num}".format(job_num=job_num))
+# 	jobHand = pickle.loads(jobHand_pickled)	
+# 	return jobHand
+
+# # task objects
+# def taskUpdate(taskHand):		
+# 	taskHand_pickled = pickle.dumps(taskHand)				
+# 	r_job_handle.set("taskStatus_{job_num}".format(job_num=taskHand.job_num),taskHand_pickled)	
+
+# def taskGet(job_num):
+# 	taskHand_pickled = r_job_handle.get("taskStatus_{job_num}".format(job_num=job_num))
+# 	taskHand = pickle.loads(taskHand_pickled)	
+# 	# this is key, loads all tasks for a given job number
+# 	completed_tasks = r_job_handle.keys("task*job_num{job_num}".format(job_num=job_num))
+# 	taskHand.completed_tasks = 	completed_tasks	
+# 	return taskHand
 
 
 # PID selection
@@ -73,7 +78,6 @@ def sendUserPIDs(username,PIDs,group_name):
 	etime = time.time()
 	ttime = (etime - stime) * 1000
 	print "Took this long to add PIDs to SQL",ttime,"ms"
-
 
 
 # PID removal

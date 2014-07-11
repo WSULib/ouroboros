@@ -224,12 +224,13 @@ def previewIngest():
 # Local Task V2
 ################################################################################################
 '''
-Approach here...
+Different approach here...
 
-have the routed function "ingestFOXML()" start the job, then run the interating ingest function ingestFOXML_worker()
-	- good option, speedy / instant return to user
+*anticpated problem: for very large lists of FOXML, not having a similar celeryTaskFactory() will cause this to delay.
 
-this one runs everything through this one
+ingestFOXML()
+
+
 '''
 @batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
 def ingestFOXML():

@@ -1,6 +1,12 @@
 // likely be removed if moving to prettier tempating
 function exportJobStatus(job_package){
-	return "Job #"+job_package.job_num+": "+job_package.completed_tasks+" / "+job_package.estimated_tasks+" ("+job_package.comp_percent+") - "+job_package.job_status+" - (assigned: "+job_package.assigned_tasks+") - <a href='/jobDetails/"+job_package.job_num+"'>Job Details</a>";
+	if (job_package.job_status != "complete"){
+		var return_string = "Job #"+job_package.job_num+": "+job_package.completed_tasks+" / "+job_package.estimated_tasks+" ("+job_package.comp_percent+") - "+job_package.job_status+" - (assigned: "+job_package.assigned_tasks+")";
+	}
+	if (job_package.job_status == "complete"){
+		var return_string = "Job #"+job_package.job_num+": "+job_package.completed_tasks+" / "+job_package.estimated_tasks+" ("+job_package.comp_percent+") - "+job_package.job_status+" - (assigned: "+job_package.assigned_tasks+") - <a href='/jobDetails/"+job_package.job_num+"'>Job Details</a>";
+	} 
+	return return_string;
 }
 
 // function to perform polling, requires wait_time variable	

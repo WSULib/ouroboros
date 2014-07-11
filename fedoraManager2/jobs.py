@@ -18,13 +18,8 @@ def jobStart():
 	Consider MySQL, might be more enduring?
 	'''
 	# increment and get job num
-	job_num = r_job_handle.incr("job_num")
-	print "Beginning job #",job_num
-
-	# instatiate handles for job and status of tasks
-	jobHand = models.jobBlob(job_num)
-	taskHand = models.taskBlob(job_num)
-	return {"jobHand":jobHand,"taskHand":taskHand}
+	job_num = r_job_handle.incr("job_num")	
+	return job_num
 
 def jobUpdateAssignedCount(job_num):
 	r_job_handle.incr("job_{job_num}_assign_count".format(job_num=job_num))
@@ -35,28 +30,35 @@ def jobUpdateCompletedCount(job_num):
 def getTaskDetails(task_id):
 	return celery.AsyncResult(task_id)
 
-# job objects
-# def jobUpdate(jobHand):
-# 	jobHand_pickled = pickle.dumps(jobHand)
-# 	r_job_handle.set("job_{job_num}".format(job_num=jobHand.job_num),jobHand_pickled)
 
-# def jobGet(job_num):		
-# 	jobHand_pickled = r_job_handle.get("job_{job_num}".format(job_num=job_num))
-# 	jobHand = pickle.loads(jobHand_pickled)	
-# 	return jobHand
+# function for non-PID based jobs to fire job
+def startLocalJob():
+	'''
+	1) get new job_num
+	2) send anticipated tasks?
+	3) update completed ones somewhere?
+	'''
 
-# # task objects
-# def taskUpdate(taskHand):		
-# 	taskHand_pickled = pickle.dumps(taskHand)				
-# 	r_job_handle.set("taskStatus_{job_num}".format(job_num=taskHand.job_num),taskHand_pickled)	
+	#establish job_num
+	job_num = jobStart()
 
-# def taskGet(job_num):
-# 	taskHand_pickled = r_job_handle.get("taskStatus_{job_num}".format(job_num=job_num))
-# 	taskHand = pickle.loads(taskHand_pickled)	
-# 	# this is key, loads all tasks for a given job number
-# 	completed_tasks = r_job_handle.keys("task*job_num{job_num}".format(job_num=job_num))
-# 	taskHand.completed_tasks = 	completed_tasks	
-# 	return taskHand
+	# send job to user_jobs SQL table
+	username = session['username']	
+	db.session.add(models.user_jobs(job_num,username, "init"))	
+	db.session.commit() 
+
+
+	new_job_package = {
+		"job_num":job_num
+	}
+
+	return new_job_package
+
+def updateLocalJob(job_num,est_tasks,assign_tasks,completed_tasks):
+
+	# send task to redis
+	redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id},{PID}".format(task_id=task_id,PID=PID))
+
 
 
 # PID selection

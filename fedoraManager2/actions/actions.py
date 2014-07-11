@@ -67,15 +67,11 @@ class postTask(Task):
 		redisHandles.r_PIDlock.delete(PID)		
 
 		# update job with task completion		
-		'''
-		CONSIDER NAMING THIS WITH THE task_id
-		redisHandles.r_job_handle.set("task{step}_job_num{job_num_id{task_id}}".format(step=step,job_num=job_num,task_id=task_id), status)			
-		'''
-
-		redisHandles.r_job_handle.set("task{step}_job_num{job_num}".format(step=step,job_num=job_num), "({status},{task_id})".format(status=status,task_id=task_id))	
+		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},{task_id}".format(status=status,task_id=task_id))		
 	
 		# increments completed tasks
-		jobs.jobUpdateCompletedCount(job_num)
+		if status == "SUCCESS":
+			jobs.jobUpdateCompletedCount(job_num)		
 
 
 @celery.task()
@@ -111,7 +107,7 @@ def celeryTaskFactory(**kwargs):
 		'''
 		Currently not doing anything with task_id!  This prevents checking status of anything after the fact.
 		'''
-		redisHandles.r_job_handle.set("task{step}_job_num{job_num}".format(step=job_package['step'],job_num=job_package['job_num']), "FIRED")
+		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id}".format(task_id=task_id))
 			
 		# update incrementer for total assigned
 		jobs.jobUpdateAssignedCount(job_num)

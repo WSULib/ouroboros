@@ -362,6 +362,22 @@ def taskDetails(task_id,job_num,task_num):
 	return render_template("taskDetails.html",task_async=task_async,PID=PID)
 
 
+# Remove job from SQL, remove tasks from Redis
+@app.route("/jobRemove/<job_num>", methods=['POST', 'GET'])
+def jobRemove(job_num):
+	
+	# on get param, commit=true using jobs.jobRemove_worker()		
+	
+	if request.method == "POST" and request.form['commit'] == "true":
+		print "Removing job {job_num}".format(job_num=job_num)
+		result = jobs.jobRemove_worker(job_num)
+		print result
+
+		return render_template("jobRemove.html",job_num=job_num,result=result)
+
+
+	return render_template("jobRemove.html",job_num=job_num)
+
 
 
 # PID MANAGEMENT

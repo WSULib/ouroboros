@@ -4,7 +4,7 @@
 
 <ul>
 	{% for job in return_package %}
-		<li>{{job.job_num}} - {{job.status}} - <a href="/jobDetails/{{job.job_num}}">Details</a></li>
+		<li>{{job.job_num}} - {{job.status}} - <a href="/jobDetails/{{job.job_num}}">Details</a> / <a href="/jobRemove/{{job.job_num}}">Remove</a></li>
 	{% endfor %}
 </ul>
 

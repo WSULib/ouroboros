@@ -1,0 +1,15 @@
+{% include 'header.html' %}
+<h2>Set Object State</h2>
+<p>This utility changes the state for objects in Fedora, being either Active "A", Inactive "I", or Deleted "D".</p>
+<p style="color:orange;">Note: When object state set to Inactive or Deleted, upon new Solr update, they will be removed until state set to Active again.</p>
+<form action="/fireTask/objectState_worker" method="POST">
+	<label>Please select target state:</label>
+	<select name="target_state">
+		<option value="A">Active 'A'</option>
+		<option value="I">Inactive 'I'</option>
+		<option value="D">Deleted 'D'</option>
+	</select><br>
+	<label>Please type "CONFIRM" to confirm and change object state:</label>
+	<input name="confirm_string" id="confirm_string"/><br>
+	<input type="submit" value="Make it so!"/>
+</form>

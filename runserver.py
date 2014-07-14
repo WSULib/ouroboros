@@ -21,6 +21,14 @@ from localConfig import *
 from fedoraManager2 import app
 
 
+################################################
+# WRAPPING / ROUTING TESTING
+################################################
+# from werkzeug.wsgi import DispatcherMiddleware
+# parent_app = DispatcherMiddleware(app, {"/fedoraManager2-graham": app})
+################################################
+
+
 # WSUDOR API ##############################################################
 '''
 Prod: Listening on :61617, reverseproxy in Apache to :80/WSUAPI.  Accepts GET parameters, routes to WSUAPI.py (formerly DCAPI project)

@@ -34,3 +34,13 @@ def escapeSolrArg(term):
 		escaping special characters like : , etc"""
 	term = term.replace('\\', r'\\')   # escape \ first
 	return "".join([nextStr for nextStr in escapedSeq(term)])
+
+
+# function to remove job from fm2
+def jobRemove_worker(job_num):
+	'''
+	- remove job from SQL
+	- remove from broker (use celery methods)
+	- remove task results from Redis (homegrown)
+	'''
+	

@@ -45,6 +45,10 @@ app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 from batchIngest import batchIngest, ingestFOXML_worker
 app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
 
+#objectState
+from objectState import objectState, objectState_worker
+app.register_blueprint(objectState, url_prefix=tasks_URL_prefix)
+
 
 
 # task firing

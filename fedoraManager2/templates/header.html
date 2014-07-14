@@ -15,7 +15,8 @@
 <body>
 	<div class="nav-collapse collapse">
 		<ul class="nav">
-			<li class="active"><a href="/">Home</a></li>
+			<li><a href="/FM2Home">FM2 Home</a></li>
+			<li><a href="/userPage">User Home</a></li>
 				{% if g.user.is_authenticated()%}
 			<li><a href="{{ url_for('logout') }}">Logout</a></li>
 			<li><a href="{{ url_for('register') }}">Create New Account</a></li>

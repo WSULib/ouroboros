@@ -72,7 +72,7 @@ def index():
 		return render_template("index.html",username=username)
 
 
-@app.route('/userPage/')
+@app.route('/userPage')
 @login_required
 def userPage():
 	# set username in session
@@ -84,6 +84,11 @@ def userPage():
 	return render_template("userPage.html",userData=userData)
 
 
+@app.route('/FM2Home')
+@login_required
+def FM2Home():
+	
+	return render_template("FM2Home.html")
 
 # LOGIN
 #########################################################################################################

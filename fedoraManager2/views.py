@@ -15,6 +15,7 @@ from uuid import uuid4
 import json
 import unicodedata
 import shlex, subprocess
+import socket
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response
@@ -81,14 +82,31 @@ def userPage():
 	# info to render page
 	userData = {}
 	userData['username'] = username
-	return render_template("userPage.html",userData=userData)
+	return render_template("userPage.html",userData=userData)	
 
 
-@app.route('/FM2Home')
+@app.route('/systemStatus')
 @login_required
-def FM2Home():
+def systemStatus():
+
+	#check important ports
+	imp_ports = [(61616,"Fedora JMS"),(61617,"WSUAPI - prod"),(61618,"imageServer - prod"),(61619,"WSUAPI - dev"),(61620,"imageServer - dev"),(8080,"Tomcat"),(5001,"ouroboros"),(6379,"Redis"),(3006,"MySQL")]
 	
-	return render_template("FM2Home.html")
+	imp_ports_results = []
+	for port,desc in imp_ports:
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		check = result = s.connect_ex(("localhost",port))
+		if check == 0:
+			msg = "active"
+		else:
+			msg = "inactive"
+
+		imp_ports_results.append((str(port),desc,msg))
+
+
+	
+
+	return render_template("systemStatus.html",imp_ports_results=imp_ports_results)
 
 # LOGIN
 #########################################################################################################

@@ -1,0 +1,30 @@
+{% include 'header.html' %}
+<h2>System Status</h2>
+
+<h3>Ports</h3>
+<ul>
+{% for port,desc,msg in imp_ports_results %}
+	{% if msg == 'active' %}	
+		<li style="color:green;">{{port}} / {{desc}}: <strong>{{msg}}</strong></li>
+	{% else %}
+		<li style="color:red;">{{port}} / {{desc}}: <strong>{{msg}}</strong></li>
+	{% endif %}
+{% endfor %}
+</ul>
+
+<h3>Page Previews</h3>
+<ul>
+	<li>Digital Collections - front page</li>
+	<li><iframe src="http://digital.library.wayne.edu/" width="640" height="480"/></li>
+</ul>
+
+
+<hr>
+
+<ul>
+	<li><h2>Documentation</h2></li>
+	<ul>
+		<li><a href="https://docs.google.com/document/d/14SYCY7k_6V86KXDRHqQMLRCFba5WSN5V9jE7umc8enI/edit">original google doc</a></li>		
+		<li><a href="http://digital.library.wayne.edu/wiki/index.php/ouroboros">blossoming WSU digital collections wiki</a></li>		
+	</ul>
+</ul>

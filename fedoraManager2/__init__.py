@@ -9,7 +9,6 @@ from flask.ext.login import LoginManager
 # create app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://fm2:fm2@localhost/fedoraManager2'
-app.config['UPLOAD_FOLDER'] = '/tmp/fm2uploads'
 app.debug = True
 
 #setup db

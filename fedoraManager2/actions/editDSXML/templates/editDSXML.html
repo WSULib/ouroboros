@@ -1,0 +1,48 @@
+<!-- load dependencies -->
+
+<!-- EXAMPLE URL_FOR -->
+<!-- <script type="text/javascript" src="{{ url_for('static',filename='PIDmanage.js')}}"></script> -->
+
+<link rel="stylesheet" href="{{ url_for('static',filename='UNC_xmleditor/demo/stylesheets/reset.css') }}" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('static',filename='UNC_xmleditor/demo/stylesheets/demo.css') }}" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('static',filename='UNC_xmleditor/css/jquery.xmleditor.css') }}" type="text/css" />
+
+<script src="{{ url_for('static', filename='UNC_xmleditor/lib/ace/src-min/ace.js') }}"></script>
+<script src="{{ url_for('static', filename='UNC_xmleditor/lib/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='UNC_xmleditor/lib/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('static', filename='UNC_xmleditor/lib/json2.js') }}"></script>
+<script src="{{ url_for('static', filename='UNC_xmleditor/lib/cycle.js') }}"></script>
+<script src="{{ url_for('static', filename='UNC_xmleditor/lib/jquery.autosize-min.js') }}"></script>
+<script src="{{ url_for('static', filename='UNC_xmleditor/lib/vkbeautify.js') }}"></script>
+<script src="{{ url_for('static', filename='UNC_xmleditor/jquery.xmleditor.js') }}"></script>
+
+<!-- end load -->
+
+<body>	
+	<div id="xml_editor">
+		<mods xmlns="http://www.loc.gov/mods/v3"> </mods>
+	</div>
+	<script type="text/javascript">		
+		
+		$(function() {
+			$("#xml_editor").xmlEditor({				
+				// from Flask with reverse-proxy (works)
+				schema : "http://digital.library.wayne.edu/fedoraManager2-graham/static/UNC_xmleditor/demo/examples/mods.json",
+				// attempting static pull
+				// schema : "{{ url_for('static', filename='UNC_xmleditor/demo/examples/mods.json') }}",
+				// static from web directory (works)
+				// schema : "http://digital.library.wayne.edu/dev/graham/XML_editing/UNC_xmleditor/demo/examples/mods.json",
+				documentTitle: "Dodge Brothers Factory Exterior",
+				ajaxOptions: {
+					// xmlRetrievalPath: "http://digital.library.wayne.edu/fedoraManager2-graham/static/UNC_xmleditor/demo/examples/CFAI_mods.xml"
+					xmlRetrievalPath: "http://digital.library.wayne.edu/fedora/objects/wayne:CFAIEB01c321/datastreams/MODS/content"
+				}
+			});
+		});
+	
+	</script>	
+</body>
+
+</html>
+
+

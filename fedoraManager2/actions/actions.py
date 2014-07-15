@@ -12,18 +12,7 @@ import time
 import sys
 
 
-'''
-This file's primary function is to fire off the specific tasks for a job asynchronously.
-views.py, using getattr(), grabs the function as a handle that is passed to this.
-Thus, this file does not need to import tasks from tasks.py, merely fire them off via
-their handle using celery.
-
-It is also to load specific task blueprints.
-'''
-
-
-
-# blueprints
+# action blueprints
 ###########################################################################
 
 # register blueprints
@@ -48,6 +37,10 @@ app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
 #objectState
 from objectState import objectState, objectState_worker
 app.register_blueprint(objectState, url_prefix=tasks_URL_prefix)
+
+#editDSXML
+from editDSXML import editDSXML
+app.register_blueprint(editDSXML, url_prefix=tasks_URL_prefix)
 
 
 

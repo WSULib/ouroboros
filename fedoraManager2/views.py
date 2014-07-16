@@ -613,7 +613,6 @@ def freshenSolr():
 	if request.args.get("type") == "fullIndex":				
 		index_handle = FOXML2Solr.delay('fullIndex','')
 
-
 	if request.args.get("type") == "timestamp":		
 		index_handle = FOXML2Solr.delay('timestampIndex','')
 

@@ -1,5 +1,5 @@
 import xmltodict, json
-from lib.FOXML2Solr.FOXML2Solr import FOXML2Solr
+from fedoraManager2.actions.FOXML2Solr import FOXML2Solr
 
 
 # handles events in Fedora Commons as reported by JSM

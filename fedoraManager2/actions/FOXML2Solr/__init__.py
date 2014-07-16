@@ -10,15 +10,35 @@ from string import Template
 import time
 import datetime
 from lxml import etree
+from flask import Blueprint, render_template, abort, request
 
+# revise
 from cl.cl import celery
 from celery import Task
 
+# augmentCore 
 from augmentCore import augmentCore
+
+# define blueprint
+FOXML2Solr_blue = Blueprint('FOXML2Solr', __name__, template_folder='templates')
+
+
+@FOXML2Solr_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
+def updateSolr(update_type):			
+
+	if update_type == "fullIndex":				
+		index_handle = FOXML2Solr.delay('fullIndex','')
+
+	if update_type == "timestamp":		
+		index_handle = FOXML2Solr.delay('timestampIndex','')
+
+	# pass the current PIDs to page as list	
+	return render_template("updateSolr.html",type=request.args.get("type"))
+
 
 
 @celery.task()
-def FOXML2Solr(fedEvent,PID):	
+def FOXML2Solr(fedEvent, PID):	
 
 	#Get DT Threshold
 	def getLastFedoraIndexDate():	
@@ -71,6 +91,7 @@ def FOXML2Solr(fedEvent,PID):
 		else:
 			return True
 
+			
 	def indexFOXMLinSolr(toUpdate):
 
 		count = 0
@@ -113,6 +134,7 @@ def FOXML2Solr(fedEvent,PID):
 				fhand_exceptions.write(str(PID)+"\n")
 				fhand_exceptions.close()	
 	
+	
 	def commitSolrChanges():		
 
 		# commit changes in Solr
@@ -122,6 +144,7 @@ def FOXML2Solr(fedEvent,PID):
 		r = requests.post(baseurl,data=data)
 		print r.text
 
+	
 	def replicateToSearch():
 		
 		# replicate to "search core"
@@ -131,6 +154,7 @@ def FOXML2Solr(fedEvent,PID):
 		r = requests.post(baseurl,data=data)
 		print r.text	
 
+	
 	def updateLastFedoraIndexDate():		
 
 		#Updated LastFedoraIndex in Solr
@@ -141,6 +165,7 @@ def FOXML2Solr(fedEvent,PID):
 		r = requests.post(updateURL, data=dateUpdateXML, headers=headers)
 		print r.text
 
+	
 	def removeFOXMLinSolr(PID):		
 		
 		print "*** Removing document from Solr ***"		

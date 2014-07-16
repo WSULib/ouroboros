@@ -605,19 +605,17 @@ def updatePIDsfromSolr(update_type):
 
 # BOUTIQUE SERVICES
 ####################################################################################
-@app.route("/freshenSolr", methods=['POST', 'GET'])
-def freshenSolr():	
-
-	from lib.FOXML2Solr.FOXML2Solr import FOXML2Solr
+# @app.route("/freshenSolr", methods=['POST', 'GET'])
+# def freshenSolr():		
 	
-	if request.args.get("type") == "fullIndex":				
-		index_handle = FOXML2Solr.delay('fullIndex','')
+# 	if request.args.get("type") == "fullIndex":				
+# 		index_handle = FOXML2Solr.delay('fullIndex','')
 
-	if request.args.get("type") == "timestamp":		
-		index_handle = FOXML2Solr.delay('timestampIndex','')
+# 	if request.args.get("type") == "timestamp":		
+# 		index_handle = FOXML2Solr.delay('timestampIndex','')
 
-	# pass the current PIDs to page as list	
-	return render_template("freshenSolr.html",type=request.args.get("type"))
+# 	# pass the current PIDs to page as list	
+# 	return render_template("freshenSolr.html",type=request.args.get("type"))
 
 
 

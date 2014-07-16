@@ -1,0 +1,15 @@
+{% include 'header.html' %}
+
+{% if not type %}
+	<p>Freshen Solr?</p>
+	<ul>
+		<li><a href="/tasks/updateSolr/fullIndex">All:</a> Index ALL Fedora Objects</a></li>
+		<li><a href="/tasks/updateSolr/timestamp">Recently Modified:</a> Index Fedora Objects since <a href="http://digital.library.wayne.edu/solr4/fedobjs/select?q=id%3ALastFedoraIndex&fl=last_modified&wt=json&indent=true">last full index</a></li>
+	</ul>
+{% endif %}
+
+{% if type %}
+	<p>Ran FOXML2Solr utility with option: <strong>{{type}}</strong></p>
+{% endif %}
+
+{% include 'footer.html' %}

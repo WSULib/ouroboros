@@ -66,4 +66,7 @@ def update():
 	# save constructed object
 	print newDS.save()
 
+	# after save, derive DC from MODS
+	actions.DCfromMODS.DCfromMODS_single(PID)
+
 	return "{{PID}} Updated.".format(PID=PID)

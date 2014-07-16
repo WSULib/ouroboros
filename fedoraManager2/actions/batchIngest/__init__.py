@@ -22,12 +22,8 @@ import re
 # eulfedora
 import eulfedora
 
-
-
-
 # create blueprint
 batchIngest = Blueprint('batchIngest', __name__, template_folder='templates', static_folder="static")
-
 
 # main view
 @batchIngest.route('/batchIngest', methods=['POST', 'GET'])
@@ -113,13 +109,7 @@ def editXSL(action_type):
 
 
 @batchIngest.route('/batchIngest/previewIngest', methods=['POST', 'GET'])
-def previewIngest():
-
-	'''
-	1) upload MODS file to MySQL?  This way, the actual ingest process can work off that, and not shuffling around form data
-	2) what preview?  mock FOXML file, by extracting one <mods:mods> element?
-		- preview and ingest *could* share a function to generate the FOXML		
-	'''
+def previewIngest():	
 
 	form_data = request.form		
 
@@ -162,12 +152,11 @@ def previewIngest():
 # ################################################################################################
 # '''
 # Approach here...
-
 # have the routed function "ingestFOXML()" start the job, then run the interating ingest function ingestFOXML_worker()
 # 	- good option, speedy / instant return to user
-
 # this one runs everything through this one
 # '''
+
 # @batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
 # def ingestFOXML():
 # 	form_data = request.form
@@ -220,18 +209,15 @@ def previewIngest():
 # 	return "Ingest finished."
 # ################################################################################################
 
+
 ################################################################################################
-# Local Task V2
+# Action Tasks ( utilitizes taskWrapper() )
 ################################################################################################
 '''
 Different approach here...
-
 *anticpated problem: for very large lists of FOXML, not having a similar celeryTaskFactory() will cause this to delay.
-
-ingestFOXML()
-
-
 '''
+
 @batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
 def ingestFOXML():
 	form_data = request.form

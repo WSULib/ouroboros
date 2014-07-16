@@ -18,12 +18,20 @@
 <!-- end load -->
 
 
+	<div id="object_details">
+		<ul>
+			<li>Current PID: <strong>{{PID}}</strong></li>			
+			<li><a href='/tasks/editDSXML/{{(pid_num - 1)}}'>&lt;-- ({{PIDs[(pid_num-1)]}})</a> / <a href='/tasks/editDSXML/{{(pid_num + 1)}}'>({{PIDs[(pid_num+1)]}}) --&gt;</a></li>
+		</ul>
+	</div>
+	<br>
+
 	<div id="xml_editor">
 		<mods xmlns="http://www.loc.gov/mods/v3"> </mods>
 	</div>
 	
 	<script type="text/javascript">		
-		var PID = "wayne:Fake02a";
+		var PID = "{{PID}}";
 		var DS = "MODS";
 		
 		$(function() {
@@ -34,9 +42,9 @@
 				// schema : "{{ url_for('editDSXML.static', filename='UNC_xmleditor/demo/examples/mods.json') }}",
 				// attempting static full path pull
 				// WORKAROUND: treat static directory as if it were relative, do not include the url_for()
-				schema : "static/editDSXML/UNC_xmleditor/demo/examples/mods.json",
+				// schema : "static/editDSXML/UNC_xmleditor/demo/examples/mods.json",
 				// static from web directory (works)
-				// schema : "http://digital.library.wayne.edu/dev/graham/XML_editing/UNC_xmleditor/demo/examples/mods.json",
+				schema : "http://digital.library.wayne.edu/dev/graham/XML_editing/UNC_xmleditor/demo/examples/mods.json",
 				documentTitle: "Dodge Brothers Factory Exterior",
 				ajaxOptions: {					
 					xmlRetrievalPath: "http://digital.library.wayne.edu/fedora/objects/"+PID+"/datastreams/"+DS+"/content",

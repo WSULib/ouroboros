@@ -1,5 +1,5 @@
 import json
-from lib.FOXML2Solr.FOXML2Solr import FOXML2Solr
+
 from lib.WSUAPI.WSUAPImain import WSUAPImain
 from lib.imageServer.imageServerMain import imageWork
 from lib.Projects.ProjectsMain import ProjectsMain

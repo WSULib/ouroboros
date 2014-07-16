@@ -42,6 +42,9 @@ app.register_blueprint(objectState, url_prefix=tasks_URL_prefix)
 from editDSXML import editDSXML
 app.register_blueprint(editDSXML, url_prefix=tasks_URL_prefix)
 
+#FOXML2Solr
+from FOXML2Solr import FOXML2Solr_blue
+app.register_blueprint(FOXML2Solr_blue, url_prefix=tasks_URL_prefix)
 
 
 # task firing

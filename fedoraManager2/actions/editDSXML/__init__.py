@@ -5,12 +5,12 @@ from fedoraManager2.forms import RDF_edit
 from fedoraManager2.solrHandles import solr_handle
 from fedoraManager2.fedoraHandles import fedora_handle
 from fedoraManager2 import redisHandles
-from fedoraManager2 import jobs
+from fedoraManager2.jobs import getSelPIDs
 from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2.forms import batchIngestForm
 import fedoraManager2.actions as actions
-from flask import Blueprint, render_template, abort, request, redirect
+from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules
 from lxml import etree
@@ -28,10 +28,21 @@ UI notes:
 '''
 
 # main view
-@editDSXML.route('/editDSXML', methods=['POST', 'GET'])
-def index():
+@editDSXML.route('/editDSXML/<pid_num>', methods=['POST', 'GET'])
+def index(pid_num):
+
+	# get PIDs	
+	PIDs = getSelPIDs()
+	PID = PIDs[int(pid_num)]
+
+	# datastream currently hardcoded to MODS
+	DS = "MODS"
+
+	session['editDSXML_pid_num'] = pid_num
+	session['editDSXML_PID'] = PID
+	session['editDSXML_DS'] = DS
 	
-	return render_template("editDSXML.html")
+	return render_template("editDSXML.html",PIDs=PIDs,PID=PID,pid_num=int(pid_num))
 
 
 # update handler
@@ -40,10 +51,9 @@ def update():
 	'''
 	New raw XML contained in request.data
 	'''
-
-	# get object info
-	PID = "wayne:Fake02a" # need to actually get PID...		
-	DS = "MODS" # need to get datastream...
+	# get object info	
+	PID = session['editDSXML_PID']	
+	DS = session['editDSXML_DS']
 
 	# initialized DS object
 	obj_ohandle = fedora_handle.get_object(PID)
@@ -56,4 +66,4 @@ def update():
 	# save constructed object
 	print newDS.save()
 
-	return "Updated."	
+	return "{{PID}} Updated.".format(PID=PID)

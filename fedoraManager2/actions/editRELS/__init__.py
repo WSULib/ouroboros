@@ -12,6 +12,7 @@ from flask import Blueprint, render_template, abort, request
 #python modules
 from lxml import etree
 import re
+import requests
 
 # eulfedora
 import eulfedora
@@ -30,12 +31,13 @@ def index():
 
 	# get PID to examine, if noted
 	if request.args.get("PIDnum") != None:
-		PIDnum = int(request.args.get("PIDnum"))
+		PIDnum = int(request.args.get("PIDnum"))		
 	else:
 		PIDnum = 0
 	
 	# get PIDs	
 	PIDs = getSelPIDs()	
+	print PIDs[PIDnum]
 
 	# instantiate forms
 	form = RDF_edit()		
@@ -46,14 +48,30 @@ def index():
 	# filter out RELS-EXT and WSUDOR predicates
 	riquery_filtered = []
 	for s,p,o in riquery:
-		if "relations-external" in p or "WSUDOR-Fedora-Relations" in p:
-			riquery_filtered.append((p,o))	
+		try:
+			if "relations-external" in p or "WSUDOR-Fedora-Relations" in p:
+				riquery_filtered.append((p,o))	
+		except:
+			print "Could not parse RDF relationship"
 	riquery_filtered.sort() #mild sorting applied to group WSUDOR or RELS-EXT	
 
 	# get raw RDF XML for raw_xml field
-	obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])	
-	raw_xml = obj_ohandle.rels_ext.content.serialize()
 
+	# Eulfedora
+	###############################################################
+	# obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])	
+	# try:
+	# 	raw_xml = obj_ohandle.rels_ext.content.serialize()
+	# except:
+	# 	raw_xml = "COULD NOT PARSE"
+	###############################################################
+
+	# Raw Datastream via Fedora API
+	###############################################################
+	PID = PIDs[PIDnum]
+	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
+	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+	###############################################################
 	
 	return render_template("editRELS_index.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,form=form,raw_xml=raw_xml)
 
@@ -105,8 +123,21 @@ def editRELS_edit_worker(job_package):
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)
 
-	# get unmodified XML		
-	pre_mod_xml = obj_ohandle.rels_ext.content.serialize()
+	# Eulfedora
+	###############################################################
+	# obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])	
+	# try:
+	# 	raw_xml = obj_ohandle.rels_ext.content.serialize()
+	# except:
+	# 	raw_xml = "COULD NOT PARSE"
+	###############################################################
+
+	# Raw Datastream via Fedora API
+	###############################################################
+	PID = PIDs[PIDnum]
+	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
+	pre_mod_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+	###############################################################
 
 	# get modified XML
 	form_data = job_package['form_data']
@@ -152,8 +183,22 @@ def editRELS_regex_worker(job_package):
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)	
 	
-	# get original RELS-EXT to modify
-	orig_string = obj_ohandle.rels_ext.content.serialize()
+	# Eulfedora
+	###############################################################
+	# obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])	
+	# try:
+	# 	raw_xml = obj_ohandle.rels_ext.content.serialize()
+	# except:
+	# 	raw_xml = "COULD NOT PARSE"
+	###############################################################
+
+	# Raw Datastream via Fedora API
+	###############################################################
+	PID = PIDs[PIDnum]
+	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
+	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+	###############################################################
+
 	
 	# get regex parameters
 	form_data = job_package['form_data']	
@@ -161,7 +206,7 @@ def editRELS_regex_worker(job_package):
 	# search / replace	
 	regex_search = form_data['regex_search'].encode('utf-8')
 	regex_replace = form_data['regex_replace'].encode('utf-8')
-	new_string = re.sub(regex_search,regex_replace,orig_string)		
+	new_string = re.sub(regex_search,regex_replace,raw_xml)		
 
 	# similar to addDS functionality	
 	newDS = eulfedora.models.DatastreamObject(obj_ohandle, "RELS-EXT", "RELS-EXT", control_group="X")	

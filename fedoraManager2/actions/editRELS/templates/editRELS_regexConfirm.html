@@ -9,9 +9,9 @@
 		<p style="color:red;">No differences detected in strings, none can be made - <a href="#" onclick="window.history.back(); return false;">go back</a>.</p>				
 	{% else %}
 		<p style="color:green;">Changes detected.</p>
-		<p>If it looks good, fire away!</p>
-		<button type="submit">go!</button>
+		<p>If it looks good, fire away!</p>		
 	{% endif %}		
+	<button type="submit">go!</button>
 	<input type="hidden" name="regex_search" value="{{return_package.regex_search}}">
 	<input type="hidden" name="regex_replace" value="{{return_package.regex_replace}}">
 </form>

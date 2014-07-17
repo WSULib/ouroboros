@@ -1,7 +1,7 @@
 <!-- header -->
 <html>
 <head>
-	<title>fedoraManager2</title>
+	<title>WSU Ouroboros</title>
 	<!-- jquery CDN -->	
 	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 	<!-- jquery data tables -->
@@ -14,7 +14,8 @@
 
 <body>
 	<div class="nav-collapse collapse">
-		<ul class="nav">
+		<ul class="nav">			
+			<li><img width=40 src="{{ url_for('static', filename='Ouroboros.png') }}"/></li>
 			<li><a href="/userPage">User Home</a></li>
 			<li><a href="/systemStatus">System Status</a></li>			
 				{% if g.user.is_authenticated()%}

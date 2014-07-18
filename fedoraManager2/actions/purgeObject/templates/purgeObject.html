@@ -1,0 +1,13 @@
+{% include 'header.html' %}
+<h2>Purge Object</h2>
+
+<p>This utility purges objects from Fedora.  Please note, objects without the state "Deleted (D)" will be automatically skipped.  Additionally, an archive of the objects can be performed upon purge (in-progress).</p>
+
+<p style="color:red;">Note: This action is permanent and cannot be undone.  Two users will be required to enter their user pin to continue.</p>
+
+<form action="/fireTask/purgeObject_worker" method="POST">	
+	<label>Two users with administrative roles enter <a href="/userPin">user pin</a></label><br>
+	Admin 1: <input name="admin_string_1" id="admin_string_1" size=100/><br>
+	Admin 2: <input name="admin_string_2" id="admin_string_2" size=100/><br>
+	<input type="submit" value="Make it so!"/>
+</form>

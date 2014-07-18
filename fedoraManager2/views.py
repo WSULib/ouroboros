@@ -16,10 +16,12 @@ import json
 import unicodedata
 import shlex, subprocess
 import socket
+import hashlib
 
 # flask proper
-from flask import render_template, request, session, redirect, make_response
+from flask import render_template, request, session, redirect, make_response, Response
 from flask.ext.sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 # fm2
 from fedoraManager2 import app
@@ -360,7 +362,7 @@ def jobDetails(job_num):
 	task_step = 1
 	while task_step <= job_task_num:
 		task = redisHandles.r_job_handle.get( "{job_num},{task_step}".format(job_num=job_num,task_step=task_step) )	
-		print task	
+		# print task	
 		task_split = task.split(",")
 		tasks_package[task_split[0]].append([task_split[1],job_num,task_step]) 		
 
@@ -605,22 +607,65 @@ def updatePIDsfromSolr(update_type):
 		print "...complete."
 
 	return "Update Complete."
+
+
+# PID check for user
+@app.route("/userPin", methods=['POST', 'GET'])
+def userPin():	
+	# get username from session
+	username = session['username']	
+
+	# get date object
+	date_obj = datetime.now()
+
+	# perform search	
+	if request.method == 'POST':
+		print "generating pin"
+
+		form_data = request.form
+		print form_data
+
+		# check credentials
+		user_handle = db.session.query(models.User).filter(models.User.username == form_data['username'],models.User.password == form_data['password']).first()
+		if user_handle != None:
+			print user_handle
+
+			# creat user pin
+			hashString = form_data['username'] + str(date_obj.month) + str(date_obj.day) + "ShoppingHorse"
+			user_pin = hashlib.sha256(hashString).hexdigest()
+			print user_pin
+
+			return render_template("userPin.html",username=username,date=date_obj,user_pin=user_pin)
+
+		return render_template("userPin.html",username=username,date=date_obj)
+	
+	return render_template("userPin.html",username=username,date=date_obj)
+
+
+
 	
 
 
-# BOUTIQUE SERVICES
+# EXPERIMENTAL SERVICES
 ####################################################################################
-# @app.route("/freshenSolr", methods=['POST', 'GET'])
-# def freshenSolr():		
-	
-# 	if request.args.get("type") == "fullIndex":				
-# 		index_handle = FOXML2Solr.delay('fullIndex','')
+# stream bits from Fedora through fm2
+@app.route("/strDS/<PID>/<DS>", methods=['POST', 'GET'])
+def strDS(PID,DS):
+	obj_handle = fedora_handle.get_object(PID)
+	obj_ds_handle = obj_handle.getDatastreamObject(DS)
 
-# 	if request.args.get("type") == "timestamp":		
-# 		index_handle = FOXML2Solr.delay('timestampIndex','')
+	# chunked, generator
+	def stream():
+		step = 1024
+		pointer = 0
+		for chunk in range(0, len(obj_ds_handle.content), step):
+			yield obj_ds_handle.content[chunk:chunk+step]
 
-# 	# pass the current PIDs to page as list	
-# 	return render_template("freshenSolr.html",type=request.args.get("type"))
+	return Response(stream(), mimetype=obj_ds_handle.mimetype)
+
+	# straight pipe, thinking maybe download first?
+	# return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)	
+
 
 
 

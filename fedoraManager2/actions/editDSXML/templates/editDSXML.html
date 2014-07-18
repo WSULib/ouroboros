@@ -1,6 +1,6 @@
 <!-- load in-page css before header -->
-<link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/demo/stylesheets/reset.css') }}" type="text/css" />
-<link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/demo/stylesheets/demo.css') }}" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/css/stylesheets/reset.css') }}" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/css/stylesheets/simple.css') }}" type="text/css" />
 <link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/css/jquery.xmleditor.css') }}" type="text/css" />
 <!-- end pre-load -->
 
@@ -37,14 +37,16 @@
 		$(function() {
 			$("#xml_editor").xmlEditor({				
 				// from Flask with reverse-proxy (works)
-				// schema : "http://digital.library.wayne.edu/fedoraManager2-graham/static/UNC_xmleditor/demo/examples/mods.json",
+				// schema : "http://digital.library.wayne.edu/fedoraManager2-graham/static/UNC_xmleditor/inc/schema_json/mods.json",
 				// attempting static relative pull
-				// schema : "{{ url_for('editDSXML.static', filename='UNC_xmleditor/demo/examples/mods.json') }}",
+				// schema : "{{ url_for('editDSXML.static', filename='UNC_xmleditor/inc/schema_json/mods.json') }}",
 				// attempting static full path pull
 				// WORKAROUND: treat static directory as if it were relative, do not include the url_for()
-				// schema : "static/editDSXML/UNC_xmleditor/demo/examples/mods.json",
+				// schema : "static/editDSXML/UNC_xmleditor/inc/schema_json/mods.json",
 				// static from web directory (works)
-				schema : "http://digital.library.wayne.edu/dev/graham/XML_editing/UNC_xmleditor/demo/examples/mods.json",
+				// schema : "http://digital.library.wayne.edu/dev/graham/XML_editing/UNC_xmleditor/demo/examples/mods.json",
+				// hard-coded full URL?
+				schema : "http://digital.library.wayne.edu:5001/tasks/static/editDSXML/UNC_xmleditor/inc/schema_json/mods.json",
 				documentTitle: "Dodge Brothers Factory Exterior",
 				ajaxOptions: {					
 					xmlRetrievalPath: "http://digital.library.wayne.edu/fedora/objects/"+PID+"/datastreams/"+DS+"/content",

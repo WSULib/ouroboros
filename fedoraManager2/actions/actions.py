@@ -38,6 +38,10 @@ app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
 from objectState import objectState, objectState_worker
 app.register_blueprint(objectState, url_prefix=tasks_URL_prefix)
 
+#objectState
+from purgeObject import purgeObject, purgeObject_worker
+app.register_blueprint(purgeObject, url_prefix=tasks_URL_prefix)
+
 #editDSXML
 from editDSXML import editDSXML
 app.register_blueprint(editDSXML, url_prefix=tasks_URL_prefix)

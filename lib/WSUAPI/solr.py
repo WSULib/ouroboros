@@ -1,4 +1,4 @@
-# SOLR Query Interpreter
+# Solr Functions
 import requests
 import ast
 import urllib
@@ -86,7 +86,7 @@ def solrSearch(getParams):
 	baseURL += "&fl=id mods* dc* rels* obj* last_modified&"
 
 	processed = ["raw","fullview","facets[]","fq[]","q"]
-	
+
 	# add all other parameters	
 	for k in getParams:
 		if k not in processed:
@@ -120,7 +120,7 @@ def solrCoreGeneric(getParams):
 	else:
 		print "*No search terms provided*"
 		getParams['q'][0] = ""
-	
+
 	# add to URL
 	baseURL	+= "q="+getParams['q'][0]+"&"	
 
@@ -135,7 +135,7 @@ def solrCoreGeneric(getParams):
 			baseURL += ("fq="+fq+"&")
 
 	processed = ["raw","fullview","facets[]","fq[]","q"]
-	
+
 	# add all other parameters	
 	for k in getParams:
 		if k not in processed:
@@ -151,7 +151,7 @@ def solrFacetSearch(getParams):
 ######################################################################################################################
 	# establish baseURL
 	baseURL = "http://localhost/solr4/search/select?"
-	
+
 	# set solrParams
 	solrParams = ast.literal_eval(getParams['solrParams'][0])
 	solrParams["wt"] = "python"	
@@ -189,7 +189,7 @@ def solrFacetSearch(getParams):
 			baseURL += ("fq="+fq+"&")	
 
 	processed = ["raw","fullview","facets[]","fq[]"]
-	
+
 	# add all other parameters	
 	for k in solrParams:
 		if k not in processed:
@@ -223,7 +223,7 @@ def getUserFavorites(getParams):
 
 	# establish baseURL
 	baseURL = "http://localhost/solr4/users/select?"
-	
+
 	# set solrParams
 	solrParams = ast.literal_eval(getParams['solrParams'][0])	
 	print "Solr Search Params:", solrParams
@@ -243,7 +243,7 @@ def getUserFavorites(getParams):
 			baseURL += ("fq="+fq+"&")	
 
 	processed = ["raw","fullview","facets[]","fq[]"]
-	
+
 	# add all other parameters	
 	for k in solrParams:
 		if k not in processed:
@@ -264,11 +264,11 @@ def userSearch(getParams):
 
 	# establish baseURL
 	baseURL = "http://localhost/solr4/users/select?"
-	
+
 	solrParams = {}
 	solrParams['q'] = 'id:'+getParams['username'][0]
 	solrParams["wt"] = "python"	
-	
+
 	# add all other parameters	
 	for k in solrParams:		
 		baseURL += (k+"="+str(solrParams[k])+"&")	
@@ -284,7 +284,7 @@ def userSearch(getParams):
 
 	# prepare dict to convert to JSON and return
 	userReturnDict = {}
-	
+
 	# check if username extant
 	if userDict['response']['numFound'] != 0:
 		# set some parameters of return dictionary
@@ -301,7 +301,7 @@ def userSearch(getParams):
 
 	print userReturnDict
 	jsonString = json.dumps(userReturnDict)
-	
+
 	return jsonString
 
 
@@ -316,11 +316,11 @@ def WSUDORuserAuth(getParams):
 	baseURL = "http://localhost/solr4/users/select?"
 	# print "Here's what we have to authorize with in WSUDOR..."
 	# print getParams
-	
+
 	solrParams = {}
 	solrParams['q'] = 'id:'+getParams['username'][0]
 	solrParams["wt"] = "python"	
-	
+
 	# add all other parameters	
 	for k in solrParams:		
 		baseURL += (k+"="+str(solrParams[k])+"&")	
@@ -353,7 +353,7 @@ def WSUDORuserAuth(getParams):
 
 	# print userReturnDict
 	jsonString = json.dumps(userReturnDict)
-	
+
 	return jsonString
 
 
@@ -375,11 +375,11 @@ def cookieAuth(getParams):
 		# print userReturnDict
 		jsonString = json.dumps(userReturnDict)	
 		return jsonString
-	
+
 	solrParams = {}
 	solrParams['q'] = 'id:'+getParams['username'][0]
 	solrParams["wt"] = "python"	
-	
+
 	# add all other parameters	
 	for k in solrParams:		
 		baseURL += (k+"="+str(solrParams[k])+"&")	
@@ -396,7 +396,7 @@ def cookieAuth(getParams):
 
 	# prepare dict to convert to JSON and return
 	userReturnDict = {}
-	
+
 	# check hash match
 	if getParams['clientHash'][0] == userDict['response']['docs'][0]['user_hash'][0]:
 		# print "account hashes match"
@@ -407,14 +407,14 @@ def cookieAuth(getParams):
 
 	# print userReturnDict
 	jsonString = json.dumps(userReturnDict)
-	
+
 	return jsonString
 
 
 def createUserAccount(getParams):
 # function to take jsonAddString, index in Solr, and return confirmation code
 ######################################################################################################################	
-	
+
 	# print getParams
 
 	# create solrString to add doc
@@ -475,7 +475,7 @@ def removeFavorite(getParams):
 	# authenticate user	
 	username = getParams['username'][0]
 	providedHash = getParams['userhash'][0]
-	
+
 	si = sunburnt.SolrInterface("http://localhost:8080/solr4/users/")	
 	response = si.query(user_username=username).execute()
 	recordedHash = response[0]['user_hash'][0]
@@ -498,7 +498,7 @@ def removeFavorite(getParams):
 		returnDict['status'] = "Credentials don't match."
 		return json.dumps(returnDict)
 
-	
+
 
 def solrTranslationHash(args):
 # function to return PIDs and their Labels in JS Hash that can / is used to cleanup front-end interfaces, 
@@ -506,7 +506,7 @@ def solrTranslationHash(args):
 # Note: Makes sense to key off PID however for logic, as these are less likely to change than the Object Label / DC Title field
 ######################################################################################################################	
 
-	
+
 	# list of queries to translate results
 	queriesToTrans = [
 		# all Collection objects
@@ -533,9 +533,13 @@ def solrTranslationHash(args):
 def pubStore(getParams):
 	urlsuff = getParams['urlsuff'][0]
 	solrString = getParams['json'][0]	
-	
-	baseURL = "http://localhost/solr4/pubstore/{urlsuff}".format(urlsuff=urlsuff)	
-	
+
+	# print solrString
+
+	baseURL = "http://localhost/solr4/pubstore/{urlsuff}".format(urlsuff=urlsuff)
+	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
+	# print "Going to this URL:",baseURL
+
 	# json post
 	if "update" in urlsuff:
 		headersDict = {
@@ -552,15 +556,3 @@ def pubStore(getParams):
 
 	jsonString = r.text
 	return jsonString
-
-
-
-
-
-
-
-
-
-
-
-	

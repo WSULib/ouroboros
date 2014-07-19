@@ -1,4 +1,6 @@
 # utilities
+import datetime
+import hashlib
 
 escapeRules = {'+': r'\+',
 			   '-': r'\-',
@@ -36,11 +38,9 @@ def escapeSolrArg(term):
 	return "".join([nextStr for nextStr in escapedSeq(term)])
 
 
-# function to remove job from fm2
-def jobRemove_worker(job_num):
-	'''
-	- remove job from SQL
-	- remove from broker (use celery methods)
-	- remove task results from Redis (homegrown)
-	'''
-	
+def genUserPin(username):
+	# create user pin
+	date_obj = datetime.datetime.now()
+	hashString = username + str(date_obj.month) + str(date_obj.day) + "WSUDOR"
+	user_pin = hashlib.sha256(hashString).hexdigest()
+	return user_pin	

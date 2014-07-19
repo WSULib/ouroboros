@@ -5,9 +5,9 @@
 
 <p style="color:red;">Note: This action is permanent and cannot be undone.  Two users will be required to enter their user pin to continue.</p>
 
-<form action="/tasks/purgeObject/confirm" method="POST">	
-	<label>Two users with administrative roles enter <a href="/userPin">user pin</a></label><br>
-	Admin 1 Username: <input name="admin_name_1" id="admin_name_1" size=40/> Admin 1 Pin: <input name="admin_pin_1" id="admin_pin_1" size=100/><br>
-	Admin 2 Username: <input name="admin_name_2" id="admin_name_2" size=40/> Admin 2 Pin: <input name="admin_pin_2" id="admin_pin_2" size=100/><br>
+
+<p>Confirm status: {% if confirm_status == True %}<span style="color:green;">Confirmed</span>{% else %}<span style="color:red; cursor:pointer;" onclick="window.history.back(); return false;">Not Confirmed.  Try again</span>{% endif %}</p>
+
+<form action="/fireTask/purgeObject_worker" method="POST">	
 	<input type="submit" value="Make it so!"/>
 </form>

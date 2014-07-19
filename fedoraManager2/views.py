@@ -620,29 +620,25 @@ def userPin():
 
 	# perform search	
 	if request.method == 'POST':
-		print "generating pin"
+
+		print "generating pin"		
 
 		form_data = request.form
 		print form_data
 
 		# check credentials
 		user_handle = db.session.query(models.User).filter(models.User.username == form_data['username'],models.User.password == form_data['password']).first()
+
 		if user_handle != None:
 			print user_handle
 
-			# creat user pin
-			hashString = form_data['username'] + str(date_obj.month) + str(date_obj.day) + "ShoppingHorse"
-			user_pin = hashlib.sha256(hashString).hexdigest()
-			print user_pin
+			# create user pin
+			user_pin = utilities.genUserPin(form_data['username'])
 
-			return render_template("userPin.html",username=username,date=date_obj,user_pin=user_pin)
-
-		return render_template("userPin.html",username=username,date=date_obj)
-	
+			return render_template("userPin.html",username=username,date=date_obj, user_pin=user_pin)
+		
+	# render page
 	return render_template("userPin.html",username=username,date=date_obj)
-
-
-
 	
 
 

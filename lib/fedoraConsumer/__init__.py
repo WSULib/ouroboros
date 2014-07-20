@@ -1,9 +1,9 @@
 import xmltodict, json
 from fedoraManager2.actions.FOXML2Solr import FOXML2Solr
 
-
 # handles events in Fedora Commons as reported by JSM
 def fedoraConsumer(self,**kwargs):			
+	
 	msg = kwargs['msg']		
 
 	# create dictionary from XML string

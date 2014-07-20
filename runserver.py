@@ -150,10 +150,10 @@ class fedoraConsumerWorker(object):
         }
         client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
 
-    def consume(self, client, frame):        
-
-        #send to clearkRouter        
+    def consume(self, client, frame):
+        #send to clearkRouter           
         worker = clerkRouter()
+        print dir(worker)
         worker.fedoraConsumer(msg=frame.body)
 
 

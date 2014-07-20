@@ -216,8 +216,11 @@ def fireTask(task_name):
 	job_package = {		
 		"username":username,
 		"job_num":job_num,		
-		"form_data":request.form		
+		"form_data":request.form			
 	}
+
+	# include session
+	# print session
 
 	# pass along binary uploaded data if included in job task
 	if 'upload' in request.files and request.files['upload'].filename != '':

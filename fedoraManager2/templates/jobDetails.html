@@ -2,6 +2,8 @@
 
 <h1>Job Details: # {{job_num}}</h1>
 
+<a href="/jobRemove/{{job_num}}">Remove Job?</a>
+
 <h2 style="color:green;">Success!</h2>
 <ul>
 	{% for task in tasks_package.SUCCESS %}
@@ -16,4 +18,3 @@
 	{% endfor %}
 </ul>
 
-<a href="/jobRemove/{{job_num}}">Remove Job?</a>

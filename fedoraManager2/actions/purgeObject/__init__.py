@@ -19,7 +19,7 @@ purgeObject = Blueprint('purgeObject', __name__, template_folder='templates', st
 
 
 @purgeObject.route('/purgeObject')
-def index():	
+def index():
 
 	# get PIDs	
 	PIDs = getSelPIDs()
@@ -31,37 +31,46 @@ def confirm():
 
 	form_data = request.form
 
+	pin_package = {
+		"an1": form_data['an1'],
+		"ap1": form_data['ap1'],
+		"an2": form_data['an2'],
+		"ap2": form_data['ap2']
+	}
+
 	#check admin credentials	
-	if form_data['admin_pin_1'] == utilities.genUserPin(form_data['admin_name_1']) and form_data['admin_pin_2'] == utilities.genUserPin(form_data['admin_name_2']) and form_data['admin_name_1'] != form_data['admin_name_2']:		
-		confirm_status = True
-		session['purge_confirm'] = True
+	confirm_status = utilities.checkPinCreds(pin_package,"purge")	
 
-	else:
-		confirm_status = False
-		session['purge_confirm'] = False
-
-	return render_template("purgeConfirm.html",confirm_status=confirm_status)
+	return render_template("purgeConfirm.html",confirm_status=confirm_status,pin_package=pin_package)
 
 
 
-def purgeObject_worker(job_package):
-	
-	# form_data = job_package['form_data']
-	# print form_data	
+def purgeObject_worker(job_package):	
+
+	form_data = job_package['form_data']
 
 	PID = job_package['PID']
 
-	# check confirm_status in session
-	# if session['purge_confirm'] != True:
-	# 	return "Skipping, purge confirmation was not met."
+	# check credentials
+	pin_package = {
+		"an1": form_data['an1'],
+		"ap1": form_data['ap1'],
+		"an2": form_data['an2'],
+		"ap2": form_data['ap2']
+	}
+	confirm_status = utilities.checkPinCreds(pin_package,"purge")
+	if confirm_status == False:
+		return "Skipping, admin credentials don't check out."
 
 	# check object state
 	obj_handle = fedora_handle.get_object(PID)
 	print obj_handle.state
 	if obj_handle.state != "D":
 		return "Skipping, object state not 'Deleted (D)'"
-
 	
-	return "PID purged (not yet actually)."
+	# else, purge object from Fedora (object will be pulled via Messenging service)
+	result = fedora_handle.purge_object(PID)
+	return "{PID} purge result: {result}".format(PID=PID,result=result)
+
 
 

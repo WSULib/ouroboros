@@ -6,6 +6,7 @@ import fedoraManager2.jobs as jobs
 import fedoraManager2.redisHandles as redisHandles
 import fedoraManager2.models as models
 from fedoraManager2 import app
+from flask import session
 
 # local dependecies
 import time
@@ -79,7 +80,7 @@ class postTask(Task):
 
 
 @celery.task(name="celeryTaskFactory")
-def celeryTaskFactory(**kwargs):	
+def celeryTaskFactory(**kwargs):
 	
 	# create job_package
 	job_package = kwargs['job_package']	

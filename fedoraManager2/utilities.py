@@ -44,3 +44,12 @@ def genUserPin(username):
 	hashString = username + str(date_obj.month) + str(date_obj.day) + "WSUDOR"
 	user_pin = hashlib.sha256(hashString).hexdigest()
 	return user_pin	
+
+
+def checkPinCreds(pin_package,check_type):
+	if check_type == "purge":
+		# check PINs are correct for username, and that usernames are not equal
+		if pin_package['ap1'] == genUserPin(pin_package['an1']) and pin_package['ap2'] == genUserPin(pin_package['an2']) and pin_package['an1'] != pin_package['an2']:
+			return True
+		else:
+			return False

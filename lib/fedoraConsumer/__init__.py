@@ -12,7 +12,7 @@ def fedoraConsumer(self,**kwargs):
 		# pull info
 		fedEvent = msgDict['entry']['title']['#text']			
 
-		# testing, print results			
+		# print fedEvent
 		print "Action:",fedEvent
 
 		# modify, purge
@@ -20,6 +20,7 @@ def fedoraConsumer(self,**kwargs):
 			PID = msgDict['entry']['category'][0]['@term']		
 			print "Object PID:", PID
 			FOXML2Solr.delay(fedEvent,PID)
+
 		# ingest
 		if fedEvent.startswith('ingest'):
 			PID = msgDict['entry']['content']['#text']

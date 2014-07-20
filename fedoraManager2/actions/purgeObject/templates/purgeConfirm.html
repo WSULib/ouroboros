@@ -1,13 +1,18 @@
 {% include 'header.html' %}
 <h2>Purge Object</h2>
 
-<p>This utility purges objects from Fedora.  Please note, objects without the state "Deleted (D)" will be automatically skipped.  Additionally, an archive of the objects can be performed upon purge (in-progress).</p>
+<p style="color:red;">Note: Remember, this action is permanent and cannot be undone!</p>
 
-<p style="color:red;">Note: This action is permanent and cannot be undone.  Two users will be required to enter their user pin to continue.</p>
-
-
-<p>Confirm status: {% if confirm_status == True %}<span style="color:green;">Confirmed</span>{% else %}<span style="color:red; cursor:pointer;" onclick="window.history.back(); return false;">Not Confirmed.  Try again</span>{% endif %}</p>
-
-<form action="/fireTask/purgeObject_worker" method="POST">	
+<p>Two user pin authentication: {% if confirm_status == True %}<span style="color:green;">Confirmed</span></p>
+<form action="/fireTask/purgeObject_worker" method="POST">
+	<input type="hidden" name="an1" value="{{pin_package.an1}}"/>
+	<input type="hidden" name="ap1" value="{{pin_package.ap1}}"/>
+	<input type="hidden" name="an2" value="{{pin_package.an2}}"/>
+	<input type="hidden" name="ap2" value="{{pin_package.ap2}}"/>
 	<input type="submit" value="Make it so!"/>
 </form>
+
+{% else %}
+
+<span style="color:red;">Not Confirmed.</span> <a href="#" onclick="window.history.back(); return false;">Try again</a>{% endif %}</p>
+

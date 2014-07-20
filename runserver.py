@@ -31,8 +31,8 @@ from fedoraManager2 import app
 
 # WSUDOR API ##############################################################
 '''
-Prod: Listening on :61617, reverseproxy in Apache to :80/WSUAPI.  Accepts GET parameters, routes to WSUAPI.py (formerly DCAPI project)
-Dev: Listening on :61619
+Prod: Listening on :61617, reverseproxy in Apache to :80/WSUAPI.
+Dev: Listening on :61619, reverseproxy in Apache to :80/WSUAPI-dev.
 '''
 class WSUAPIListener(resource.Resource):
 	isLeaf = True
@@ -94,8 +94,8 @@ class WSUAPIListener(resource.Resource):
 
 # WSU imageServer ##############################################################
 '''
-Prod: Listening on :61618
-Dev: Listening on :61620
+Prod: Listening on :61618, reverseproxy in Apache to :80/imageServer
+Dev: Listening on :61620, reverseproxy in Apache to :80/imageServer-dev
 '''
 class imageServerListener(resource.Resource):
 	isLeaf = True
@@ -128,7 +128,8 @@ class imageServerListener(resource.Resource):
 
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
-Prod: Connected to JSM Messaging service on :fedConsumer_port (usually 61616), routes 'fedEvents' to clerkRouter function from clerkRouter.py
+Prod: Connected to JSM Messaging service on :fedConsumer_port (usually 61616), 
+routes 'fedEvents' to clerkRouter function from clerkRouter.py
 Dev: Disabled
 '''
 class fedoraConsumerWorker(object):
@@ -152,8 +153,7 @@ class fedoraConsumerWorker(object):
 
     def consume(self, client, frame):
         #send to clearkRouter           
-        worker = clerkRouter()
-        print dir(worker)
+        worker = clerkRouter()        
         worker.fedoraConsumer(msg=frame.body)
 
 

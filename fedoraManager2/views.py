@@ -59,9 +59,8 @@ from fedoraHandles import fedora_handle
 
 # session data secret key
 ####################################
-app.secret_key = 'ShoppingHorse'
+app.secret_key = 'WSUDOR'
 ####################################
-
 
 # GENERAL
 #########################################################################################################
@@ -73,6 +72,7 @@ def index():
 	else:
 		username = "User not set."
 		return render_template("index.html",username=username)
+
 
 @app.route("/about")
 def about():
@@ -108,12 +108,10 @@ def systemStatus():
 		else:
 			msg = "inactive"
 
-		imp_ports_results.append((str(port),desc,msg))
-
-
-	
+		imp_ports_results.append((str(port),desc,msg))	
 
 	return render_template("systemStatus.html",imp_ports_results=imp_ports_results)
+
 
 # LOGIN
 #########################################################################################################
@@ -130,10 +128,12 @@ def user_loader(userid):
 	# """
 	return User.query.get(int(userid))
 
+
 @app.before_request
 def before_request():
 	# This is executed before every request
 	g.user = current_user
+
 
 @app.route('/register', methods=['GET', 'POST'])
 @login_required
@@ -147,7 +147,6 @@ def register():
 
 	elif request.method == 'GET': 
 		return render_template('register.html')
-
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -165,11 +164,13 @@ def login():
 	session["username"] = username
 	return redirect(request.args.get('next') or url_for('index'))
 
+
 @app.route('/logout')
 def logout():
 	session["username"] = ""
 	logout_user()
 	return redirect(url_for('index'))
+
 
 
 # JOB MANAGEMENT
@@ -217,15 +218,11 @@ def fireTask(task_name):
 		"username":username,
 		"job_num":job_num,		
 		"form_data":request.form			
-	}
-
-	# include session
-	# print session
+	}	
 
 	# pass along binary uploaded data if included in job task
 	if 'upload' in request.files and request.files['upload'].filename != '':
 		job_package['upload_data'] = request.files['upload'].read()
-
 
 	# send to celeryTaskFactory in actions.py
 	'''
@@ -238,7 +235,7 @@ def fireTask(task_name):
 	return redirect("/userJobs")
 
 
-
+#status of currently running, spooling, or pending jobs for user
 @app.route("/userJobs")
 def userJobs():
 
@@ -327,6 +324,7 @@ def userJobs():
 		return render_template("userJobs.html",username=session['username'],localConfig=localConfig)
 
 
+# see all user jobs, including completed
 @app.route("/userAllJobs")
 def userAllJobs():
 
@@ -348,7 +346,6 @@ def userAllJobs():
 		return_package.append(job_package)
 		
 	return render_template("userAllJobs.html",username=session['username'],return_package=return_package)
-
 
 
 # Details of a given job
@@ -375,7 +372,7 @@ def jobDetails(job_num):
 	return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)
 
 	
-# Details of a given job
+# Details of a given task
 @app.route("/taskDetails/<task_id>/<job_num>/<task_num>")
 def taskDetails(task_id,job_num,task_num):
 
@@ -397,17 +394,14 @@ def taskDetails(task_id,job_num,task_num):
 
 # Remove job from SQL, remove tasks from Redis
 @app.route("/jobRemove/<job_num>", methods=['POST', 'GET'])
-def jobRemove(job_num):
-	
-	# on get param, commit=true using jobs.jobRemove_worker()		
-	
+def jobRemove(job_num):	
+		
 	if request.method == "POST" and request.form['commit'] == "true":
 		print "Removing job {job_num}".format(job_num=job_num)
 		result = jobs.jobRemove_worker(job_num)
 		print result
 
 		return render_template("jobRemove.html",job_num=job_num,result=result)
-
 
 	return render_template("jobRemove.html",job_num=job_num)
 
@@ -430,7 +424,7 @@ def PIDmanage():
 	return render_template("PIDManage.html",username=username, group_names=group_names, localConfig=localConfig)
 
 
-
+# Select / Deselect / Remove PIDs from user list
 @app.route("/PIDmanageAction/<action>", methods=['POST', 'GET'])
 def PIDmanageAction(action):	
 	# get username from session
@@ -470,6 +464,7 @@ def PIDmanageAction(action):
 	return redirect("/PIDmanage")
 
 
+# small function toggle selection of PIDs
 @app.route("/PIDRowUpdate/<id>/<action>/<status>")
 def PIDRowUpdate(id,action,status):
 	# get username from session
@@ -487,8 +482,7 @@ def PIDRowUpdate(id,action,status):
 			elif PID.status == "selected":
 				PID.status = "unselected"
 		else:
-			PID.status = status
-		
+			PID.status = status		
 
 	# delete single row
 	if action == "delete":

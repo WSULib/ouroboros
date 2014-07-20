@@ -3,9 +3,12 @@ import json
 from lib.WSUAPI.WSUAPImain import WSUAPImain
 from lib.imageServer.imageServerMain import imageWork
 from lib.Projects.ProjectsMain import ProjectsMain
-from lib.fedoraConsumer import fedoraConsumer
+
 
 class clerkRouter:	
+
+	# class imports (need to have at runserver.py level)
+	from lib.fedoraConsumer import fedoraConsumer
 
 	# handles WSUAPI requests
 	def WSUAPI(self,**kwargs):		
@@ -53,5 +56,9 @@ class clerkRouter:
 			response['content'] = '{{"WSUAPIstatus":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
 			return response
 		
+
+	# def fedoraConsumer(self,**kwargs):			
+	# 	print "********************************************FIRING!****************************************************"
+	# 	msg = kwargs['msg']		
 
 

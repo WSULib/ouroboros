@@ -46,7 +46,7 @@ def checksum_worker(job_package):
 		# getDatastreamObject('ACCESS').checksum
 		# take name, insert into .checksum and checksum_type
 		# return datastream name and checksum results to page (which are then sorted by template)
-		# gotta figure out what return does in this context
+		# not quiet sure what return does below
 		return obj_ohandle
 
 		# Enable Checksumming feature to be developed if Checksums are not enabled

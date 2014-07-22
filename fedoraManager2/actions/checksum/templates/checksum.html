@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+<h2>Trigger Checksum</h2>
+<p>This utility computes checksums for object datastreams in Fedora, compares these computations against the stored checksum, and returns either Valid, Invalid, or Disabled.</p>
+<form action="/fireTask/objectState_worker" method="POST">
+	<label>Please select target state:</label>
+	<select name="target_state">
+		<option value="A">Valid 'V'</option>
+		<option value="I">Invalid 'I'</option>
+		<option value="D">Disabled 'D'</option>
+	</select><br>
+	<label>Please type "CONFIRM" to confirm and change object state:</label>
+	<input name="confirm_string" id="confirm_string"/><br>
+	<input type="submit" value="Make it so!"/>
+</form>

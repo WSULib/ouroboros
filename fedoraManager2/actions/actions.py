@@ -51,6 +51,10 @@ app.register_blueprint(editDSXML, url_prefix=tasks_URL_prefix)
 from FOXML2Solr import FOXML2Solr_blue
 app.register_blueprint(FOXML2Solr_blue, url_prefix=tasks_URL_prefix)
 
+#checksum
+from checksum import checksum, checksum_worker
+app.register_blueprint(checksum, url_prefix=tasks_URL_prefix)
+
 
 # task firing
 ###########################################################################

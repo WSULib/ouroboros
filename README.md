@@ -1,4 +1,4 @@
-ouroboros
+Ouroboros
 ========
 
 Note: In rapid development, structure and functionality likely to change quite dramatically for awhile...

@@ -21,14 +21,6 @@ from localConfig import *
 from fedoraManager2 import app
 
 
-################################################
-# WRAPPING / ROUTING TESTING
-################################################
-# from werkzeug.wsgi import DispatcherMiddleware
-# parent_app = DispatcherMiddleware(app, {"/fedoraManager2-graham": app})
-################################################
-
-
 # WSUDOR API ##############################################################
 '''
 Prod: Listening on :61617, reverseproxy in Apache to :80/WSUAPI.
@@ -165,7 +157,7 @@ site = Site(resource)
 
 if __name__ == '__main__':
 	if fm2Fire == True:
-		print "Starting fedoraManager2 server..."
+		print "Starting fedoraManager2..."
 		reactor.listenTCP( fedoraManager2_port, site )
 	if WSUAPIFire == True:
 		print "Starting WSUAPI..."
@@ -176,5 +168,5 @@ if __name__ == '__main__':
 	if fedConsumerFire == True:
 		print "Starting JSM listener..."
 		fedoraConsumerWorker().run()
-	print "<--ouroboros says hissss-->"
+	print "<--Ouroboros says hissss-->"
 	reactor.run()

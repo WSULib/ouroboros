@@ -31,9 +31,9 @@ def updateSolr(update_type):
 
 	if update_type == "timestamp":		
 		index_handle = FOXML2Solr.delay('timestampIndex','')
-
+		
 	# pass the current PIDs to page as list	
-	return render_template("updateSolr.html",type=request.args.get("type"))
+	return render_template("updateSolr.html",update_type=update_type)
 
 
 

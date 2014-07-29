@@ -13,7 +13,7 @@ from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2.forms import batchIngestForm
 import fedoraManager2.actions as actions
-from flask import Blueprint, render_template, abort, request, redirect
+from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules
 from lxml import etree
@@ -148,93 +148,53 @@ def previewIngest():
 
 
 # ################################################################################################
-# # Local Task
+# V3 ( utilitizes taskWrapper() and a local celeryTaskFactory() )
 # ################################################################################################
-# '''
-# Approach here...
-# have the routed function "ingestFOXML()" start the job, then run the interating ingest function ingestFOXML_worker()
-# 	- good option, speedy / instant return to user
-# this one runs everything through this one
-# '''
-
-# @batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
-# def ingestFOXML():
-# 	form_data = request.form
-
-# 	# register local job
-# 	new_job_package = jobs.startLocalJob()	
-
-# 	print "Beginning bulk ingest, Job #:",new_job_package['job_num']
-
-# 	# fire ingester
-# 	ingestFOXML_worker.delay(form_data['MODS_id'], form_data['xsl_trans_id'], job_num=new_job_package['job_num'])
-
-# 	return redirect("/userJobs")
-
-
-# @celery.task()
-# def ingestFOXML_worker(MODS_id, xsl_trans_id, job_num):	
-# 	print MODS_id,xsl_trans_id,job_num
-
-# 	# get FOXML
-# 	FOXMLs_serialized = genFOXML("retrieve", MODS_id, xsl_trans_id)
-
-# 	# update job info
-# 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),len(FOXMLs_serialized))
-
-	
-# 	# ingest in Fedora
-# 	step = 1
-# 	for FOXML in FOXMLs_serialized:		
-# 		jobs.jobUpdateAssignedCount(job_num)
-# 		try:
-# 			# ingest
-# 			ingest_result = fedora_handle.ingest(FOXML)
-# 			status = "SUCCESS"
-# 			print "Ingested {step} / {total}".format(step=step,total=len(FOXMLs_serialized))
-# 		except:
-# 			status = "FAILURE"
-# 			print "Error {step} / {total}".format(step=step,total=len(FOXMLs_serialized))		
-
-# 		# update job info		
-# 		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},NULL,NULL".format(status=status))
-
-# 		if status == "SUCCESS":
-# 			jobs.jobUpdateCompletedCount(job_num)
-
-
-# 		# bump		
-# 		step = step + 1
-
-# 	return "Ingest finished."
-# ################################################################################################
-
-
-################################################################################################
-# Action Tasks ( utilitizes taskWrapper() )
-################################################################################################
 '''
-Different approach here...
-*anticpated problem: for very large lists of FOXML, not having a similar celeryTaskFactory() will cause this to delay.
+Similar to approach from above, but utilizing an ad-hoc celeryTaskFactory() approach to generate parent / children celery tasks
 '''
 
 @batchIngest.route('/batchIngest/ingestFOXML', methods=['POST', 'GET'])
-def ingestFOXML():
-	form_data = request.form
+def ingestFOXML():	
+	# get new job num
+	job_num = jobs.jobStart()
 
-	# register local job
-	job_package = jobs.startLocalJob()	
+	# get username
+	username = session['username']			
+
+	# prepare job_package for boutique celery wrapper
+	job_package = {
+		'job_num':job_num,
+		'task_name':"ingestFOXML_worker",
+		'form_data':request.form
+	}	
+
+	# job celery_task_id
+	celery_task_id = celeryTaskFactoryUnique.delay(job_num,job_package)		 
+
+	# send job to user_jobs SQL table
+	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init"))	
+	db.session.commit()		
+
+	print "Started job #",job_num,"Celery task #",celery_task_id
+	return redirect("/userJobs")
+
+
+@celery.task(name="celeryTaskFactoryUnique")
+def celeryTaskFactoryUnique(job_num,job_package):
+	'''
+	Circular logic warning: actions.actions.taskWrapper() from below is actually running ingestFOXML_worker from *this* file
+	'''
+
+	# reconstitute
+	form_data = job_package['form_data']
 	job_num = job_package['job_num']
-
-	print "Beginning bulk ingest, Job #:",job_num
 
 	# get FOXML
 	FOXMLs_serialized = genFOXML("retrieve", form_data['MODS_id'], form_data['xsl_trans_id'])
 
 	# update job info
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),len(FOXMLs_serialized))
-
-	job_package['task_name'] = "ingestFOXML_worker"
 
 	# ingest in Fedora
 	step = 1
@@ -248,16 +208,12 @@ def ingestFOXML():
 		result = actions.actions.taskWrapper.delay(job_package)
 
 		task_id = result.id		
-		
-		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id},{PID}".format(task_id=task_id,PID=job_package['PID']))
 			
 		# update incrementer for total assigned
 		jobs.jobUpdateAssignedCount(job_num)
 
 		# bump step
 		step += 1
-
-	return redirect("/userJobs")
 
 
 

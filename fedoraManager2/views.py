@@ -97,7 +97,7 @@ def userPage():
 def systemStatus():
 
 	#check important ports
-	imp_ports = [(61616,"Fedora JMS"),(61617,"WSUAPI - prod"),(61618,"imageServer - prod"),(61619,"WSUAPI - dev"),(61620,"imageServer - dev"),(8080,"Tomcat"),(5001,"ouroboros"),(6379,"Redis"),(3306,"MySQL")]
+	imp_ports = [(61616,"Fedora JMS"),(61617,"WSUAPI - prod"),(61618,"imageServer - prod"),(61619,"WSUAPI - dev"),(61620,"imageServer - dev"),(8080,"Tomcat"),(5001,"ouroboros dev @:5001"),(5002,"ouroboros dev @:5002"),(6379,"Redis"),(3306,"MySQL")]
 	
 	imp_ports_results = []
 	for port,desc in imp_ports:

@@ -20,7 +20,7 @@ def index():
 
 def addDS_worker(job_package):
 	
-	form_data = job_package['form_data']
+	form_data = job_package['form_data']	
 	print form_data
 	
 	PID = job_package['PID']		
@@ -39,9 +39,7 @@ def addDS_worker(job_package):
 	if 'upload_data' in job_package:		
 		newDS.content = job_package['upload_data']
 	elif form_data['content'] != '':
-		newDS.content = form_data['content']
-
-	print newDS.content
+		newDS.content = form_data['content']	
 
 	# save constructed object
 	newDS.save()

@@ -119,13 +119,13 @@ def systemStatus():
 
 @login_manager.user_loader
 def user_loader(userid):
-	# """Flask-Login user_loader callback.
-	# The user_loader function asks this function to get a User Object or return 
-	# None based on the userid.
-	# The userid was stored in the session environment by Flask-Login.  
-	# user_loader stores the returned User object in current_user during every 
-	# flask request. 
-	# """
+	'''Flask-Login user_loader callback.
+	The user_loader function asks this function to get a User Object or return 
+	None based on the userid.
+	The userid was stored in the session environment by Flask-Login.  
+	user_loader stores the returned User object in current_user during every 
+	flask request. 
+	'''
 	return User.query.get(int(userid))
 
 
@@ -203,11 +203,7 @@ def fireTask(task_name):
 
 	# get job number
 	# pulling from incrementing redis counter, considering MySQL	
-	job_num = jobs.jobStart()	
-
-	# send job to user_jobs SQL table
-	db.session.add(models.user_jobs(job_num,username, "init"))	
-	db.session.commit() 
+	job_num = jobs.jobStart()		
 	
 	# begin job and set estimated
 	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
@@ -227,11 +223,17 @@ def fireTask(task_name):
 	# send to celeryTaskFactory in actions.py
 	'''
 	iterates through PIDs and creates secondary async tasks for each
-	passing username, task_name, and job_package containing all the update handles		
+	passing username, task_name, and job_package containing all the update handles	
+	'celery_task_id' below contains celery task key, that contains all eventual children objects
 	'''
-	result = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)
+	celery_task_id = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)
+	print type(celery_task_id)
 
-	print "Started job #",job_num
+	# send job to user_jobs SQL table
+	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init"))	
+	db.session.commit() 
+
+	print "Started job #",job_num,"Celery task #",celery_task_id
 	return redirect("/userJobs")
 
 
@@ -355,41 +357,47 @@ def jobDetails(job_num):
 	# get number of estimate tasks
 	job_task_num = int(redisHandles.r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num)))
 
+	# get parent object
+	job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
+	print "job celery task id:",job_SQL.celery_task_id
+
+	job_details = jobs.getTaskDetails(job_SQL.celery_task_id)	
+	print job_details
+
 	# get tasks
 	tasks_package = {}
 	tasks_package['SUCCESS'] = []
+	tasks_package['PENDING'] = []
+	tasks_package['RETRY'] = []
 	tasks_package['FAILURE'] = []
-	task_step = 1
-	while task_step <= job_task_num:
-		task = redisHandles.r_job_handle.get( "{job_num},{task_step}".format(job_num=job_num,task_step=task_step) )	
-		# print task	
-		task_split = task.split(",")
-		tasks_package[task_split[0]].append([task_split[1],job_num,task_step]) 		
 
-		# bump counter
-		task_step += 1	
+	for child in job_details.children:
+		tasks_package[child.status].append([child.task_id,child.task_name])
+	
 
-	return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)
+	return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)	
 
 	
 # Details of a given task
-@app.route("/taskDetails/<task_id>/<job_num>/<task_num>")
-def taskDetails(task_id,job_num,task_num):
-
+@app.route("/taskDetails/<task_id>/<job_num>")
+def taskDetails(task_id,job_num):
+	
 	if task_id != "NULL":	
-		task_async = jobs.getTaskDetails(task_id)	
-		task_job_handle = redisHandles.r_job_handle.get( "{job_num},{task_num}".format(job_num=job_num,task_num=task_num) ).split(",")	
-		PID = task_job_handle[2]	
+		# async, celery status
+		task_async = jobs.getTaskDetails(task_id)
+		# fm2 recorded values
+		task_returns = redisHandles.r_job_handle.get(task_id).split(",")		
+		PID = task_returns[1]	
 
 	else:
-		print "We're dealing with a local job, not celeried"
+		print "We're dealing with a local job, not Celerized"
 		PID = "N/A"
 		task_async = {
 			"status":"N/A",
 			"result":"N/A"
 		}
 
-	return render_template("taskDetails.html",task_async=task_async,PID=PID)
+	return render_template("taskDetails.html",task_async=task_async,PID=PID)	
 
 
 # Remove job from SQL, remove tasks from Redis

@@ -72,7 +72,8 @@ class postTask(Task):
 		redisHandles.r_PIDlock.delete(PID)		
 
 		# update job with task completion		
-		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},{task_id},{PID}".format(status=status,task_id=task_id,PID=PID))		
+		# redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},{task_id},{PID}".format(status=status,task_id=task_id,PID=PID))
+		redisHandles.r_job_handle.set("{task_id}".format(task_id=task_id), "{status},{PID}".format(status=status,PID=PID))		
 	
 		# increments completed tasks
 		if status == "SUCCESS":
@@ -120,10 +121,6 @@ def celeryTaskFactory(**kwargs):
 
 	print "Finished assigning tasks"
 
-
-'''
-Consider creating one that is for non-PID related jobs, a factory of sorts...
-'''
 
 #TASKS
 ##################################################################

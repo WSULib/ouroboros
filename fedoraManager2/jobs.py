@@ -14,9 +14,7 @@ from flask import session
 # Job Management
 ############################################################################################################
 def jobStart():
-	'''
-	Consider MySQL, might be more enduring?
-	'''
+	'''Consider SQL, might be more enduring'''
 	# increment and get job num
 	job_num = r_job_handle.incr("job_num")	
 	return job_num
@@ -29,30 +27,6 @@ def jobUpdateCompletedCount(job_num):
 
 def getTaskDetails(task_id):
 	return celery.AsyncResult(task_id)
-
-
-# function for non-PID based jobs to fire job
-def startLocalJob():
-	'''
-	1) get new job_num
-	2) send anticipated tasks?
-	3) update completed ones somewhere?
-	'''
-
-	#establish job_num
-	job_num = jobStart()
-
-	# send job to user_jobs SQL table
-	username = session['username']	
-	db.session.add(models.user_jobs(job_num,username, "init"))	
-	db.session.commit() 
-
-
-	new_job_package = {
-		"job_num":job_num
-	}
-
-	return new_job_package
 
 def updateLocalJob(job_num,est_tasks,assign_tasks,completed_tasks):
 

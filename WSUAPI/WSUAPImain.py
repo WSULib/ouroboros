@@ -9,10 +9,10 @@ import json
 import argparse
 import ast
 # WSU LOCAL MODULES
-from fedora import *
-from solr import *
-from ldapUsers import *
-from utils import *
+from functions.fedora import *
+from functions.solr import *
+from functions.ldapUsers import *
+from functions.utils import *
 import re
 
 def WSUAPImain(getParams):
@@ -21,7 +21,7 @@ def WSUAPImain(getParams):
 	####################################################################################################
 	def runFunctions():	
 		
-		# get functions from clerkRouter
+		# get functions get parameters		
 		funcs = getParams['functions[]']		
 
 		for func in funcs:		

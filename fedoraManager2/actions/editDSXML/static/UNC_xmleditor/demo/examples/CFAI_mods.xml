@@ -1,0 +1,71 @@
+
+<mods:mods xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mods="http://www.loc.gov/mods/v3" version="3.4">
+		             <mods:titleInfo>
+			               <mods:nonSort></mods:nonSort>
+			               <mods:title>Dodge Brothers Factory Exterior</mods:title>
+		             </mods:titleInfo>
+		             <mods:name>
+			               <mods:namePart></mods:namePart>
+			               <mods:role>
+				                 <mods:roleTerm type="text">creator</mods:roleTerm>
+			               </mods:role>
+		             </mods:name>
+		             <mods:subject authority="lcsh">
+			               <mods:topic>Automobile factories</mods:topic>
+			               <mods:geographic>Michigan</mods:geographic>
+			               <mods:geographic>Detroit</mods:geographic>
+			               <mods:topic>History</mods:topic>
+		             </mods:subject>
+		             <mods:subject authority="lcsh">
+			               <mods:topic>Dodge automobile</mods:topic>
+			               <mods:topic>History</mods:topic>
+		             </mods:subject>
+		             <mods:subject authority="lcsh">
+			               <mods:topic>Automobile industry and trade</mods:topic>
+			               <mods:topic>History</mods:topic>
+		             </mods:subject>
+		             <mods:note>8x10 black and white photograph from glass negative 4184 of the Dodge Brothers factory buildings showing men and horse-drawn wagons at work, the image is inscribed &quot;Oct-26-14&quot;</mods:note>
+		             <mods:originInfo>
+			               <mods:place>
+				                 <mods:placeTerm type="code" authority="marccountry">miu</mods:placeTerm>
+			               </mods:place>
+			               <mods:dateIssued keyDate="yes" encoding="w3cdtf">1914</mods:dateIssued>
+		             </mods:originInfo>
+		             <mods:typeOfResource>still image</mods:typeOfResource>
+		             <mods:physicalDescription>
+			               <mods:form authority="aat">photographs</mods:form>
+			               <mods:digitalOrigin>reformatted digital</mods:digitalOrigin>
+			               <mods:internetMediaType>tiff</mods:internetMediaType>
+		             </mods:physicalDescription>
+		             <mods:identifier type="local">EB02a006</mods:identifier>
+		             <mods:relatedItem type="host">
+			               <mods:titleInfo>
+				                 <mods:nonSort></mods:nonSort>
+				                 <mods:title>Burton Historical Collection</mods:title>
+			               </mods:titleInfo>
+		             </mods:relatedItem>
+		             <mods:relatedItem type="otherFormat">
+			               <mods:titleInfo>
+				                 <mods:nonSort></mods:nonSort>
+				                 <mods:title>National Automotive History Collection </mods:title>
+			               </mods:titleInfo>
+			               <mods:note type="original version">The original materials from this collection are located in the Special Collections at the Detroit Public Library. Additional items that were not digitized may also be available.</mods:note>
+			               <mods:location>
+				                 <mods:physicalLocation>Special Collections, Detroit Public Library</mods:physicalLocation>
+				                 <mods:url>http://www.detroitpubliclibrary.org/featuredcollection/burton-historical-collection</mods:url>
+			               </mods:location>
+		             </mods:relatedItem>
+		             <mods:language>
+			               <mods:languageTerm type="code" authority="iso639-2b"></mods:languageTerm>
+		             </mods:language>
+		             <mods:location>
+			               <mods:url usage="primary"></mods:url>
+		             </mods:location>
+		             <mods:recordInfo>
+			               <mods:languageOfCataloging>
+				                 <mods:languageTerm type="code" authority="iso639-2b">eng</mods:languageTerm>
+			               </mods:languageOfCataloging>
+		             </mods:recordInfo>
+		             <mods:accessCondition type="use and reproduction">Users can cite and link to these materials without obtaining permission. Users can also use the materials for non-commercial educational and research purposes in accordance with &lt;a href=&quot;http://copyright.wayne.edu&quot;&gt;fair use&lt;/a&gt;. For other uses or to obtain high resolution images, please contact the copyright holder.</mods:accessCondition>
+		             <mods:note type="preferred citation">Photographer Name (if available). &lt;i&gt;Title.&lt;/i&gt; Year. Detroit Public Library, Detroit. &lt;u&gt;Burton Historical Collection.&lt;/u&gt; Date Visited Website (URL for image).</mods:note>
+	           </mods:mods>

@@ -1,6 +1,6 @@
 #Utility to link Fedora Commons FOXML objects and Solr, with augmentation in /search core
 
-from sensitive import *
+from fedoraManager2.sensitive import *
 import os
 import sys
 import xml.etree.ElementTree as ET

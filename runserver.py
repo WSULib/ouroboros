@@ -20,68 +20,8 @@ from localConfig import *
 # import fedoraManger2 (fm2) app
 from fedoraManager2 import app
 
-
-# WSUDOR API ##############################################################
-'''
-Prod: Listening on :61617, reverseproxy in Apache to :80/WSUAPI.
-Dev: Listening on :61619, reverseproxy in Apache to :80/WSUAPI-dev.
-'''
-class WSUAPIListener(resource.Resource):
-	isLeaf = True
-
-	# function for WSUAPI requests
-	def _delayedWSUAPIRender(self,request):
-		getParams = request.args
-
-		# send to clearkRouter, retrieve JSON string from WSUAPImain()
-		worker = clerkRouter()
-		response = worker.WSUAPI(getParams=getParams)
-
-		# response 
-		request.setHeader('Access-Control-Allow-Origin', '*')
-		request.setHeader('Access-Control-Allow-Methods', 'GET, POST')
-		request.setHeader('Access-Control-Allow-Headers', 'x-prototype-version,x-requested-with')
-		request.setHeader('Access-Control-Max-Age', 2520)
-		request.setHeader("content-type", "application/json")
-		request.setHeader('Connection', 'Close')
-		request.setHeader('X-Powered-By', 'ShoppingHorse')
-		request.write(response)
-		request.finish()
-
-	# function for unique and one-off modules
-	def _delayedWSUAPIProjectsRender(self,request):
-		getParams = request.args
-
-		# send to clearkRouter, retrieve JSON string from WSUAPImain()
-		worker = clerkRouter()
-		response = worker.Projects(getParams=getParams,requestPath=request.path)
-
-		# response 
-		# iterate through header arguments        
-		for k in response['headers']:
-			request.setHeader(k,response['headers'][k])
-
-		request.write(response['content'])
-		request.finish()
-
-	def render_GET(self, request):     
-		print "Request path:",request.path
-		d = deferLater(reactor, .01, lambda: request)                
-		if "/projects/" in request.path:
-			print "firing projects"
-			d.addCallback(self._delayedWSUAPIProjectsRender)
-		else:
-			print "firing WSUAPI"
-			d.addCallback(self._delayedWSUAPIRender)
-		d.addErrback(log.err)
-		return NOT_DONE_YET
-
-	def render_POST(self, request):                
-		d = deferLater(reactor, .01, lambda: request)        
-		d.addCallback(self._delayedWSUAPIRender)
-		d.addErrback(log.err)
-		return NOT_DONE_YET
-		
+# import WSUAPI app
+from WSUAPI import WSUAPI_app
 
 
 # WSU imageServer ##############################################################
@@ -152,21 +92,58 @@ class fedoraConsumerWorker(object):
 
 # twisted liseners
 logging.basicConfig(level=logging.DEBUG)
+
+# fedoraManager2
 resource = WSGIResource(reactor, reactor.getThreadPool(), app)
 site = Site(resource)
 
+# WSUAPI_app
+WSUAPI_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUAPI_app)
+WSUAPI_site = Site(WSUAPI_resource)
+
 if __name__ == '__main__':
+
+	# fedoraManagere2
 	if fm2Fire == True:
 		print "Starting fedoraManager2..."
 		reactor.listenTCP( fedoraManager2_port, site )
+
+	# WSUAPI
 	if WSUAPIFire == True:
-		print "Starting WSUAPI..."
-		reactor.listenTCP(WSUAPIListener_port, server.Site(WSUAPIListener()))
+		print "Starting WSUAPI_app..."
+		reactor.listenTCP( WSUAPIListener_port, WSUAPI_site )	
+	
+	# imageServer
 	if imageServerFire == True:
 		print "Starting imageServer..."
 		reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))	
+	
+	# fedConsumer
 	if fedConsumerFire == True:
 		print "Starting JSM listener..."
 		fedoraConsumerWorker().run()
+
+
+	print '''               
+                ::+:/`              
+         :----:+ssoo+:.`           
+      `-:+sssossysoooooo+/-`       
+    `:oysyo++ooooo+////+ooss+-`    
+   :ssyy/-`   `..     ..:/+osso:   
+ `/ssyo:                 `-+:oss+` 
+ +sso+:                    `//sss+ 
+.sssoo`                     `o+sss:
+/syso+                    `-`+ooss+
+ssyoo+                    ../oossss
+osso+o.                  `+//ooysoo
+:ysyo+o.                  `/++osos:
+`+ssssoo:`   ``.-` .-    `-ooosss+`
+ `ossso///-.--:.``::. `.:+ooossso` 
+  `+sossyo++o++::///:/+ooossoss+`  
+    -ossssss+oo+sossoosossssso-    
+      ./osssssysyysssssssso/.      
+         `-:++sosyssyyo+:.   
+	'''
 	print "<--Ouroboros says hissss-->"
+
 	reactor.run()

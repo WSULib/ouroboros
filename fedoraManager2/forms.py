@@ -10,8 +10,8 @@ class PIDselection(Form):
 
 class solrSearch(Form):
 	# native Solr
-	q = StringField('query (q)')
-	fq = StringField('filter query (fq_')
+	q = StringField('query (q)',default="*")
+	fq = StringField('filter query (fq)')
 	fl = StringField('fields to return (fl)')	
 
 	# Fedora RELS-EXT fields

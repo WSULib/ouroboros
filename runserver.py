@@ -14,7 +14,7 @@ import json
 import logging 
 
 # local
-from clerkRouter import clerkRouter
+from mainRouter import mainRouter
 from localConfig import *
 
 # import fedoraManger2 (fm2) app
@@ -36,7 +36,7 @@ class imageServerListener(resource.Resource):
 		getParams = request.args
 
 		# send to clearkRouter
-		worker = clerkRouter()
+		worker = mainRouter()
 		# response = worker.imageServer(getParams=getParams)
 		###################################
 		image_dict = worker.imageServer(getParams=getParams)
@@ -61,7 +61,7 @@ class imageServerListener(resource.Resource):
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
 Prod: Connected to JSM Messaging service on :fedConsumer_port (usually 61616), 
-routes 'fedEvents' to clerkRouter function from clerkRouter.py
+routes 'fedEvents' to mainRouter function from mainRouter.py
 Dev: Disabled
 '''
 class fedoraConsumerWorker(object):
@@ -85,7 +85,7 @@ class fedoraConsumerWorker(object):
 
     def consume(self, client, frame):
         #send to clearkRouter           
-        worker = clerkRouter()        
+        worker = mainRouter()        
         worker.fedoraConsumer(msg=frame.body)
 
 

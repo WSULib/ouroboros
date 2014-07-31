@@ -1,14 +1,16 @@
 # WSU Digital Collections Infrastructure API
-# WSU Digital Collections Infrastructure API - Designed to query and combine results from multiple back-end systems into a single JSON package.
+# Designed to query and combine results from multiple back-end systems into a single JSON package.
 
 # IMPORTS
 ####################################################################################################
+# python proper
 import os
 import sys
 import json
 import argparse
 import ast
-# WSU LOCAL MODULES
+
+# WSUAPI modules
 from functions.fedora import *
 from functions.solr import *
 from functions.ldapUsers import *
@@ -29,7 +31,7 @@ def WSUAPImain(getParams):
 				funcName = globals()[func]				
 				print "running",func			
 				try:
-					JSONdict[funcName.__name__] = funcName(getParams)#passes GET params from clerkRouter()
+					JSONdict[funcName.__name__] = funcName(getParams) #passes *all* GET params from mainRouter()
 				except Exception,e:
 					JSONdict[funcName.__name__] = '{{"status":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
 			else:

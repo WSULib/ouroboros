@@ -4,7 +4,7 @@ from lib.imageServer.imageServerMain import imageWork
 from lib.Projects.ProjectsMain import ProjectsMain
 
 
-class clerkRouter:	
+class mainRouter:	
 
 	# class imports (need to have at runserver.py level)
 	from lib.fedoraConsumer import fedoraConsumer		

@@ -1,47 +1,52 @@
 {% include 'header.html' %}
+<p>This area is used to select objects from Fedora that will be acted upon by fedoraManager2.  After performing queries, select objects from the results either by clicking individual objects, or selecting all.  <strong>Note:</strong> when selecting PIDs, you can identify a "group" that will be searchable and filterable in the <a href="/PIDmanage">PID object management</a> screen.</p>
 
-<h3>Solr Query & Select</h3>
-
-<div id="solr_form">
+<div style="float:left; margin:auto;" id="solr_form">
+    <h2>Solr Query & Select</h2>
     <form method="POST" action="/PIDSolr">
         <p>------ Native Solr Fields --------</p>
-        {{ form.csrf_token }}    
-        {{ form.q.label }} {{ form.q(size=60) }}<br>
-        {{ form.fq.label }} {{ form.fq(size=60) }}<br>
-        {{ form.fl.label }} {{ form.fl(size=60) }}<br>  
+        {{ form.csrf_token }} 
+        <table>
+            <tr><td>{{ form.q.label }}</td><td> {{ form.q(size=60) }}</td></tr>                
+            <tr><td>{{ form.fq.label }}</td> <td>{{ form.fq(size=60) }}</td></tr>
+            <tr><td>{{ form.fl.label }}</td> <td>{{ form.fl(size=60) }}</td></tr>
+        </table>
         <p>------ Fedora Relationships --------</p>       
-
         <!-- forms attempt -->
-        {{ form.collection_object.label }} {{ form.collection_object }} <br>
-        {{ form.content_model.label }} {{ form.content_model }} <br>
-
-        <p>------------------------------------</p>
-        <input type="submit" value="Go">
+        <table>
+            <tr><td>{{ form.collection_object.label }}</td><td>{{ form.collection_object }}</td></tr>
+            <tr><td>{{ form.content_model.label }}</td><td>{{ form.content_model }}</td></tr>
+        </table>        
+        <input type="submit" value="Submit">
     </form>
 </div>
 
-<div id="actions"   >
+<div style="float:right; margin:auto;" id="actions">
     <h2>actions</h2>
-    <button id="sendSelPIDs">Send Selected to User PIDs</button>
-    <button id="sendAllPIDs">Send all to User PIDs</button>
-    <span> /// </span>
-    <button id="removeSelPIDs">Remove Selected from User PIDs</button>
-    <button id="removeAllPIDs">Remove All from User PIDs</button><br>
+    <button id="sendSelPIDs">Add Selected</button>
+    <button id="sendAllPIDs">Add ALL</button>
+    <span> / </span>
+    <button id="removeSelPIDs">Remove Selected</button>
+    <button id="removeAllPIDs">Remove ALL</button><br><br>
     Group name: <input id="group_name"></input>
 </div>
 
-<h2>results</h2>
+<div style="clear:both;">
+    <h2>results</h2>
 
-{% if q_results %}
-<table id="PIDtable" class="display" cellspacing="0" width="100%">
-    <thead>
-        <tr>
-            <th>PID</th>
-            <th>dc_title</th>            
-        </tr>
-    </thead>
-</table>
-{% endif %}
+    {% if q_results %}
+    <div>
+        <table id="PIDtable" class="display" cellspacing="0" width="100%">            
+            <thead>
+                <tr>
+                    <th>PID</th>
+                    <th>dc_title</th>            
+                </tr>
+            </thead>
+        </table>
+    </div>
+    {% endif %}
+</div>
 
 <script type="text/javascript" src="{{ url_for('static',filename='PIDSolr.js')}}"></script>
 {% if json_output %}

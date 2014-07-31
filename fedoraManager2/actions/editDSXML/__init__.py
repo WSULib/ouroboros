@@ -10,6 +10,7 @@ from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2.forms import batchIngestForm
 import fedoraManager2.actions as actions
+import localConfig
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules
@@ -42,7 +43,7 @@ def index(pid_num):
 	session['editDSXML_PID'] = PID
 	session['editDSXML_DS'] = DS
 	
-	return render_template("editDSXML.html",PIDs=PIDs,PID=PID,pid_num=int(pid_num))
+	return render_template("editDSXML.html",PIDs=PIDs,PID=PID,pid_num=int(pid_num),app_host=localConfig.app_host)
 
 
 # update handler

@@ -29,7 +29,7 @@ def index():
 	For feeding WSUAPImain in Flask app form, performed here.
 	'''
 	
-	getParams = {each:request.args.getlist(each) for each in request.args}	
+	getParams = {each:request.values.getlist(each) for each in request.args}	
 
 	try:
 		response = make_response(WSUAPImain(getParams))

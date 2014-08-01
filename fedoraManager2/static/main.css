@@ -22,11 +22,15 @@ ul.nav li {
    border-collapse:collapse;
 }
 
-#rdf_triples tr.headers {
+tr.headers {
    text-align:center;
 }
 
 #rdf_triples td {
 	padding:5px 20px 5px 5px;	
 	border-bottom: 1px solid black;
+}
+
+#rdf_triples_modify td {
+	padding:5px 20px 5px 5px;		
 }

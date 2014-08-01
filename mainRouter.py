@@ -7,7 +7,7 @@ from lib.Projects.ProjectsMain import ProjectsMain
 class mainRouter:	
 
 	# class imports (need to have at runserver.py level)
-	from lib.fedoraConsumer import fedoraConsumer		
+	from fedoraConsumer import fedoraConsumer		
 
 	# handles requests for images
 	def imageServer(self,**kwargs):		

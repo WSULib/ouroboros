@@ -23,13 +23,14 @@ WSUAPI_app.secret_key = 'WSUDOR-WSUAPI'
 @WSUAPI_app.route("/{WSUAPI_prefix}/".format(WSUAPI_prefix=localConfig.WSUAPI_prefix), methods=['POST', 'GET'])
 @WSUAPI_app.route("/{WSUAPI_prefix}".format(WSUAPI_prefix=localConfig.WSUAPI_prefix), methods=['POST', 'GET'])
 def index():		
+
+	print "HTTP METHOD:",request.method
 	
 	'''
 	Twisted must have this parameter parsing built-in.
-	For feeding WSUAPImain in Flask app form, performed here.
-	'''
-	
-	getParams = {each:request.values.getlist(each) for each in request.args}	
+	For feeding WSUAPImain in Flask app form, we perform here.
+	'''	
+	getParams = {each:request.values.getlist(each) for each in request.values}	
 
 	try:
 		response = make_response(WSUAPImain(getParams))

@@ -31,6 +31,10 @@ app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
 from addDS import addDS, addDS_worker
 app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 
+#purgeDS
+from purgeDS import purgeDS, purgeDS_worker
+app.register_blueprint(purgeDS, url_prefix=tasks_URL_prefix)
+
 #batchIngest
 from batchIngest import batchIngest, ingestFOXML_worker
 app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)

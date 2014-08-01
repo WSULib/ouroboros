@@ -1,3 +1,6 @@
+# Ouroboros config
+import localConfig
+
 # python modules
 import json
 
@@ -6,8 +9,6 @@ from flask import render_template, request, session, redirect, make_response, Re
 
 # WSUAPI_app
 from WSUAPI import WSUAPI_app
-
-# WSUAPI
 from WSUAPImain import WSUAPImain
 
 
@@ -19,8 +20,8 @@ WSUAPI_app.secret_key = 'WSUDOR-WSUAPI'
 
 # GENERAL
 #########################################################################################################
-@WSUAPI_app.route("/WSUAPI-dev/", methods=['POST', 'GET'])
-@WSUAPI_app.route("/WSUAPI-dev", methods=['POST', 'GET'])
+@WSUAPI_app.route("/{WSUAPI_prefix}/".format(WSUAPI_prefix=localConfig.WSUAPI_prefix), methods=['POST', 'GET'])
+@WSUAPI_app.route("/{WSUAPI_prefix}".format(WSUAPI_prefix=localConfig.WSUAPI_prefix), methods=['POST', 'GET'])
 def index():		
 	
 	'''

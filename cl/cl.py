@@ -8,7 +8,7 @@ celery = Celery(backend='redis://localhost:6379/1',include=[
                         ])
 
 # import celery config file
-celery.config_from_object('celeryconfig')
+celery.config_from_object('cl.celeryConfig')
 
 if __name__ == '__main__':
     celery.start()

@@ -1,0 +1,19 @@
+{% include 'header.html' %}
+<h1>RELS-EXT editing V2</h1>
+
+<table id="rdf_triples_modify">
+	<tr class="headers">
+		<td><strong>Predicate</strong></td>
+		<td><strong>Object</strong></td>
+		<td>Actions</td>
+	</tr>
+	{% for p,o in riquery_filtered %}
+		<tr>
+			<form action="/editRELSv2/updateRel" method="POST">				
+				<td><input type="text" name="{{p}}" value="{{p}}" size=150/></td>
+				<td><input type="text" name="{{o}}" value="{{o}}" size=100/></td>
+				<td><span style="color:red;">remove</span> / <span style="color:orange;">modify</span></td>
+			</form>
+		</tr>
+	{% endfor %}
+</table>

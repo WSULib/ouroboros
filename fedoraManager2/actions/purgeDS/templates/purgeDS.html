@@ -1,0 +1,25 @@
+{% include 'header.html' %}
+<h1>Purge Datastream</h1>
+
+<p>You may also browse other PIDs in the set:<br>
+	<a href='/tasks/purgeDS?PIDnum={{(PIDnum - 1)}}'>previous</a> / <a href='/tasks/purgeDS?PIDnum={{(PIDnum + 1)}}'>next</a></p>
+<p>
+<form method="POST" action="/fireTask/purgeDS_worker" enctype="multipart/form-data">
+	{{ form.csrf_token }} 
+	{{ form.dsID.label }} {{ form.dsID(size=60) }}<br>
+	{{ form.altIDs.label }} {{ form.altIDs(size=60) }}<br>
+	{{ form.dsLabel.label }} {{ form.dsLabel(size=60) }}<br>
+	{{ form.MIMEType.label }} {{ form.MIMEType(size=60) }}<br>
+	{{ form.dsLocation.label }} {{ form.dsLocation(size=60) }}<br>
+<select id="names" name="names">
+    <option value="">Filter by dsID Name...</option>
+    {% for group_name in group_names %}
+        <option value="{{names}}">{{names}}</option>
+    {% endfor %}
+</select>
+	{{ form.controlGroup.label }} {{ form.controlGroup }} <br>
+	{{ form.content.label }} {{ form.content }}<br>
+	{{ form.upload.label }} {{ form.upload }}<br>	
+	<input type="submit" value="Go">
+</form>
+

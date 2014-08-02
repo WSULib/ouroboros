@@ -4,17 +4,21 @@
 <p>You may also browse other PIDs in the set:<br>
 	<a href='/tasks/purgeDS?PIDnum={{(PIDnum - 1)}}'>previous</a> / <a href='/tasks/purgeDS?PIDnum={{(PIDnum + 1)}}'>next</a></p>
 <p>
-<p>Current PID: {{PID}}
+<!-- <p>Current PID: wayne:Fake02b<p> -->
+<p>Current PID: {{PID}}<p>
 	<form method="POST" action="/fireTask/purgeDS_worker" enctype="multipart/form-data">
 	{{ form.csrf_token }} 
-	{{ form.dsID.label }} {{ form.dsID(size=60) }}<br>
-	{{ form.altIDs.label }} {{ form.altIDs(size=60) }}<br>
-	<select id="names" name="names">
-    <option value="">Filter by dsID Name...</option>
-    {% for name in names %}
-        <option value="{{name}}">{{name}}</option>
+	{{ form.PID.label }} {{ form.PID(value=PID) }}<br>
+	<select id="dsID" name="dsID">
+    <option value="">Select Datastream you wish to purge</option>
+    {% for dsID in dsIDs %}
+        <option value="{{dsID}}">{{dsID}}</option>
     {% endfor %}
-	</select>	
+	</select><br>
+	<a href='#' title = "The (inclusive) start date-time stamp of the range. If null, this is taken to be the lowest possible value, and thus, the entire version history up to the endDT be purged.">{{ form.startDT.label }}</a> {{ form.startDT(size=60) }}<br>
+	<a href='#' title = "The (inclusive) ending date-time stamp of the range. If null, this is taken to be the greatest possible value, and thus, the entire version history back to the startDT will be purged.">{{ form.endDT.label }}</a> {{ form.endDT(size=60) }}<br>
+	{{ form.logMessage.label }} {{ form.logMessage(size=75) }}<br>
+	<a href='#' title = "Force the update even if it would break a data contract.">{{  form.force.label }}</a> {{ form.force(size=60) }}<br>
 	<input type="submit" value="Go">
 </form>
 

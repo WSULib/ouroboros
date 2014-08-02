@@ -23,23 +23,23 @@ def index():
 	PIDs = getSelPIDs()	
 	print PIDs[PIDnum]
 
+	# obj_ohandle = fedora_handle.get_object("wayne:Fake02b")
 	obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])		
 	obj_ohandle = obj_ohandle.ds_list
-	names = []
+	dsIDs = []
 	for (name, loc) in obj_ohandle.items():
-		names.extend([name])
-	print names
-# Stopping at here: currently, you need to pass the each of the names (as a list) to the template, which will then render your dropdown menu.
-# Reopen PIDManage.html, views.py, and actions.py
+		dsIDs.extend([name])
+	print dsIDs
+
 	form = purgeDSForm()	
-	return render_template("purgeDS.html",form=form,PID=PIDs[PIDnum],names=names,PIDnum=PIDnum)
+	return render_template("purgeDS.html",form=form,PID=PIDs[PIDnum],dsIDs=dsIDs,PIDnum=PIDnum)
 
 
 
 def purgeDS_worker(job_package):
-	
-	# PID = job_package['PID']		
-	# fedora_handle.api.purgeDatastream(PID, name)
+	# Note: need to check if it works when you remove all the form data below that is empty
+	PID = job_package['PID']		
+	fedora_handle.api.purgeDatastream(form_data['PID'], form_data['dsID'], form_data['logMessage'], form_data['startDT'], form['endDT'], form['force'])
 	# obj_ohandle = fedora_handle.get_object(PID)
 
 	# # initialized DS object

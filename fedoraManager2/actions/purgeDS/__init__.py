@@ -38,28 +38,17 @@ def index():
 
 def purgeDS_worker(job_package):
 	# Note: need to check if it works when you remove all the form data below that is empty
-	PID = job_package['PID']		
-	fedora_handle.api.purgeDatastream(form_data['PID'], form_data['dsID'], form_data['logMessage'], form_data['startDT'], form['endDT'], form['force'])
-	# obj_ohandle = fedora_handle.get_object(PID)
-
-	# # initialized DS object
-	# newDS = eulfedora.models.DatastreamObject(obj_ohandle, form_data['dsID'], form_data['dsLabel'], control_group=form_data['controlGroup'])	
-
-	# # construct DS object
-	# if form_data['MIMEType'] != '':		
-	# 	newDS.mimetype = form_data['MIMEType']	
-	# if form_data['dsLocation'] != '':
-	# 	newDS.ds_location = form_data['dsLocation']	
-
-	# # content
-	# if 'upload_data' in job_package:		
-	# 	newDS.content = job_package['upload_data']
-	# elif form_data['content'] != '':
-	# 	newDS.content = form_data['content']	
-
-	# # save constructed object
-	# newDS.save()
-
-
+	# Note: also see what the form_data and PID print out to
 	form_data = job_package['form_data']	
-	print form_data	
+	print form_data
+
+	PID = job_package['PID']		
+	print PID
+	# obj_ohandle = fedora_handle.get_object(PID)
+	# fedora_handle.api.purgeDatastream(obj_ohandle, form_data['dsID'], form_data['logMessage'], form_data['startDT'], form['endDT'], form['force'])
+
+	# # # initialized DS object
+	# # newDS = eulfedora.models.DatastreamObject(obj_ohandle, form_data['dsID'], form_data['dsLabel'], control_group=form_data['controlGroup'])	
+
+	# form_data = job_package['form_data']	
+	# print form_data	

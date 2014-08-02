@@ -25,11 +25,10 @@ def index():
 
 	obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])		
 	obj_ohandle = obj_ohandle.ds_list
-	# for (name, loc) in obj_ohandle.items():
-	# 	print name
-
-	names = [each.name.encode('ascii','ignore') for each in obj_ohandle]	
-
+	names = []
+	for (name, loc) in obj_ohandle.items():
+		names.extend([name])
+	print names
 # Stopping at here: currently, you need to pass the each of the names (as a list) to the template, which will then render your dropdown menu.
 # Reopen PIDManage.html, views.py, and actions.py
 	form = purgeDSForm()	

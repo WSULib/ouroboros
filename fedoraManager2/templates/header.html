@@ -2,13 +2,21 @@
 <html>
 <head>
 	<title>WSU Ouroboros</title>
-	<!-- jquery CDN -->	
+	<!-- jquery CDN -->
 	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
 	<!-- jquery data tables -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='main.css')}}"></link>	
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='jquery.dataTables.css')}}"></link>	
 	<link href='http://fonts.googleapis.com/css?family=Droid+Sans:400' rel='stylesheet' type='text/css'>
 	<script type="text/javascript" src="{{ url_for('static',filename='jquery.dataTables.js')}}"></script>		
+    <script>
+    $(function() {
+    	$( document ).tooltip();
+    });
+    </script>
+
 
 </head>
 

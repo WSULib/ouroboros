@@ -31,18 +31,15 @@ class addDSForm(Form):
 	content = TextAreaField('Paste Content (usually XML, and trumps file upload)')
 	upload = FileField('Upload Content')
 
-# form for adding Datastreams
+# form for purging Datastreams
 class purgeDSForm(Form):
 	# using params verbatim from Fedora documentation
-	dsID = StringField('Datastream ID:')
-	altIDs = StringField('Alternate Datastream ID:')		
-	dsLabel = StringField('Datastream Label:')
-	MIMEType = StringField('MIME-Type:')
-	dsLocation = StringField('Location (note: will trump content below):')
-	controlGroup = SelectField('Control Group:', choices=[('M', 'Managed Content'), ('X', 'Inline XML'), ('R', 'Redirect'), ('E', 'External Referenced')])	
-	content = TextAreaField('Paste Content (usually XML, and trumps file upload)')
-	upload = FileField('Upload Content')
-
+	PID = StringField('PID: ')
+	dsID = StringField('Datastream ID: ')
+	startDT = StringField('Start Date-Time Stamp: ')
+	endDT = StringField('Ending Date-Time Stamp: ')
+	logMessage = StringField('Log Message: ')
+	force = StringField('Force Update: ')
 
 # form for adding RDF triples
 class RDF_edit(Form):

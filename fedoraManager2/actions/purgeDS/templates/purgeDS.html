@@ -4,11 +4,10 @@
 <p>You may also browse other PIDs in the set:<br>
 	<a href='/tasks/purgeDS?PIDnum={{(PIDnum - 1)}}'>previous</a> / <a href='/tasks/purgeDS?PIDnum={{(PIDnum + 1)}}'>next</a></p>
 <p>
-<!-- <p>Current PID: wayne:Fake02b<p> -->
+
 <p>Current PID: {{PID}}<p>
 	<form method="POST" action="/fireTask/purgeDS_worker" enctype="multipart/form-data">
 	{{ form.csrf_token }} 
-	{{ form.PID.label }} {{ form.PID(value=PID) }}<br>
 	<select id="dsID" name="dsID">
     <option value="">Select Datastream you wish to purge</option>
     {% for dsID in dsIDs %}

@@ -4,31 +4,37 @@
 
 <a href="/jobRemove/{{job_num}}">Remove Job?</a>
 
-<h2 style="color:green;">Success!</h2>
-<ul>
-	{% for task in tasks_package.SUCCESS %}
-		<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}} </a></li>
-	{% endfor %}
-</ul>
+{% if tasks_package %}
+	<h2 style="color:green;">Success!</h2>
+	<ul>
+		{% for task in tasks_package.SUCCESS %}
+			<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}} </a></li>
+		{% endfor %}
+	</ul>
 
-<h2 style="color:orange;">Pending...</h2>
-<ul>
-	{% for task in tasks_package.PENDING %}
-		<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
-	{% endfor %}
-</ul>
+	<h2 style="color:orange;">Pending...</h2>
+	<ul>
+		{% for task in tasks_package.PENDING %}
+			<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
+		{% endfor %}
+	</ul>
 
-<h2 style="color:orange;">Retry...</h2>
-<ul>
-	{% for task in tasks_package.RETRY %}
-		<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
-	{% endfor %}
-</ul>
+	<h2 style="color:orange;">Retry...</h2>
+	<ul>
+		{% for task in tasks_package.RETRY %}
+			<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
+		{% endfor %}
+	</ul>
 
-<h2 style="color:red;">Failure.</h2>
-<ul>
-	{% for task in tasks_package.FAILURE %}
-		<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
-	{% endfor %}
-</ul>
+	<h2 style="color:red;">Failure.</h2>
+	<ul>
+		{% for task in tasks_package.FAILURE %}
+			<li><a href="/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
+		{% endfor %}
+	</ul>
+{% else %}
+	<p>All tasks were pending, nothing to report.</p>
+{% endif %}
+
+
 

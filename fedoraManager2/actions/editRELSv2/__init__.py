@@ -28,34 +28,6 @@ from rdflib.compare import to_isomorphic, graph_diff
 editRELSv2 = Blueprint('editRELSv2', __name__, template_folder='templates')
 
 
-# @editRELSv2.route('/editRELSv2', methods=['POST', 'GET'])
-# def index():
-
-# 	# get PID to examine, if noted
-# 	if request.args.get("PIDnum") != None:
-# 		PIDnum = int(request.args.get("PIDnum"))		
-# 	else:
-# 		PIDnum = 0
-	
-# 	# get PIDs	
-# 	PIDs = getSelPIDs()	
-# 	print PIDs[PIDnum]	
-
-# 	# get triples for 1st object
-# 	riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDs[PIDnum], predicate=None, object=None)
-	
-# 	# filter out RELS-EXT and WSUDOR predicates
-# 	riquery_filtered = []
-# 	for s,p,o in riquery:
-# 		try:
-# 			if "relations-external" in p or "WSUDOR-Fedora-Relations" in p:
-# 				riquery_filtered.append((p,o))	
-# 		except:
-# 			print "Could not parse RDF relationship"
-# 	riquery_filtered.sort() #mild sorting applied to group WSUDOR or RELS-EXT
-
-# 	return render_template('old.html',riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum)
-
 @editRELSv2.route('/editRELSv2', methods=['POST', 'GET'])
 def index():	
 
@@ -108,7 +80,7 @@ def shared():
 				"type" : "tuples",
 				"format" : "JSON"
 			}
-			r = requests.post(base_URL, auth=HTTPBasicAuth(username, password), data=payload )
+			r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
 			risearch = json.loads(r.text)
 			for each in risearch['results']:
 				if each not in shared_relationships:
@@ -129,11 +101,9 @@ def shared():
 			"type" : "tuples",
 			"format" : "JSON"
 		}
-		r = requests.post(base_URL, auth=HTTPBasicAuth(username, password), data=payload )
+		r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
 		risearch = json.loads(r.text)
 		shared_relationships = risearch['results']
-		
-	print shared_relationships
 
 
 	return render_template('editRELS_shared.html',shared_relationships=shared_relationships)

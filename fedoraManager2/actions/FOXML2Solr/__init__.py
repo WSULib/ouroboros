@@ -65,7 +65,7 @@ def FOXML2Solr(fedEvent, PID):
 			'dt': 'on', 
 			'query': risearch_query
 			})
-		risearch_host = "http://{username}:{password}@localhost/fedora/risearch?".format(username=username,password=password)
+		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
 
 		print "********************DEBUG****************************"
 		print risearch_query

@@ -1,5 +1,7 @@
 {% include 'header.html' %}
 <h1>RELS-EXT editing V2</h1>
+<p>The table below shows all RDF relationships <strong>common</strong> to all <a href="/PIDmanage">currently selected PIDs</a>.  To modify a relationship, select a relationship from the dropdown menu or type in your own.  To modify the target object, enter a new PID or value.</p>
+<img src="{{ url_for('static',filename='img/SPO_model.png')}}"/>
 
 <table id="rdf_triples_modify">
 	<tr class="headers">
@@ -17,3 +19,5 @@
 		</tr>
 	{% endfor %}
 </table>
+
+{% include 'footer.html' %}

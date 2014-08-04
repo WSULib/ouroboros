@@ -3,15 +3,7 @@
 <p><p>RDF statements are expressed as triples in Fedora Commons.  A triple is comrpised of a "subject", "predicate", and "object".  This can be thought of as a "thing (subject)" having a "relationship (predicate" to another "thing (object)".  Subject, Predicate, Object is commonly referred to as "SPO".  In the case of this utility, the "subject" will always be the current PID in the PID set when iterating through.</p>
 <p style="color:red;"><strong>Note: triples and raw RDF XML are from the following PID only: {{PID}}</strong></p>
 <p>This utility is designed to act on PIDs in bulk.  As such, the XML applied below will be applied to all selected PIDs, but this does <strong>not</strong> gaurantee they all have identical RELS-EXT datastreams.  Carefully selecting PIDs with self-similar RELS-EXT datastreams should be carried out with searching and managing currently selected PIDs.</p>
-
-<p>Find below methods for adding / editing / removing relationships between objects in Fedora.</p>
-
-<h2>Options:</h2>
-<ul>
-	<li><a href="./editRELS_shared">Edit Shared Relationships</a></li>
-</ul>
-
-<!-- <p>You may also browse other PIDs in the set:<br>
+<p>You may also browse other PIDs in the set:<br>
 	<a href='/tasks/editRELS?PIDnum={{(PIDnum - 1)}}'>previous</a> / <a href='/tasks/editRELS?PIDnum={{(PIDnum + 1)}}'>next</a></p>
 <p>
 
@@ -63,4 +55,4 @@
 <!-- <form action="/fireTask/editRELS_remove_worker" method="POST" >
 	{{ form.predicate.label }} {{ form.predicate }} {{ form.obj.label }} {{ form.obj(size=100) }}
 	<button type="submit">go!</button>
-</form> --> -->
+</form> -->

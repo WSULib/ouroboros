@@ -35,6 +35,10 @@ app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
 from addDS import addDS, addDS_worker
 app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 
+#purgeDS
+from purgeDS import purgeDS, purgeDS_worker
+app.register_blueprint(purgeDS, url_prefix=tasks_URL_prefix)
+
 #batchIngest
 from batchIngest import batchIngest, ingestFOXML_worker
 app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
@@ -54,6 +58,10 @@ app.register_blueprint(editDSXML, url_prefix=tasks_URL_prefix)
 #FOXML2Solr
 from FOXML2Solr import FOXML2Solr_blue
 app.register_blueprint(FOXML2Solr_blue, url_prefix=tasks_URL_prefix)
+
+#checksum
+from checksum import checksum, checksum_worker
+app.register_blueprint(checksum, url_prefix=tasks_URL_prefix)
 
 
 # task firing

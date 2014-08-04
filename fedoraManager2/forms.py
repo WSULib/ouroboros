@@ -34,7 +34,6 @@ class addDSForm(Form):
 # form for purging Datastreams
 class purgeDSForm(Form):
 	# using params verbatim from Fedora documentation
-	PID = StringField('PID: ')
 	dsID = StringField('Datastream ID: ')
 	startDT = StringField('Start Date-Time Stamp: ')
 	endDT = StringField('Ending Date-Time Stamp: ')

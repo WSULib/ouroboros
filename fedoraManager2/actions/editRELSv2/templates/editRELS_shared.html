@@ -1,0 +1,25 @@
+{% include 'header.html' %}
+<h1>RELS-EXT editing - Shared Relationships</h1>
+<p>The table below shows RDF relationships <strong>shared</strong> by all <a href="/PIDmanage">currently selected PIDs</a>.  To modify a relationship, select a relationship from the dropdown menu or type in your own.  To modify the target object, enter a new PID or value.</p>
+<div style="width:100%; text-align:center;">
+	<img src="{{ url_for('static',filename='img/SPO_model.png')}}"/>
+</div>
+
+<table id="rdf_triples_modify">
+	<tr class="headers">
+		<td><strong>Predicate</strong></td>
+		<td><strong>Object</strong></td>
+		<td>Actions</td>
+	</tr>
+	{% for relationship in shared_relationships %}
+		<tr>
+			<form action="/editRELSv2/updateRel" method="POST">				
+				<td><input type="text" name="{{relationship.predicate}}" value="{{relationship.predicate}}" size=150/></td>
+				<td><input type="text" name="{{relationship.object}}" value="{{relationship.object}}" size=100/></td>
+				<td><span style="color:red;">remove</span> / <span style="color:orange;">modify</span></td>
+			</form>
+		</tr>
+	{% endfor %}
+</table>
+
+{% include 'footer.html' %}

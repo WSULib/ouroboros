@@ -7,12 +7,15 @@ from fedoraManager2.fedoraHandles import fedora_handle
 from fedoraManager2.jobs import getSelPIDs
 from fedoraManager2 import models
 from fedoraManager2 import db
+from fedoraManager2.sensitive import *
 from flask import Blueprint, render_template, abort, request
 
 #python modules
 from lxml import etree
 import re
 import requests
+from requests.auth import HTTPBasicAuth
+import json
 
 # eulfedora
 import eulfedora
@@ -25,16 +28,27 @@ from fuzzywuzzy import fuzz
 
 editRELS = Blueprint('editRELS', __name__, template_folder='templates', static_folder="static")
 
-
 @editRELS.route('/editRELS', methods=['POST', 'GET'])
-def index():
+def index():	
+	return render_template("editRELS_index.html")
+
+@editRELS.route('/editRELS/add', methods=['POST', 'GET'])
+def editRELS_add():	
+	
+	# instantiate forms
+	form = RDF_edit()
+
+	return render_template("editRELS_add.html",form=form)
+
+@editRELS.route('/editRELS/blanket', methods=['POST', 'GET'])
+def editRELS_blanket():
 
 	# get PID to examine, if noted
 	if request.args.get("PIDnum") != None:
 		PIDnum = int(request.args.get("PIDnum"))		
 	else:
 		PIDnum = 0
-	
+
 	# get PIDs	
 	PIDs = getSelPIDs()	
 	print PIDs[PIDnum]
@@ -53,18 +67,7 @@ def index():
 				riquery_filtered.append((p,o))	
 		except:
 			print "Could not parse RDF relationship"
-	riquery_filtered.sort() #mild sorting applied to group WSUDOR or RELS-EXT	
-
-	# get raw RDF XML for raw_xml field
-
-	# Eulfedora
-	###############################################################
-	# obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])	
-	# try:
-	# 	raw_xml = obj_ohandle.rels_ext.content.serialize()
-	# except:
-	# 	raw_xml = "COULD NOT PARSE"
-	###############################################################
+	riquery_filtered.sort() #mild sorting applied to group WSUDOR or RELS-EXT		
 
 	# Raw Datastream via Fedora API
 	###############################################################
@@ -73,8 +76,93 @@ def index():
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
-	return render_template("editRELS_index.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,form=form,raw_xml=raw_xml)
+	return render_template("editRELS_blanket.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)
 
+@editRELS.route('/editRELS/shared', methods=['POST', 'GET'])
+def editRELS_shared():
+	'''
+	Will return only RDF statements shared (predicate AND object) by all PIDs	
+
+	- Requires workaround for large queries...
+		- Eulfedora (uses GET, too small)
+		- POST requests 100+ break sparql
+		- Solution: for scenarios with 100+ PIDs, break into smaller queries, then mix together in results
+
+	'''
+
+	# get PIDs	
+	PIDs = getSelPIDs()	
+
+	# shared relationships	
+	shared_relationships = []
+
+	if len(PIDs) > 100:		
+
+		def grouper(iterable, chunksize, fillvalue=None):
+			from itertools import izip_longest
+			args = [iter(iterable)] * chunksize
+			return izip_longest(*args, fillvalue=fillvalue)
+
+		chunks =  grouper(PIDs,100)
+
+
+		for chunk in chunks:			
+
+			# construct where statement for query
+			where_statement = ""
+			for PID in chunk:
+				if PID != None:				
+					where_statement += "<fedora:{PID}> $predicate $object . ".format(PID=PID)
+			query_statement = "select $predicate $object from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
+
+			# print query_statement
+			
+			base_URL = "http://localhost/fedora/risearch"
+			payload = {
+				"lang" : "sparql",
+				"query" : query_statement,
+				"flush" : "false",
+				"type" : "tuples",
+				"format" : "JSON"
+			}
+			r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
+			risearch = json.loads(r.text)
+			chunk_list = []			
+			for each in risearch['results']:
+				tup = (each['predicate'],each['object'])				
+				chunk_list.append(tup)
+			try:
+				curr_set = set.intersection(curr_set,set(chunk_list))
+			except:
+				curr_set = set(chunk_list)
+
+		print curr_set
+		shared_relationships = curr_set
+		
+
+	else:
+		# construct where statement for query
+		where_statement = ""
+		for PID in PIDs:
+			where_statement += "<fedora:{PID}> $predicate $object . ".format(PID=PID)
+		query_statement = "select $predicate $object from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)
+		
+		base_URL = "http://localhost/fedora/risearch"
+		payload = {
+			"lang" : "sparql",
+			"query" : query_statement,
+			"flush" : "false",
+			"type" : "tuples",
+			"format" : "JSON"
+		}
+		r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
+		risearch = json.loads(r.text)
+		for each in risearch['results']:
+				tup = (each['predicate'],each['object'])
+				shared_relationships.append(tup)
+
+
+	return render_template('editRELS_shared.html',shared_relationships=shared_relationships)
 
 @editRELS.route('/editRELS/regexConfirm', methods=['POST', 'GET'])
 def regexConfirm():
@@ -110,9 +198,36 @@ def editRELS_add_worker(job_package):
 
 	form_data = job_package['form_data']	
 	
-	isMemberOfCollection = form_data['predicate']
-	collection_uri = form_data['obj']
-	print obj_ohandle.add_relationship(isMemberOfCollection, collection_uri)
+	predicate_string = form_data['predicate'].encode('utf-8').strip()
+	object_string = form_data['obj'].encode('utf-8').strip()
+	print obj_ohandle.add_relationship(predicate_string, object_string)
+
+
+def editRELS_purge_worker(job_package):
+
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)	
+
+	form_data = job_package['form_data']
+	predicate_string = form_data['predicate'].encode('utf-8').strip()
+	object_string = form_data['object'].encode('utf-8').strip()
+		
+	print obj_ohandle.purge_relationship(predicate_string, object_string)
+
+
+def editRELS_modify_worker(job_package):
+
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)	
+
+	form_data = job_package['form_data']
+
+	new_predicate_string = form_data['new_predicate'].encode('utf-8').strip()
+	old_predicate_string = form_data['old_predicate'].encode('utf-8').strip()
+	new_object_string = form_data['new_object'].encode('utf-8').strip()	
+	old_object_string = form_data['old_object'].encode('utf-8').strip()
+		
+	print obj_ohandle.modify_relationship(old_predicate_string, old_object_string, new_object_string)
 
 
 def editRELS_edit_worker(job_package):		
@@ -133,8 +248,7 @@ def editRELS_edit_worker(job_package):
 	###############################################################
 
 	# Raw Datastream via Fedora API
-	###############################################################
-	PID = PIDs[PIDnum]
+	###############################################################	
 	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
 	pre_mod_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
@@ -246,4 +360,3 @@ def editRELS_remove_worker(job_package):
 
 
 
-	

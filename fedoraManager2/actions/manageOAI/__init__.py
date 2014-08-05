@@ -30,6 +30,7 @@ manageOAI = Blueprint('manageOAI', __name__, template_folder='templates', static
 
 @manageOAI.route('/manageOAI', methods=['POST', 'GET'])
 def index():	
+	
 	return render_template("manageOAI_index.html")
 
 

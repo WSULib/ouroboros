@@ -1,7 +1,7 @@
 {% include 'header.html' %}
 <p>This area is used to select objects from Fedora that will be acted upon by fedoraManager2.  After performing queries, select objects from the results either by clicking individual objects, or selecting all.  <strong>Note:</strong> when selecting PIDs, you can identify a "group" that will be searchable and filterable in the <a href="/PIDmanage">PID object management</a> screen.</p>
-
-<div style="float:left; margin:auto;" id="solr_form">
+<div class="row">
+<div class="col-md-6" id="solr_form">
     <h2>Solr Query & Select</h2>
     <form method="POST" action="/PIDSolr">
         <p>------ Native Solr Fields --------</p>
@@ -21,8 +21,8 @@
     </form>
 </div>
 
-<div style="float:right; margin:auto;" id="actions">
-    <h2>actions</h2>
+<div class="col-md-6" id="actions">
+    <h2>Actions</h2>
     <button id="sendSelPIDs">Add Selected</button>
     <button id="sendAllPIDs">Add ALL</button>
     <span> / </span>
@@ -30,8 +30,9 @@
     <button id="removeAllPIDs">Remove ALL</button><br><br>
     Group name: <input id="group_name"></input>
 </div>
-
-<div style="clear:both;">
+</div>
+<div class="row">
+<div class="col-md-12"style="clear:both;">
     <h2>results</h2>
 
     {% if q_results %}
@@ -47,7 +48,7 @@
     </div>
     {% endif %}
 </div>
-
+</div>
 <script type="text/javascript" src="{{ url_for('static',filename='PIDSolr.js')}}"></script>
 {% if json_output %}
 <script type="text/javascript">

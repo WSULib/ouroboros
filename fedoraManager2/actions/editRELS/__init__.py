@@ -333,10 +333,6 @@ def editRELS_regex_worker(job_package):
 	# save constructed object
 	print newDS.save()
 
-def editRELS_remove_worker(job_package):
-	pass
-	
-
 
 
 

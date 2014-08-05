@@ -1,0 +1,13 @@
+{% include 'header.html' %}
+<h1>RELS-EXT editing - Add Relationships</h1>
+
+<p>Use the form below to add a relationship for all currentl selected PIDs:
+	<ul>
+		<li>Step 1: Either select a predicate "relationship" below, or type the relationship "literal" 
+		<li>Step 2: Provide the target object.  The target object should be formed like "info:fedora/wayne:collectionCFAI".</p>
+
+<form action="/fireTask/editRELS_add_worker" method="POST" >
+	{{ form.predicate.label }} {{ form.predicate }} {{ form.obj.label }} {{ form.obj(size=100) }}	
+	<button type="submit">go!</button>
+</form>
+{% include 'footer.html' %}

@@ -371,11 +371,12 @@ def jobDetails(job_num):
 	tasks_package['RETRY'] = []
 	tasks_package['FAILURE'] = []
 
-	for child in job_details.children:
-		tasks_package[child.status].append([child.task_id,child.task_name])
-	
-
-	return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)	
+	if job_details.children != None:
+		for child in job_details.children:
+			tasks_package[child.status].append([child.task_id,child.task_name])
+		return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)	
+	else:
+		return render_template("jobDetails.html",job_num=job_num)	
 
 	
 # Details of a given task

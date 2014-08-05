@@ -15,9 +15,9 @@
 		</tr>
 		{% for predicate,object in shared_relationships %}
 			<tr>						
-				<td><input type="text" name="{{predicate}}" value="{{predicate}}" size=120/></td>
-				<td><input type="text" name="{{object}}" value="{{object}}" size=80/></td>
-				<td><span style="color:orange; cursor:point;" onclick="modifyRel('{{predicate}}','{{object}}'); return false;" >modify</span> / <span style="color:red; cursor:point;" onclick="removeRel('{{predicate}}','{{object}}'); return false;">remove</span></td>				
+				<td class="predicate"><input type="text" name="{{predicate}}" value="{{predicate}}" size=120/></td>
+				<td class="object"><input type="text" name="{{object}}" value="{{object}}" size=80/></td>
+				<td><span class="edit" style="color:orange; cursor:pointer;" onclick="modifyRel($(this)); return false;" >modify</span> / <span style="color:red; cursor:pointer;" onclick="removeRel('{{predicate}}','{{object}}'); return false;">remove</span></td>				
 			</tr>
 		{% endfor %}
 	</table>

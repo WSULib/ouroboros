@@ -6,20 +6,29 @@
 <p>
 
 <p>Current PID: {{PID}}<p>
-	<form class="navbar-form navbar-left" method="POST" action="/fireTask/purgeDS_worker" enctype="multipart/form-data">
-		<div class="form-group">
+	<form role="form" method="POST" action="/fireTask/purgeDS_worker" enctype="multipart/form-data">
+	<div class="form-group">
 	{{ form.csrf_token }} 
-	<select id="dsID" name="dsID">
-    <option value="">Select Datastream you wish to purge</option>
+	<label class=class="col-sm-4 control-label">Select Datastream you wish to purge</label>
+	<select class="form-control input-sm" id="dsID" name="dsID">
+    <option value=""></option>
     {% for dsID in dsIDs %}
         <option value="{{dsID}}">{{dsID}}</option>
     {% endfor %}
-	</select><br>
-	<a href='#' title = "The (inclusive) start date-time stamp of the range. If null, this is taken to be the lowest possible value, and thus, the entire version history up to the endDT be purged.">{{ form.startDT.label }}</a> {{ form.startDT(size=60) }}<br>
-	<a href='#' title = "The (inclusive) ending date-time stamp of the range. If null, this is taken to be the greatest possible value, and thus, the entire version history back to the startDT will be purged.">{{ form.endDT.label }}</a> {{ form.endDT(size=60) }}<br>
-	{{ form.logMessage.label }} {{ form.logMessage(size=75) }}<br>
-	<a href='#' title = "Force the update even if it would break a data contract.">{{  form.force.label }}</a> {{ form.force(size=60) }}<br>
+	</select>
 	</div>
-	<input type="submit" value="Go">
+	<div class="form-group">
+	<a href='#' title = "The (inclusive) start date-time stamp of the range. If null, this is taken to be the lowest possible value, and thus, the entire version history up to the endDT be purged.">{{ form.startDT.label(class="col-sm-4 control-label") }}</a> {{ form.startDT(class="form-control input-sm") }}
+	</div>
+	<div class="form-group">
+	<a href='#' title = "The (inclusive) ending date-time stamp of the range. If null, this is taken to be the greatest possible value, and thus, the entire version history back to the startDT will be purged.">{{ form.endDT.label(class="col-sm-4 control-label") }}</a> {{ form.endDT(class="form-control input-sm") }}
+	</div>
+	<div class="form-group">
+	{{ form.logMessage.label(class="col-sm-4 control-label") }} {{ form.logMessage(class="form-control input-sm") }}
+	</div>
+	<div class="form-group">
+	<a href='#' title = "Force the update even if it would break a data contract.">{{  form.force.label(class="col-sm-4 control-label") }}</a> {{ form.force(class="form-control input-sm") }}
+	</div>
+	<input type="submit" class="btn btn-primary" value="Go">
 </form>
 

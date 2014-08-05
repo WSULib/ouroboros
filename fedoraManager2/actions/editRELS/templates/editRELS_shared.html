@@ -1,7 +1,7 @@
 {% include 'header.html' %}
 <h1>RELS-EXT editing - Shared Relationships</h1>
 <p>The table below shows RDF relationships <strong>shared</strong> by all <a href="/PIDmanage">currently selected PIDs</a>.  To modify a relationship, select a relationship from the dropdown menu or type in your own.  To modify the target object, enter a new PID or value.</p>
-<p>You can use <strong>&#123;&#123;PID&#125;&#125;</strong> in the object field as a placeholder for a string of the PID of the object being iterated over.</p>
+<p>You can use <strong>&#123;&#123;PID&#125;&#125;</strong> in the object field as a placeholder for a string of the PID if desired.</p>
 <div style="width:100%; text-align:center;">
 	<img src="{{ url_for('static',filename='img/SPO_model.png')}}"/>
 </div>
@@ -13,16 +13,17 @@
 			<td><strong>Object</strong></td>
 			<td>Actions</td>
 		</tr>
-		{% for relationship in shared_relationships %}
-			<tr>
-				<form action="/editRELSv2/updateRel" method="POST">				
-					<td><input type="text" name="{{relationship.predicate}}" value="{{relationship.predicate}}" size=120/></td>
-					<td><input type="text" name="{{relationship.object}}" value="{{relationship.object}}" size=80/></td>
-					<td><span style="color:red;">remove</span> / <span style="color:orange;">modify</span></td>
-				</form>
+		{% for predicate,object in shared_relationships %}
+			<tr>						
+				<td><input type="text" name="{{predicate}}" value="{{predicate}}" size=120/></td>
+				<td><input type="text" name="{{object}}" value="{{object}}" size=80/></td>
+				<td><span style="color:orange; cursor:point;" onclick="modifyRel('{{predicate}}','{{object}}'); return false;" >modify</span> / <span style="color:red; cursor:point;" onclick="removeRel('{{predicate}}','{{object}}'); return false;">remove</span></td>				
 			</tr>
 		{% endfor %}
 	</table>
 </div>
+
+<!-- load JS -->
+<script type="text/javascript" src="{{ url_for('static',filename='actions/editRELS.js')}}"></script>
 
 {% include 'footer.html' %}

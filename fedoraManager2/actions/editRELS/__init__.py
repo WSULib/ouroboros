@@ -28,16 +28,27 @@ from fuzzywuzzy import fuzz
 
 editRELS = Blueprint('editRELS', __name__, template_folder='templates', static_folder="static")
 
-
 @editRELS.route('/editRELS', methods=['POST', 'GET'])
-def index():
+def index():	
+	return render_template("editRELS_index.html")
+
+@editRELS.route('/editRELS/add', methods=['POST', 'GET'])
+def editRELS_add():	
+	
+	# instantiate forms
+	form = RDF_edit()
+
+	return render_template("editRELS_add.html",form=form)
+
+@editRELS.route('/editRELS/blanket', methods=['POST', 'GET'])
+def editRELS_blanket():
 
 	# get PID to examine, if noted
 	if request.args.get("PIDnum") != None:
 		PIDnum = int(request.args.get("PIDnum"))		
 	else:
 		PIDnum = 0
-	
+
 	# get PIDs	
 	PIDs = getSelPIDs()	
 	print PIDs[PIDnum]
@@ -65,9 +76,9 @@ def index():
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
-	return render_template("editRELS_index.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,form=form,raw_xml=raw_xml)
+	return render_template("editRELS_blanket.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)
 
-@editRELS.route('/editRELS_shared', methods=['POST', 'GET'])
+@editRELS.route('/editRELS/shared', methods=['POST', 'GET'])
 def editRELS_shared():
 	'''
 	Will return only RDF statements shared (predicate AND object) by all PIDs	
@@ -82,7 +93,7 @@ def editRELS_shared():
 	# get PIDs	
 	PIDs = getSelPIDs()	
 
-	# shared relationships
+	# shared relationships	
 	shared_relationships = []
 
 	if len(PIDs) > 100:		
@@ -93,6 +104,7 @@ def editRELS_shared():
 			return izip_longest(*args, fillvalue=fillvalue)
 
 		chunks =  grouper(PIDs,100)
+
 
 		for chunk in chunks:			
 
@@ -113,11 +125,20 @@ def editRELS_shared():
 				"type" : "tuples",
 				"format" : "JSON"
 			}
-			r = requests.post(base_URL, auth=HTTPBasicAuth(username, password), data=payload )
+			r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
 			risearch = json.loads(r.text)
+			chunk_list = []			
 			for each in risearch['results']:
-				if each not in shared_relationships:
-					shared_relationships.append(each)
+				tup = (each['predicate'],each['object'])				
+				chunk_list.append(tup)
+			try:
+				curr_set = set.intersection(curr_set,set(chunk_list))
+			except:
+				curr_set = set(chunk_list)
+
+		print curr_set
+		shared_relationships = curr_set
+		
 
 	else:
 		# construct where statement for query
@@ -136,7 +157,9 @@ def editRELS_shared():
 		}
 		r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
 		risearch = json.loads(r.text)
-		shared_relationships = risearch['results']
+		for each in risearch['results']:
+				tup = (each['predicate'],each['object'])
+				shared_relationships.append(tup)
 
 
 	return render_template('editRELS_shared.html',shared_relationships=shared_relationships)
@@ -311,4 +334,3 @@ def editRELS_remove_worker(job_package):
 
 
 
-	

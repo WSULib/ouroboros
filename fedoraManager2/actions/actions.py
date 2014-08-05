@@ -19,8 +19,8 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
-#editRELSv2
-from editRELS import editRELS, editRELS_add_worker, editRELS_edit_worker, editRELS_regex_worker
+#editRELS
+from editRELS import editRELS, editRELS_add_worker, editRELS_purge_worker, editRELS_modify_worker, editRELS_edit_worker, editRELS_regex_worker
 app.register_blueprint(editRELS, url_prefix=tasks_URL_prefix)
 
 #DCfromMODS

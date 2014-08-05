@@ -198,9 +198,36 @@ def editRELS_add_worker(job_package):
 
 	form_data = job_package['form_data']	
 	
-	isMemberOfCollection = form_data['predicate']
-	collection_uri = form_data['obj']
-	print obj_ohandle.add_relationship(isMemberOfCollection, collection_uri)
+	predicate_string = form_data['predicate'].encode('utf-8').strip()
+	object_string = form_data['obj'].encode('utf-8').strip()
+	print obj_ohandle.add_relationship(predicate_string, object_string)
+
+
+def editRELS_purge_worker(job_package):
+
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)	
+
+	form_data = job_package['form_data']
+	predicate_string = form_data['predicate'].encode('utf-8').strip()
+	object_string = form_data['object'].encode('utf-8').strip()
+		
+	print obj_ohandle.purge_relationship(predicate_string, object_string)
+
+
+def editRELS_modify_worker(job_package):
+
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)	
+
+	form_data = job_package['form_data']
+
+	new_predicate_string = form_data['new_predicate'].encode('utf-8').strip()
+	old_predicate_string = form_data['old_predicate'].encode('utf-8').strip()
+	new_object_string = form_data['new_object'].encode('utf-8').strip()	
+	old_object_string = form_data['old_object'].encode('utf-8').strip()
+		
+	print obj_ohandle.modify_relationship(old_predicate_string, old_object_string, new_object_string)
 
 
 def editRELS_edit_worker(job_package):		
@@ -221,8 +248,7 @@ def editRELS_edit_worker(job_package):
 	###############################################################
 
 	# Raw Datastream via Fedora API
-	###############################################################
-	PID = PIDs[PIDnum]
+	###############################################################	
 	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
 	pre_mod_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################

@@ -28,10 +28,31 @@ from fuzzywuzzy import fuzz
 
 manageOAI = Blueprint('manageOAI', __name__, template_folder='templates', static_folder="static")
 
+'''
+REFERENCE
+baseURL: http://digital.library.wayne.edu:8080/oaiprovider/
+ListIdentifiers: http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListIdentifiers&metadataPrefix=oai_dc
+'''
+
 @manageOAI.route('/manageOAI', methods=['POST', 'GET'])
 def index():	
 	
 	return render_template("manageOAI_index.html")
+
+
+
+def manageOAI_genItemID_worker(job_package):
+
+	# get PID
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)	
+
+	# generate OAI identifier
+	OAI_identifier = "oai:digital.library.wayne.edu:{PID}".format(PID=PID)	
+	
+	print obj_ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", OAI_identifier)
+	
+
 
 
 	

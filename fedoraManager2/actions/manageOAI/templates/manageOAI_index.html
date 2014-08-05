@@ -1,17 +1,40 @@
 {% include 'header.html' %}
-<h1>RELS-EXT editing</h1>
-<p><p>RDF statements are expressed as triples in Fedora Commons.  A triple is comrpised of a "subject", "predicate", and "object".  This can be thought of as a "thing (subject)" having a "relationship (predicate" to another "thing (object)".  Subject, Predicate, Object is commonly referred to as "SPO".  In the case of this utility, the "subject" will always be the current PID in the PID set when iterating through.</p>
 
-<p>Find below methods for adding / editing / removing relationships between objects in Fedora.  Please keep in mind, the focus of this utility is to edit objects in bulk</p>
+<div class="row">
+	<div class="col-md-12">
+		<h1>Manage OAI Relationships</h1>
+		<p>This utility is designed to manage how objects are exposed via OAI.  We currently use PROAI that comes bundled with Fedora.  Objects are detected and indexed by PROAI via a small set of RELS-EXT relationships.  Find below tools for understanding those relationships, tools for editing them, and general information about the OAI server.</p>
+	</div>
+</div>
 
-<h2>Options:</h2>
-<ul>
-	<li><a href="./editRELS/add">Add Relationships</a></li>
-	<li><a href="./editRELS/shared">Modify / Purge Shared Relationships</a>
+<div class="row">
+	<div class="col-md-12">
+		<h3>OAI Status and Examples</h3>
 		<ul>
-			<li>As this utility seeks out relationships common to <strong>all</strong> selected PIDs, it may take some time to load (think 10,000+).</li>
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=Identify">Identify</a></li>
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListIdentifiers&metadataPrefix=oai_dc">ListIdentifiers</a></li>
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:digital.library.wayne.edu:wayne:LincolnLettersFHC232434">Example GetRecord - Letter of appointment from Abraham Lincoln for George Harrington</a>
 		</ul>
-	</li>
-	<li><a href="./editRELS/blanket">Blanket RELS-EXT XML Editing</a></li>
-</ul>
+	</div>
+</div>
+
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Generate OAI identifiers</h3>
+		<p>Clicking the button below will create RELS-EXT relationships for all currently selected Objects, that define the <strong>unique OAI identifier</strong> for that object.</p>
+		<p><span style="color:red;">Currently, this only adds a RELS-EXT relationship, meaning multiple are possible if they differ.</span></p>
+		<form action="/fireTask/manageOAI_genItemID_worker" method="POST">
+			<button type="submit" class="btn btn-success">Engage!</button>
+		</form>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Manage Sets</h3>		
+	</div>
+</div>
+
+
 {% include 'footer.html' %}

@@ -69,6 +69,9 @@ class OAI_sets(Form):
 	# using params verbatim from Fedora documentation	
 	predicate = StringField('predicate',default="http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet")	
 	obj = SelectField('object', choices=utilities.returnOAISets('dropdown'))
+	obj_PID = StringField('Collection PID (e.g. wayne:collectionLincolnLetters)')
+	setSpec = StringField('Set ID (setSpec)')
+	setName = StringField('Set Name (setName)')
 	
 
 # form for adding Datastreams

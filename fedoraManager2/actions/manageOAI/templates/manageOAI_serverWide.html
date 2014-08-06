@@ -13,5 +13,31 @@
 	</div>
 </div>
 
+<div class="row">
+	<div class="col-md-12">
+		<h3>Current Established OAI Sets</h3>
+		<table class="table table-striped">
+			<tr>
+				<th>Set Name</th>
+				<th>Set OAI identifier</th>
+				<th>Affailiated Fedora PID</th>
+			</tr>
+			{% for PID,setName,setSpec in OAI_sets %}
+			<tr>
+				<td>{{setName}}</td>
+				<td>{{setSpec}}</td>
+				<td>{{PID}}</td>
+			</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Create / Edit / Remove OAI set</h3>
+	</div>
+</div>
+
 
 {% include 'footer.html' %}

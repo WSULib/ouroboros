@@ -58,7 +58,8 @@ def checkPinCreds(pin_package,check_type):
 		else:
 			return False
 
-def returnOAISets():
+def returnOAISets(context):
+	# returns list of tuples, in format (collection PID, OAI set name, OAI set ID)
 	query_statement = "select $subject $setSpec $setName from <#ri> where { $subject <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $subject <http://www.openarchives.org/OAI/2.0/setName> $setName . }"
 	base_URL = "http://localhost/fedora/risearch"
 	payload = {
@@ -70,7 +71,12 @@ def returnOAISets():
 	}
 	r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
 	risearch = json.loads(r.text)
-	shared_relationships = [ (each['subject'], each['setName']) for each in risearch['results'] ]	
+
+	if context == "dropdown":
+		shared_relationships = [ (each['subject'], each['setName']) for each in risearch['results'] ]	
+	else:
+		shared_relationships = [ (each['subject'], each['setName'], each['setSpec']) for each in risearch['results'] ]	
+
 	return shared_relationships
 
 

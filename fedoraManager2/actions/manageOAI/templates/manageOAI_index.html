@@ -2,39 +2,26 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<h1>Manage OAI Relationships</h1>
-		<p>This utility is designed to manage how objects are exposed via OAI.  We currently use PROAI that comes bundled with Fedora.  Objects are detected and indexed by PROAI via a small set of RELS-EXT relationships.  Find below tools for understanding those relationships, tools for editing them, and general information about the OAI server.</p>
-	</div>
-</div>
-
-<div class="row">
-	<div class="col-md-12">
-		<h3>OAI Status and Examples</h3>
+		<h1>Manage OAI Server</h1>
+		<p>This module helps manage the OAI server for the Wayne State Digital Object Repository.  We currently use PROAI that comes bundled with Fedora 3.6.x, itself a Tomcat Application.  Objects are detected and indexed by PROAI, and "Sets" are created via a small set of RELS-EXT relationships.  Find below links to OAI server and repository wide settings, and  tools for managing OAI relationships for batches of objects.</p>
 		<ul>
-			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=Identify">Identify</a></li>
-			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListIdentifiers&metadataPrefix=oai_dc">ListIdentifiers</a></li>
-			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:digital.library.wayne.edu:wayne:LincolnLettersFHC232434">Example GetRecord - Letter of appointment from Abraham Lincoln for George Harrington</a>
-		</ul>
+			<li>
+				<a href="./manageOAI/serverWide">OAI Server & Repository-wide Management</a>
+				<p>Check server status, example OAI queries; Create and edit sets</p>
+			</li>
+			<li>
+				<a href="./manageOAI/objectRelated">Manage OAI Relationships for Objects</a>
+				<p>Generate unique OAI identifiers for objects; View, add, and remove set affiliations for batches of objects</p>
+			</li>
+
+
 	</div>
 </div>
 
 
-<div class="row">
-	<div class="col-md-12">
-		<h3>Generate OAI identifiers</h3>
-		<p>Clicking the button below will create RELS-EXT relationships for all currently selected Objects, that define the <strong>unique OAI identifier</strong> for that object.</p>
-		<p><span style="color:red;">Currently, this only adds a RELS-EXT relationship, meaning multiple are possible if they differ.</span></p>
-		<form action="/fireTask/manageOAI_genItemID_worker" method="POST">
-			<button type="submit" class="btn btn-success">Engage!</button>
-		</form>
-	</div>
-</div>
 
-<div class="row">
-	<div class="col-md-12">
-		<h3>Manage Sets</h3>		
-	</div>
-</div>
+
+
 
 
 {% include 'footer.html' %}

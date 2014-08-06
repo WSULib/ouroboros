@@ -20,7 +20,7 @@ import sys
 tasks_URL_prefix = "/tasks"
 
 #manageOAI
-from manageOAI import manageOAI, manageOAI_genItemID_worker
+from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_addSet_worker
 app.register_blueprint(manageOAI, url_prefix=tasks_URL_prefix)
 
 #editRELS

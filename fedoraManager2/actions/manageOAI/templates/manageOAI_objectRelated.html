@@ -1,0 +1,55 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Generate OAI identifiers</h3>
+		<p>Clicking the button below will create RELS-EXT relationships for all currently selected Objects, that define the <strong>unique OAI identifier</strong> for that object.</p>
+		<p><span style="color:red;">Currently, this only adds a RELS-EXT relationship, meaning multiple are possible if they differ.</span></p>
+		<form action="/fireTask/manageOAI_genItemID_worker" method="POST">
+			<button type="submit" class="btn btn-success">Engage!</button>
+		</form>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Manage Sets</h3>
+
+		{% if shared_relationships %}
+		<div class="col-md-12">
+			<h4>View and Remove associated Sets:</h4>
+			<table class="table table-striped">
+				<tr>
+					<td><strong>Set Name</strong></td>
+					<td><strong>Set Spec (OAI identifier)</strong></td>
+					<td><strong>Fedora PID</strong></td>
+					<td><strong>Actions</strong></td>
+				</tr>
+				{% for object, setSpec, setName in shared_relationships %}
+				<tr>
+					<td>{{setName}}</td>
+					<td>{{setSpec}}</td>
+					<td>{{object}}</td>
+					<td><span style="color:red; cursor:pointer;" onclick="removeRel('{{predicate}}','{{object}}'); return false;">remove</span></td>
+				</tr>
+				{% endfor %}
+			</table>
+		</div>
+		{% endif %}
+
+		<div class="col-md-12">
+			<h4>Add Set:</h4>
+			<form action="/fireTask/manageOAI_addSet_worker" method="POST" role="form">
+				<div class="col-md-3">
+					<div class="form-group">					
+						{{ form.obj (class="form-control") }}					
+					</div>
+				</div>
+				<button class="btn btn-success" type="submit">Add!</button>
+			</form>
+		</div>		
+		
+	</div>
+</div>
+
+{% include 'footer.html' %}

@@ -30,7 +30,7 @@
 					<td>{{setName}}</td>
 					<td>{{setSpec}}</td>
 					<td>{{object}}</td>
-					<td><span style="color:red; cursor:pointer;" onclick="removeRel('{{predicate}}','{{object}}'); return false;">remove</span></td>
+					<td><span style="color:red; cursor:pointer;" onclick="removeRel('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet','{{object}}'); return false;">remove</span></td>
 				</tr>
 				{% endfor %}
 			</table>
@@ -51,5 +51,24 @@
 		
 	</div>
 </div>
+
+<script type="text/javascript">		
+
+	// send pred / obj to purge_relationship
+	function removeRel(predicate,object){
+		$.ajax({
+		url: "/fireTask/editRELS_purge_worker",
+		type: "POST",
+		data: {
+			"predicate":predicate,
+			"object":object
+		}
+		}).done(function(response) { 
+			window.location.href="/userJobs";
+		});
+	}
+    
+
+</script>
 
 {% include 'footer.html' %}

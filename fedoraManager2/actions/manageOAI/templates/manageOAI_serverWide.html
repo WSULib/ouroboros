@@ -2,7 +2,7 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<h3>OAI Status and Examples</h3>
+		<h3>OAI Examples</h3>
 		<ul>
 			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=Identify">Identify</a></li>
 			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListSets">ListSets</a></li>			
@@ -13,20 +13,24 @@
 	</div>
 </div>
 
+<p style="color:orange;">Consider making this like the shared RELS editing?  With three boxes? Same function for modify / remove?</p>
+
 <div class="row">
 	<div class="col-md-12">
-		<h3>Current Established OAI Sets</h3>
+		<h3>Established OAI Sets</h3>
 		<table class="table table-striped">
 			<tr>
 				<th>Set Name</th>
 				<th>Set OAI identifier</th>
-				<th>Affailiated Fedora PID</th>
+				<th>Affiliated Fedora PID</th>
+				<th>Actions</th>
 			</tr>
-			{% for PID,setName,setSpec in OAI_sets %}
+			{% for PID,setName,setSpec in OAI_sets_tuples %}
 			<tr>
 				<td>{{setName}}</td>
 				<td>{{setSpec}}</td>
 				<td>{{PID}}</td>
+				<td><span style="color:red; cursor:pointer;" onclick="removeOAISet('{{PID}}','{{setSpec}}','{{setName}}'); return false;">remove</span></td>
 			</tr>
 			{% endfor %}
 		</table>
@@ -35,9 +39,42 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<h3>Create / Edit / Remove OAI set</h3>
+		<h3>Create OAI set</h3>
+		<p>Provide <strong>PID</strong>, and desired <strong>setSpec</strong> and <strong>setName</strong></p>
+		
+		<form class="form" action="/tasks/manageOAI/createSet" method="POST">			
+			<div class="form-group">
+				{{ form.obj_PID.label }} {{ form.obj_PID }}
+			</div>		
+			<div class="form-group">
+				{{ form.setSpec.label }} {{ form.setSpec }}
+			</div>
+			<div class="form-group">
+				{{ form.setName.label }} {{ form.setName }}
+			</div>
+			<button type="submit" class="btn btn-default">Create!</button>			
+		</form>
+
 	</div>
 </div>
 
+<script type="text/javascript">
+	// send pred / obj to purge_relationship
+	function removeOAISet(obj,setSpec,setName){
+
+		// remove setSpec, chain removing setName, then send to user jobs
+		$.ajax({
+			url: "/tasks/manageOAI/purgeSet",
+			type: "POST",
+			data: {
+				"obj":obj,
+				"setSpec":setSpec,
+				"setName":setName
+			}
+		}).done(function(response) {
+			window.location.href="./serverWide";			
+		});
+	}
+</script>
 
 {% include 'footer.html' %}

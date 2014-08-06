@@ -9,7 +9,7 @@ from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2 import utilities
 from fedoraManager2.sensitive import *
-from flask import Blueprint, render_template, abort, request
+from flask import Blueprint, render_template, abort, request, redirect
 
 #python modules
 from lxml import etree
@@ -39,9 +39,13 @@ def index():
 @manageOAI.route('/manageOAI/serverWide', methods=['POST', 'GET'])
 def serverWide():
 
-	OAI_sets = utilities.returnOAISets('detailed')
+	OAI_sets_tuples = utilities.returnOAISets('detailed')
 
-	return render_template("manageOAI_serverWide.html",OAI_sets=OAI_sets)
+	# finally, find all currently available / defined sets
+	# instantiate forms
+	form = OAI_sets()
+
+	return render_template("manageOAI_serverWide.html",OAI_sets_tuples=OAI_sets_tuples,form=form)
 
 
 @manageOAI.route('/manageOAI/objectRelated', methods=['POST', 'GET'])
@@ -138,7 +142,64 @@ def manageOAI_addSet_worker(job_package):
 	print obj_ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", target_collection_object )
 
 
+# Boutique Jobs
+@manageOAI.route('/manageOAI/purgeSet', methods=['POST', 'GET'])
+def manageOAI_purgeSet_worker():
+	# small utility to remove OAI set definitions from collection objects
+	# boutique, not coming through normal channels
 
+	form_data = request.form
+	print form_data
+
+	# get object handle
+	PID = form_data['obj']
+	obj_ohandle = fedora_handle.get_object(PID)
+	
+	# purge setSpec relationship
+	success = True
+	while success == True:
+		predicate_string = "http://www.openarchives.org/OAI/2.0/setSpec"
+		object_string = form_data['setSpec'].encode('utf-8').strip()
+		print obj_ohandle.purge_relationship(predicate_string, object_string)
+
+		# purge setName relationship
+		predicate_string = "http://www.openarchives.org/OAI/2.0/setName"
+		object_string = form_data['setName'].encode('utf-8').strip()
+		print obj_ohandle.purge_relationship(predicate_string, object_string)	
+
+		return "Collection removed as OAI set."
+
+	return "Collection could not be removed, errors were had." 
+	
+
+@manageOAI.route('/manageOAI/createSet', methods=['POST', 'GET'])
+def manageOAI_createSet_worker():
+	# small utility to remove OAI set definitions from collection objects
+	# boutique, not coming through normal channels
+
+	form_data = request.form
+	print form_data
+
+	# get object handle
+	PID = form_data['obj_PID']
+	obj_ohandle = fedora_handle.get_object(PID)
+	
+	# purge setSpec relationship
+	# success = True
+	# while success == True:
+	predicate_string = "http://www.openarchives.org/OAI/2.0/setSpec"
+	object_string = form_data['setSpec'].encode('utf-8').strip()
+	print obj_ohandle.add_relationship(predicate_string, object_string)
+
+	# purge setName relationship
+	predicate_string = "http://www.openarchives.org/OAI/2.0/setName"
+	object_string = form_data['setName'].encode('utf-8').strip()
+	print obj_ohandle.add_relationship(predicate_string, object_string)	
+
+	return redirect("/tasks/manageOAI/serverWide")
+
+	
+	
 	
 
 

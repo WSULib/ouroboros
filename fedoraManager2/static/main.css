@@ -4,6 +4,10 @@ body {
 	color: #262626;	
 }
 
+.brand img{
+	margin-top:4px;
+}
+
 ul.nav {
 	list-style-type: none;
 }

@@ -1,13 +1,57 @@
 {% include 'header.html' %}
 <h1>RELS-EXT editing - Add Relationships</h1>
 
-<p>Use the form below to add a relationship for all currentl selected PIDs:
-	<ul>
-		<li>Step 1: Either select a predicate "relationship" below, or type the relationship "literal" 
-		<li>Step 2: Provide the target object.  The target object should be formed like "info:fedora/wayne:collectionCFAI".</p>
+<div class="row">
+	<div class="col-md-12">
+		<p>Use the form below to add a relationship for all currentl selected PIDs:
+		<ul>
+			<li>Step 1: Either select a predicate "relationship" below, or <a href="#" onclick="$('#PredLiteral').fadeToggle(); return false;">click here</a> for more advanced options
+			<li>Step 2: Provide the target object.  The target object should be formed like "info:fedora/wayne:collectionCFAI".</p>
+		</ul>
+	</div>
+</div>
 
-<form action="/fireTask/editRELS_add_worker" method="POST" >
-	{{ form.predicate.label }} {{ form.predicate }} {{ form.obj.label }} {{ form.obj(size=100) }}	
-	<button type="submit">go!</button>
-</form>
+<div class="row">
+	<div class="col-md-12">
+		<form action="/fireTask/editRELS_add_worker" method="POST" role="form">
+			<div class="col-md-3">
+				<div class="form-group">
+					{{ form.predicate.label }} {{ form.predicate (class="form-control") }}	
+				</div>
+				<div class="form-group">
+					{{ form.obj.label }} {{ form.obj(size=80) }}
+				</div>
+				<div class="form-group">
+					<button class="btn btn-success" type="submit">go!</button>
+				</div>
+			</div>			
+		</form>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<form id="PredLiteral" style="display:none;" action="/fireTask/editRELS_add_worker" method="POST" >
+			<p>Enter predicate "literal", direct string entry for advanced RELS-EXT modeling.  For example "http://www.openarchives.org/OAI/2.0/setSpec" will translate to "&lt;setSpec xmlns="http://www.openarchives.org/OAI/2.0/"&gt;&lt;/setSpec&gt;"  It is encouraged to use the drop-down above for normalization of RDF relationships in the repository, but there are scenarios where unique or special RDF relationships (predicates) are needed.</p>
+			<div class="col-md-3">
+				<div class="form-group">
+					{{ form.predicate_literal.label }} {{ form.predicate_literal(size=100) }} 
+				</div>
+				<div class="form-group">
+					{{ form.obj.label }} {{ form.obj(size=80) }}
+				</div>	
+				<div class="form-group">
+					<input type="hidden" name="literalclear" value="true"/>
+					<button type="submit">go!</button>
+				</div>
+			</div>			
+		</form>
+	</div>
+</div>
+
 {% include 'footer.html' %}
+
+
+
+
+

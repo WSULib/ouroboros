@@ -1,7 +1,11 @@
 body {	
 	font-family: 'Droid Sans', sans-serif;	
 	padding:20px;	
-	color: #262626;
+	color: #262626;	
+}
+
+.brand img{
+	margin-top:4px;
 }
 
 ul.nav {

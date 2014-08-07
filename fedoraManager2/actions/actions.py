@@ -19,6 +19,10 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#manageOAI
+from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_toggleSet_worker
+app.register_blueprint(manageOAI, url_prefix=tasks_URL_prefix)
+
 #editRELS
 from editRELS import editRELS, editRELS_add_worker, editRELS_purge_worker, editRELS_modify_worker, editRELS_edit_worker, editRELS_regex_worker
 app.register_blueprint(editRELS, url_prefix=tasks_URL_prefix)
@@ -71,8 +75,7 @@ class postTask(Task):
 		# extract task data		
 		status = args[0]
 		task_id = args[2]
-		task_details = args[3]
-		step = task_details[0]['step']
+		task_details = args[3]		
 		job_num = task_details[0]['job_num']
 		PID = task_details[0]['PID']
 

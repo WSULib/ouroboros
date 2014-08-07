@@ -1,0 +1,67 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>OAI Examples</h3>
+		<ul>
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=Identify">Identify</a></li>
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListSets">ListSets</a></li>			
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListIdentifiers&metadataPrefix=oai_dc">ListIdentifiers</a></li>
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListRecords&metadataPrefix=oai_dc&set=set:wayne:collectionLincolnLetters">Set Records - Lincoln Letters (set:wayne:collectionLincolnLetters) set</a>
+			<li><a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:digital.library.wayne.edu:wayne:LincolnLettersFHC232434">Single Record - Letter of appointment from Abraham Lincoln for George Harrington</a>
+		</ul>
+	</div>
+</div>
+
+<p style="color:orange;">Note: May take a second or two for toggle changes to reflect here, try refreshing the page.</p>
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Fedora Collections</h3>
+		<table class="table table-striped">
+			<tr>
+				<th>Collection Name</th>
+				<th>Fedora PID</th>	
+				<th>OAI setSpec</th>							
+				<th>Is Harvestable?</th>				
+				<th>Actions</th>
+			</tr>
+			{% for dc_title,PID,isOAIHarvestable in collection_tups %}
+			<tr>				
+				<td>{{dc_title}}</td>
+				<td>{{PID}}</td>	
+				<td>set:{{PID}}</td>			
+				{% if isOAIHarvestable == 'True' %}				
+					<td><span style="color:green;">{{isOAIHarvestable}}</span></td>
+				{% else %}
+					<td><span style="color:red;">{{isOAIHarvestable}}</span></td>
+				{% endif %}				
+				<td><a class="btn btn-warning btn-xs" href="/tasks/manageOAI/toggleSet/{{PID}}">Toggle Harvest</a></td>				
+			</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div>
+
+
+
+<script type="text/javascript">
+	// send pred / obj to purge_relationship
+	function removeOAISet(obj,setSpec,setName){
+
+		// remove setSpec, chain removing setName, then send to user jobs
+		$.ajax({
+			url: "/tasks/manageOAI/purgeSet",
+			type: "POST",
+			data: {
+				"obj":obj,
+				"setSpec":setSpec,
+				"setName":setName
+			}
+		}).done(function(response) {
+			window.location.href="./serverWide";			
+		});
+	}
+</script>
+
+{% include 'footer.html' %}

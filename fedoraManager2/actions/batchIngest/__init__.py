@@ -182,10 +182,7 @@ def ingestFOXML():
 
 @celery.task(name="celeryTaskFactoryUnique")
 def celeryTaskFactoryUnique(job_num,job_package):
-	'''
-	Circular logic warning: actions.actions.taskWrapper() from below is actually running ingestFOXML_worker from *this* file
-	'''
-
+	
 	# reconstitute
 	form_data = job_package['form_data']
 	job_num = job_package['job_num']

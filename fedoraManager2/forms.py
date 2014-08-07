@@ -52,12 +52,16 @@ class purgeDSForm(Form):
 class RDF_edit(Form):
 	# using params verbatim from Fedora documentation	
 	predicate = SelectField('predicate', choices=[('info:fedora/fedora-system:def/relations-external#hasContentModel', 'hasContentModel'),
+		#Fedora RELS-EXT
 		('info:fedora/fedora-system:def/relations-external#isMemberOfCollection', 'isMemberOfCollection'),
 		('info:fedora/fedora-system:def/relations-external#isMemberOf', 'isMemberOf'),
 		('info:fedora/fedora-system:def/relations-external#isPartOf', 'isPartOf'),
+		#WSUDOR
 		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy', 'hasSecurityPolicy'),
 		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable', 'isDiscoverable'),
-		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel', 'preferredContentModel')])
+		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel', 'preferredContentModel'),
+		('http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isOAIHarvestable', 'isOAIHarvestable')
+		])
 	predicate_literal = StringField('predicate literal')
 	obj = StringField('object')
 	raw_xml = TextAreaField('Raw XML')	
@@ -68,7 +72,8 @@ class RDF_edit(Form):
 class OAI_sets(Form):
 	# using params verbatim from Fedora documentation	
 	predicate = StringField('predicate',default="http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet")	
-	obj = SelectField('object', choices=utilities.returnOAISets('dropdown'))
+	# obj = SelectField('object', choices=utilities.returnOAISets('dropdown'))
+	# obj = SelectField('object')
 	obj_PID = StringField('Collection PID (e.g. wayne:collectionLincolnLetters)')
 	setSpec = StringField('Set ID (setSpec)')
 	setName = StringField('Set Name (setName)')

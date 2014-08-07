@@ -194,7 +194,7 @@ def editRELS_add_worker(job_package):
 		predicate_string = form_data['predicate'].encode('utf-8').strip()
 
 	object_string = form_data['obj'].encode('utf-8').strip()
-	print obj_ohandle.add_relationship(predicate_string, object_string)
+	return obj_ohandle.add_relationship(predicate_string, object_string)
 
 
 def editRELS_purge_worker(job_package):
@@ -206,7 +206,7 @@ def editRELS_purge_worker(job_package):
 	predicate_string = form_data['predicate'].encode('utf-8').strip()
 	object_string = form_data['object'].encode('utf-8').strip()
 		
-	print obj_ohandle.purge_relationship(predicate_string, object_string)
+	return obj_ohandle.purge_relationship(predicate_string, object_string)
 
 
 def editRELS_modify_worker(job_package):
@@ -221,7 +221,7 @@ def editRELS_modify_worker(job_package):
 	new_object_string = form_data['new_object'].encode('utf-8').strip()	
 	old_object_string = form_data['old_object'].encode('utf-8').strip()
 		
-	print obj_ohandle.modify_relationship(old_predicate_string, old_object_string, new_object_string)
+	return obj_ohandle.modify_relationship(old_predicate_string, old_object_string, new_object_string)
 
 
 def editRELS_edit_worker(job_package):		

@@ -11,18 +11,27 @@
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='jquery.dataTables.css')}}"></link>	
 	<link href='http://fonts.googleapis.com/css?family=Droid+Sans:400' rel='stylesheet' type='text/css'>
 	<script type="text/javascript" src="{{ url_for('static',filename='jquery.dataTables.js')}}"></script>		
+	<script type="text/javascript" src="{{ url_for('static',filename='form_validation.js')}}"></script>	
 	<!-- Bootstrap CDN -->
 	<!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<!-- flat-ui -->
+	<!-- 	<link rel="stylesheet" href="//cdn.jsdelivr.net/flat-ui/2.0/css/bootstrap.css">
+		<link rel="stylesheet" href="//cdn.jsdelivr.net/flat-ui/2.0/css/flat-ui.css"> -->
+
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
 	<!-- Latest compiled and minified JavaScript -->
 	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 	<!-- signin css -->
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='signin.css')}}"></link>
+	<!-- bootstrap form validator -->
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jquery.bootstrapvalidator/0.5.0/css/bootstrapValidator.min.css"/>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.bootstrapvalidator/0.5.0/js/bootstrapValidator.min.js"></script>
     <script>
+    //tooltip
     $(function() {
-    	$( document ).tooltip();
+        $( "[data-toggle='tooltip']" ).tooltip();
     });
     </script>
 

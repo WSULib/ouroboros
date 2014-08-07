@@ -1,6 +1,10 @@
 # utilities
 import datetime
 import hashlib
+import requests
+from requests.auth import HTTPBasicAuth
+from fedoraManager2.sensitive import *
+import json
 
 escapeRules = {'+': r'\+',
 			   '-': r'\-',
@@ -53,3 +57,41 @@ def checkPinCreds(pin_package,check_type):
 			return True
 		else:
 			return False
+
+def returnOAISets(context):
+	# returns list of tuples, in format (collection PID, OAI set name, OAI set ID)
+	query_statement = "select $subject $setSpec $setName from <#ri> where { $subject <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $subject <http://www.openarchives.org/OAI/2.0/setName> $setName . }"
+	base_URL = "http://localhost/fedora/risearch"
+	payload = {
+		"lang" : "sparql",
+		"query" : query_statement,
+		"flush" : "false",
+		"type" : "tuples",
+		"format" : "JSON"
+	}
+	r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
+	risearch = json.loads(r.text)
+
+	if context == "dropdown":
+		shared_relationships = [ (each['subject'], each['setName']) for each in risearch['results'] ]	
+	else:
+		shared_relationships = [ (each['subject'], each['setName'], each['setSpec']) for each in risearch['results'] ]	
+
+	return shared_relationships
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -89,13 +89,36 @@ def editRELS_shared():
 		- Solution: for scenarios with 100+ PIDs, break into smaller queries, then mix together in results
 
 	'''
-
 	# get PIDs	
-	PIDs = getSelPIDs()	
+	PIDs = getSelPIDs()
 
 	# shared relationships	
 	shared_relationships = []
 
+	# shared function for whole or chunked query
+	def risearchQuery(list_of_PIDs):
+		# construct where statement for query
+		where_statement = ""
+		for PID in list_of_PIDs:
+			if PID != None:				
+				where_statement += "<fedora:{PID}> $predicate $object . ".format(PID=PID)
+		query_statement = "select $predicate $object from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
+
+		# print query_statement
+		
+		base_URL = "http://localhost/fedora/risearch"
+		payload = {
+			"lang" : "sparql",
+			"query" : query_statement,
+			"flush" : "false",
+			"type" : "tuples",
+			"format" : "JSON"
+		}
+		r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
+		risearch = json.loads(r.text)
+		return risearch
+
+	# if more than 100 PIDs, chunk into sub-queries
 	if len(PIDs) > 100:		
 
 		def grouper(iterable, chunksize, fillvalue=None):
@@ -105,28 +128,11 @@ def editRELS_shared():
 
 		chunks =  grouper(PIDs,100)
 
-
 		for chunk in chunks:			
 
-			# construct where statement for query
-			where_statement = ""
-			for PID in chunk:
-				if PID != None:				
-					where_statement += "<fedora:{PID}> $predicate $object . ".format(PID=PID)
-			query_statement = "select $predicate $object from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
+			# perform query
+			risearch = risearchQuery(chunk)
 
-			# print query_statement
-			
-			base_URL = "http://localhost/fedora/risearch"
-			payload = {
-				"lang" : "sparql",
-				"query" : query_statement,
-				"flush" : "false",
-				"type" : "tuples",
-				"format" : "JSON"
-			}
-			r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
-			risearch = json.loads(r.text)
 			chunk_list = []			
 			for each in risearch['results']:
 				tup = (each['predicate'],each['object'])				
@@ -141,25 +147,9 @@ def editRELS_shared():
 		
 
 	else:
-		# construct where statement for query
-		where_statement = ""
-		for PID in PIDs:
-			where_statement += "<fedora:{PID}> $predicate $object . ".format(PID=PID)
-		query_statement = "select $predicate $object from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)
-		
-		base_URL = "http://localhost/fedora/risearch"
-		payload = {
-			"lang" : "sparql",
-			"query" : query_statement,
-			"flush" : "false",
-			"type" : "tuples",
-			"format" : "JSON"
-		}
-		r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
-		risearch = json.loads(r.text)
-		for each in risearch['results']:
-				tup = (each['predicate'],each['object'])
-				shared_relationships.append(tup)
+		# perform query
+		risearch = risearchQuery(PIDs)
+		shared_relationships = [ (each['predicate'], each['object']) for each in risearch['results'] ]
 
 
 	return render_template('editRELS_shared.html',shared_relationships=shared_relationships)
@@ -197,10 +187,14 @@ def editRELS_add_worker(job_package):
 	obj_ohandle = fedora_handle.get_object(PID)	
 
 	form_data = job_package['form_data']	
-	
-	predicate_string = form_data['predicate'].encode('utf-8').strip()
+
+	if "literal" in form_data:
+		predicate_string = form_data['predicate_literal'].encode('utf-8').strip()	
+	else:
+		predicate_string = form_data['predicate'].encode('utf-8').strip()
+
 	object_string = form_data['obj'].encode('utf-8').strip()
-	print obj_ohandle.add_relationship(predicate_string, object_string)
+	return obj_ohandle.add_relationship(predicate_string, object_string)
 
 
 def editRELS_purge_worker(job_package):
@@ -212,7 +206,7 @@ def editRELS_purge_worker(job_package):
 	predicate_string = form_data['predicate'].encode('utf-8').strip()
 	object_string = form_data['object'].encode('utf-8').strip()
 		
-	print obj_ohandle.purge_relationship(predicate_string, object_string)
+	return obj_ohandle.purge_relationship(predicate_string, object_string)
 
 
 def editRELS_modify_worker(job_package):
@@ -227,7 +221,7 @@ def editRELS_modify_worker(job_package):
 	new_object_string = form_data['new_object'].encode('utf-8').strip()	
 	old_object_string = form_data['old_object'].encode('utf-8').strip()
 		
-	print obj_ohandle.modify_relationship(old_predicate_string, old_object_string, new_object_string)
+	return obj_ohandle.modify_relationship(old_predicate_string, old_object_string, new_object_string)
 
 
 def editRELS_edit_worker(job_package):		
@@ -332,10 +326,6 @@ def editRELS_regex_worker(job_package):
 
 	# save constructed object
 	print newDS.save()
-
-def editRELS_remove_worker(job_package):
-	pass
-	
 
 
 

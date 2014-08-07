@@ -22,23 +22,24 @@ class solrSearch(Form):
 # form for adding Datastreams
 class addDSForm(Form):
 	# using params verbatim from Fedora documentation
-	dsID = StringField('Datastream ID:')
+	dsID = StringField()
 	altIDs = StringField('Alternate Datastream ID:')		
 	dsLabel = StringField('Datastream Label:')
 	MIMEType = StringField('MIME-Type:')
-	dsLocation = StringField('Location (note: will trump content below):')
-	controlGroup = SelectField('Control Group:', choices=[('M', 'Managed Content'), ('X', 'Inline XML'), ('R', 'Redirect'), ('E', 'External Referenced')])	
-	content = TextAreaField('Paste Content (usually XML, and trumps file upload)')
+	controlGroup = SelectField('Control Group:', choices=[('M', 'Managed Content'), ('X', 'Inline XML'), ('R', 'Redirect'), ('E', 'External Referenced')])
+	dataType = SelectField('Select where your data is coming from:', choices=[('', ''), ('dsLocation', 'URL'), ('content', 'Pasted Content'), ('upload', 'Uploaded Content')])
+	dsLocation = StringField('Location:')
+	content = TextAreaField('Paste Content:')
 	upload = FileField('Upload Content')
 
 # form for purging Datastreams
 class purgeDSForm(Form):
 	# using params verbatim from Fedora documentation
-	dsID = StringField('Datastream ID: ')
-	startDT = StringField('Start Date-Time Stamp: ')
-	endDT = StringField('Ending Date-Time Stamp: ')
-	logMessage = StringField('Log Message: ')
-	force = StringField('Force Update: ')
+	dsID = StringField('Datastream ID:')
+	startDT = StringField('Start Date-Time Stamp:')
+	endDT = StringField('Ending Date-Time Stamp:')
+	logMessage = StringField('Log Message:')
+	force = StringField('Force Update:')
 
 # form for adding RDF triples
 class RDF_edit(Form):

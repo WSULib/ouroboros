@@ -32,6 +32,10 @@ $(document).ready(function() {
 				validators: {
 					notEmpty: {
 						message: 'You must give the datastream a MIME-Type'
+					},
+					regexp: {
+						regexp: /.+\/.+$/,
+						message: 'invalid MIME-Type'
 					}
 				}
 			},

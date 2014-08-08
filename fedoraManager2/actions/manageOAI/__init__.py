@@ -49,7 +49,7 @@ def serverWide():
 	all_collections = fedora_handle.risearch.sparql_query("select $dc_title $subject $isOAIHarvestable from <#ri> where { \
 		$subject <http://purl.org/dc/elements/1.1/title> $dc_title . \
 		$subject <fedora-rels-ext:hasContentModel> <info:fedora/CM:Collection> . \
-		$subject <http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isOAIHarvestable> $isOAIHarvestable \
+		$subject <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isOAIHarvestable> $isOAIHarvestable \
 		}")
 	
 	collection_tups = [ (rel["dc_title"],rel["subject"].split("/")[1],rel["isOAIHarvestable"]) for rel in all_collections]	
@@ -74,7 +74,7 @@ def objectRelated():
 		where_statement = ""
 		for PID in list_of_PIDs:
 			if PID != None:				
-				where_statement += "<fedora:{PID}> <http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet> $object . $object <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $object <http://www.openarchives.org/OAI/2.0/setName> $setName .".format(PID=PID)
+				where_statement += "<fedora:{PID}> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet> $object . $object <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $object <http://www.openarchives.org/OAI/2.0/setName> $setName .".format(PID=PID)
 		query_statement = "select $object $setSpec $setName from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
 		base_URL = "http://localhost/fedora/risearch"
 		payload = {
@@ -148,7 +148,7 @@ def manageOAI_genItemID_worker(job_package):
 @manageOAI.route('/manageOAI/toggleSet/<PID>', methods=['POST', 'GET'])
 def manageOAI_toggleSet(PID):	
 
-	isOAIHarvestable_predicate = "http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isOAIHarvestable"
+	isOAIHarvestable_predicate = "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isOAIHarvestable"
 	
 	# determine collection status
 	obj_ohandle = fedora_handle.get_object(PID)
@@ -214,7 +214,7 @@ def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 		redisHandles.r_PIDlock.set(PID,1)
 	################################################
 
-	isMemberOfOAISet_predicate = "http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet"
+	isMemberOfOAISet_predicate = "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet"
 	obj_handle = fedora_handle.get_object(object_uri)
 
 	# toggle collection OAI relatedd RELS-EXT relationships	
@@ -245,7 +245,7 @@ def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 # 	form_data = job_package['form_data']
 # 	target_collection_object = form_data['obj'].encode('utf-8').strip()
 		
-# 	print obj_ohandle.add_relationship("http://silo.lib.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", target_collection_object )
+# 	print obj_ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", target_collection_object )
 
 
 # # Boutique Jobs

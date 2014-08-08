@@ -82,8 +82,7 @@ class postTask(Task):
 		# release PID from PIDlock
 		redisHandles.r_PIDlock.delete(PID)		
 
-		# update job with task completion		
-		# redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "{status},{task_id},{PID}".format(status=status,task_id=task_id,PID=PID))
+		# update job with task completion
 		redisHandles.r_job_handle.set("{task_id}".format(task_id=task_id), "{status},{PID}".format(status=status,PID=PID))		
 	
 		# increments completed tasks
@@ -120,9 +119,10 @@ def celeryTaskFactory(**kwargs):
 		job_package['PID'] = PID		
 		# fire off async task via taskWrapper		
 		result = taskWrapper.delay(job_package)		
-		task_id = result.id		
-		
-		redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id},{PID}".format(task_id=task_id,PID=PID))
+		task_id = result.id
+
+		# Set handle in 
+		redisHandles.r_job_handle.set("{task_id}".format(task_id=task_id), "FIRED,{PID}".format(PID=PID))
 			
 		# update incrementer for total assigned
 		jobs.jobUpdateAssignedCount(job_num)

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from localConfig import *
+
 import requests
 import json
 import sys
@@ -66,7 +68,7 @@ def DCfromMODS_single(PID):
  	} 	
 
  	headers = {'Content-Type': 'application/xml'}
-	response = requests.post(baseFedoraURL, auth=('fedoraAdmin', 'cowp00p2012'), params=fedoraParams, data=str(DC), headers=headers)
+	response = requests.post(baseFedoraURL, auth=(FEDORA_USER, FEDORA_PASSWORD), params=fedoraParams, data=str(DC), headers=headers)
  	if response.status_code == 201:
  		print "DC from MODS derivation successful"
  		return "success"

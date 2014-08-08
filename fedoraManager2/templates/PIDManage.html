@@ -55,7 +55,7 @@
 <script type="text/javascript" src="{{ url_for('static',filename='PIDmanage.js')}}"></script>
 <script type="text/javascript">
     $(document).ready(function(){
-        paintTable("{{username}}","{{localConfig.dataTables_handle}}");
+        paintTable("{{username}}","{{localConfig.DATATABLES_HANDLE}}");
     });    
 </script>
 {% include 'footer.html' %}

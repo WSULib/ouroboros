@@ -301,12 +301,10 @@ def editRELS_regex_worker(job_package):
 	###############################################################
 
 	# Raw Datastream via Fedora API
-	###############################################################
-	PID = PIDs[PIDnum]
+	###############################################################	
 	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
-
 	
 	# get regex parameters
 	form_data = job_package['form_data']	

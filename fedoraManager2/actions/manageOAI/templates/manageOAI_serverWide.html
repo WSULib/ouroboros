@@ -32,7 +32,7 @@
 				<td>{{PID}}</td>	
 				<td>set:{{PID}}</td>			
 				{% if isOAIHarvestable == 'True' %}				
-					<td><span style="color:green;">{{isOAIHarvestable}}</span></td>
+					<td><span style="color:green;">{{isOAIHarvestable}} / (<a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListRecords&metadataPrefix=oai_dc&set=set:{{PID}}">explore</a>)</span></td>
 				{% else %}
 					<td><span style="color:red;">{{isOAIHarvestable}}</span></td>
 				{% endif %}				

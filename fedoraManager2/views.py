@@ -19,7 +19,7 @@ import socket
 import hashlib
 
 # flask proper
-from flask import render_template, request, session, redirect, make_response, Response
+from flask import render_template, request, session, redirect, make_response, Response, Blueprint
 from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -62,6 +62,13 @@ from fedoraHandles import fedora_handle
 app.secret_key = 'WSUDOR'
 ####################################
 
+# CONFIGS
+@app.before_request
+def log_request():
+    if app.config.get('LOG_REQUESTS'):                
+        print request.headers
+        
+
 # GENERAL
 #########################################################################################################
 @app.route("/")
@@ -76,7 +83,7 @@ def index():
 
 @app.route("/about")
 def about():
-	
+	print request.headers	
 	return render_template("about.html")
 
 

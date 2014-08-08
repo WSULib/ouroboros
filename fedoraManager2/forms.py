@@ -1,6 +1,6 @@
 from wtforms import Form, BooleanField, StringField, SelectField, TextAreaField, FileField, validators, fields
 
-from fedoraManager2.sensitive import *
+from localConfig import *
 from fedoraManager2 import utilities
 
 

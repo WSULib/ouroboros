@@ -1,6 +1,6 @@
 #Utility to link Fedora Commons FOXML objects and Solr, with augmentation in /search core
 
-from fedoraManager2.sensitive import *
+from localConfig import *
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -101,7 +101,7 @@ def FOXML2Solr(fedEvent, PID):
 			
 			#get object FOXML and parse as XML
 			try:
-				response = urllib.urlopen("http://{username}:{password}@localhost/fedora/objects/{PID}/objectXML".format(PID=PID,username=username,password=password))
+				response = urllib.urlopen("http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/objects/{PID}/objectXML".format(PID=PID,FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD))
 				FOXML = response.read()
 				XMLroot = etree.fromstring(FOXML)		
 			except:

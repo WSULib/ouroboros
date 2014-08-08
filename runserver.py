@@ -60,7 +60,7 @@ class imageServerListener(resource.Resource):
 
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
-Prod: Connected to JSM Messaging service on :fedConsumer_port (usually 61616), 
+Prod: Connected to JSM Messaging service on :FEDCONSUMER_PORT (usually 61616), 
 routes 'fedEvents' to mainRouter function from mainRouter.py
 Dev: Disabled
 '''
@@ -68,7 +68,7 @@ class fedoraConsumerWorker(object):
     QUEUE = "/topic/fedora.apim.update"
     def __init__(self, config=None):
         if config is None:
-            config = StompConfig('tcp://localhost:{fedConsumer_port}'.format(fedConsumer_port=fedConsumer_port))
+            config = StompConfig('tcp://localhost:{FEDCONSUMER_PORT}'.format(FEDCONSUMER_PORT=FEDCONSUMER_PORT))
         self.config = config
 
     @defer.inlineCallbacks
@@ -104,22 +104,22 @@ WSUAPI_site = Site(WSUAPI_resource)
 if __name__ == '__main__':
 
 	# fedoraManagere2
-	if fm2Fire == True:
+	if FEDORA_MANAGER_2_FIRE == True:
 		print "Starting fedoraManager2..."
-		reactor.listenTCP( fedoraManager2_port, site )
+		reactor.listenTCP( FEDORA_MANAGER_2_PORT, site )
 
 	# WSUAPI
-	if WSUAPIFire == True:
+	if WSUAPI_FIRE == True:
 		print "Starting WSUAPI_app..."
-		reactor.listenTCP( WSUAPIListener_port, WSUAPI_site )	
+		reactor.listenTCP( WSUAPI_LISTENER_PORT, WSUAPI_site )	
 	
 	# imageServer
-	if imageServerFire == True:
+	if IMAGESERVER_FIRE == True:
 		print "Starting imageServer..."
-		reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))	
+		reactor.listenTCP(IMAGESERVER_LISTENER_PORT, server.Site(imageServerListener()))	
 	
 	# fedConsumer
-	if fedConsumerFire == True:
+	if FEDCONSUMER_FIRE == True:
 		print "Starting JSM listener..."
 		fedoraConsumerWorker().run()
 

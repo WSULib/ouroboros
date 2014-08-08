@@ -3,7 +3,7 @@ import datetime
 import hashlib
 import requests
 from requests.auth import HTTPBasicAuth
-from fedoraManager2.sensitive import *
+from localConfig import *
 import json
 
 escapeRules = {'+': r'\+',

@@ -20,8 +20,8 @@ WSUAPI_app.secret_key = 'WSUDOR-WSUAPI'
 
 # GENERAL
 #########################################################################################################
-@WSUAPI_app.route("/{WSUAPI_prefix}/".format(WSUAPI_prefix=localConfig.WSUAPI_prefix), methods=['POST', 'GET'])
-@WSUAPI_app.route("/{WSUAPI_prefix}".format(WSUAPI_prefix=localConfig.WSUAPI_prefix), methods=['POST', 'GET'])
+@WSUAPI_app.route("/{WSUAPI_PREFIX}/".format(WSUAPI_PREFIX=localConfig.WSUAPI_PREFIX), methods=['POST', 'GET'])
+@WSUAPI_app.route("/{WSUAPI_PREFIX}".format(WSUAPI_PREFIX=localConfig.WSUAPI_PREFIX), methods=['POST', 'GET'])
 def index():		
 
 	print "HTTP METHOD:",request.method

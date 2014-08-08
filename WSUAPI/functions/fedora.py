@@ -1,7 +1,7 @@
 # Main Fedora and Risearch querying module
 import requests
 import urllib
-from sensitive import *
+from localConfig import *
 import xmltodict, json
 from fedDataSpy import checkSymlink
 

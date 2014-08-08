@@ -4,8 +4,8 @@ from localConfig import *
 # BROKER_URL = 'amqp://guest:guest@mitten:5672//'
 
 # Redis
-BROKER_URL='redis://localhost:6379/{redis_broker_db}'.format(redis_broker_db=str(redis_broker_db))
-RESULT_BACKEND='redis://localhost:6379/{redis_backend_db}'.format(redis_backend_db=str(redis_backend_db))
+BROKER_URL='redis://localhost:6379/{REDIS_BROKER_DB}'.format(REDIS_BROKER_DB=str(REDIS_BROKER_DB))
+RESULT_BACKEND='redis://localhost:6379/{REDIS_BACKEND_DB}'.format(REDIS_BACKEND_DB=str(REDIS_BACKEND_DB))
 RESULT_SERIALIZER='json'
 
 

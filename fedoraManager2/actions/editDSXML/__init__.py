@@ -43,7 +43,7 @@ def index(pid_num):
 	session['editDSXML_PID'] = PID
 	session['editDSXML_DS'] = DS
 	
-	return render_template("editDSXML.html",PIDs=PIDs,PID=PID,pid_num=int(pid_num),app_host=localConfig.app_host)
+	return render_template("editDSXML.html",PIDs=PIDs,PID=PID,pid_num=int(pid_num),APP_HOST=localConfig.APP_HOST)
 
 
 # update handler

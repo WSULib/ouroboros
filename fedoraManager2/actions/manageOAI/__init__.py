@@ -12,7 +12,7 @@ from fedoraManager2.jobs import getSelPIDs
 from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2 import utilities
-from fedoraManager2.sensitive import *
+from localConfig import *
 from fedoraManager2 import redisHandles
 from flask import Blueprint, render_template, abort, request, redirect
 

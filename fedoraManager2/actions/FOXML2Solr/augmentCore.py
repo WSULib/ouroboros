@@ -1,5 +1,5 @@
 # ancillary utility to FOXML2Solr that, for a given list of PIDs, checks their CM type and/or datastream mime/types and indexs documents in /search core
-from fedoraManager2.sensitive import *
+from localConfig import *
 
 import sys
 import requests

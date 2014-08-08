@@ -7,7 +7,7 @@ import json
 import re
 import hashlib
 import xmltodict
-from sensitive import *
+from localConfig import *
 
 
 # takes XML URL as input, returns JSON

@@ -6,7 +6,7 @@ from paste.util.multidict import MultiDict
 import json
 import re
 import hashlib
-from sensitive import *
+from localConfig import *
 from utils import *
 
 # python sunburnt module
@@ -31,8 +31,6 @@ def solrGetFedDoc(getParams):
 
 def solrSearch(getParams):
 ######################################################################################################################	
-	# print getParams
-
 	# establish baseURL
 	if 'solrCore' in getParams:				
 		baseURL = "http://localhost/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
@@ -340,7 +338,7 @@ def WSUDORuserAuth(getParams):
 
 	# check hash match
 	# gen hash	
-	hashString = getParams['username'][0]+getParams['password'][0]+userAccountSalt
+	hashString = getParams['username'][0]+getParams['password'][0]+USER_ACCOUNT_SALT
 	clientHash = hashlib.sha256(hashString).hexdigest()
 
 	if clientHash == userDict['response']['docs'][0]['user_hash'][0]:

@@ -19,43 +19,44 @@ def jobStart():
 	job_num = r_job_handle.incr("job_num")	
 	return job_num
 
+
 def jobUpdateAssignedCount(job_num):
 	r_job_handle.incr("job_{job_num}_assign_count".format(job_num=job_num))
+
 
 def jobUpdateCompletedCount(job_num):
 	r_job_handle.incr("job_{job_num}_complete_count".format(job_num=job_num))
 
+
 def getTaskDetails(task_id):
 	return celery.AsyncResult(task_id)
+
 
 def updateLocalJob(job_num,est_tasks,assign_tasks,completed_tasks):
 
 	# send task to redis
 	redisHandles.r_job_handle.set("{job_num},{step}".format(step=step,job_num=job_num), "FIRED,{task_id},{PID}".format(task_id=task_id,PID=PID))
 
+
 # function to remove job from fm2
 def jobRemove_worker(job_num):	
 
-	# get number of tasks	
-	job_task_num = int(r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num)))
-	print "Number of tasks to remove for the job:",job_task_num	
+	# get children from job
+	#query SQL database for job task_id
+	job_handle = models.user_jobs.query.filter_by(job_num=job_num).first()
+	job_celery_id = job_handle.celery_task_id
 
-	# remove from celery broker
-	'''
-	Might not be possible / necessary.  AsyncResult.forget() doesn't seem to have any effect... 
-	Skipping for now.
-	'''
+	# get children
+	job_celery_handle = celery.AsyncResult(job_celery_id)
+	children = job_celery_handle.children
 
 	# remove celery results from Redis backend
-	to_delete = []
-	task_step = 1
-	while task_step <= job_task_num:
-		to_delete.append("{job_num},{task_step}".format(job_num=job_num,task_step=task_step))
-		task_step += 1
+	to_delete = []	
+	for child in children:
+		to_delete.append(child.id)	
 	
 	task_del_num = r_job_handle.delete(*to_delete)
-	task_del_result = "{task_del_num} tasks remove from Redis backend".format(task_del_num=task_del_num)
-	
+	task_del_result = "{task_del_num} tasks remove from Redis backend".format(task_del_num=task_del_num)	
 
 	# remove from SQL DB
 	job_handle = models.user_jobs.query.filter_by(job_num=job_num)
@@ -69,7 +70,6 @@ def jobRemove_worker(job_num):
 	# prepare return package
 	result_package = (task_del_result,db_del_result)
 	return result_package
-
 
 # PID selection
 ############################################################################################################

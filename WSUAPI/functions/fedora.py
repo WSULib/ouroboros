@@ -9,7 +9,7 @@ from fedDataSpy import checkSymlink
 # return Fedora MODS datastream
 def getObjectXML(getParams):	
 	baseURL = "http://localhost/fedora/objects/{PID}/objectXML".format(PID=getParams['PID'][0])
-	r = requests.get(baseURL, auth=(username, password))			
+	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
 	xmlString = r.text
 
 	#check if valid PID
@@ -39,7 +39,7 @@ def isMemberOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(username, password), data=risearch_params)
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -57,7 +57,7 @@ def hasMemberOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(username, password), data=risearch_params)
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -78,7 +78,7 @@ def isMemberOfCollection(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(username, password), data=risearch_params)
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')
 	return jsonString
@@ -96,7 +96,7 @@ def hasMemberOfCollection(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(username, password), data=risearch_params)
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -116,7 +116,7 @@ def getSiblings(getParams):
 	}
 
 	# prepare as JSON dict
-	r = requests.post(baseURL, auth=(username, password), data=risearch_params)
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')
 	lines = jsonString.split("\n")	
@@ -143,7 +143,7 @@ def getSiblings(getParams):
 # return Fedora MODS datastream
 def fedoraMODS(getParams):
 	baseURL = "http://localhost/fedora/objects/{PID}/datastreams/MODS/content".format(PID=getParams['PID'][0])
-	r = requests.get(baseURL, auth=(username, password))			
+	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
 	xmlString = r.text
 	#convert XML to JSON with "xmltodict"
 	outputDict = xmltodict.parse(xmlString)
@@ -164,7 +164,7 @@ def serialWalk(getParams):
 		'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(username, password), data=risearch_params)
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString

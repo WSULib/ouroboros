@@ -60,7 +60,11 @@ class imageServerListener(resource.Resource):
 
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
+<<<<<<< HEAD
 Prod: Connected to JSM Messaging service on :FEDCONSUMER_PORT (usually 61616), 
+=======
+Prod: Connected to JSM Messaging service on :fedConsumer_port (usually 61616), 
+>>>>>>> 4145dd3c4546af714726d125408f89efc9327623
 routes 'fedEvents' to mainRouter function from mainRouter.py
 Dev: Disabled
 '''
@@ -104,6 +108,7 @@ WSUAPI_site = Site(WSUAPI_resource)
 if __name__ == '__main__':
 
 	# fedoraManagere2
+<<<<<<< HEAD
 	if FEDORA_MANAGER_2_FIRE == True:
 		print "Starting fedoraManager2..."
 		reactor.listenTCP( FEDORA_MANAGER_2_PORT, site )
@@ -120,6 +125,24 @@ if __name__ == '__main__':
 	
 	# fedConsumer
 	if FEDCONSUMER_FIRE == True:
+=======
+	if fm2Fire == True:
+		print "Starting fedoraManager2..."
+		reactor.listenTCP( fedoraManager2_port, site )
+
+	# WSUAPI
+	if WSUAPIFire == True:
+		print "Starting WSUAPI_app..."
+		reactor.listenTCP( WSUAPIListener_port, WSUAPI_site )	
+	
+	# imageServer
+	if imageServerFire == True:
+		print "Starting imageServer..."
+		reactor.listenTCP(imageServerListener_port, server.Site(imageServerListener()))	
+	
+	# fedConsumer
+	if fedConsumerFire == True:
+>>>>>>> 4145dd3c4546af714726d125408f89efc9327623
 		print "Starting JSM listener..."
 		fedoraConsumerWorker().run()
 

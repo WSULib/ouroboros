@@ -9,8 +9,8 @@ from flask.ext.login import LoginManager
 # create app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://fm2:fm2@localhost/fedoraManager2'
-app.config['LOG_REQUESTS'] = True
-app.debug = True
+# app.config['LOG_REQUESTS'] = True
+# app.debug = True
 
 #setup db
 db = SQLAlchemy(app)

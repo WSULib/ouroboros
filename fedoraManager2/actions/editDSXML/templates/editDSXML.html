@@ -49,7 +49,7 @@
 				schema : "{{APP_HOST}}tasks/static/editDSXML/UNC_xmleditor/inc/schema_json/mods.json",
 				documentTitle: "Dodge Brothers Factory Exterior",
 				ajaxOptions: {					
-					xmlRetrievalPath: "http://digital.library.wayne.edu/fedora/objects/"+PID+"/datastreams/"+DS+"/content",
+					xmlRetrievalPath: "http://{{DOMAIN}}/fedora/objects/"+PID+"/datastreams/"+DS+"/content",
 					xmlUploadPath: "/tasks/editDSXML/update"
 				}
 			});

@@ -8,6 +8,6 @@
 <script type="text/javascript" src="{{ url_for('static',filename='userJobs.js')}}"></script>
 <script type="text/javascript">	
 	// automatic start
-	poll(1500,"{{localConfig.APP_HOST}}");
+	poll(1500,"{{localConfig.APP_BASE_URL}}");
 </script>
 {% include 'footer.html' %}

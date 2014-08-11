@@ -7,9 +7,9 @@ function exportJobStatus(job_package){
 }
 
 // function to perform polling, requires wait_time variable	
-function poll(wait_time, APP_HOST){
+function poll(wait_time, APP_BASE_URL){
 	var longPoller = setTimeout(function(){
-		url = APP_HOST+"userJobs?data=true";
+		url = APP_BASE_URL+"/userJobs?data=true";
 		$.ajax({ 
 			url: url, 
 			dataType:"json",
@@ -34,7 +34,7 @@ function poll(wait_time, APP_HOST){
 
 				// the loop
 				if (response.job_status != "complete"){
-					poll(wait_time,APP_HOST);	
+					poll(wait_time,APP_BASE_URL);	
 				}
 				else{
 					console.log("finis!");

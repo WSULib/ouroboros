@@ -7,6 +7,7 @@ from fedoraManager2.fedoraHandles import fedora_handle
 from fedoraManager2.jobs import getSelPIDs
 from fedoraManager2 import models
 from fedoraManager2 import db
+from fedoraManager2 import utilities
 from localConfig import *
 from flask import Blueprint, render_template, abort, request
 
@@ -29,10 +30,12 @@ from fuzzywuzzy import fuzz
 editRELS = Blueprint('editRELS', __name__, template_folder='templates', static_folder="static")
 
 @editRELS.route('/editRELS', methods=['POST', 'GET'])
+@utilities.objects_needed
 def index():	
 	return render_template("editRELS_index.html")
 
 @editRELS.route('/editRELS/add', methods=['POST', 'GET'])
+@utilities.objects_needed
 def editRELS_add():	
 	
 	# instantiate forms
@@ -41,6 +44,7 @@ def editRELS_add():
 	return render_template("editRELS_add.html",form=form)
 
 @editRELS.route('/editRELS/blanket', methods=['POST', 'GET'])
+@utilities.objects_needed
 def editRELS_blanket():
 
 	# get PID to examine, if noted
@@ -79,6 +83,7 @@ def editRELS_blanket():
 	return render_template("editRELS_blanket.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)
 
 @editRELS.route('/editRELS/shared', methods=['POST', 'GET'])
+@utilities.objects_needed
 def editRELS_shared():
 	'''
 	Will return only RDF statements shared (predicate AND object) by all PIDs	

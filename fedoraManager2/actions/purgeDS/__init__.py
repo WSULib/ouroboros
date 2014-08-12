@@ -4,6 +4,7 @@
 from fedoraManager2.fedoraHandles import fedora_handle
 from fedoraManager2.forms import purgeDSForm
 from fedoraManager2.jobs import getSelPIDs
+from fedoraManager2 import utilities
 from flask import Blueprint, render_template, request
 
 
@@ -11,6 +12,7 @@ purgeDS = Blueprint('purgeDS', __name__, template_folder='templates', static_fol
 
 
 @purgeDS.route('/purgeDS', methods=['POST', 'GET'])
+@utilities.objects_needed
 def index():
 
 	# get PID to examine, if noted

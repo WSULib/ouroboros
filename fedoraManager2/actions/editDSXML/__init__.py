@@ -9,6 +9,7 @@ from fedoraManager2.jobs import getSelPIDs
 from fedoraManager2 import models
 from fedoraManager2 import db
 from fedoraManager2.forms import batchIngestForm
+from fedoraManager2 import utilities
 import fedoraManager2.actions as actions
 import localConfig
 from flask import Blueprint, render_template, abort, request, redirect, session
@@ -30,6 +31,7 @@ UI notes:
 
 # main view
 @editDSXML.route('/editDSXML/<pid_num>', methods=['POST', 'GET'])
+@utilities.objects_needed
 def index(pid_num):
 
 	# get PIDs	

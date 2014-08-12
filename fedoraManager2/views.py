@@ -62,7 +62,12 @@ from fedoraHandles import fedora_handle
 app.secret_key = 'WSUDOR'
 ####################################
 
+
+
+
 # CONFIGS
+#########################################################################################################
+
 @app.before_request
 def log_request():
     if app.config.get('LOG_REQUESTS'):                
@@ -71,6 +76,7 @@ def log_request():
 
 # GENERAL
 #########################################################################################################
+
 @app.route("/")
 def index():
 	if "username" in session:
@@ -184,8 +190,9 @@ def logout():
 #########################################################################################################
 # fireTask is the factory that begins tasks from fedoraManager2.actions
 @app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
+@utilities.objects_needed
 def fireTask(task_name):
-	print "Starting task request..."
+	print "Starting task request..."	
 
 	# check if task in available tasks, else abort
 	try:

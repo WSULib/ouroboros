@@ -3,6 +3,7 @@
 # handles
 from fedoraManager2.fedoraHandles import fedora_handle
 from fedoraManager2.forms import addDSForm
+from fedoraManager2 import utilities
 from flask import Blueprint, render_template, abort
 import eulfedora
 
@@ -11,6 +12,7 @@ addDS = Blueprint('addDS', __name__, template_folder='templates', static_folder=
 
 
 @addDS.route('/addDS')
+@utilities.objects_needed
 def index():
 
 	form = addDSForm()	

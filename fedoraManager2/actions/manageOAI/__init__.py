@@ -58,6 +58,7 @@ def serverWide():
 
 
 @manageOAI.route('/manageOAI/objectRelated', methods=['POST', 'GET'])
+@utilities.objects_needed
 def objectRelated():
 
 	from fedoraManager2 import forms

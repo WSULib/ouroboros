@@ -11,12 +11,14 @@ from lxml import etree
 from flask import Blueprint, render_template, redirect, abort
 
 from fedoraManager2.fedoraHandles import fedora_handle
+from fedoraManager2 import utilities
 
 
 objectState = Blueprint('objectState', __name__, template_folder='templates', static_folder="static")
 
 
 @objectState.route('/objectState')
+@utilities.objects_needed
 def index():	
 	return render_template("objectState.html")
 

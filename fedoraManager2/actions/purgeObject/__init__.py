@@ -19,6 +19,7 @@ purgeObject = Blueprint('purgeObject', __name__, template_folder='templates', st
 
 
 @purgeObject.route('/purgeObject')
+@utilities.objects_needed
 def index():
 
 	# get PIDs	

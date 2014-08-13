@@ -85,6 +85,10 @@ def returnOAISets(context):
 	return shared_relationships
 
 
+def applicationError(error_msg):
+	return render_template("applicationError.html",error_msg=error_msg)
+
+
 
 # DECORATORS
 #########################################################################################################

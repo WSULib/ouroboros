@@ -192,13 +192,13 @@ def logout():
 @app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
 @utilities.objects_needed
 def fireTask(task_name):
-	print "Starting task request..."	
+	print "Starting task request..."
 
 	# check if task in available tasks, else abort
 	try:
 		task_handle = getattr(actions, task_name)
 	except:		 
-		return render_template("taskError.html")
+		return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/userPage'>user page</a>.")		
 	
 	# get username from session (will pull from user auth session later)
 	username = session['username']	

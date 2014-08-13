@@ -7,13 +7,22 @@
     <xsl:template name="RELS-EXT">        
         <xsl:param name="RELSroot"
             select="/foxml:digitalObject/foxml:datastream[@ID='RELS-EXT']/foxml:datastreamVersion[last()]/foxml:xmlContent/rdf:RDF/rdf:Description"/>        
-        <xsl:for-each 
-            select="$RELSroot/*">            
+        <xsl:for-each select="$RELSroot/*">     
+            
             <field> 
                 <xsl:attribute name="name"> 
                     <xsl:value-of select="concat('rels_', name())"/> 
                 </xsl:attribute> 
-                <xsl:value-of select="@rdf:resource"/> 
+                <!-- grab URI's if prsent as rdf:resource,
+                    otherwise grab as string literal -->
+                <xsl:choose>
+                    <xsl:when test="@rdf:resource">
+                        <xsl:value-of select="@rdf:resource"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="."/>
+                    </xsl:otherwise>
+                </xsl:choose>
             </field> 
         </xsl:for-each>        
     </xsl:template>

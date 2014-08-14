@@ -65,14 +65,11 @@ app.secret_key = 'WSUDOR'
 
 
 
-# CONFIGS
+# META
 #########################################################################################################
 
-@app.before_request
-def log_request():
-    if app.config.get('LOG_REQUESTS'):                
-        print request.headers
-        
+
+
 
 # GENERAL
 #########################################################################################################
@@ -143,9 +140,9 @@ def user_loader(userid):
 
 
 @app.before_request
-def before_request():
+def before_request():	
 	# This is executed before every request
-	g.user = current_user
+	g.user = current_user	
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -192,6 +189,7 @@ def logout():
 @app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
 @utilities.objects_needed
 def fireTask(task_name):
+
 	print "Starting task request..."
 
 	# check if task in available tasks, else abort
@@ -203,23 +201,19 @@ def fireTask(task_name):
 	# get username from session (will pull from user auth session later)
 	username = session['username']	
 
-	# get total SELECTED PIDs associated with user	
+	# get user-selectedd objects	
 	stime = time.time()
 	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status="selected")	
 	PIDlist = [PID.PID for PID in userSelectedPIDs]	
 	etime = time.time()
 	ttime = (etime - stime) * 1000
-	print "Took this long to create list from SQL query",ttime,"ms"
+	print "Took this long to create list from SQL query",ttime,"ms"	
 
-	# if no PIDs selected, abort
-	if userSelectedPIDs.count() == 0:
-		return "<p>No PIDs selected, try again.  Try selecting <a href='/PIDmanage'>here</a>.</p>"
-
-	# get job number
-	# pulling from incrementing redis counter, considering MySQL	
+	# instantiate job number
+	''' pulling from incrementing redis counter, considering MySQL '''
 	job_num = jobs.jobStart()		
 	
-	# begin job and set estimated
+	# begin job and set estimated tasks
 	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())	
 
@@ -228,7 +222,7 @@ def fireTask(task_name):
 		"username":username,
 		"job_num":job_num,		
 		"form_data":request.form			
-	}	
+	}
 
 	# pass along binary uploaded data if included in job task
 	if 'upload' in request.files and request.files['upload'].filename != '':
@@ -240,8 +234,7 @@ def fireTask(task_name):
 	passing username, task_name, and job_package containing all the update handles	
 	'celery_task_id' below contains celery task key, that contains all eventual children objects
 	'''
-	celery_task_id = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)
-	print type(celery_task_id)
+	celery_task_id = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)	
 
 	# send job to user_jobs SQL table
 	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init"))	
@@ -428,6 +421,12 @@ def jobRemove(job_num):
 
 	return render_template("jobRemove.html",job_num=job_num)
 
+
+# View to get 30,000 ft handle one Objects slated to be acted on
+@app.route("/objPreview", methods=['POST', 'GET'])
+def objPreview():	
+
+	return render_template("objPreview.html")	
 
 
 # PID MANAGEMENT

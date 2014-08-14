@@ -24,11 +24,6 @@ import eulfedora
 # create blueprint
 editDSXML = Blueprint('editDSXML', __name__, template_folder='templates', static_folder="static", static_url_path='/static/editDSXML')
 
-'''
-UI notes:
-	- need to iterate through PIDs for each editor...
-'''
-
 # main view
 @editDSXML.route('/editDSXML/<pid_num>', methods=['POST', 'GET'])
 @utilities.objects_needed

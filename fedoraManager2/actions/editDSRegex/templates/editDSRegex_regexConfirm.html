@@ -1,0 +1,17 @@
+{% include 'header.html' %}
+
+<form action="/fireTask/editDSRegex_regex_worker" method="POST">
+	<h2>Original String</h2>
+	<textarea name="orig_string" cols="100" rows="20">{{return_package.orig_string}}</textarea><br>
+	<h2>Regex-ed String</h2>
+	<textarea name="new_string" cols="100" rows="20">{{return_package.new_string}}</textarea><br>
+	{% if return_package.string_match %}
+		<p style="color:red;">No differences detected in strings, none can be made - <a href="#" onclick="window.history.back(); return false;">go back</a>.</p>				
+	{% else %}
+		<p style="color:green;">Changes detected.</p>
+		<p>If it looks good, fire away!</p>		
+	{% endif %}		
+	<button type="submit">go!</button>
+	<input type="hidden" name="regex_search" value="{{return_package.regex_search}}">
+	<input type="hidden" name="regex_replace" value="{{return_package.regex_replace}}">
+</form>

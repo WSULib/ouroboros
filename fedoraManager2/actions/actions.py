@@ -19,6 +19,10 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#editDSRegex
+from editDSRegex import editDSRegex, editDSRegex_regex_worker
+app.register_blueprint(editDSRegex, url_prefix=tasks_URL_prefix)
+
 #manageOAI
 from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_toggleSet_worker
 app.register_blueprint(manageOAI, url_prefix=tasks_URL_prefix)

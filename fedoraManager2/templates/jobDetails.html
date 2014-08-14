@@ -1,8 +1,17 @@
 {% include 'header.html' %}
 
-<h1>Job Details: # {{job_num}}</h1>
+<div class="row">
+	<div class="col-md-12">
+		<h1>Job Details: # {{job_num}}</h1>
+	</div>
+</div>
 
-<a href="/jobRemove/{{job_num}}">Remove Job?</a>
+<div class="row">
+	<div class="col-md-12">
+		<a href="/jobRemove/{{job_num}}">Remove Job?</a><br>	
+		<a href="/jobRetire/{{job_num}}">Retire Job?</a>
+	</div>
+</div>
 
 {% if tasks_package %}
 	<h2 style="color:green;">Success!</h2>

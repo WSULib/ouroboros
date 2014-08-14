@@ -266,7 +266,7 @@ def userJobs():
 	username = session['username']	
 
 	# get user jobs
-	user_jobs_list = models.user_jobs.query.filter(models.user_jobs.status != "complete", models.user_jobs.username == username)
+	user_jobs_list = models.user_jobs.query.filter(models.user_jobs.status != "complete", models.user_jobs.status != "retired", models.user_jobs.username == username)
 
 	# return package
 	return_package = []
@@ -435,6 +435,16 @@ def jobRemove(job_num):
 		return render_template("jobRemove.html",job_num=job_num,result=result)
 
 	return render_template("jobRemove.html",job_num=job_num)
+
+
+# Remove job from SQL, remove tasks from Redis
+@app.route("/jobRetire/<job_num>", methods=['POST', 'GET'])
+def jobRetire(job_num):		
+	
+	result = jobs.jobRetire_worker(job_num)		
+	print result
+
+	return redirect("/userPage")
 
 
 # View to get 30,000 ft handle one Objects slated to be acted on

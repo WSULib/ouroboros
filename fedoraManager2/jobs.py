@@ -39,11 +39,25 @@ def updateLocalJob(job_num,est_tasks,assign_tasks,completed_tasks):
 
 
 # function to remove job from fm2
+def jobRetire_worker(job_num):	
+	# get job handle
+	job_query = models.user_jobs.query.filter_by(job_num=job_num)
+
+	# set status to "retired"
+	job_query[0].status = "retired"
+	
+	# commit
+	return db.session.commit()
+
+
+# function to remove job from fm2
 def jobRemove_worker(job_num):	
 
-	# get children from job
-	#query SQL database for job task_id
-	job_handle = models.user_jobs.query.filter_by(job_num=job_num).first()
+	# get job handle
+	job_query = models.user_jobs.query.filter_by(job_num=job_num)
+	job_handle = job_query.first()
+	
+	# get children from job	
 	job_celery_id = job_handle.celery_task_id
 
 	# get children
@@ -58,9 +72,8 @@ def jobRemove_worker(job_num):
 	task_del_num = r_job_handle.delete(*to_delete)
 	task_del_result = "{task_del_num} tasks remove from Redis backend".format(task_del_num=task_del_num)	
 
-	# remove from SQL DB
-	job_handle = models.user_jobs.query.filter_by(job_num=job_num)
-	db_del_result = job_handle.delete()
+	# remove from SQL DB	
+	db_del_result = job_query.delete()
 	if db_del_result == 1:
 		db_del_result = "Job {job_num} removed from SQL DB".format(job_num=job_num)
 	else:

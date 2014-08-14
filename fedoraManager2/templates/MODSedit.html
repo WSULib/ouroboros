@@ -1,0 +1,16 @@
+{% include 'header.html' %}
+
+<h2>MODS Management</h2>
+<p>For the digital collections, <a href="http://www.loc.gov/standards/mods/">MODS</a> is used as the primary descriptive metadata format for all objects.  Dublin Core, required by Fedora, is automatically derived from the MODS datastream (automatically or manually with the function below).  So much so, that ingest is usually centered around collections of MODS records, parsed by XSLT, as the baseline information for ingesting objects.</p>
+
+<p>Use the utilities below to create, manage, and prune MODS datastreams for objects.  All utilities below require at least one currently selected PID.</p>
+
+<ul>		
+	<li><a href="/tasks/editDSXML/0">Browser-based MODS XML editor</a></li>	
+	<li><a href="/tasks/editDSRegex">Regex "Find and Replace" for MODS</a></li>
+	<li><a href="/tasks/DCfromMODS">Derive DC from MODS (<span style="color:red;">fires immeditately</span>)</a></li>
+</ul>	
+
+
+
+{% include 'footer.html' %}

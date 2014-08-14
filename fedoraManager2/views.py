@@ -123,6 +123,21 @@ def systemStatus():
 	return render_template("systemStatus.html",imp_ports_results=imp_ports_results)
 
 
+# MAJOR SUB-SECTIONS	
+#########################################################################################################
+@app.route('/MODSedit', methods=['GET', 'POST'])
+def MODSedit():
+	return render_template("MODSedit.html")
+
+
+@app.route('/datastreamManagement', methods=['GET', 'POST'])
+def datastreamManagement():
+	return render_template("datastreamManagement.html")
+
+@app.route('/objectManagement', methods=['GET', 'POST'])
+def objectManagement():
+	return render_template("objectManagement.html")
+
 # LOGIN
 #########################################################################################################
 # Use @login_required when you want to lock down a page

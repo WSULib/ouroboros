@@ -3,37 +3,28 @@
 
 <h1>Welcome {{userData.username}}, to Ouroboros</h1>
 <ul>		
-	<li><h2>Object Selection</h2></li>
+	<li><h2>Object Exploring and Selection</h2></li>
 	<ul>		
-		<li><a href="/PIDSolr">Select Objects: Solr</a></li>
-		<li><a href="/PIDmanage">Manage Objects</a></li>	
+		<li><a href="/PIDSolr">Explore and Select Objects</a></li>
+		<li><a href="/PIDmanage">Manage Selections</a></li>	
 	</ul>
-	<li><h2>Object Related Tasks</h2></li>
 
-	<ul>
-		<li><a href="/tasks/editDSXML/0">Edit MODS</a></li>
-		<li><a href="/tasks/editRELS">RDF / RELS-EXT modeling</a></li>		
-		<li><a href="/tasks/editDSRegex">Edit MODS with Regex</a></li>		
-		<li><a href="/tasks/addDS">Add Datastream</a></li>		
-		<li><a href="/tasks/purgeDS">Purge Datastream</a></li>
-		<li><a href="/tasks/DCfromMODS">Derive DC from MODS (<span style="color:red;">fires immeditately</span>)</a></li>
-		<li><a href="/tasks/objectState">Change Object State</a></li>
-		<li><a href="/tasks/purgeObject">Purge Objects</a></li>	
+	<li><h2>Areas</h2></li>
+	<ul>		
+		<li><a href="/objectManagement">Object Management</a></li>
+		<li><a href="/datastreamManagement">Datastream Management</a></li>
+		<li><a href="/MODSedit">MODS Management</a></li>
+		<li><a href="/tasks/editRELS">RDF / RELS-EXT Modeling</a></li>		
 		<li><a href="/tasks/checksum" style="color:orange;">Checksum Objects</a></li>
 		<li><a href="/tasks/manageOAI">Manage OAI Server</a></li>
 	</ul>	
-
-	<li><h2>Repository Tasks</h2></li>
-	<ul>
-		<li><a href="/tasks/updateSolr/select">Update / Index Solr</a></li>
-		<li><a href="/tasks/batchIngest">Batch Ingest</a></li>		
-	</ul>
 	
-	<li><h2>Job(s) Status</h2></li>
+	<li><h2>Jobs</h2></li>
 	<ul>
-		<li><a href="/userJobs">Running Jobs</a></li>
+		<li><a href="/userJobs">Currently Running Jobs</a></li>
 		<li><a href="/userAllJobs">All Jobs</a></li>		
 	</ul>
+
 </ul>
 
 {% include 'footer.html' %}

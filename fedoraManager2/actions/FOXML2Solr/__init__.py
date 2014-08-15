@@ -10,7 +10,8 @@ from string import Template
 import time
 import datetime
 from lxml import etree
-from flask import Blueprint, render_template, abort, request
+from flask import Blueprint, render_template, make_response, abort, request
+import json
 
 # revise
 from cl.cl import celery
@@ -32,8 +33,27 @@ def updateSolr(update_type):
 	if update_type == "timestamp":		
 		index_handle = FOXML2Solr.delay('timestampIndex','')
 		
-	# pass the current PIDs to page as list	
-	return render_template("updateSolr.html",update_type=update_type)
+	# return logic
+	if "APIcall" in request.values and request.values['APIcall'] == "True":
+
+		# prepare package
+		return_dict = {
+			"FOXML2Solr":{
+				"update_type":update_type,
+				"timestamp":datetime.datetime.now().isoformat(),
+				"job_celery_ID":index_handle.id
+			}
+		}
+
+		# return JSON
+		print return_dict
+		json_string = json.dumps(return_dict)
+		resp = make_response(json_string)
+		resp.headers['Content-Type'] = 'application/json'
+		return resp		
+	
+	else:
+		return render_template("updateSolr.html",update_type=update_type)
 
 
 

@@ -508,19 +508,36 @@ def flushPIDLock():
 ####################################################################################
 
 # View to get 30,000 ft handle one Objects slated to be acted on
-@app.route("/objPreview", methods=['POST', 'GET'])
-def objPreview():	
+@app.route("/objPreview/<PIDnum>", methods=['POST', 'GET'])
+@utilities.objects_needed
+def objPreview(PIDnum):	
 
-	# get current Objects
-	PIDs = jobs.getSelPIDs()
+	object_package = {}
+
+	# get current Objects	
+	PIDlet = jobs.genPIDlet(int(PIDnum))
+	if PIDlet == False:
+		return utilities.applicationError("PIDnum is out of range or invalid.  Object-at-a-Glance is displeased.")
+	PIDlet['pURL'] = "/objPreview/"+str(int(PIDnum)-1)
+	PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)	
+
+	# General Metadata
+	solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
+	solr_results = solr_handle.search(**solr_params)
+	solr_package = solr_results.documents[0]
+	object_package['solr_package'] = solr_package
+
 
 	# RDF Relationships
 
 
 	# Datastreams	
 
+	# OAI
+	object_package['OAIID'] = ""
+
 	# render
-	return render_template("objPreview.html")	
+	return render_template("objPreview.html",PIDlet=PIDlet,object_package=object_package)	
 
 
 # PID check for user

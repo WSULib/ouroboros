@@ -1,8 +1,31 @@
 {% include 'header.html' %}
 
 <div class="row">
-	<div class="col-md-12">
+		<div class="col-md-12">		
+			{% include "PIDiterator.html" %}
+		</div>
+	</div>
+
+<div class="row">
+	<div class="col-md-6">
 		<h2>Object-at-a-Glace</h2>
+
+		<table id="solr_table" style="font-size:90%;" class="table">
+			{% set displayed_fields = ['dc_title','dc_description'] %}
+			{% for field in object_package.solr_package %}
+			{% if field in displayed_fields %}
+			<tr>
+				<td><strong>{{field}}:</strong></td>
+				<td>{{object_package.solr_package[field][0]}}</td>
+			</tr>
+			{% endif %}
+			{% endfor %}
+			<tr>
+				<td><strong>thumbnail</strong></td>
+				<td><a target="_blank" href="http://digital.library.wayne.edu/digitalcollections/item?id={{PIDlet.cPID}}"><img src="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a></td>
+			</tr>
+		</table>
+
 	</div>
 </div>
 
@@ -15,6 +38,22 @@
 <div class="row">
 	<div class="col-md-12">
 		<h3>Datastreams</h3>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>OAI</h3>
+		<ul>{% if object_package.OAIID %}			
+			<li>OAI GetRecord: <a target="_blank" href="http://silo.lib.wayne.edu/oaiprovider/?verb=GetRecord&identifier={{object_package.OAIID}}&metadataPrefix=mods">link</a></li>
+			{% endif %}
+			{% if object_package.OAIsets %}
+			<li>Members of OAI Sets:
+				<ul>			
+				</ul>
+			</li>
+			{% endif %}
+		</ul>
 	</div>
 </div>
 

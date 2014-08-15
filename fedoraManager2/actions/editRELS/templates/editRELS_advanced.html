@@ -2,13 +2,14 @@
 
 <h1>RELS-EXT editing - RELS-EXT XML</h1>
 
-<p style="color:red;"><strong>Note: triples and raw RDF XML are from the following PID only: {{PID}}</strong></p>
+<p style="color:red;"><strong>Note: triples and raw RDF XML are from the following PID only: {{PIDlet.cPID}}</strong></p>
 <p>This utility is designed to act on PIDs in bulk.  As such, the XML applied below will be applied to all selected PIDs, but this does <strong>not</strong> gaurantee they all have identical RELS-EXT datastreams.  Carefully selecting PIDs with self-similar RELS-EXT datastreams should be carried out with searching and managing currently selected PIDs.</p>
-{% if len_PIDs > 1 %}
-	<p>As there are more than 1 PIDs in the currently selected set, you may browse relationships from other PIDS:<br>	
-		{% if PIDnum > 0 %}<a href='/tasks/editRELS/blanket?PIDnum={{(PIDnum - 1)}}'>previous</a>{% endif %} / {% if PIDnum < (len_PIDs - 1) %}<a href='/tasks/editRELS/blanket?PIDnum={{(PIDnum + 1)}}'>next</a>{% endif %}</p>	
-	<p>
-{% endif %}
+
+<div class="row">
+	<div class="col-md-12">		
+		{% include "PIDiterator.html" %}
+	</div>
+</div>
 
 <h2>Edit RDF triples for PIDs</h2> 
 <p>You can view triples for the representative PID in the table, and edit the raw RELS-EXT XML datastream below.  Clicking "go" will apply that XML verbatim to all PIDs in the set.</p>

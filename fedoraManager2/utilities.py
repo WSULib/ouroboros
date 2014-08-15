@@ -100,7 +100,7 @@ def objects_needed(f):
 			username = session['username']
 		except:
 			return render_template("noObjs.html")
-		userSelectedPIDs = models.user_pids.query.filter_by(username=username,status="selected")	
+		userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
 		if userSelectedPIDs.count() == 0:			
 			return render_template("noObjs.html")		
 		return f(*args, **kwargs)		

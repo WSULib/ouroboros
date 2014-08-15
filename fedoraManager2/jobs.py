@@ -120,6 +120,9 @@ def removeUserPIDs(username,PIDs):
 	print "Took this long to remove PIDs to SQL",ttime,"ms"
 	print "PIDs removed"	
 
+'''
+Improvement for getSelPIDs() and genPIDlet() - creator generator that suffices both?
+'''
 
 def getSelPIDs():
 	username = session['username']
@@ -128,24 +131,23 @@ def getSelPIDs():
 	return PIDlist
 
 
+# function to create small object with current, previous, and next PIDs for views
 def genPIDlet(cursor):
+
 	# get PIDs
 	PIDs = getSelPIDs()
 
-	# creat dict
-	try:
-		PIDlet = {
-				"pPID" : PIDs[cursor-1],
-				"cPID" : PIDs[cursor],
-				"nPID" : PIDs[cursor+1],
-				"count" : len(PIDs)
-			}
-	except:
-		PIDlet = {
-				"cPID" : PIDs[cursor],
-				"count" : len(PIDs)
-			}
+	# set to zero if out of bounds
+	if cursor > len(PIDs) or cursor < 0:
+		PIDlet = False
+		return PIDlet
 
+	# init dict
+	PIDlet = {
+		"cPID" : PIDs[cursor],
+		"count" : len(PIDs)
+	}		
+	
 	# only one
 	if len(PIDs) == 1:
 		PIDlet["pPID"] = None
@@ -154,10 +156,17 @@ def genPIDlet(cursor):
 	# first one
 	elif cursor <= 0:		
 		PIDlet["pPID"]  = None
+		PIDlet["nPID"] = PIDs[cursor+1]
 		
 	# last one	
 	elif cursor >= (len(PIDs) - 1):		
+		PIDlet["pPID"] = PIDs[cursor-1]
 		PIDlet["nPID"] = None	
+
+	# somewhere mid-range
+	else:
+		PIDlet["pPID"] = PIDs[cursor-1]			
+		PIDlet["nPID"] = PIDs[cursor+1]			
 
 	return PIDlet
 	

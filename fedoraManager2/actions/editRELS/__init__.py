@@ -4,10 +4,7 @@
 from fedoraManager2.forms import RDF_edit
 from fedoraManager2.solrHandles import solr_handle
 from fedoraManager2.fedoraHandles import fedora_handle
-from fedoraManager2.jobs import getSelPIDs
-from fedoraManager2 import models
-from fedoraManager2 import db
-from fedoraManager2 import utilities
+from fedoraManager2 import jobs, models, db, utilities
 from localConfig import *
 from flask import Blueprint, render_template, abort, request
 
@@ -29,10 +26,12 @@ from fuzzywuzzy import fuzz
 
 editRELS = Blueprint('editRELS', __name__, template_folder='templates', static_folder="static")
 
+
 @editRELS.route('/editRELS', methods=['POST', 'GET'])
 @utilities.objects_needed
 def index():	
 	return render_template("editRELS_index.html")
+
 
 @editRELS.route('/editRELS/add', methods=['POST', 'GET'])
 @utilities.objects_needed
@@ -43,9 +42,14 @@ def editRELS_add():
 
 	return render_template("editRELS_add.html",form=form)
 
-@editRELS.route('/editRELS/blanket', methods=['POST', 'GET'])
+
+@editRELS.route('/editRELS/advanced', methods=['POST', 'GET'])
 @utilities.objects_needed
-def editRELS_blanket():
+def editRELS_advanced():
+
+	'''
+	/tasks/editRELS/blanket?PIDnum={{(PIDnum - 1)}}
+	'''
 
 	# get PID to examine, if noted
 	if request.args.get("PIDnum") != None:
@@ -53,15 +57,18 @@ def editRELS_blanket():
 	else:
 		PIDnum = 0
 
-	# get PIDs	
-	PIDs = getSelPIDs()	
-	print PIDs[PIDnum]
+	# gen PIDlet
+	PIDlet = jobs.genPIDlet(int(PIDnum))
+	if PIDlet == False:
+		return utilities.applicationError("PIDnum is out of range.")
+	PIDlet['pURL'] = "/tasks/editRELS/advanced?PIDnum="+str(int(PIDnum)-1)
+	PIDlet['nURL'] = "/tasks/editRELS/advanced?PIDnum="+str(int(PIDnum)+1)	
 
 	# instantiate forms
 	form = RDF_edit()		
 
 	# get triples for 1st object
-	riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDs[PIDnum], predicate=None, object=None)
+	riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate=None, object=None)
 	
 	# filter out RELS-EXT and WSUDOR predicates
 	riquery_filtered = []
@@ -74,13 +81,14 @@ def editRELS_blanket():
 	riquery_filtered.sort() #mild sorting applied to group WSUDOR or RELS-EXT		
 
 	# Raw Datastream via Fedora API
-	###############################################################
-	PID = PIDs[PIDnum]
-	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
+	###############################################################	
+	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PIDlet['cPID'])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
-	return render_template("editRELS_blanket.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)
+	# return render_template("editRELS_advanced.html",riquery_filtered=riquery_filtered,PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)
+	return render_template("editRELS_advanced.html",riquery_filtered=riquery_filtered,PIDlet=PIDlet,form=form,raw_xml=raw_xml)
+
 
 @editRELS.route('/editRELS/shared', methods=['POST', 'GET'])
 @utilities.objects_needed
@@ -158,6 +166,7 @@ def editRELS_shared():
 
 
 	return render_template('editRELS_shared.html',shared_relationships=shared_relationships)
+
 
 @editRELS.route('/editRELS/regexConfirm', methods=['POST', 'GET'])
 def regexConfirm():
@@ -290,6 +299,7 @@ def editRELS_edit_worker(job_package):
 
 		# save constructed object
 		print newDS.save()
+
 
 def editRELS_regex_worker(job_package):		
 	

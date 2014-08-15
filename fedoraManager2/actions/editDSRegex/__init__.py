@@ -37,14 +37,12 @@ def index():
 	if "PIDnum" in request.values:
 		PIDnum = int(request.args.get("PIDnum"))		
 	else:
-		PIDnum = 0
-
-	# get PIDs	
-	PIDs = jobs.getSelPIDs()	
-	PID = PIDs[PIDnum]
+		PIDnum = 0	
 
 	# gen PIDlet
-	PIDlet = jobs.genPIDlet(PIDnum)
+	PIDlet = jobs.genPIDlet(PIDnum)	
+	if PIDlet == False:		
+		return utilities.applicationError("PIDnum is out of range.")
 	PIDlet['pURL'] = "/tasks/editDSRegex?PIDnum="+str(PIDnum-1)
 	PIDlet['nURL'] = "/tasks/editDSRegex?PIDnum="+str(PIDnum+1)	
 
@@ -53,7 +51,7 @@ def index():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID)
+	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PIDlet['cPID'])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	

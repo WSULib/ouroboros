@@ -25,12 +25,10 @@ editDSXML = Blueprint('editDSXML', __name__, template_folder='templates', static
 @utilities.objects_needed
 def index(PIDnum):	
 
-	# get PIDs	
-	# PIDs = jobs.getSelPIDs()
-	# PID = PIDs[int(pid_num)]
-
 	# gen PIDlet
 	PIDlet = jobs.genPIDlet(int(PIDnum))
+	if PIDlet == False:
+		return utilities.applicationError("PIDnum is out of range.")
 	PIDlet['pURL'] = "/tasks/editDSXML/"+str(int(PIDnum)-1)
 	PIDlet['nURL'] = "/tasks/editDSXML/"+str(int(PIDnum)+1)	
 
@@ -40,8 +38,7 @@ def index(PIDnum):
 	session['editDSXML_pid_num'] = PIDnum
 	session['editDSXML_PID'] = PIDlet['cPID']
 	session['editDSXML_DS'] = DS
-
-	# return render_template("editDSXML.html", PIDs=PIDs, PID=PID, pid_num=int(pid_num), APP_HOST=localConfig.APP_HOST, APP_BASE_URL=localConfig.APP_BASE_URL)
+	
 	return render_template("editDSXML.html", PIDlet=PIDlet, APP_HOST=localConfig.APP_HOST, APP_BASE_URL=localConfig.APP_BASE_URL)
 
 # update handler

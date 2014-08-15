@@ -514,7 +514,7 @@ def objPreview(PIDnum):
 
 	object_package = {}
 
-	# get current Objects	
+	# GET CURRENT OBJECTS	
 	PIDlet = jobs.genPIDlet(int(PIDnum))
 	if PIDlet == False:
 		return utilities.applicationError("PIDnum is out of range or invalid.  Object-at-a-Glance is displeased.")
@@ -528,15 +528,52 @@ def objPreview(PIDnum):
 	object_package['solr_package'] = solr_package
 
 
-	# RDF Relationships
+	# RDF RELATIONSHIPS
+	riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate=None, object=None)
+	
+	# parse
+	riquery_filtered = []
+	for s,p,o in riquery:	
+		riquery_filtered.append((p,o))	
+		# optional filtering
+		# try:
+		# 	if "relations-external" in p or "WSUDOR-Fedora-Relations" in p or "model#" in p:
+		# 		riquery_filtered.append((p,o))	
+		# except:
+		# 	print "Could not parse RDF relationship"
+	riquery_filtered.sort()
+	object_package['rdf_package'] = riquery_filtered
 
+	
+	# DATASTREAMS	
+	obj_handle = fedora_handle.get_object(PIDlet['cPID'])
+	ds_list = obj_handle.ds_list
+	object_package['datastream_package'] = ds_list
 
-	# Datastreams	
-
+	
 	# OAI
-	object_package['OAIID'] = ""
+	OAI_dict = {}	
+	#identifer
+	try:
+		riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://www.openarchives.org/OAI/2.0/itemID", object=None)
+		OAI_ID = riquery.objects().next().encode('utf-8')
+		OAI_dict['ID'] = OAI_ID
+	except:
+		print "No OAI Identifier found."
+	
+	# sets
+	OAI_dict['sets'] = []
+	try:
+		riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", object=None)
+		for each in riquery.objects():
+			OAI_dict['sets'].append(each)					
+	except:
+		print "No OAI sets found."
 
-	# render
+	object_package['OAI_package'] = OAI_dict
+	print object_package['OAI_package']
+
+	# RENDER
 	return render_template("objPreview.html",PIDlet=PIDlet,object_package=object_package)	
 
 

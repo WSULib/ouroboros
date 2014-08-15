@@ -103,7 +103,7 @@ def editRELS_shared():
 
 	'''
 	# get PIDs	
-	PIDs = getSelPIDs()
+	PIDs = jobs.getSelPIDs()
 
 	# shared relationships	
 	shared_relationships = []
@@ -172,7 +172,7 @@ def editRELS_shared():
 def regexConfirm():
 		
 	# get PIDs	
-	PIDs = getSelPIDs()			
+	PIDs = jobs.getSelPIDs()			
 	form_data = request.form	
 
 	# search / replace

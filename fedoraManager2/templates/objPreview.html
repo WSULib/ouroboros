@@ -7,9 +7,14 @@
 	</div>
 
 <div class="row">
-	<div class="col-md-6">
+	<div class="col-md-12">
 		<h2>Object-at-a-Glace</h2>
+	</div>
+</div>
 
+<div class="row">
+	<div class="col-md-6">
+		<h3>Metadata</h3>
 		<table id="solr_table" style="font-size:90%;" class="table">
 			{% set displayed_fields = ['dc_title','dc_description'] %}
 			{% for field in object_package.solr_package %}
@@ -31,28 +36,63 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<h3>RDF Relationships</h3>
+		<h3><a href="/tasks/editRELS">RDF Relationships</a></h3>		
+
+		<table style="font-size:90%;" id="rdf_triples_modify" style="margin:auto;" class="table">
+			<tr class="headers">
+				<td><strong>Predicate</strong></td>
+				<td><strong>Object</strong></td>				
+			</tr>
+			{% for predicate,object in object_package.rdf_package %}				
+				<tr>						
+					<td class="predicate">{{predicate}}</td>
+					<td class="object">{{object}}</td>					
+				</tr>
+			{% endfor %}
+		</table>
+
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-6">
+		<h3><a href="/datastreamManagement">Datastreams</a></h3>
+
+		<table style="font-size:90%;" style="margin:auto;" class="table">
+			<tr class="headers">
+				<td><strong>ID</strong></td>
+				<td><strong>Label</strong></td>
+				<td><strong>Mime Type</strong></td>
+				<td><strong>Direct Link</strong></td>				
+			</tr>
+			{% for ds in object_package.datastream_package %}				
+				<tr>						
+					<td>{{ds}}</td>
+					<td>{{object_package.datastream_package[ds].label}}</td>
+					<td>{{object_package.datastream_package[ds].mimeType}}</td>					
+					<td><a target="_blank" href="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
+				</tr>
+			{% endfor %}
+		</table>
+
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-12">
-		<h3>Datastreams</h3>
-	</div>
-</div>
-
-<div class="row">
-	<div class="col-md-12">
-		<h3>OAI</h3>
-		<ul>{% if object_package.OAIID %}			
-			<li>OAI GetRecord: <a target="_blank" href="http://silo.lib.wayne.edu/oaiprovider/?verb=GetRecord&identifier={{object_package.OAIID}}&metadataPrefix=mods">link</a></li>
+		<h3><a href="/tasks/manageOAIOAI">OAI</a></h3>
+		<ul>{% if object_package.OAI_package['ID'] %}			
+			<li><strong>OAI Record:</strong> <a target="_blank" href="http://silo.lib.wayne.edu/oaiprovider/?verb=GetRecord&identifier={{object_package.OAI_package['ID']}}&metadataPrefix=mods">link</a></li>
 			{% endif %}
-			{% if object_package.OAIsets %}
-			<li>Members of OAI Sets:
-				<ul>			
+			
+			<li><strong>Members of OAI Sets</strong>:
+				<ul>
+					{% for set in object_package.OAI_package['sets'] %}
+					<li>{{set}}</li>
+					{% endfor %}
 				</ul>
-			</li>
-			{% endif %}
+			</li>			
+
 		</ul>
 	</div>
 </div>

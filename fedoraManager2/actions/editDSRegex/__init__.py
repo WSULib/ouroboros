@@ -65,7 +65,7 @@ def index():
 def regexConfirm():
 		
 	# get PIDs	
-	PIDs = getSelPIDs()			
+	PIDs = jobs.getSelPIDs()			
 	form_data = request.form	
 
 	# search / replace

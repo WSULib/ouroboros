@@ -1,0 +1,10 @@
+<ul class="list-inline">
+	{% if PIDlet.pPID != None %}
+	<li><a class="btn btn-default btn-sm" href="{{PIDlet.pURL}}">{{PIDlet.pPID}} &lt;-- </a></li>
+	{% endif %}
+	<li><strong>{{PIDlet.cPID}} ({{PIDnum}} / {{PIDlet.count}})</strong></li>
+	{% if PIDlet.nPID != None %}
+	<li><a class="btn btn-default btn-sm" href="{{PIDlet.nURL}}"> --&gt; {{PIDlet.nPID}}</a></li>
+	{% endif %}
+</ul>
+

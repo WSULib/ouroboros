@@ -4,12 +4,8 @@
 from fedoraManager2.forms import RDF_edit
 from fedoraManager2.solrHandles import solr_handle
 from fedoraManager2.fedoraHandles import fedora_handle
-from fedoraManager2 import redisHandles
-from fedoraManager2.jobs import getSelPIDs
-from fedoraManager2 import models
-from fedoraManager2 import db
+from fedoraManager2 import jobs, models, db, utilities, redisHandles
 from fedoraManager2.forms import batchIngestForm
-from fedoraManager2 import utilities
 import fedoraManager2.actions as actions
 import localConfig
 from flask import Blueprint, render_template, abort, request, redirect, session
@@ -25,22 +21,28 @@ import eulfedora
 editDSXML = Blueprint('editDSXML', __name__, template_folder='templates', static_folder="static", static_url_path='/static/editDSXML')
 
 # main view
-@editDSXML.route('/editDSXML/<pid_num>', methods=['POST', 'GET'])
+@editDSXML.route('/editDSXML/<PIDnum>', methods=['POST', 'GET'])
 @utilities.objects_needed
-def index(pid_num):
+def index(PIDnum):	
 
 	# get PIDs	
-	PIDs = getSelPIDs()
-	PID = PIDs[int(pid_num)]
+	# PIDs = jobs.getSelPIDs()
+	# PID = PIDs[int(pid_num)]
+
+	# gen PIDlet
+	PIDlet = jobs.genPIDlet(int(PIDnum))
+	PIDlet['pURL'] = "/tasks/editDSXML/"+str(int(PIDnum)-1)
+	PIDlet['nURL'] = "/tasks/editDSXML/"+str(int(PIDnum)+1)	
 
 	# datastream currently hardcoded to MODS
 	DS = "MODS"
 
-	session['editDSXML_pid_num'] = pid_num
-	session['editDSXML_PID'] = PID
+	session['editDSXML_pid_num'] = PIDnum
+	session['editDSXML_PID'] = PIDlet['cPID']
 	session['editDSXML_DS'] = DS
 
-	return render_template("editDSXML.html", PIDs=PIDs, PID=PID, pid_num=int(pid_num), APP_HOST=localConfig.APP_HOST, APP_BASE_URL=localConfig.APP_BASE_URL)
+	# return render_template("editDSXML.html", PIDs=PIDs, PID=PID, pid_num=int(pid_num), APP_HOST=localConfig.APP_HOST, APP_BASE_URL=localConfig.APP_BASE_URL)
+	return render_template("editDSXML.html", PIDlet=PIDlet, APP_HOST=localConfig.APP_HOST, APP_BASE_URL=localConfig.APP_BASE_URL)
 
 # update handler
 @editDSXML.route('/editDSXML/update', methods=['POST', 'GET'])

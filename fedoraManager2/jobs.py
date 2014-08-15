@@ -128,7 +128,39 @@ def getSelPIDs():
 	return PIDlist
 
 
+def genPIDlet(cursor):
+	# get PIDs
+	PIDs = getSelPIDs()
 
+	# creat dict
+	try:
+		PIDlet = {
+				"pPID" : PIDs[cursor-1],
+				"cPID" : PIDs[cursor],
+				"nPID" : PIDs[cursor+1],
+				"count" : len(PIDs)
+			}
+	except:
+		PIDlet = {
+				"cPID" : PIDs[cursor],
+				"count" : len(PIDs)
+			}
+
+	# only one
+	if len(PIDs) == 1:
+		PIDlet["pPID"] = None
+		PIDlet["nPID"] = None
+
+	# first one
+	elif cursor <= 0:		
+		PIDlet["pPID"]  = None
+		
+	# last one	
+	elif cursor >= (len(PIDs) - 1):		
+		PIDlet["nPID"] = None	
+
+	return PIDlet
+	
 
 
 

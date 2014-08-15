@@ -4,10 +4,7 @@
 from fedoraManager2.forms import RDF_edit
 from fedoraManager2.solrHandles import solr_handle
 from fedoraManager2.fedoraHandles import fedora_handle
-from fedoraManager2.jobs import getSelPIDs
-from fedoraManager2 import models
-from fedoraManager2 import db
-from fedoraManager2 import utilities
+from fedoraManager2 import models, jobs, db, utilities
 from localConfig import *
 from flask import Blueprint, render_template, abort, request
 
@@ -24,31 +21,45 @@ import eulfedora
 editDSRegex = Blueprint('editDSRegex', __name__, template_folder='templates', static_folder="static")
 
 
+'''
+Improvements:
+	- currently hardcoded to MODS, should accept datastream ID
+	- currently only works with inline XML, should detect management type and reapply (line 109)
+'''
+
+
 @editDSRegex.route('/editDSRegex', methods=['POST', 'GET'])
 @utilities.objects_needed
 def index():
 
 	# get PID to examine, if noted
-	if request.args.get("PIDnum") != None:
+	# if request.args.get("PIDnum") != None:
+	if "PIDnum" in request.values:
 		PIDnum = int(request.args.get("PIDnum"))		
 	else:
 		PIDnum = 0
 
 	# get PIDs	
-	PIDs = getSelPIDs()	
-	print PIDs[PIDnum]
+	PIDs = jobs.getSelPIDs()	
+	PID = PIDs[PIDnum]
+
+	# gen PIDlet
+	PIDlet = jobs.genPIDlet(PIDnum)
+	PIDlet['pURL'] = "/tasks/editDSRegex?PIDnum="+str(PIDnum-1)
+	PIDlet['nURL'] = "/tasks/editDSRegex?PIDnum="+str(PIDnum+1)	
 
 	# instantiate forms
 	form = RDF_edit()	
 
 	# Raw Datastream via Fedora API
-	###############################################################
-	PID = PIDs[PIDnum]
+	###############################################################	
 	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
-	return render_template("editDSRegex_index.html",PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)
+	# return render_template("editDSRegex_index.html",PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)
+	return render_template("editDSRegex_index.html",PIDlet=PIDlet,PIDnum=PIDnum,form=form,raw_xml=raw_xml)
+	
 
 
 

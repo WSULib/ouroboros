@@ -17,13 +17,13 @@
 <script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/jquery.xmleditor.js') }}"></script>
 <!-- end load -->
 
-
-	<div id="object_details">
-		<ul>
-			<li>Current PID: <strong>{{PID}}</strong></li>			
-			<li><a href='/tasks/editDSXML/{{(pid_num - 1)}}'>&lt;-- ({{PIDs[(pid_num-1)]}})</a> / <a href='/tasks/editDSXML/{{(pid_num + 1)}}'>({{PIDs[(pid_num+1)]}}) --&gt;</a></li>
-		</ul>
+	<div class="row">
+		<div class="col-md-12">		
+			{% include "PIDiterator.html" %}
+		</div>
 	</div>
+
+	
 	<br>
 
 	<div id="xml_editor">
@@ -31,7 +31,7 @@
 	</div>
 	
 	<script type="text/javascript">		
-		var PID = "{{PID}}";
+		var PID = "{{PIDlet.cPID}}";
 		var DS = "MODS";
 		
 		$(function() {
@@ -47,7 +47,7 @@
 				// schema : "http://digital.library.wayne.edu/dev/graham/XML_editing/UNC_xmleditor/demo/examples/mods.json",
 				// hard-coded full URL?
 				schema : "{{APP_BASE_URL}}/tasks/static/editDSXML/UNC_xmleditor/inc/schema_json/mods.json",
-				documentTitle: "MODS editing",
+				documentTitle: "{{PIDlet.cPID}}",
 				ajaxOptions: {					
 					xmlRetrievalPath: "http://{{APP_HOST}}/fedora/objects/"+PID+"/datastreams/"+DS+"/content",
 					xmlUploadPath: "/tasks/editDSXML/update"

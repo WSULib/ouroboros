@@ -511,6 +511,15 @@ def flushPIDLock():
 @app.route("/objPreview", methods=['POST', 'GET'])
 def objPreview():	
 
+	# get current Objects
+	PIDs = jobs.getSelPIDs()
+
+	# RDF Relationships
+
+
+	# Datastreams	
+
+	# render
 	return render_template("objPreview.html")	
 
 

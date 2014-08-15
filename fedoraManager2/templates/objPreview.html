@@ -24,15 +24,56 @@
 				<td>{{object_package.solr_package[field][0]}}</td>
 			</tr>
 			{% endif %}
-			{% endfor %}
+			{% endfor %}			
 			<tr>
-				<td><strong>thumbnail</strong></td>
-				<td><a target="_blank" href="http://digital.library.wayne.edu/digitalcollections/item?id={{PIDlet.cPID}}"><img src="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a></td>
+				<td><strong>thumbnail:</strong></td>
+				<td><a target="_blank" href="http://digital.library.wayne.edu/digitalcollections/item?id={{PIDlet.cPID}}"><img class="img-rounded" src="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a></td>
 			</tr>
 		</table>
 
-	</div>
+	</div>	
 </div>
+
+<div class="row">
+	<div class="col-md-6">
+		<h3><a href="/datastreamManagement">Datastreams</a></h3>
+		<table style="font-size:90%;" style="margin:auto;" class="table">
+			<tr class="headers">
+				<td><strong>ID</strong></td>
+				<td><strong>Label</strong></td>
+				<td><strong>Mime Type</strong></td>
+				<td><strong>Direct Link</strong></td>				
+			</tr>
+			{% for ds in object_package.datastream_package %}				
+				<tr>						
+					<td>{{ds}}</td>
+					<td>{{object_package.datastream_package[ds].label}}</td>
+					<td>{{object_package.datastream_package[ds].mimeType}}</td>					
+					<td><a target="_blank" href="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+	{% if object_package.components_package %}
+	<div class="col-md-6">
+		<h3>Components</h3>		
+		<table style="font-size:90%;" style="margin:auto;" class="table">
+			<tr class="headers">
+				<td><strong>PID</strong></td>				
+			</tr>
+			{% for subject in object_package.components_package %}				
+				<tr>						
+					<td>{{subject}}</td>				
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+	{% endif %}
+</div>
+
+<!-- <div class="row">
+	
+</div> -->
 
 <div class="row">
 	<div class="col-md-12">
@@ -54,29 +95,7 @@
 	</div>
 </div>
 
-<div class="row">
-	<div class="col-md-6">
-		<h3><a href="/datastreamManagement">Datastreams</a></h3>
 
-		<table style="font-size:90%;" style="margin:auto;" class="table">
-			<tr class="headers">
-				<td><strong>ID</strong></td>
-				<td><strong>Label</strong></td>
-				<td><strong>Mime Type</strong></td>
-				<td><strong>Direct Link</strong></td>				
-			</tr>
-			{% for ds in object_package.datastream_package %}				
-				<tr>						
-					<td>{{ds}}</td>
-					<td>{{object_package.datastream_package[ds].label}}</td>
-					<td>{{object_package.datastream_package[ds].mimeType}}</td>					
-					<td><a target="_blank" href="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
-				</tr>
-			{% endfor %}
-		</table>
-
-	</div>
-</div>
 
 <div class="row">
 	<div class="col-md-12">

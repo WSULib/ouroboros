@@ -521,11 +521,22 @@ def objPreview(PIDnum):
 	PIDlet['pURL'] = "/objPreview/"+str(int(PIDnum)-1)
 	PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)	
 
+	# get handle
+	obj_handle = fedora_handle.get_object(PIDlet['cPID'])
+
 	# General Metadata
 	solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
 	solr_results = solr_handle.search(**solr_params)
 	solr_package = solr_results.documents[0]
 	object_package['solr_package'] = solr_package
+
+	# COMPONENTS
+	object_package['components_package'] = []
+	riquery = fedora_handle.risearch.spo_search(subject=None, predicate="info:fedora/fedora-system:def/relations-external#isMemberOf", object="info:fedora/"+PIDlet['cPID'])
+	for s,p,o in riquery:
+		object_package['components_package'].append(s.encode('utf-8'))
+	if len(object_package['components_package']) == 0:
+		object_package.pop('components_package')		
 
 
 	# RDF RELATIONSHIPS
@@ -545,8 +556,7 @@ def objPreview(PIDnum):
 	object_package['rdf_package'] = riquery_filtered
 
 	
-	# DATASTREAMS	
-	obj_handle = fedora_handle.get_object(PIDlet['cPID'])
+	# DATASTREAMS		
 	ds_list = obj_handle.ds_list
 	object_package['datastream_package'] = ds_list
 

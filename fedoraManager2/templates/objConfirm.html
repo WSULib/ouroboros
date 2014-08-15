@@ -1,0 +1,55 @@
+{% include 'header.html' %}
+
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Perform task, {{task_name}}, on the following objects?</h3>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<ul class="list-inline">
+			<li><a class="btn btn-success btn-sm"href="/fireTaskWorker/{{task_name}}/{{task_inputs_key}}">Engage!</a></li>
+			<li><a class="btn btn-danger btn-sm"href="/cancelTask/{{task_inputs_key}}">Nevermind</a></li>
+		</ul>
+	</div>
+</div>
+<hr>
+
+<div class="row">
+	<div class="col-md-12">
+		<table id="PIDtable" class="display" cellspacing="0" width="100%">
+		    <thead>
+		        <tr>            
+		            <th>id</th>
+		            <th>PID</th>
+		            <th>username</th>    
+		            <th>status</th>
+		            <th id="group_name_col">group</th>
+		            <th>actions</th>                  
+		        </tr>
+		    </thead>
+		    <tfoot>
+		        <tr>            
+		            <th>id</th>
+		            <th>PID</th>
+		            <th>username</th>    
+		            <th>status</th>
+		            <th>group</th>
+		            <th>actions</th>                  
+		        </tr>
+		    </tfoot>
+		</table>
+	</div>
+</div>
+
+
+
+<script type="text/javascript" src="{{ url_for('static',filename='PIDconfirm.js')}}"></script>
+<script type="text/javascript">
+    $(document).ready(function(){
+        paintTable("{{username}}","{{localConfig.DATATABLES_HANDLE}}");
+    });    
+</script>
+{% include 'footer.html' %}

@@ -44,11 +44,6 @@ def addDS_worker(job_package):
 		newDS.content = form_data['content']	
 
 	# save constructed object
-	newDS.save()
-
-
-	form_data = job_package['form_data']	
-	print form_data	
-	
+	return newDS.save()
 	
 	

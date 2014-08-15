@@ -86,7 +86,7 @@ def index():
 
 @app.route("/about")
 def about():
-	print request.headers	
+
 	return render_template("about.html")
 
 
@@ -157,7 +157,8 @@ def user_loader(userid):
 @app.before_request
 def before_request():	
 	# This is executed before every request
-	g.user = current_user	
+	g.user = current_user
+
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -200,12 +201,52 @@ def logout():
 
 # JOB MANAGEMENT
 #########################################################################################################
-# fireTask is the factory that begins tasks from fedoraManager2.actions
+
+# confirmation page for objects, serializes relevant request objects as "job_package"
 @app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
 @utilities.objects_needed
 def fireTask(task_name):
 
+	username = session['username']
+
+	# create job_package	
+	job_package = {		
+		"username":username,
+		"form_data":request.values			
+	}
+
+	# pass along binary uploaded data if included in job task
+	if 'upload' in request.files and request.files['upload'].filename != '':
+		job_package['upload_data'] = request.files['upload'].read()
+
+	task_inputs_key = username+"_"+task_name+"_"+str(int(time.time()))
+	print "Assigning to Redis-Cached key:",task_inputs_key
+	redisHandles.r_job_handle.set(task_inputs_key,pickle.dumps(job_package))
+
+	# get PIDs to confirm
+	PIDs = jobs.getSelPIDs()		
+
+	return render_template("objConfirm.html",task_name=task_name,task_inputs_key=task_inputs_key,PIDs=PIDs,username=username,localConfig=localConfig)
+
+
+# confirmation page for objects, serializes relevant request objects as "job_package"
+@app.route("/cancelTask/<task_inputs_key>", methods=['POST', 'GET'])
+def cancelTask(task_inputs_key):
+
+	print redisHandles.r_job_handle.delete(task_inputs_key)
+	return redirect("/userPage")
+
+
+# fireTask is the factory that begins tasks from fedoraManager2.actions
+@app.route("/fireTaskWorker/<task_name>/<task_inputs_key>", methods=['POST', 'GET'])
+@utilities.objects_needed
+def fireTaskWorker(task_name,task_inputs_key):
+
 	print "Starting task request..."
+
+	# get job_package and burn it
+	job_package = pickle.loads(redisHandles.r_job_handle.get(task_inputs_key))
+	redisHandles.r_job_handle.delete(task_inputs_key)
 
 	# check if task in available tasks, else abort
 	try:
@@ -218,7 +259,7 @@ def fireTask(task_name):
 
 	# get user-selectedd objects	
 	stime = time.time()
-	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status="selected")	
+	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
 	PIDlist = [PID.PID for PID in userSelectedPIDs]	
 	etime = time.time()
 	ttime = (etime - stime) * 1000
@@ -232,16 +273,22 @@ def fireTask(task_name):
 	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())	
 
-	# create job_package	
-	job_package = {		
-		"username":username,
-		"job_num":job_num,		
-		"form_data":request.form			
-	}
+	# OLD STYLE BEFORE CONFIRMATION, CONSIDER REMOVING
+	################################################################
+	# # create job_package	
+	# job_package = {		
+	# 	"username":username,
+	# 	"job_num":job_num,		
+	# 	"form_data":request.values			
+	# }
 
-	# pass along binary uploaded data if included in job task
-	if 'upload' in request.files and request.files['upload'].filename != '':
-		job_package['upload_data'] = request.files['upload'].read()
+	# # pass along binary uploaded data if included in job task
+	# if 'upload' in request.files and request.files['upload'].filename != '':
+	# 	job_package['upload_data'] = request.files['upload'].read()
+	################################################################
+
+	# augment job_package
+	job_package['job_num'] = job_num
 
 	# send to celeryTaskFactory in actions.py
 	'''
@@ -255,7 +302,7 @@ def fireTask(task_name):
 	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init"))	
 	db.session.commit() 
 
-	print "Started job #",job_num,"Celery task #",celery_task_id
+	print "Started job #",job_num,"Celery task #",celery_task_id	
 	return redirect("/userJobs")
 
 
@@ -447,15 +494,25 @@ def jobRetire(job_num):
 	return redirect("/userPage")
 
 
+# Remove job from SQL, remove tasks from Redis
+@app.route("/flushPIDLock", methods=['POST', 'GET'])
+def flushPIDLock():
+	result = redisHandles.r_PIDlock.flushdb()
+	print "Result of PID Lock flush:",result
+	return render_template("flushPIDLock.html",result=result)
+
+
+
+
+# OBJECT MANAGEMENT
+####################################################################################
+
 # View to get 30,000 ft handle one Objects slated to be acted on
 @app.route("/objPreview", methods=['POST', 'GET'])
 def objPreview():	
 
 	return render_template("objPreview.html")	
 
-
-# PID MANAGEMENT
-####################################################################################
 
 # PID check for user
 @app.route("/PIDmanage")
@@ -481,26 +538,26 @@ def PIDmanageAction(action):
 	# if post AND group toggle
 	if request.method == 'POST' and action == 'group_toggle':		
 		group_name = request.form['group_name']
-		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = 'unselected' THEN 'selected' ELSE 'unselected' END WHERE username = '{username}' AND group_name = '{group_name}';".format(username=username,group_name=group_name))
+		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '{username}' AND group_name = '{group_name}';".format(username=username,group_name=group_name))
 
 	# select all
 	if action == "s_all":
 		print "All PIDs selected..."		
-		db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': "selected"})
+		db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': True})
 	
 	# select none
 	if action == "s_none":
 		print "All PIDs unselected..."
-		db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': "unselected"})
+		db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': False})
 	
 	# select toggle	
 	if action == "s_toggle":		
 		print "All PIDs toggling..."
-		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = 'unselected' THEN 'selected' ELSE 'unselected' END WHERE username = '{username}';".format(username=username))
+		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '{username}';".format(username=username))
 	
 	# delete selections
 	if action == "s_del":
-		db.session.query(models.user_pids).filter(models.user_pids.username == username, models.user_pids.status == "selected").delete()
+		db.session.query(models.user_pids).filter(models.user_pids.username == username, models.user_pids.status == True).delete()
 
 	# commit changes
 	db.session.commit()
@@ -524,10 +581,10 @@ def PIDRowUpdate(id,action,status):
 		# update
 		if status == "toggle":
 			# where PID.status equals current status in SQL
-			if PID.status == "unselected":
-				PID.status = "selected"
-			elif PID.status == "selected":
-				PID.status = "unselected"
+			if PID.status == False:
+				PID.status = True
+			elif PID.status == True:
+				PID.status = False
 		else:
 			PID.status = status		
 

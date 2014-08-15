@@ -1,15 +1,15 @@
 {% include 'header.html' %}
 <!-- User Page -->
 
-<h1>Welcome {{userData.username}}, to Ouroboros</h1>
+<h2>Welcome {{userData.username}}!</h2>
 <ul>		
-	<li><h2>Object Exploring and Selection</h2></li>
+	<li><h3>Object Exploring and Selection</h3></li>
 	<ul>		
 		<li><a href="/PIDSolr">Explore and Select Objects</a></li>
 		<li><a href="/PIDmanage">Manage Selections</a></li>	
 	</ul>
 
-	<li><h2>Areas</h2></li>
+	<li><h3>Areas</h3></li>
 	<ul>		
 		<li><a href="/objectManagement">Object Management</a></li>
 		<li><a href="/datastreamManagement">Datastream Management</a></li>
@@ -19,10 +19,11 @@
 		<li><a href="/tasks/manageOAI">Manage OAI Server</a></li>
 	</ul>	
 	
-	<li><h2>Jobs</h2></li>
+	<li><h3>Jobs</h3></li>
 	<ul>
 		<li><a href="/userJobs">Currently Running Jobs</a></li>
-		<li><a href="/userAllJobs">All Jobs</a></li>		
+		<li><a href="/userAllJobs">All Jobs</a></li>
+		<li><a href="/flushPIDLock">Release all Objects from "PID Lock"</a></li>		
 	</ul>
 
 </ul>

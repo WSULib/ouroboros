@@ -6,9 +6,8 @@ import sqlalchemy
 class user_pids(db.Model):
 	id = db.Column(db.Integer, primary_key=True)	
 	PID = db.Column(db.String(255)) 
-	username = db.Column(db.String(255))	
-	# consider making status TINYINT, either 0 or 1
-	status = db.Column(db.String(64))
+	username = db.Column(db.String(255))
+	status = db.Column(db.Boolean(1))	
 	group_name = db.Column(db.String(255))	
 
 	def __init__(self, PID, username, status, group_name):

@@ -19,8 +19,9 @@ function paintTable(username,DT_target){
 		    	"visible":false	    	
 		    },		    
 		    {
+		    	"searchable": true,
 		    	"name":"status",
-		    	"visible":true
+		    	"visible":true		    	
 		    },
 		    { 	"searchable": true, 
 		    	"name":"group"		    	    	
@@ -30,20 +31,21 @@ function paintTable(username,DT_target){
 		    	"title":"actions",		    	
 		    	"render":function (data,type,row){		    				    		
 		    		return "<a href='#' onclick='del_row("+row[0]+"); return false;'>remove</a>";
-		    	}		    	
+		    	},
+		    	"visible":false    	
 		    }	    
 		  ],
 		searchCols: [
 	        null,
-	        null,	        
-	        { sSearch: username },
 	        null,
+	        { sSearch: username },	        
+	        { sSearch: 1 }, // 1 represents "True" in MySQL, i.e. Selected	        
 	        null,
 	        null
 	    ],	    
 		"rowCallback": function( row, data, displayIndex ) {
             if ( data[3] == 1 ) {            	
-                $(row).addClass('selected');                
+                $(row).addClass('selected');
             }
         },
         start:1
@@ -51,7 +53,7 @@ function paintTable(username,DT_target){
 	
 
 	// row select toggle
-	$('#PIDtable tbody').on('click', 'tr', function () {	    
+	$('#PIDtable tbody').on('click', 'tr', function () {
 	    var id = $(this).children()[0].innerHTML;	    
 		$.ajax({
 			url: "/PIDRowUpdate/"+id+"/update_status/toggle",			
@@ -60,21 +62,7 @@ function paintTable(username,DT_target){
 			table_handle.draw( false ); // false parameter keeps current page
 		});
 	} );
- 
-    // $('#button').click( function () {
-    //     alert( table.rows('.selected').data().length +' row(s) selected' );
-    // } );
 
-	// don't need, but might be worth saving
-	// var cpage = table_handle.page();
-	// console.log(cpage);
-	// table_handle.draw();
-	// $("a.paginate_button.current").click();					
-
-	// LEAVE FOR REFERENCE, searchCols WORKING ABOVE PER BUG FIX IN DATATABLES
-	// filter only the user
-	// https://datatables.net/forums/discussion/comment/61834#Comment_61834
-	// table_handle.columns(2).search(username).draw();	
 }
 
 function PIDmanageAction(action){

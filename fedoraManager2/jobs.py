@@ -94,7 +94,7 @@ def sendUserPIDs(username,PIDs,group_name):
 	print "Storing selected PIDs for {username}".format(username=username)
 
 	# insert into table via list comprehension
-	values_groups = [(each.encode('ascii'),username.encode('ascii'),'unselected',group_name) for each in PIDs]
+	values_groups = [(each.encode('ascii'), username.encode('ascii'), False, group_name) for each in PIDs]
 	values_groups_string = str(values_groups)[1:-1] # trim brackets			
 	db.session.execute("INSERT INTO user_pids (PID,username,status,group_name) VALUES {values_groups_string}".format(values_groups_string=values_groups_string));
 	db.session.commit()	
@@ -123,7 +123,7 @@ def removeUserPIDs(username,PIDs):
 
 def getSelPIDs():
 	username = session['username']
-	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status="selected")	
+	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
 	PIDlist = [PID.PID for PID in userSelectedPIDs]
 	return PIDlist
 

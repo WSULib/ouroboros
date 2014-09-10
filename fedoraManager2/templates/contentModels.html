@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+
+<h2>Content Models</h2>
+
+<p>Below are current Content Models found in Fedora Commons.  These are pulling dynamically from all CM:* objects.</p>
+
+<ul>	
+	{% for CM in CM_list %}
+	<li>{{CM}}</li>
+	{% endfor %}
+</ul>	
+
+
+{% include 'footer.html' %}

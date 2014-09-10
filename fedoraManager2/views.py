@@ -125,10 +125,17 @@ def systemStatus():
 
 # MAJOR SUB-SECTIONS	
 #########################################################################################################
+@app.route('/contentModels', methods=['GET', 'POST'])
+def contentModels():
+
+	# get all registered Content Models
+
+
+	return render_template("contentModels.html")
+
 @app.route('/MODSedit', methods=['GET', 'POST'])
 def MODSedit():
 	return render_template("MODSedit.html")
-
 
 @app.route('/datastreamManagement', methods=['GET', 'POST'])
 def datastreamManagement():

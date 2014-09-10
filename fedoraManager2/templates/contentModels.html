@@ -2,11 +2,12 @@
 
 <h2>Content Models</h2>
 
-<p>Below are current Content Models found in Fedora Commons.  These are pulling dynamically from all CM:* objects.</p>
+<p style="color:orange;">In Progress</p>
+<p>Below are current Content Models found in Fedora Commons.  These are pulling dynamically from all Content Model objects (CM:*) that isMemberOfCollection of "CM:ModelsCollection".  Proposing blueprint / area for each content type, automatically linked to from this list.</p>
 
 <ul>	
 	{% for CM in CM_list %}
-	<li>{{CM}}</li>
+	<li><a href="/CM/{{CM.label}}">{{CM.label}}</a></li>
 	{% endfor %}
 </ul>	
 

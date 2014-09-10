@@ -127,11 +127,14 @@ def systemStatus():
 #########################################################################################################
 @app.route('/contentModels', methods=['GET', 'POST'])
 def contentModels():
-
+	
 	# get all registered Content Models
+	CM_list = fedora_handle.risearch.sparql_query("select $label $CM from <#ri> where { \
+		$CM <fedora-rels-ext:isMemberOfCollection> <info:fedora/CM:ModelsCollection> . \
+		$CM <info:fedora/fedora-system:def/model#label> $label . \
+		}")
 
-
-	return render_template("contentModels.html")
+	return render_template("contentModels.html",CM_list=CM_list)
 
 @app.route('/MODSedit', methods=['GET', 'POST'])
 def MODSedit():
@@ -315,17 +318,17 @@ def fireTaskWorker(task_name,task_inputs_key):
 
 #status of currently running, spooling, or pending jobs for user
 @app.route("/userJobs")
-def userJobs():
+def userJobs():	
 
 	username = session['username']	
 
 	# get user jobs
-	user_jobs_list = models.user_jobs.query.filter(models.user_jobs.status != "complete", models.user_jobs.status != "retired", models.user_jobs.username == username)
+	user_jobs_list = models.user_jobs.query.filter(models.user_jobs.status != "complete", models.user_jobs.status != "retired", models.user_jobs.username == username)	
 
 	# return package
 	return_package = []
 
-	for job in user_jobs_list:
+	for job in user_jobs_list:		
 
 		# get job num
 		job_num = job.job_num
@@ -393,13 +396,13 @@ def userJobs():
 	db.session.commit()
 
 	# return return_package
-	if request.args.get("data","") == "true":
+	if request.args.get("data","") == "true":		
 		json_string = json.dumps(return_package)
 		resp = make_response(json_string)
 		resp.headers['Content-Type'] = 'application/json'
 		return resp
 	else:
-		return render_template("userJobs.html",username=session['username'],localConfig=localConfig)
+		return render_template("userJobs.html",username=username,localConfig=localConfig)
 
 
 # see all user jobs, including completed

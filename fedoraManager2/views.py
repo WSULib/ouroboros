@@ -17,6 +17,7 @@ import unicodedata
 import shlex, subprocess
 import socket
 import hashlib
+import os
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response, Response, Blueprint
@@ -147,6 +148,10 @@ def datastreamManagement():
 @app.route('/objectManagement', methods=['GET', 'POST'])
 def objectManagement():
 	return render_template("objectManagement.html")
+
+@app.route('/serverManagement', methods=['GET', 'POST'])
+def serverManagement():
+	return render_template("serverManagement.html")
 
 # LOGIN
 #########################################################################################################
@@ -824,6 +829,21 @@ def userPin():
 	# render page
 	return render_template("userPin.html",username=username,date=date_obj)
 	
+# SERVER MANAGEMENT
+####################################################################################
+
+# Clear imageServer Cache
+@app.route("/imgServerCacheClear")
+def imgServerCacheClear():
+
+	# run os command an return results
+	results = os.system("rm /tmp/imageServer/*")	
+	if results == 0:
+		msg = "imageServer Cache successfully cleared."
+	else:
+		msg = "An error was had: {results}".format(results=results)
+		
+	return render_template("imgServerCacheClear.html",msg=msg)
 
 
 # EXPERIMENTAL SERVICES

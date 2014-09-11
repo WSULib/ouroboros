@@ -22,7 +22,7 @@ def solrGetFedDoc(getParams):
 	solrParams = {
 		'q' : 'id:{PID}'.format(PID=PID),
 		'wt' : 'json',
-		'fl' : 'id mods* dc* rels* obj* last_modified' # throttled to prevent unwanted fields from weighing down response		
+		'fl' : 'id mods* dc* rels* obj* facet* last_modified' # throttled to prevent unwanted fields from weighing down response		
 	}
 	r = requests.get(baseURL , params=solrParams)			
 	jsonString = r.text

@@ -19,6 +19,10 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#editDSXMLAdv
+from editDSXMLAdv import editDSXMLAdv, editDSXMLAdv_worker
+app.register_blueprint(editDSXMLAdv, url_prefix=tasks_URL_prefix)
+
 #editDSRegex
 from editDSRegex import editDSRegex, editDSRegex_regex_worker
 app.register_blueprint(editDSRegex, url_prefix=tasks_URL_prefix)

@@ -1,0 +1,22 @@
+{% include 'header.html' %}
+
+<h1>MODS editing - Regex</h1>
+
+<div class="row">
+	<div class="col-md-12">		
+		{% include "PIDiterator.html" %}
+	</div>
+</div>
+
+<p><span style="color:red;">UNDER DEVELOPMENT</span> - This utility allows you to edit MODS datastreams in bulk, using regular exprssions..</p>
+
+<form action="/tasks/editDSRegex/regexConfirm" method="POST" >
+	
+	<h3>MODS Regex Editing</h3>
+	<textarea name="raw_xml" cols="100" rows="20">{{raw_xml}}</textarea><br>
+	{{ form.regex_search.label }} {{ form.regex_search(size=150) }}<br>
+	{{ form.regex_replace.label }} {{ form.regex_replace(size=150) }}<br>
+	
+	<button type="submit">go!</button>
+</form>
+

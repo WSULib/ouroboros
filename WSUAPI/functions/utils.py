@@ -15,7 +15,7 @@ def XMLtoJSON(getParams):
 
 	URL = getParams['url'][0]
 	
-	r = requests.get(URL, auth=(username, password))			
+	r = requests.get(URL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
 	xmlString = r.text	
 	outputDict = xmltodict.parse(xmlString)
 	output = json.dumps(outputDict)

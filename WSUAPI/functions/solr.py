@@ -424,7 +424,7 @@ def createUserAccount(getParams):
 	# solrDict['user_password'] = getParams['user_password'][0]
 	solrDict['user_WSU'] = getParams['user_WSU'][0]
 	# create hash of username and password	
-	hashString = solrDict['user_username']+getParams['user_password'][0]+userAccountSalt
+	hashString = solrDict['user_username']+getParams['user_password'][0]+USER_ACCOUNT_SALT
 	solrDict['user_hash'] = hashlib.sha256(hashString).hexdigest()
 	# print solrDict
 

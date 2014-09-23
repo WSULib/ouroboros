@@ -1,0 +1,50 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<div class="col-md-12">		
+		{% include "PIDiterator.html" %}
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">	
+		<h2>Change Datastream Mime/Type</h2>
+		<p>This utility changes the mime-type for object datastreams in Fedora.</p>		
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-6">
+		<p>Datastreams for current object:</p>
+		<table style="font-size:90%;" style="margin:auto;" class="table">
+			<tr class="headers">
+				<td><strong>ID</strong></td>
+				<td><strong>Label</strong></td>
+				<td><strong>Mime Type</strong></td>
+				<td><strong>Direct Link</strong></td>				
+			</tr>
+			{% for ds in ds_list %}				
+				<tr>						
+					<td>{{ds}}</td>
+					<td>{{ds_list[ds].label}}</td>
+					<td>{{ds_list[ds].mimeType}}</td>					
+					<td><a target="_blank" href="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div>
+
+<div class="col-md-6">
+	<form action="/fireTask/editDSMime_worker" method="POST">
+		<div class="form-group">
+			<label>Please type target datastream ID:</label>
+			<input type="text" class="form-control" name="DSID"/>
+		</div>
+		<div class="form-group">
+			<label>Type new Mime-Type</label>
+			<input type="text" class="form-control" name="mimetype"/>
+		</div>	
+		<input type="submit" value="Make it so!"/>
+	</form>
+</div>

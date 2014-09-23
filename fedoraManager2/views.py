@@ -506,7 +506,7 @@ def jobRetire(job_num):
 	result = jobs.jobRetire_worker(job_num)		
 	print result
 
-	return redirect("/userPage")
+	return redirect("/userJobs")
 
 
 # Remove job from SQL, remove tasks from Redis

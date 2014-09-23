@@ -20,6 +20,10 @@ import sys
 tasks_URL_prefix = "/tasks"
 
 #editDSXMLAdv
+from editDSMime import editDSMime, editDSMime_worker
+app.register_blueprint(editDSMime, url_prefix=tasks_URL_prefix)
+
+#editDSXMLAdv
 from editDSXMLAdv import editDSXMLAdv, editDSXMLAdv_worker
 app.register_blueprint(editDSXMLAdv, url_prefix=tasks_URL_prefix)
 

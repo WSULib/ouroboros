@@ -652,7 +652,8 @@
     </xsl:for-each>
     
     <!-- Extension Fields -->
-    <xsl:for-each select="$MODSroot/mods:extension/mods:bibNo[normalize-space(text())]">         
+    <!-- NOTE: no "mods" prefix for bibNo field, locally created -->
+    <xsl:for-each select="$MODSroot/mods:extension/bibNo[normalize-space(text())]">         
       <field>
         <xsl:attribute name="name">
           <xsl:value-of select="concat($prefix, local-name(), $suffix)"/>

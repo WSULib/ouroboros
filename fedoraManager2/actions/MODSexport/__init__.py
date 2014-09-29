@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, abort, session, make_response
 import eulfedora
 
 from lxml import etree, objectify
+import time
 
 
 MODSexport = Blueprint('MODSexport', __name__, template_folder='templates', static_folder="static")
@@ -125,6 +126,8 @@ def MODSexport_worker(job_package):
 
 	# initialized DS object and rewrite MODS
 	ds_handle = obj_ohandle.getDatastreamObject('MODS')
+
+	time.sleep(1)
 
 	# get mods:collection 
 	if 'upload_data' in job_package:		

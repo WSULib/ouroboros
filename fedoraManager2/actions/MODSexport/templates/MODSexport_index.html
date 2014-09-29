@@ -1,0 +1,16 @@
+{% include 'header.html' %}
+<h2>MODS Export/Import</h2>
+<p>This utility allows you to export multiple MODS records into a &lt;mods:modsCollection&gt; file, or import a collection of MODS records that have been edited outside of Ouroboros (spreadsheet, XML editor, text editors).</p>
+<h4>Choose "export" or "import" below:</h4> 
+
+<ul>
+	<li>
+		<img id="loading_circle" style="display:none;" src="{{ url_for('static', filename='img/circle.gif') }}"/>
+		<a id="export_button" class="btn btn-default btn-sm" href="./MODSexport/export" onclick="$('#export_button').hide(); $('#loading_circle').show(); ">Export</a><p>For large selections of objects, may take some time.  Download will start automatically.</p>
+	</li><br>
+	<li><a class="btn btn-default btn-sm" href="./MODSexport/import">Import</a></li>
+</ul>
+
+{% include 'footer.html' %}
+
+

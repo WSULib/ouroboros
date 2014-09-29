@@ -1,0 +1,309 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html prefix="http://spiffygif.com" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
+
+    <head>
+      <title>SpiffyGif - loading GIF and PNG spinners </title>
+      <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+      <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+      <meta name="keywords" content="loading spinner gif generator download transparent png free spinner.gif custom customize ajax animation preloader" />
+      <meta name="description" content="Easily design and customize your loading gif spinner. Customize the colors, size, shadow, and other attributes of your spinner, and download in a click.      " />
+      <meta name="robots" content="noodp, noydir" />
+
+      <!--Facebook-->
+      <meta property="og:url" content="http://spiffygif.com"/>
+      <meta property="og:title" content="SpiffyGif - loading GIF and PNG spinners "/>
+      <meta property="og:description" content="Easily design and customize your loading gif spinner. Customize the colors, size, shadow, and other attributes of your spinner, and download in a click.      "/>
+      <meta property="fb:app_id" content="158994530911104" />
+      <meta property="og:type" content="website"/>
+      <meta property="og:image" content="http://spiffygif.com/static/assets/og_image.png"/>
+
+      <link rel="shortcut icon" href="http://spiffygif.com/static/assets/favicon.ico" />
+      
+      <link rel='stylesheet' href="http://spiffygif.com/static/css/common.css" />
+      <link rel='stylesheet' href="http://spiffygif.com/static/css/app.css" />
+
+
+      
+  <script>  var jsData = {"defaults": {"rotate": 0, "format": "gif", "color": ["#000"], "corners": 1, "lines": 12, "bgColor": "#ffffff", "trail": 100, "length": 5, "radius": 6, "shadow": false, "speed": 1, "width": 3, "halo": 0}, "opts": {"rotate": 0, "format": "gif", "color": ["#000000"], "corners": 1, "lines": 12, "trail": 100, "bgColor": "#ffffff", "length": 5, "radius": 6, "shadow": false, "speed": 1, "width": 3, "halo": 0}}  </script>
+    <script src="http://spiffygif.com/static/js/dist/spiffygif-0.3.0.min.js"></script>
+
+
+      <!--Google Analytics-->
+      <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-35684986-1']);
+        _gaq.push(['_setDomainName', 'spiffygif.com']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+          var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+          ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+          var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+      </script>
+    </head>
+    <body>
+        <a class='feedback-tab' target="_blank" href='http://www.surveymonkey.com/s/5V3JVBG'>Feedback</a>
+        <div id="container">
+          <header id="header">
+            <div class="title clearfix">
+              <a href="/"><h1>Spiffy<span>Gif</span></h1>&nbsp;<h2></a>
+            </div>
+
+            <div id="carbonads-container">
+              <div class="carbonad">
+                <div id="azcarbon"></div>
+                <script type="text/javascript">
+                  var z = document.createElement("script"); z.type = "text/javascript"; z.async = true; z.src = "http://engine.carbonads.com/z/32656/azcarbon_2_1_0_HORIZ"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(z, s);</script>
+              </div>
+            </div>
+            <ul class="tabs">
+                <li  class="selected" ><a href="/" >Home</a></li>
+                <li ><a href="/docs/" >Docs</a></li>
+            </ul>
+          </header>
+
+          <div id="page-wrap">
+            <div class="main clearfix">
+              
+
+
+
+
+
+
+
+
+<div class="primary-section">
+  <div class="left-side">
+    <div id="drawing-table" class="hide">
+      <div id="cropping-div" style="display:none">
+        <div class="crop-size">
+          <span class="img-size">30x30</span>
+        </div>
+      </div>
+      <div id="spinner-elem"></div>
+    </div>
+    <div class="error-msg hidden" >
+    </div>
+    <div class="center download-btn-container">
+      <a href="/gif" class="btn primary download-btn">Download<span class="dl-icon"></span><span class="spin-icon"></span></a>
+    </div>
+    <fieldset class='share' id="sharer">
+      <legend>Share</legend>
+      <label class="link-label">Link:</label>
+      <input type="text" readonly=""/>
+    </fieldset>
+  </div>
+  <div id="controls">
+    <fieldset id="spin-style">
+      <legend>Style</legend>
+      <ul style-options="">
+        <li opt="format">
+          <label>Format:</label>
+          <select id="file-format" name="format">
+            <option selected value ="gif">GIF</option>
+            <option  value ="png">PNG sprite</option>
+          </select>
+          <div class="q" title content="format-help-popout">?</div>
+          <a class="new-feature" href="/docs/#png-sprites">New!</a>
+        </li>
+        <li opt="lines">
+          <label>Lines:</label>
+          <div class="slider">
+            <input type="text" id="fds-lines" name="lines" min="1" max="16" step="1" value="12" class="fd-form-element-hidden"/>
+          </div>
+        </li>
+        <li opt="corners">
+          <label>Corners:</label>
+          <div class="slider">
+            <input type="text" id="fds-corners" name="corners" min="0" max="1" step="0.1" value="1" class="fd-form-element-hidden"/>
+          </div>
+        </li>
+        
+        <li opt="trail">
+          <label>Trail:</label>
+          <div class="slider">
+            <input type="text" id="fds-trail" name="trail" min="10" max="100" value="100" class="fd-form-element-hidden"/>
+            </div>
+        </li>
+        <li opt="rotate">
+          <label>Rotate:</label>
+          <div class="slider">
+            <input type="text" id="fds-rotate" name="rotate" min="0" max="90" value="0" class="fd-form-element-hidden"/>
+            </div>
+        </li>
+        <li opt="shadow">
+          <label>Shadow:</label><input type='checkbox'  name="shadow"/>
+        </li>
+        <li opt="halo" class=>
+          <label>Halo:</label>&nbsp;<input type='checkbox'  name="halo"/>
+          <div class="q" title content="halo-help-popout">?</div>
+        </li>
+      </ul>
+      <div id="color-selector">
+        <label>Color palettes:</label>
+        <div class="q" title content="color-help-popout">?</div>
+        <table class="palettes">
+          <tbody>
+          <tr spin-foreground >
+            <th>Foreground</th>
+              <td class="swatch">
+                <div class="color" name='color' style='background-color:#000000' value="000000"></div>
+              </td>
+            <td><a add-color class="dark-link" href="#">+Add color</a></td>
+          </tr>
+
+          <tr spin-background class=>
+            <th>Background</th>
+            <td class="swatch"><div class="color" name='bgColor' style='background-color:#ffffff' value="ffffff"></div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </fieldset>
+    <fieldset id="spin-sizing">
+      <legend>Sizing</legend>
+      <ul>
+        <li opt="length">
+          <label>Length:</label>
+          <div class="slider">
+            <input type="text" id="fds-length" name="length" min="0" max="45" value="5"class="fd-form-element-hidden"/>
+          </div>
+        </li>
+        <li opt="width">
+          <label>Width:</label>
+          <div class="slider">
+            <input type="text" id="fds-width" name="width" min="1" max="15" value="3" class="fd-form-element-hidden"/>
+          </div>
+        </li>
+        <li opt="radius">
+          <label>Radius:</label>
+          <div class="slider">
+            <input type="text" id="fds-radius" name="radius" min="0" max="27" value="6" class="fd-form-element-hidden"/>
+          </div>
+        </li>
+        <li class='size-details'>
+          <label>Image size:</label><span class="img-size"> 30x30</span>
+        </li>
+      </ul>
+    </fieldset>
+    <div>
+      <a title="Randomize style, start the party" class="btn btn-small" id="randomize-btn">Randomize!</a>
+    </div>
+  </div>
+</div>
+
+<div class="secondary-section center">
+  <div id='social' style="display:none;">
+    <ul>
+      <li>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="7VVJ4NDY9KDWC">
+<div class="donate_element center btn btn-small yellow">
+	Donate on<span class="paypal-icon"></span>
+	<input type="image" class="donate_image" src="../assets/paypal.png" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+</div>
+<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
+
+      </li>
+      <li>
+        <div class='twitter-btn'>
+          <a href="https://twitter.com/share" class="twitter-share-button" url='http://spiffygif.com' data-lang="en">Tweet</a>
+        </div>
+      </li>
+      <li>
+        <div class="fb-like" data-href="http://spiffygif.com" data-send="false" data-layout="button_count" data-width="450" data-show-faces="true"></div>
+      </li>
+      <li>
+        <div class="g-plusone" data-size="tall" data-annotation="none"></div>
+      </li>
+
+    </ul>
+  </div>
+</div>
+<!-- Templates -->
+<div style="display:none">
+  <div id="halo-help-popout" style="display:none" class="popout">
+      <h3>HALO</h3>
+      <p>
+        For situations where the spinner's background is an image or can be more than one color.
+        The halo effect crops the spinner's background to a cicle, providing a consistent display in IE.
+      </p>
+      <p>
+        For recommended CSS, <a href="/docs/#recommended-css">learn more here</a>.
+      </p>
+
+  </div>
+  <div id="format-help-popout" style="display:none" class="popout">
+      <h3>FILE FORMAT</h3>
+      <p>
+        You may choose from two file formats: GIF or PNG.
+      </p>
+      <p>
+        GIFs can animate, but cannot fully support continuous transparency.  Generated PNGs are sprite, and some
+        javscript and CSS are required to animate them.  However, PNGs fully support transparency.
+      </p>
+      <p>
+        For more information, please <a href="/docs/#png-sprites">see the docs</a>
+      </p>
+  </div>
+  <div id="color-help-popout" style="display:none" class="popout">
+      <h3>COLOR PALETTES</h3>
+      <p>
+        You may choose one background color and multiple foreground colors.
+      </p>
+      <p>
+        The spinner will use each foreground color you select from left to right for each line of the spinner.  If there are more lines than colors, it will repeat this process until there are no more lines.
+      </p>
+  </div>
+</div>
+
+<div id="fb-root"></div>
+<script>
+  window.fbAsyncInit = function() {
+    // init the FB JS SDK
+    FB.init({
+      appId      : '158994530911104',                        // App ID from the app dashboard
+      channelUrl : '//www.spiffygif.com/channel.html', // Channel file for x-domain comms
+      status     : true,                                 // Check Facebook Login status
+      xfbml      : true                                  // Look for social plugins on the page
+    });
+
+    // Additional initialization code such as adding Event Listeners goes here
+  };
+
+  // Load the SDK asynchronously
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.async = true
+     js.src = "//connect.facebook.net/en_US/all.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>
+
+            </div>
+            <div class="filler"></div>
+          </div>
+
+        </div>
+        <footer class="footer">
+          <div class="text-container">
+              <p>
+              © SpiffyGif 2012-2014
+              ·
+               Created by <a class="light-link" href="http://twitter.com/sean_holbert" target="_blank">@sean_holbert</a>
+              ·
+              <a class="light-link" href="/docs/#license" target="_blank">License</a>
+            </p>
+          </div>
+        </footer>
+    </body>
+</html>

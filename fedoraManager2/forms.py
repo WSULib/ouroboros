@@ -40,6 +40,15 @@ class addDSForm(Form):
 	content = TextAreaField('Paste Content:')
 	upload = FileField('Upload Content')
 
+
+# form for importing <mods:modsCollection>
+class importMODS(Form):
+	# using params verbatim from Fedora documentation	
+	content = TextAreaField('Paste Content:')
+	upload = FileField('Upload Content')
+
+
+
 # form for purging Datastreams
 class purgeDSForm(Form):
 	# using params verbatim from Fedora documentation

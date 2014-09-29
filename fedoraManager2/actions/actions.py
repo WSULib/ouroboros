@@ -19,6 +19,10 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#MODSexport
+from MODSexport import MODSexport, MODSexport_worker
+app.register_blueprint(MODSexport, url_prefix=tasks_URL_prefix)
+
 #editDSXMLAdv
 from editDSMime import editDSMime, editDSMime_worker
 app.register_blueprint(editDSMime, url_prefix=tasks_URL_prefix)

@@ -44,7 +44,7 @@ def pidfileCreate():
 def pidfileRemove():
 	print "Removing pidfile"
 	ouroboros_pidlock.release()
-	os.system("rm /var/run/{APP_NAME}.pid".format(APP_NAME))
+	os.system("rm /var/run/{APP_NAME}.pid".format(APP_NAME=APP_NAME))
 
 
 # WSU imageServer ##############################################################

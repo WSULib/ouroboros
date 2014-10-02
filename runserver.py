@@ -13,6 +13,11 @@ from stompest.protocol import StompSpec
 import json
 import logging 
 
+# for Ouroboros pid management
+import os
+import atexit
+import lockfile
+
 # local
 from mainRouter import mainRouter
 from localConfig import *
@@ -22,6 +27,24 @@ from fedoraManager2 import app
 
 # import WSUAPI app
 from WSUAPI import WSUAPI_app
+
+
+
+# Ouroboros pidfile ##############################################################
+# function to create/remove Ouroboros pidfile
+def pidfileCreate():	
+	print "Creating pidfile"
+	fhand=open("/var/run/{APP_NAME}.pid".format(APP_NAME=APP_NAME),"w")
+	fhand.write(str(os.getpid()))
+	fhand.close()
+	ouroboros_pidlock = lockfile.LockFile("/var/run/{APP_NAME}.pid".format(APP_NAME=APP_NAME))
+	ouroboros_pidlock.acquire()			
+	return ouroboros_pidlock
+	
+def pidfileRemove():
+	print "Removing pidfile"
+	ouroboros_pidlock.release()
+	os.system("rm /var/run/{APP_NAME}.pid".format(APP_NAME))
 
 
 # WSU imageServer ##############################################################
@@ -102,6 +125,10 @@ WSUAPI_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUAPI_app)
 WSUAPI_site = Site(WSUAPI_resource)
 
 if __name__ == '__main__':
+
+	# write PID to /var/run
+	atexit.register(pidfileRemove)
+	ouroboros_pidlock = pidfileCreate()
 
 	# fedoraManagere2
 	if FEDORA_MANAGER_2_FIRE == True:

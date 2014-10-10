@@ -2,9 +2,10 @@
 import requests
 import json
 
-# import functions from other API sections
+# import sibling files
 import solr
 import fedora
+
 
 '''
 Brainstorming / Tests:
@@ -38,6 +39,7 @@ Want to test:
 	- imageServer hit of known item PREVIEW and THUMBNAIL
 '''
 
+
 def getItems():
 	# return an array of PIDs from current collections
 	pass
@@ -48,29 +50,70 @@ def getItems():
 ################################################################################################
 # function for testing overall integrity of front-end system
 # runs tests from below, integrating results into one JSON package, with True / False verdict
+################################################################################################
 def integrityTest(getParams):
 
-	# create dictionary that will equate function / task with True / False and result message	
-	resultsDict = {}
+	# create dictionary that will equate function / task with True / False and result message		
+	resultsList = []	
 
 	# run functions here
+	resultsList.append(json.loads(getSingleObjectSolrMetadata(getParams)))
+
+	# read all functions, determine if any false present
+	for eachFunction in resultsList:	# json.loads
+		final_verdict = True
+		# eachFunction = json.loads(eachFunction)	
+		if eachFunction['result'] == True:
+			continue
+		elif eachFunction['result'] == False:
+			final_verdict = False
+			break
 
 	# return resultsDict as function response
-	return json.dumps(resultsDict)
+	return json.dumps({
+			'result': final_verdict,
+			'function_log':resultsList # need to recursively decode the JSON here
+		})
 
 	
 
 # INDIVIDUAL TEST FUNCTIONS
 ################################################################################################
+# each function should contain a human-readable SUCCESS / FAILURE expectation and description
+	# as triple-quoted string, which bubbles up to help / description pages.
+# each function response should build and return json.loads(returnDict)
+################################################################################################
 
-# example...
+
+
 def getSingleObjectSolrMetadata(getParams):
+	'''
+	returns the metadata for a single object, from Solr, via the WSUAPI
+	SUCCESS: solr.response.docs > 0
+	FAILURE: solr.response.docs == 0
+	'''
 	# solr search	
-	result = solr.solrGetFedDoc({"PID":["wayne:CFAIEB01a045"]})
-	try:		
-		json.loads(result) # tests JSON validity	
-		return result # return JSON for API response
+	result = solr.solrGetFedDoc({"PID":["wayne:CFAIEB01a045"]})	
+	try:
+		result_handle = json.loads(result) # tests JSON validity	
+		numFound = result_handle['response']['numFound']
+		if numFound == 1:
+			returnDict = {
+				"result":True,
+				'msg':"Solr Metadata returned correctly, numFound = 1"
+			}
+		else:
+			returnDict = {
+				"result":True,
+				'msg':"Response successful, but numFound wrong.  Should be 1, found {numFound}".format(numFound=str(numFound))
+			}
+		# return result # return JSON for API response
 	except Exception, e:
-		return json.dumps(e)
+		returnDict = {
+			'result' : False,
+			'msg' : json.dumps(e)
+		}		
+
+	return json.dumps(returnDict)
 
 

@@ -64,10 +64,14 @@ def integrityTest(getParams):
 		final_verdict = True
 		# eachFunction = json.loads(eachFunction)	
 		if eachFunction['result'] == True:
-			continue
+			final_verdict = True
 		elif eachFunction['result'] == False:
 			final_verdict = False
 			break
+
+		# trigger false from GET param
+		if getParams['simulateFalse'][0] == "true":
+			final_verdict = False
 
 	# return resultsDict as function response
 	return json.dumps({

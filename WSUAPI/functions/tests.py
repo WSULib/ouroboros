@@ -71,7 +71,7 @@ def integrityTest(getParams):
 
 	# return resultsDict as function response
 	return json.dumps({
-			'result': final_verdict,
+			'integrityTest_result': final_verdict,
 			'function_log':resultsList # need to recursively decode the JSON here
 		})
 

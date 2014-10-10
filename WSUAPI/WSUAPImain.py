@@ -15,6 +15,7 @@ from functions.fedora import *
 from functions.solr import *
 from functions.ldapUsers import *
 from functions.utils import *
+from functions.tests import *
 import re
 
 def WSUAPImain(getParams):

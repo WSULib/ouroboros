@@ -67,11 +67,7 @@ def integrityTest(getParams):
 			final_verdict = True
 		elif eachFunction['result'] == False:
 			final_verdict = False
-			break
-
-		# trigger false from GET param
-		if getParams['simulateFalse'][0] == "true":
-			final_verdict = False
+			break		
 
 	# return resultsDict as function response
 	return json.dumps({
@@ -97,7 +93,7 @@ def getSingleObjectSolrMetadata(getParams):
 	FAILURE: solr.response.docs == 0
 	'''
 	# solr search	
-	result = solr.solrGetFedDoc({"PID":["wayne:CFAIEB01a045"]})	
+	result = solr.solrGetFedDoc({"PID":["wayne:CFAIEB01a045-GIBBERISH"]})	
 	try:
 		result_handle = json.loads(result) # tests JSON validity	
 		numFound = result_handle['response']['numFound']
@@ -108,7 +104,7 @@ def getSingleObjectSolrMetadata(getParams):
 			}
 		else:
 			returnDict = {
-				"result":True,
+				"result":False,
 				'msg':"Response successful, but numFound wrong.  Should be 1, found {numFound}".format(numFound=str(numFound))
 			}
 		# return result # return JSON for API response

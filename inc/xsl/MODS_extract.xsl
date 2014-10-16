@@ -71,7 +71,7 @@
     </xsl:for-each>
 
     <!-- Abstract -->
-    <xsl:for-each select="$MODSroot/mods:abstract[normalize-space(text())]">		
+    <xsl:for-each select="$MODSroot/mods:abstract[@type!='transcription'][normalize-space(text())]">		
       <field>
         <xsl:attribute name="name">
         	<xsl:choose>

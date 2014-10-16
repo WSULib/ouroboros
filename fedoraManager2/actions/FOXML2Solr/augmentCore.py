@@ -62,7 +62,7 @@ def ebookText(PID):
 	}]		 
 	data_json = json.dumps(data)
 	r = requests.post(baseurl, data=data_json, headers=headers)
-	print r.text
+	
 
 
 

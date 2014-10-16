@@ -144,6 +144,7 @@ def FOXML2Solr(fedEvent, PID):
 
 			#index Solr-ready XML (SolrXML)		 
 			try:
+				print SolrXML
 				updateURL = "http://localhost/solr4/fedobjs/update/"								
 				headers = {'Content-Type': 'application/xml'}
 				r = requests.post(updateURL, data=str(SolrXML), headers=headers)
@@ -270,8 +271,7 @@ def FOXML2Solr(fedEvent, PID):
 		#end timer
 		endTime = int(time.time())
 		totalTime = endTime - startTime
-		print "Total seconds elapsed",totalTime
-		
+		print "Total seconds elapsed",totalTime	
 		
 
 	# Index single item per fedEvent

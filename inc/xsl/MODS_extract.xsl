@@ -550,6 +550,15 @@
       </field>
     </xsl:for-each>
 
+    <!-- 4-Digit Year from Key Date -->
+    <xsl:for-each select="$MODSroot/mods:originInfo/mods:dateIssued[@keyDate='yes'][normalize-space(text())]">
+      <!-- Create a date field for Solr to facet -->
+      <field>
+        <xsl:attribute name="name">mods_key_date_year</xsl:attribute>
+        <xsl:value-of select="substring(text(),1,4)"/>
+      </field>
+    </xsl:for-each>
+
     <!-- Date Captured -->
     <xsl:for-each select="$MODSroot/mods:originInfo/mods:dateCaptured[normalize-space(text())]">
       <field>

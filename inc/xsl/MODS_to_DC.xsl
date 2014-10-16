@@ -166,7 +166,7 @@
 			</xsl:if>
 		</xsl:template>
 	
-		<xsl:template match="mods:abstract | mods:tableOfContents | mods:note">
+		<xsl:template match="mods:abstract[not(@type = 'transcription')] | mods:tableOfContents | mods:note">
 			<dc:description>
 				<xsl:value-of select="."/>
 			</dc:description>

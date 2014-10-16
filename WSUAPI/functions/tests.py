@@ -1,6 +1,7 @@
 # Functions for testing System functionality
 import requests
 import json
+import subprocess
 
 # import sibling files
 import solr
@@ -8,38 +9,25 @@ import fedora
 
 
 '''
-Brainstorming / Tests:
+Notes:
 ----------------------
+Considering not using Ghost.py at this point, for stability and performance reasons.
 
-+ we want to test the integrity of the system, not the integrity of the collection items (metadata, RELS-EXT, etc)
-+ known items will be one from each collection
-+ random items, don't want fales positives
-+ each function returns JSON, with True or False
-+ main integrityTest() function compiles these, all can be run independently
+Currently, testing metadata and search calls through the API.  
+	- This *could* run through dozens of objects, very quickly
+	- All page rendering functions commented out
+	- Difficult for a variety of reasons
+		- Ghost.py has to run as main thread, so seperate script (could hold up Ouro)
+		- -X server
+		- can bring down Ouro pretty easily
 
-+ Can include "Best Guess" based on analysis of function results
-
-+ For penultimate test, push all "True" and "False" results to resultsList[], then check if any Falses tehre
-	if False in resultsList:
-		then fail.
-
-Want to test:
-- linkages of Solr-WSUAPI
-	- solr.solrGetFedDoc() 
-	- fedora.getObjectXML()
-	- linkages of search / browse
-		- known search term, e.g. "Detroit" - solr.solrSearch()
-
-- front-end page rendering
-	- single object page redirect to 404 = front-end, Solr, or WSUAPI is malfunctioning (check page.url == http://digital.library.wayne.edu/dev/graham/digitalcollections/404.php)
-	- collection page (?)
- 	- search page (?)
-
-- images
-	- imageServer hit of known item PREVIEW and THUMBNAIL
+Looking into a "robo-user" that will walk collections always.
 '''
 
-
+# GET ITEMS
+################################################################################################
+# This function produces an representative list of PIDs to check 
+################################################################################################
 def getItems():
 	# return an array of PIDs from current collections
 	pass
@@ -57,17 +45,30 @@ def integrityTest(getParams):
 	resultsList = []	
 
 	# run functions here
-	resultsList.append(json.loads(getSingleObjectSolrMetadata(getParams)))
+	#########################################################################################################################
+	# Single Objects
+	resultsList.append({"getSingleObjectSolrMetadata":json.loads(getSingleObjectSolrMetadata({"PID":"wayne:CFAIEB01a002"}))})
+	# resultsList.append({"singleObjectPageRender":json.loads(singleObjectPageRender({"PID":"wayne:CFAIEB01a002"}))})
+	
+	# Search / Browse / Collections
+	resultsList.append({"solrSearchKnownTerm":json.loads(solrSearchKnownTerm({"search_term":"Michigan"}))})
+	resultsList.append({"solrSearchCollectionObjects":json.loads(solrSearchCollectionObjects({"search_term":"rels_hasContentModel%3Ainfo%5C%3Afedora%2FCM%5C%3ACollection"}))})
+	# resultsList.append({"searchPageRender":json.loads(searchPageRender({"search_term":"Michigan"}))})
+	# resultsList.append({"collectionPageRender":json.loads(collectionPageRender({False}))})
+	#########################################################################################################################
 
-	# read all functions, determine if any false present
-	for eachFunction in resultsList:	# json.loads
-		final_verdict = True
-		# eachFunction = json.loads(eachFunction)	
-		if eachFunction['result'] == True:
-			final_verdict = True
-		elif eachFunction['result'] == False:
-			final_verdict = False
-			break		
+	# read all functions, determine if any false present, breaks if so
+	# simpler: one False will sully the True
+	final_verdict = True
+	for eachFunction in resultsList:	# json.loads		
+		for funcName in eachFunction:
+			result_dict = eachFunction[funcName]						
+			# eachFunction = json.loads(eachFunction)	
+			if result_dict['result'] == True:				
+				continue
+			elif result_dict['result'] == False:
+				final_verdict = False
+				break
 
 	# return resultsDict as function response
 	return json.dumps({
@@ -86,6 +87,9 @@ def integrityTest(getParams):
 
 
 
+################################################################################################
+# Single Objects
+################################################################################################
 def getSingleObjectSolrMetadata(getParams):
 	'''
 	returns the metadata for a single object, from Solr, via the WSUAPI
@@ -93,7 +97,7 @@ def getSingleObjectSolrMetadata(getParams):
 	FAILURE: solr.response.docs == 0
 	'''
 	# solr search	
-	result = solr.solrGetFedDoc({"PID":["wayne:CFAIEB01a045-GIBBERISH"]})	
+	result = solr.solrGetFedDoc({"PID":[getParams['PID']]})	
 	try:
 		result_handle = json.loads(result) # tests JSON validity	
 		numFound = result_handle['response']['numFound']
@@ -115,5 +119,233 @@ def getSingleObjectSolrMetadata(getParams):
 		}		
 
 	return json.dumps(returnDict)
+
+
+def singleObjectPageRender(getParams):	
+	'''
+	Renders a singleObject page with Ghost.py, checks status code.
+	SUCCESS: status code == 200
+	FAILURE: status code == 404 or 503
+	'''
+	# solr search	
+	PID = getParams['PID']
+	URL = "http://digital.library.wayne.edu/digitalcollections/item?id={PID}".format(PID=PID)
+
+	try:				
+		http_status_string = subprocess.check_output("python WSUAPI/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status = int(http_status_string)
+
+		print "http status:", http_status
+
+		if http_status == 200:
+			returnDict = {
+				"result":True,
+				'msg':"Ghost.py rendering successful, HTTP status 200."
+			}		
+		else:
+			returnDict = {
+				"result":False,
+				'msg':"Ghost.py rendering unsuccessful, HTTP status {http_status}.".format(http_status=str(http_status))
+			}		
+	
+	except Exception, e:
+		returnDict = {
+			'result' : False,
+			'msg' : json.dumps(e)
+		}		
+
+	print "Page Rendering:",returnDict
+
+	return json.dumps(returnDict)
+
+
+
+
+################################################################################################
+# Search / Browse / Collections
+################################################################################################
+def solrSearchCollectionObjects(getParams):
+	'''
+	returns results for all collection objects, from Solr, via the WSUAPI
+	SUCCESS: solr.response.docs > 0
+	FAILURE: solr.response.docs == 0
+	'''
+	# solr search	
+
+	result = solr.solrSearch({"q":[getParams['search_term']],"wt":["json"]})
+	
+	try:
+		result_handle = json.loads(result) # tests JSON validity	
+		numFound = result_handle['response']['numFound']
+		if numFound > 0:
+			returnDict = {
+				"result":True,
+				'msg':"Solr Search successful, numFound > 0"
+			}
+		else:
+			returnDict = {
+				"result":False,
+				'msg':"Response successful, but numFound wrong.  Should be > 0, found {numFound}".format(numFound=str(numFound))
+			}
+		# return result # return JSON for API response
+	except Exception, e:
+		returnDict = {
+			'result' : False,
+			'msg' : json.dumps(e)
+		}		
+
+	return json.dumps(returnDict)
+
+
+def solrSearchKnownTerm(getParams):
+	'''
+	returns results for word "Michigan", from Solr, via the WSUAPI
+	SUCCESS: solr.response.docs > 0
+	FAILURE: solr.response.docs == 0
+	'''
+	# solr search	
+
+	result = solr.solrSearch({"q":[getParams['search_term']],"wt":["json"]})
+	
+	try:
+		result_handle = json.loads(result) # tests JSON validity	
+		numFound = result_handle['response']['numFound']
+		if numFound > 0:
+			returnDict = {
+				"result":True,
+				'msg':"Solr Search successful, numFound > 0"
+			}
+		else:
+			returnDict = {
+				"result":False,
+				'msg':"Response successful, but numFound wrong.  Should be > 0, found {numFound}".format(numFound=str(numFound))
+			}
+		# return result # return JSON for API response
+	except Exception, e:
+		returnDict = {
+			'result' : False,
+			'msg' : json.dumps(e)
+		}		
+
+	return json.dumps(returnDict)
+
+
+def searchPageRender(getParams):	
+	'''
+	Renders a singleObject page with Ghost.py, checks status code.
+	SUCCESS: status code == 200
+	FAILURE: status code == 404 or 503
+	'''
+	# solr search
+	URL = "http://digital.library.wayne.edu/digitalcollections/search.php?q={search_term}".format(search_term=getParams['search_term'])
+
+	try:				
+		http_status_string = subprocess.check_output("python WSUAPI/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status = int(http_status_string)
+
+		print "http status:", http_status
+
+		if http_status == 200:
+			returnDict = {
+				"result":True,
+				'msg':"Ghost.py rendering successful, HTTP status 200."
+			}		
+		else:
+			returnDict = {
+				"result":False,
+				'msg':"Ghost.py rendering unsuccessful, HTTP status {http_status}.".format(http_status=str(http_status))
+			}		
+	
+	except Exception, e:
+		returnDict = {
+			'result' : False,
+			'msg' : json.dumps(e)
+		}		
+
+	print "Page Rendering:",returnDict
+
+	return json.dumps(returnDict)
+
+
+def collectionPageRender(getParams):	
+	'''
+	Renders a singleObject page with Ghost.py, checks status code.
+	SUCCESS: status code == 200
+	FAILURE: status code == 404 or 503
+	'''
+	# solr search
+	URL = "http://digital.library.wayne.edu/digitalcollections/allcollections.php"
+
+	try:				
+		http_status_string = subprocess.check_output("python WSUAPI/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status = int(http_status_string)
+
+		print "http status:", http_status
+
+		if http_status == 200:
+			returnDict = {
+				"result":True,
+				'msg':"Ghost.py rendering successful, HTTP status 200."
+			}		
+		else:
+			returnDict = {
+				"result":False,
+				'msg':"Ghost.py rendering unsuccessful, HTTP status {http_status}.".format(http_status=str(http_status))
+			}		
+	
+	except Exception, e:
+		returnDict = {
+			'result' : False,
+			'msg' : json.dumps(e)
+		}		
+
+	print "Page Rendering:",returnDict
+
+	return json.dumps(returnDict)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

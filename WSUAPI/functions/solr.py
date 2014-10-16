@@ -62,8 +62,6 @@ def solrSearch(getParams):
 	# add to URL
 	baseURL	+= "q="+getParams['q'][0]+"&"
 
-
-
 	## BACKDOOR FOR VIEWING ALL ITEMS, NOT JUST isDiscoverableTrue	
 	if 'fullView' in getParams and getParams['fullView'][0] == "fullview123456789":
 		pass

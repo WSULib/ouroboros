@@ -73,13 +73,28 @@ class Resize(BaseTransform):
         if not size:
             size = (64, 64)
         else:
-            size = tuple((int(s) for s in size.split('x')))
+            size = tuple((int(s) for s in size.split('x')))        
         outfile = StringIO()
         im = Image.open(infile)
         im = im.resize(size)
         im.save(outfile, 'png')
-        return outfile.getvalue()
+        return outfile.getvalue()        
+
+class Crop(BaseTransform):
+    command = 'crop'
+    def _execute(self, infile, box, **kwargs):        
+        # debug
+        im = Image.open(infile)         
+        outfile = StringIO()
+
+        # get coords
+        box = tuple((int(coord) for coord in box.split('x')))        
+
+        # perform crop        
+        im = im.crop(box)                
         
+        im.save(outfile, 'png')
+        return outfile.getvalue()
 
 class Rotate(BaseTransform):
     command = 'rotate'

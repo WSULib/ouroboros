@@ -63,7 +63,7 @@ def FOXML2Solr(fedEvent, PID):
 	#Get DT Threshold
 	def getLastFedoraIndexDate():	
 		#evaluate solr response string as python dictionary
-		LastFedoraIndexDict = eval(urllib.urlopen("http://localhost/solr4/fedobjs/select?q=id%3ALastFedoraIndex&fl=last_modified&wt=python&indent=true").read())	
+		LastFedoraIndexDict = eval(urllib.urlopen("http://silo.lib.wayne.edu/solr4/fedobjs/select?q=id%3ALastFedoraIndex&fl=last_modified&wt=python&indent=true").read())	
 		LastFedoraIndexDate = LastFedoraIndexDict['response']['docs'][0]['last_modified']
 		print "Last Indexing of FOXML in Solr:",LastFedoraIndexDate,"\n"
 		return LastFedoraIndexDate
@@ -85,7 +85,7 @@ def FOXML2Solr(fedEvent, PID):
 			'dt': 'on', 
 			'query': risearch_query
 			})
-		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
 		
 		print risearch_query
 		print risearch_host
@@ -120,7 +120,7 @@ def FOXML2Solr(fedEvent, PID):
 			
 			#get object FOXML and parse as XML
 			try:
-				response = urllib.urlopen("http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/objects/{PID}/objectXML".format(PID=PID,FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD))
+				response = urllib.urlopen("http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/objects/{PID}/objectXML".format(PID=PID,FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD))
 				FOXML = response.read()
 				XMLroot = etree.fromstring(FOXML)		
 			except:
@@ -144,7 +144,7 @@ def FOXML2Solr(fedEvent, PID):
 			#index Solr-ready XML (SolrXML)		 
 			try:
 				print SolrXML
-				updateURL = "http://localhost/solr4/fedobjs/update/"								
+				updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/"								
 				headers = {'Content-Type': 'application/xml'}
 				r = requests.post(updateURL, data=str(SolrXML), headers=headers)
 				print r.text
@@ -159,7 +159,7 @@ def FOXML2Solr(fedEvent, PID):
 
 		# commit changes in Solr
 		print "*** Committing Changes ***"
-		baseurl = 'http://localhost/solr4/fedobjs/update/' 
+		baseurl = 'http://silo.lib.wayne.edu/solr4/fedobjs/update/' 
 		data = {'commit':'true'}
 		r = requests.post(baseurl,data=data)
 		print r.text
@@ -169,7 +169,7 @@ def FOXML2Solr(fedEvent, PID):
 		
 		# replicate to "search core"
 		print "*** Replicating Changes ***"
-		baseurl = 'http://localhost/solr4/search/replication?command=fetchindex' 
+		baseurl = 'http://silo.lib.wayne.edu/solr4/search/replication?command=fetchindex' 
 		data = {'commit':'true'}
 		r = requests.post(baseurl,data=data)
 		print r.text	
@@ -179,7 +179,7 @@ def FOXML2Solr(fedEvent, PID):
 
 		#Updated LastFedoraIndex in Solr
 		print "*** Updating LastFedoraIndex in Solr ***"
-		updateURL = "http://localhost/solr4/fedobjs/update/?commit=true"
+		updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/?commit=true"
 		dateUpdateXML = "<add><doc><field name='id'>LastFedoraIndex</field><field name='last_modified'>NOW</field></doc></add>"
 		headers = {'Content-Type': 'application/xml'}
 		r = requests.post(updateURL, data=dateUpdateXML, headers=headers)
@@ -190,7 +190,7 @@ def FOXML2Solr(fedEvent, PID):
 		
 		print "*** Removing document from Solr ***"		
 		PID = PID.replace(":","\:")
-		updateURL = "http://localhost/solr4/fedobjs/update/"			
+		updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/"			
 		deleteXML = "<delete><query>id:{PID}</query></delete>".format(PID=PID)
 		headers = {'Content-Type': 'application/xml'}
 		r = requests.post(updateURL, data=deleteXML, headers=headers)

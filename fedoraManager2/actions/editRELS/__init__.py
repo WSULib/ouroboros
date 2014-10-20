@@ -119,7 +119,7 @@ def editRELS_shared():
 
 		# print query_statement
 		
-		base_URL = "http://localhost/fedora/risearch"
+		base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
 		payload = {
 			"lang" : "sparql",
 			"query" : query_statement,

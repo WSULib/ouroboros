@@ -1,4 +1,4 @@
-# WSU Digital Collections Infrastructure API
+# WSU Digital Collections Infrastructure API (WSUAPI)
 # Designed to query and combine results from multiple back-end systems into a single JSON package.
 
 # IMPORTS
@@ -9,14 +9,11 @@ import sys
 import json
 import argparse
 import ast
+import re
 
 # WSUAPI modules
-from functions.fedora import *
-from functions.solr import *
-from functions.ldapUsers import *
 from functions.utils import *
-from functions.tests import *
-import re
+from functions.availableFunctions import *
 
 def WSUAPImain(getParams):
 

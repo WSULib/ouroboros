@@ -8,6 +8,7 @@ from fedoraManager2 import models
 from flask import render_template, session
 import json
 from functools import wraps
+from localConfig import *
 
 
 
@@ -66,7 +67,7 @@ def checkPinCreds(pin_package,check_type):
 def returnOAISets(context):
 	# returns list of tuples, in format (collection PID, OAI set name, OAI set ID)
 	query_statement = "select $subject $setSpec $setName from <#ri> where { $subject <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $subject <http://www.openarchives.org/OAI/2.0/setName> $setName . }"
-	base_URL = "http://localhost/fedora/risearch"
+	base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
 	payload = {
 		"lang" : "sparql",
 		"query" : query_statement,

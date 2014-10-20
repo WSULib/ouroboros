@@ -45,6 +45,6 @@ def index():
 
 	except Exception,e:
 		print "WSUAPI call unsuccessful.  Error:",str(e)
-		return '{{"WSUAPIstatus":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
+		return '{{"WSUAPIstatus":"WSUAPI call unsuccessful.","WSUAPIstatus message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
 	
 

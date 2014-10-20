@@ -113,7 +113,7 @@ def systemStatus():
 	imp_ports_results = []
 	for port,desc in imp_ports:
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		check = result = s.connect_ex(("localhost",port))
+		check = result = s.connect_ex(("silo.lib.wayne.edu",port))
 		if check == 0:
 			msg = "active"
 		else:

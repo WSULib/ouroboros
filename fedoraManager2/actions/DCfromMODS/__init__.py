@@ -35,7 +35,7 @@ def DCfromMODS_single(PID):
 	# 1) download MODS datastream
 	##################################################################################################################	
 	print "Downloading: {PID} MODS datastream...".format(PID=PID)
-	response = urllib.urlopen("http://localhost/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID))	
+	response = urllib.urlopen("http://silo.lib.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID))	
 	MODS = response.read()
 	XMLroot = etree.fromstring(MODS)
 
@@ -59,7 +59,7 @@ def DCfromMODS_single(PID):
 	print "Creating Datastream for: {PID}".format(PID=PID)
 
 	#baseURL
- 	baseFedoraURL = "http://localhost/fedora/objects/{PID}/datastreams/DC?".format(PID=PID)
+ 	baseFedoraURL = "http://silo.lib.wayne.edu/fedora/objects/{PID}/datastreams/DC?".format(PID=PID)
 	print baseFedoraURL
 
  	# set parameters
@@ -87,7 +87,7 @@ def DCfromMODS_worker(job_package):
 	# 1) download MODS datastream
 	##################################################################################################################	
 	print "Downloading: {PID} MODS datastream...".format(PID=PID)
-	response = urllib.urlopen("http://localhost/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID))	
+	response = urllib.urlopen("http://silo.lib.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID))	
 	MODS = response.read()
 	XMLroot = etree.fromstring(MODS)
 
@@ -111,7 +111,7 @@ def DCfromMODS_worker(job_package):
 	print "Creating Datastream for: {PID}".format(PID=PID)
 
 	#baseURL
- 	baseFedoraURL = "http://localhost/fedora/objects/{PID}/datastreams/DC?".format(PID=PID)
+ 	baseFedoraURL = "http://silo.lib.wayne.edu/fedora/objects/{PID}/datastreams/DC?".format(PID=PID)
 	print baseFedoraURL
 
  	# set parameters

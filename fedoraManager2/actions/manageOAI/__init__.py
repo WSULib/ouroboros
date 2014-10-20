@@ -77,7 +77,7 @@ def objectRelated():
 			if PID != None:				
 				where_statement += "<fedora:{PID}> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet> $object . $object <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $object <http://www.openarchives.org/OAI/2.0/setName> $setName .".format(PID=PID)
 		query_statement = "select $object $setSpec $setName from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
-		base_URL = "http://localhost/fedora/risearch"
+		base_URL = "http://{FEDORA_USER}:}@silo.lib.wayne.edu/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
 		payload = {
 			"lang" : "sparql",
 			"query" : query_statement,

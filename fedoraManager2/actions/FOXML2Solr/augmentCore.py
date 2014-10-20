@@ -48,13 +48,13 @@ def ebookText(PID):
 	ds_content = ds_handle.content		
 
 	# use Solr's Tika Extract to strip down to text
-	baseurl = "http://localhost:8080/solr4/fedobjs/update/extract?&extractOnly=true"
+	baseurl = "http://silo.lib.wayne.edu/solr4/fedobjs/update/extract?&extractOnly=true"
 	files = {'file': ds_content}		
 	r = requests.post(baseurl, files=files)		
 	ds_stripped_content = r.text
 
 	# atomically update in solr
-	baseurl = "http://localhost:8080/solr4/fedobjs/update?commit=true"
+	baseurl = "http://silo.lib.wayne.edu/solr4/fedobjs/update?commit=true"
 	headers = {'Content-Type': 'application/json'}
 	data = [{
 		"id":"wayne:{PID_suffix}".format(PID_suffix=PID_suffix),

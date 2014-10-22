@@ -219,6 +219,8 @@ def editRELS_purge_worker(job_package):
 	form_data = job_package['form_data']
 	predicate_string = form_data['predicate'].encode('utf-8').strip()
 	object_string = form_data['object'].encode('utf-8').strip()
+
+	print "Removing the following predicate / subject: {predicate_string} / {object_string}".format(predicate_string=predicate_string,object_string=object_string)
 		
 	return obj_ohandle.purge_relationship(predicate_string, object_string)
 

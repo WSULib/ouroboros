@@ -33,6 +33,7 @@ Function Format:
 '''
 
 
+
 #######################################################################################################################
 # --------------------------------------------------------------------------------------------------------------------#
 # SOLR RELATED                                                                                                        #
@@ -1198,6 +1199,31 @@ def getUserInfo(getParams):
 	except:
 		jsonString = '{"desc":"unsucessful"}'
 	return jsonString
+
+
+
+
+#######################################################################################################################
+# --------------------------------------------------------------------------------------------------------------------#
+# GENERAL / MISC                                                                                                      #
+# --------------------------------------------------------------------------------------------------------------------#
+#######################################################################################################################
+
+def objectLoci(getParams):
+	'''
+	This function returns the intellectual organization and location of a WSUDOR object.
+
+	Collection Siblings
+		- uses objectCollectionIndex
+
+	Search / Browse siblings
+		- expects search parameters and window size, creates new search parameters
+
+	results:
+		collection1: -5 -4 -3 -2 -1 object 1 2 3 4 5
+		collection2: -5 -4 -3 -2 -1 object 1 2 3 4 5
+		search / browse: -5 -4 -3 -2 -1 object 1 2 3 4 5			
+	'''
 
 
 

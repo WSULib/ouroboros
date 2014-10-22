@@ -20,6 +20,10 @@ import sys
 tasks_URL_prefix = "/tasks"
 
 #MODSexport
+from createObjectIndex import createObjectIndex
+app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)
+
+#MODSexport
 from MODSexport import MODSexport, MODSexport_worker
 app.register_blueprint(MODSexport, url_prefix=tasks_URL_prefix)
 

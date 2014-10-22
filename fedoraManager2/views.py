@@ -252,7 +252,7 @@ def cancelTask(task_inputs_key):
 	return redirect("/userPage")
 
 
-# fireTask is the factory that begins tasks from fedoraManager2.actions
+# fireTaskWorker is the factory that begins tasks from fedoraManager2.actions
 @app.route("/fireTaskWorker/<task_name>/<task_inputs_key>", methods=['POST', 'GET'])
 @utilities.objects_needed
 def fireTaskWorker(task_name,task_inputs_key):
@@ -287,20 +287,6 @@ def fireTaskWorker(task_name,task_inputs_key):
 	# begin job and set estimated tasks
 	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())	
-
-	# OLD STYLE BEFORE CONFIRMATION, CONSIDER REMOVING
-	################################################################
-	# # create job_package	
-	# job_package = {		
-	# 	"username":username,
-	# 	"job_num":job_num,		
-	# 	"form_data":request.values			
-	# }
-
-	# # pass along binary uploaded data if included in job task
-	# if 'upload' in request.files and request.files['upload'].filename != '':
-	# 	job_package['upload_data'] = request.files['upload'].read()
-	################################################################
 
 	# augment job_package
 	job_package['job_num'] = job_num

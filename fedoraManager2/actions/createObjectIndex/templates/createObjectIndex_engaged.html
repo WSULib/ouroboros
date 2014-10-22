@@ -1,0 +1,8 @@
+{% include 'header.html' %}
+<h1>Create Object Index</h1>
+
+<form role="form" action="/tasks/createObjectIndex/process" method="POST">
+	<p>Object Collection Indexes are being created for: {{collection_PID}}.  This operation may take some time, but is running peacefully in the background.</p>		
+</form>
+
+{% include 'footer.html' %}

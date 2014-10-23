@@ -108,10 +108,10 @@ def createObjectIndex_worker(collection_PID_suffix):
 			collection_key = "wayne:"+collection_PID_suffix
 			if DS_handle.exists == True:
 				collection_index_dict = json.loads(COLLINDEX_JSON)
-				collection_index_dict[collection_key] = cursor
+				collection_index_dict[collection_key] = {"index":cursor}
 			else:
 				collection_index_dict = {
-					collection_key:cursor
+					collection_key : {"index":cursor}
 				}
 
 			# write new content

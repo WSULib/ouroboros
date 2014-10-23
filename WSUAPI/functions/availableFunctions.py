@@ -21,6 +21,10 @@ from utils import *
 # config
 from localConfig import *
 
+# modules from fedoraManager2
+from fedoraManager2.fedoraHandles import fedora_handle
+from fedoraManager2.solrHandles import solr_handle
+
 
 '''
 Description: This file represents all functions available to the WSUAPI.  
@@ -106,7 +110,7 @@ def solrSearch(getParams):
 			baseURL += ("fq="+fq+"&")	
 
 	# tack on fl
-	baseURL += "&fl=id mods* dc* rels* obj* last_modified&"
+	baseURL += "&fl=id mods* dc* rels* obj* last_modified&"	
 
 	processed = ["raw","fullview","facets[]","fq[]","q"]
 
@@ -1205,7 +1209,7 @@ def getUserInfo(getParams):
 
 #######################################################################################################################
 # --------------------------------------------------------------------------------------------------------------------#
-# GENERAL / MISC                                                                                                      #
+# GENERAL / MISC / MIXED                                                                                                     #
 # --------------------------------------------------------------------------------------------------------------------#
 #######################################################################################################################
 
@@ -1223,7 +1227,165 @@ def objectLoci(getParams):
 		collection1: -5 -4 -3 -2 -1 object 1 2 3 4 5
 		collection2: -5 -4 -3 -2 -1 object 1 2 3 4 5
 		search / browse: -5 -4 -3 -2 -1 object 1 2 3 4 5			
+	'''	
+
+	# get PID, context
+	PID = getParams['PID'][0]		
+	try:
+		loci_context = getParams['loci_context'][0]
+	except:
+		loci_context = "nonsearch"
+	print "Operating on PID:",PID,"loci_context is",loci_context
+
+	# get fed handle 
+	obj_ohandle = fedora_handle.get_object(PID)
+
+	if obj_ohandle.exists == True:
+
+		return_dict = {}
+
+		# collection loci
+
+		# retrieve COLLINDEX JSON		
+		DS_handle = obj_ohandle.getDatastreamObject("COLLINDEX")
+
+		# append collection information
+		if DS_handle.exists == True:			
+			COLLINDEX_JSON = DS_handle.content
+			collection_index_dict = json.loads(COLLINDEX_JSON)
+
+			for collection in collection_index_dict:				
+
+				# perform solr query, get before and after
+				collection_PID_suffix = collection.split(":")[1]	
+				index = collection_index_dict[collection]['index']
+				
+				# bottom-out start for small index
+				if (index - 5) < 0:
+					start = 0
+				else:
+					start = index - 5
+
+				# construct query string
+				query = {
+					"q" : "rels_isMemberOfCollection:*{collection_PID_suffix}".format(collection_PID_suffix=collection_PID_suffix),
+					"rows" : 11,
+					"start" : start,
+					"sort" : "id asc"
+				}				
+
+				# perform query
+				results = solr_handle.search(**query)	
+				print "index / total",index,"/",results.total_results	
+				results_list = results.documents
+					
+				if index < 5:
+					wedge = index + 1
+					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,index) ]
+					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range(wedge,(wedge+5)) ]
+
+				elif (results.total_results - index ) < 6:
+					wedge = index + 1					
+					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,5) ]
+					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range(6,len(results_list)) ]					
+
+				else:
+					# grab previous / next, mid-collection
+					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,5) ]				
+					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range(6,11) ]
+				
+
+			#append to return_dict
+			print "Collection dict:",collection_index_dict
+			return_dict['collection_loci'] = collection_index_dict
+
+
+		# if "search" loci_context, access search parameters and search index, recreate, and return index in search
+		if loci_context == "search":	
+
+			# instantiate
+			search_index_dict = {}			
+			
+			# get search and index params
+			search_params = getParams['search_params'][0] # no zero needed, came in as object		
+			search_index = getParams['search_index'][0]
+			print "search_params:",search_params," / search_index:",search_index			
+
+			# convert to dictionary
+			search_params = json.loads(search_params)		
+
+			# determine index in search
+			index = int(search_params['start']) + int(search_index)			
+			search_index_dict['index'] = index
+
+			# construct new query
+			# bottom-out start for small index
+			if (index - 5) < 0:
+				start = 0
+			else:
+				start = index - 5
+			search_params['rows'] = 11
+			search_params['start'] = start
+
+			# perform query
+			r = requests.get("http://localhost/{API_url}?functions[]=solrSearch".format(API_url=getParams['API_url'][0]),params=search_params)
+			solr_response_dict = json.loads(r.content)
+			results_list = solr_response_dict['solrSearch']['response']['docs']
+			numFound = int(solr_response_dict['solrSearch']['response']['numFound'])
+					
+			if numFound == 1:
+				search_index_dict['previous_objects'] = []
+				search_index_dict['next_objects'] = []
+
+			elif index < 5:
+				wedge = index + 1
+				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,index) ]
+				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range(wedge,(wedge+5)) ]
+
+			elif ( numFound - index ) < 6:
+				wedge = index + 1					
+				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,5) ]
+				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range(6,len(results_list)) ]					
+
+			else:
+				# grab previous / next, mid-collection
+				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,5) ]				
+				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range(6,11) ]
+
+			#append to return_dict
+			print "Search dict:",search_index_dict
+			return_dict['search_loci'] = search_index_dict			
+
+	else:
+		return json.dumps({"msg":"that object id does not appear to exist"})
+	
+	return json.dumps(return_dict)
+
+
+
+def saveSearch(getParams):
 	'''
+	This function saves the parameters from a DC front-end search (Solr) for reuse later
+	'''
+
+	return json.dumps({"status":"in progress"})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

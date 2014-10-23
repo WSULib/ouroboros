@@ -1282,7 +1282,7 @@ def objectLoci(getParams):
 
 				# perform query
 				results = solr_handle.search(**query)	
-				# print "Collection index / total:",index,"/",results.total_results	
+				print "Collection index / total:",index,"/",results.total_results	
 				results_list = results.documents
 					
 				if index < windowSize:					
@@ -1298,14 +1298,19 @@ def objectLoci(getParams):
 					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
 					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range(6,len(results_list)) ]					
 
-				else:
-					# grab previous / next, mid-collection
-					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]				
-					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range((windowSize+1),((windowSize*2)+1)) ]
+				else:					
+					# grab previous / next, mid-collection					
+					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
+					if (windowSize*2) + 1 > len(results_list):
+						upperBound = len(results_list)
+					else:
+						upperBound = (windowSize*2) + 1
+					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range( (windowSize+1), upperBound ) ]
 				
 
 			#append to return_dict			
 			return_dict['collection_loci'] = collection_index_dict
+			print "Collection objectLoci added."
 
 
 		# if "search" loci_context, access search parameters and search index, recreate, and return index in search
@@ -1358,10 +1363,14 @@ def objectLoci(getParams):
 				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
 				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range(6,len(results_list)) ]					
 
-			else:
-				# grab previous / next, mid-collection
-				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]				
-				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range((windowSize+1),((windowSize*2)+1)) ]
+			else:					
+					# grab previous / next, mid-collection					
+					search_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
+					if (windowSize*2) + 1 > len(results_list):
+						upperBound = len(results_list)
+					else:
+						upperBound = (windowSize*2) + 1
+					search_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range( (windowSize+1), upperBound ) ]
 
 			#append to return_dict			
 			return_dict['search_loci'] = search_index_dict			

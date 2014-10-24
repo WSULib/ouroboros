@@ -1284,8 +1284,14 @@ def objectLoci(getParams):
 				results = solr_handle.search(**query)	
 				print "Collection index / total:",index,"/",results.total_results	
 				results_list = results.documents
+
+				# only one...	
+				if results.total_results == 1:
+					search_index_dict['previous_objects'] = []
+					search_index_dict['next_objects'] = []
 					
-				if index < windowSize:					
+				# towards the beginning...
+				elif index < windowSize:					
 					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,(index-1)) ]
 					if (index+1)+windowSize > len(results_list):
 						upperBound = len(results_list)
@@ -1293,11 +1299,13 @@ def objectLoci(getParams):
 						upperBound = (index+1)+windowSize
 					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range((index+1),upperBound) ]
 
+				# towards the end...
 				elif (results.total_results - index ) < 6:
 					wedge = index + 1					
 					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
 					collection_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range(6,len(results_list)) ]					
 
+				# solidly in the middle...
 				else:					
 					# grab previous / next, mid-collection					
 					collection_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
@@ -1325,7 +1333,7 @@ def objectLoci(getParams):
 			# print "search_params:",search_params," / search_index:",search_index			
 
 			# convert to dictionary
-			search_params = json.loads(search_params)		
+			search_params = json.loads(search_params)
 
 			# determine index in search
 			index = int(search_params['start']) + int(search_index)			
@@ -1345,34 +1353,40 @@ def objectLoci(getParams):
 			solr_response_dict = json.loads(r.content)
 			results_list = solr_response_dict['solrSearch']['response']['docs']
 			numFound = int(solr_response_dict['solrSearch']['response']['numFound'])
-					
+
+			#debug
+			print "Index / numFound:",index,"/",numFound
+				
+			# only one...	
 			if numFound == 1:
 				search_index_dict['previous_objects'] = []
 				search_index_dict['next_objects'] = []
 
+			# towards the beginning...
 			elif index < windowSize:					
 				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,index) ]
-				if (index+1)+windowSize > len(results_list):
-					upperBound = len(results_list)
+				if index + 1 + windowSize > len(results_list):
+					upperBound = len(results_list)					
 				else:
-					upperBound = (index+1)+windowSize
+					upperBound = index + 1 + windowSize					
 				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range((index+1),upperBound) ]
 
+			# towards the end...
 			elif (results.total_results - index ) < 6:
 				wedge = index + 1					
 				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
 				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range(6,len(results_list)) ]					
 
-			else:					
-					# grab previous / next, mid-collection					
-					search_index_dict[collection]['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
-					if (windowSize*2) + 1 > len(results_list):
-						upperBound = len(results_list)
-					else:
-						upperBound = (windowSize*2) + 1
-					search_index_dict[collection]['next_objects'] = [ results_list[i]['id'] for i in range( (windowSize+1), upperBound ) ]
+			# solidly in the middle...
+			else:				
+				search_index_dict['previous_objects'] = [ results_list[i]['id'] for i in range(0,windowSize) ]
+				if (windowSize * 2) + 1 > len(results_list):
+					upperBound = len(results_list)
+				else:
+					upperBound = (windowSize*2) + 1					
+				search_index_dict['next_objects'] = [ results_list[i]['id'] for i in range( (windowSize+1), upperBound ) ]
 
-			#append to return_dict			
+			#append to return_dict
 			return_dict['search_loci'] = search_index_dict			
 
 	else:

@@ -8,3 +8,8 @@ Goal:
 
 Digital Collections Infrastructure
 <img src="https://dl.dropboxusercontent.com/u/41044/digital_collections_infrastructure_7-17_wgraph_tri.png"/>
+
+### Installation
+
+Installation is still a work in progress.  A requirements.txt file has been added a first step toward building this out.  First step to installing Ouroboros:
+`pip install -r requirements.txt`

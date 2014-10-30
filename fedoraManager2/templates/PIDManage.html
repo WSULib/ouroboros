@@ -1,9 +1,8 @@
 {% include 'header.html' %}
 
 <h2>PID Selection</h2>
-<ul>
-    <li><a href="/PIDSolr">Solr</a></li>
-</ul>
+<p><a href="/PIDSolr">Click here to search for objects to manage.</a></p>
+
 <h2>PID Actions</h2>
 <ul>
     <li><a href="#" onclick="PIDmanageAction('s_all'); return false;">Select All</a></li>      
@@ -19,7 +18,7 @@
             {% endfor %}
         </select>        
     </li>
-    <li><a href="#" onclick="PIDmanageAction('s_del'); return false;">Delete Selected</a></li>
+    <li><a href="#" onclick="PIDmanageAction('s_del'); return false;">Remove Selected from User List</a></li>
 </ul>
 <hr>
 <select id="group_filter" name="group_filter" onchange="filterGroup();">

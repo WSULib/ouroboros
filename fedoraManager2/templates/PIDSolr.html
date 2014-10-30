@@ -1,5 +1,6 @@
 {% include 'header.html' %}
 <p>This area is used to select objects from Fedora that will be acted upon by fedoraManager2.  After performing queries, select objects from the results either by clicking individual objects, or selecting all.  <strong>Note:</strong> when selecting PIDs, you can identify a "group" that will be searchable and filterable in the <a href="/PIDmanage">PID object management</a> screen.</p>
+<p>Also worth noting, this is currently only seaching Solr.  Objects that have not been indexed in Solr (via FOXML2Solr), will not be findable here.  This is slated to change.</p>
 <div class="row">
 <div class="col-md-6" id="solr_form">
     <h2>Solr Query & Select</h2>
@@ -29,6 +30,7 @@
     <button id="removeSelPIDs">Remove Selected</button>
     <button id="removeAllPIDs">Remove ALL</button><br><br>
     Group name: <input id="group_name"></input>
+    <p id="actions_msg" style="color:green;"></p>
 </div>
 </div>
 <div class="row">

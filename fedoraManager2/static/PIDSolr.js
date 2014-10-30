@@ -46,7 +46,12 @@ function paintTable(json_output){
 			url: "/updatePIDsfromSolr/add",
 			type: "POST",
 			data: {"json_package":json_package,"group_name":$("#group_name").val()}
-		}).done(function(response) { console.log(response); alert("Selected PIDs sent.") });
+		}).done(function(response) { 						
+			var date = new Date(Date.now());
+			var timestamp = date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()
+			$("#actions_msg").append("<span>"+timestamp+" - Selected PIDs sent to user management</span><br>");
+
+		});
 	});
 
 
@@ -67,7 +72,11 @@ function paintTable(json_output){
 			url: "/updatePIDsfromSolr/add",
 			type: "POST",
 			data: {"json_package":json_package,"group_name":$("#group_name").val()}
-		}).done(function(response) { console.log(response); alert("All PIDs sent.") });
+		}).done(function(response) { 
+			var date = new Date(Date.now());
+			var timestamp = date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()
+			$("#actions_msg").append("<span>"+timestamp+" - All PIDs sent to user management</span><br>");
+		});
 	});
 
 

@@ -19,6 +19,10 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#exportObject to objectBag
+from exportObject import exportObject, exportObject_worker
+app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
+
 #MODSexport
 from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)

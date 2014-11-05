@@ -9,6 +9,7 @@ import hashlib
 import xmltodict
 import subprocess
 import ldap
+import mimetypes
 
 # Fedora and Risearch imports
 from fedDataSpy import checkSymlink
@@ -1401,6 +1402,76 @@ def saveSearch(getParams):
 
 
 
+# function to return mimetypes, file extensions, or dictionary thereof
+def mimetypeDictionary(getParams):
+	'''
+	function to return mimetypes, file extensions, or dictionary thereof
+
+	two "direction" dicitonaries:
+		mime2extension
+		extension2mime
+
+	option to filter with "inputFilter":
+		= "extension"
+		= "mime"
+
+	notes:
+	flip dictionary - inv_map = {v: k for k, v in map.items()}
+	'''
+
+	# grab requisite parameters		
+	try:
+		direction = getParams['direction'][0]
+		inputFilter = getParams['inputFilter'][0]
+	except:
+		return json.dumps({"status":"Parameters incorrect. Requires 'direction' parameter ('mime2extension' to return extension from mime, 'extension2mime' for mime from extension) and 'inputFilter' parameter ('all', mimetype, or file extension)."})
+
+	# MOVE TO SOMEWHERE CENTRAL
+	# mimetypes.types_map
+	###########################################################################################
+	# import WSUDOR opinionated mimes
+	opinionated_mimes = {
+		# images
+		"image/jp2":".jp2"		
+	}	
+
+	# push to mimetypes.types_map
+	for k, v in opinionated_mimes.items():
+		# reversed here
+		mimetypes.types_map[v] = k
+	###########################################################################################
+	
+
+	# return straight dictionary
+	if inputFilter == "all":
+		if direction == "mime2extension":
+			# flip mimetypes.types_map
+			flipped = {v: k for k, v in mimetypes.types_map.items()}
+			return json.dumps(flipped)
+		if direction == "extension2mime":			
+			return json.dumps(mimetypes.types_map)
+
+	# return file extension
+	elif direction == "mime2extension":
+		if "multiple" in getParams and getParams['multiple'][0] == "true":
+			return_string = mimetypes.guess_all_extensions(inputFilter)
+		else:
+			return_string = mimetypes.guess_extension(inputFilter)
+		return json.dumps(return_string)
+
+	# return mimetype
+	elif direction == "extension2mime":
+		if not inputFilter.startswith('.'):
+			inputFilter = "."+inputFilter
+		try:
+			return_string = mimetypes.types_map[inputFilter]
+		except:
+			return_string = "{inputFilter} not found".format(inputFilter=inputFilter)
+		return json.dumps(return_string)
+
+
+	else:
+		return json.dumps({"status":"Parameters incorrect. Requires 'direction' parameter ('mime2extension' to return extension from mime, 'extension2mime' for mime from extension) and 'inputFilter' parameter ('all', known mimetype, or known file extension).  Optional parameter, 'multiple=true' will return multiple file extensions for a given mimetype."})
 
 
 

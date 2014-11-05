@@ -13,7 +13,7 @@ from flask import Blueprint, render_template, redirect, abort, request, session
 from fedoraManager2.fedoraHandles import fedora_handle
 from fedoraManager2.jobs import getSelPIDs
 from fedoraManager2 import utilities
-from fedoraManager2.WSUDORbag import WSUDORbag
+from fedoraManager2.bags import WSUDORbag
 
 
 exportObject = Blueprint('exportObject', __name__, template_folder='templates', static_folder="static")

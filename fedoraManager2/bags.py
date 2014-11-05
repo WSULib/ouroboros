@@ -12,6 +12,21 @@ class WSUDORbag:
 		self.pid_suffix = eulfedoraObject.pid.split(":")[1]
 		self.ohandle = eulfedoraObject
 
+		#######################################
+		# MOVE TO SOMEWHERE CENTRAL		
+		#######################################
+		# import WSUDOR opinionated mimes
+		opinionated_mimes = {
+			# images
+			"image/jp2":".jp2"		
+		}	
+
+		# push to mimetypes.types_map
+		for k, v in opinionated_mimes.items():
+			# reversed here
+			mimetypes.types_map[v] = k
+		#######################################
+
 	
 	# export WSUDOR objectBag
 	def exportObjectBag(self):
@@ -70,3 +85,22 @@ class WSUDORbag:
 	# export WSUDOR collectionBag
 	def exportCollectionBag(self):
 		pass
+
+
+
+
+
+
+
+class ingestBag:
+
+	# init
+	def __init__(self):
+		self.name = "holding_pattern"
+		
+
+
+
+
+
+

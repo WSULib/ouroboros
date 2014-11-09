@@ -13,7 +13,8 @@
 
     <!--includes-->
     <xsl:include href="MODS_extract.xsl"/>
-    <xsl:include href="RELS-EXT_extract.xsl"/>    
+    <xsl:include href="RELS-EXT_extract.xsl"/>
+    <xsl:include href="RELS-INT_extract.xsl"/>    
     <xsl:include href="DC_extract.xsl"/>
 
     <!--get PID from FOXML file-->
@@ -66,6 +67,9 @@
 
                 <!--RELS-EXT-->
                 <xsl:call-template name="RELS-EXT"/>
+
+                <!--RELS-INT-->
+                <xsl:call-template name="RELS-INT"/>
 
                 <!--MODS-->
                 <xsl:call-template name="MODS"/>

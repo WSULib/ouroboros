@@ -61,8 +61,9 @@ class purgeDSForm(Form):
 # form for adding RDF triples
 class RDF_edit(Form):
 	# using params verbatim from Fedora documentation	
-	predicate = SelectField('predicate', choices=[('info:fedora/fedora-system:def/relations-external#hasContentModel', 'hasContentModel'),
+	predicate = SelectField('predicate', choices=[
 		#Fedora RELS-EXT
+		('info:fedora/fedora-system:def/relations-external#hasContentModel', 'hasContentModel'),
 		('info:fedora/fedora-system:def/relations-external#isMemberOfCollection', 'isMemberOfCollection'),
 		('info:fedora/fedora-system:def/relations-external#isMemberOf', 'isMemberOf'),
 		('info:fedora/fedora-system:def/relations-external#isPartOf', 'isPartOf'),
@@ -89,12 +90,22 @@ class OAI_sets(Form):
 	setName = StringField('Set Name (setName)')
 	
 
-# form for adding Datastreams
+# form for batch ingest
 class batchIngestForm(Form):	
 	name = StringField('Name of XSL Transformation:')
 	description = StringField('Description:')
 	content = TextAreaField('Paste Content (usually XML, and trumps file upload)')
 	upload = FileField('Upload Content')
+
+
+# form for bag-based ingest
+class bagIngestForm(Form):	
+	ingest_type = SelectField('ingest_type', choices=[
+		('objectBag','Single Object'),
+		('collectionBag','Full Collection'),
+	])
+	# consider pulling these dynamically
+	# content_type = 
 
 		
 

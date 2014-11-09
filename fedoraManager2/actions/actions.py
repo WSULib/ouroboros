@@ -23,6 +23,10 @@ tasks_URL_prefix = "/tasks"
 from exportObject import exportObject, exportObject_worker
 app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
 
+#exportObject to objectBag
+from bagIngest import bagIngest
+app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
+
 #MODSexport
 from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)

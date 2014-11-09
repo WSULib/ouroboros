@@ -530,6 +530,59 @@ def fedDataSpy(getParams):
 	return jsonString
 
 
+# get isPartOf children for single PID
+# def hasPartOf(getParams):	
+# 	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+# 	risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isPartOf> <info:fedora/{PID}>".format(PID=getParams['PID'][0])
+# 	risearch_params = {
+# 	'type': 'tuples',
+# 	'lang': 'itql',
+# 	'format': 'json',
+# 	'limit':'',
+# 	'dt': 'on',
+# 	'query': risearch_query
+# 	}
+
+# 	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+# 	# strip risearch namespace "info:fedora"
+# 	jsonString = r.text.replace('info:fedora/','')
+# 	handle = json.loads(jsonString)	
+
+# 	for each in handle['results']:
+# 		each['pid'] = each['object'].split("/")[0]
+# 		each['ds_id'] = each['object'].split("/")[1]
+
+# 	jsonString = json.dumps(handle)
+
+# 	return jsonString
+
+
+# get isPartOf children for single PID
+def hasPartOf(getParams):	
+	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/{PID}>".format(PID=getParams['PID'][0])
+	risearch_params = {
+	'type': 'tuples',
+	'lang': 'itql',
+	'format': 'json',
+	'limit':'',
+	'dt': 'on',
+	'query': risearch_query
+	}
+
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# strip risearch namespace "info:fedora"	
+	handle = json.loads(r.text)
+
+	for each in handle['results']:
+		each['pid'] = each['object'].split("/")[1]
+		each['ds_id'] = each['object'].split("/")[2]
+
+	jsonString = json.dumps(handle)
+
+	return jsonString
+
+
 
 #######################################################################################################################
 # --------------------------------------------------------------------------------------------------------------------#

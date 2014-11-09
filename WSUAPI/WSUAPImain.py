@@ -14,6 +14,7 @@ import re
 # WSUAPI modules
 from functions.utils import *
 from functions.availableFunctions import *
+from functions.availableFunctions_v2 import *
 
 def WSUAPImain(getParams):
 

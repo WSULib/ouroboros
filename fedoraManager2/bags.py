@@ -2,9 +2,32 @@
 import bagit
 import os
 import mimetypes
+import json
+
+# celery
+from cl.cl import celery
+
+# eulfedora
+import eulfedora
+
+# handles
+from fedoraManager2.solrHandles import solr_handle
+from fedoraManager2.fedoraHandles import fedora_handle
+from fedoraManager2 import redisHandles
+
+'''
+Would be possible to combine these, just with an arg flag
+See this for inspiration: https://github.com/emory-libraries/eulfedora/blob/5916c0cf8d30247ec5cfe04803089c275cdf15da/eulfedora/models.py
+'''
 
 
-class WSUDORbag:
+# WSUDOR object class
+class WSUDORobject:
+
+	'''
+	This class represents objects that are already ingested in Fedora.  They are technically not "bags"
+	at this point, but this class is designed to export to bags, validate as potential bags, etc.
+	'''
 
 	# init
 	def __init__(self, eulfedoraObject):
@@ -31,7 +54,13 @@ class WSUDORbag:
 	# export WSUDOR objectBag
 	def exportObjectBag(self):
 		'''
-		This function expects an eulfedora object, then exports entire object as WSUDOR objectBag
+		This function expects an eulfedora object, then exports entire object as WSUDOR objectBag.
+		We will want to return a Bag object, complete with the manifest information.
+		We will probably want to use bagit.make_bag, perhaps with the result of this file?
+		Yes.  Export to directory, THEN make bag of that.  If all goes as planned, the
+		checksums should match the original checksums.  
+
+		Validating that would be possible.		
 		'''
 
 		# create temp dir
@@ -88,16 +117,100 @@ class WSUDORbag:
 
 
 
-
-
-
-
+# Class for ingesting already formed BagIt bags
 class ingestBag:
 
+	'''
+	POLICY datastreams:
+		unrestricted --> wayne:WSUDORSecurity-permit-apia-unrestricted
+		WSU only --> wayne:WSUDORSecurity-permit-apia-WSUComm
+	'''
+
 	# init
-	def __init__(self):
-		self.name = "holding_pattern"
+	def __init__(self,bag_dir):
 		
+		# read objMeta.json
+		path = bag_dir + '/data/objMeta.json'
+		fhand = open(path,'r')
+		self.objMeta = json.loads(fhand.read())
+		print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
+
+		# BagIt methods
+		self.Bag = bagit.Bag(bag_dir)
+
+
+
+	# ignest parent script, will run sub-ingest scripts based on content_model
+	def ingest(self):
+		print "Bag content_type reads:",self.objMeta['content_model']
+
+		# Image
+		if self.objMeta['content_model'] == "Image":
+			ingest_result = self.ingestImage()
+
+		
+		# finis
+		print ingest_result
+
+
+
+
+	# ingest image type
+	def ingestImage(self):
+		'''
+		Can this itself fire a job?
+		Like, 3/10 stages complete, etc.
+		'''
+
+		# create object
+		ohandle = fedora_handle.get_object(self.objMeta['id'], create=True)
+		ohandle.label = self.objMeta['label']
+		# commit it, requisite for writing datastreams below
+		ohandle.save()
+
+		# write POLICY datastream
+		print "Using policy:",self.objMeta['policy']
+		policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
+		policy_handle = eulfedora.models.DatastreamObject(ohandle,"POLICY","POLICY",mimetype="text/xml",control_group="E")
+		policy_handle.ds_location = "http://localhost/fedora/objects/{policy}/datastreams/POLICY_XML/content".format(policy=policy_suffix)
+		policy_handle.label = "POLICY"
+		policy_handle.save()
+
+		# write RELS-EXT relationships
+		for pred_key in self.objMeta['object_relationships'].keys():
+			ohandle.add_relationship(pred_key,self.objMeta['object_relationships'][pred_key])
+
+		# create derivatives
+		for ds in self.objMeta['datastreams']:
+			print ds['filename']
+
+
+		# write binary datastreams
+		# eulfedora.models.FileDatastreamObject(obj, id, label, mimetype=None, versionable=False, state='A', format=None, control_group='M', checksum=None, checksum_type='MD5')
+
+
+		# finally, save and commit object
+		return ohandle.save()
+
+		# TESTING, PURGE OBJECT
+		# return fedora_handle.purge_object('wayne:BAGTESTtree1')
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

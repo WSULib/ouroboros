@@ -13,7 +13,7 @@ from flask import Blueprint, render_template, redirect, abort, request, session
 from fedoraManager2.fedoraHandles import fedora_handle
 from fedoraManager2.jobs import getSelPIDs
 from fedoraManager2 import utilities
-from fedoraManager2.bags import WSUDORbag
+from fedoraManager2.bags import WSUDORobject
 
 
 exportObject = Blueprint('exportObject', __name__, template_folder='templates', static_folder="static")
@@ -45,8 +45,8 @@ def exportObject_worker(job_package):
 	PID = job_package['PID']
 	ohandle = fedora_handle.get_object(PID)
 
-	# get WSUDORbag handle
-	WSUDORbag_handle = WSUDORbag(ohandle)
+	# get WSUDORobject handle
+	WSUDORbag_handle = WSUDORobject(ohandle)
 	export_result = WSUDORbag_handle.exportObjectBag()
 
 	return export_result

@@ -3,6 +3,9 @@ import bagit
 import os
 import mimetypes
 import json
+import Image
+import uuid
+import StringIO
 
 # celery
 from cl.cl import celery
@@ -161,6 +164,12 @@ class ingestBag:
 		Can this itself fire a job?
 		Like, 3/10 stages complete, etc.
 		'''
+		# DEBUG
+		try:
+			fedora_handle.purge_object('wayne:BAGTESTtree1')
+			print "object purged"
+		except:
+			print "did not find"
 
 		# create object
 		ohandle = fedora_handle.get_object(self.objMeta['id'], create=True)
@@ -169,32 +178,60 @@ class ingestBag:
 		ohandle.save()
 
 		# write POLICY datastream
+		# NOTE: 'E' management type required, not 'R'
 		print "Using policy:",self.objMeta['policy']
 		policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
-		policy_handle = eulfedora.models.DatastreamObject(ohandle,"POLICY","POLICY",mimetype="text/xml",control_group="E")
+		policy_handle = eulfedora.models.DatastreamObject(ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/{policy}/datastreams/POLICY_XML/content".format(policy=policy_suffix)
 		policy_handle.label = "POLICY"
 		policy_handle.save()
+
+		# write objMeta as datastream
+		objMeta_handle = eulfedora.models.FileDatastreamObject(ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+		objMeta_handle.label = "Ingest Bag Object Metadata"
+		objMeta_handle.content = json.dumps(self.objMeta)
+		objMeta_handle.save()
 
 		# write RELS-EXT relationships
 		for pred_key in self.objMeta['object_relationships'].keys():
 			ohandle.add_relationship(pred_key,self.objMeta['object_relationships'][pred_key])
 
-		# create derivatives
+		# create derivatives and write datastreams
 		for ds in self.objMeta['datastreams']:
-			print ds['filename']
+			file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+			print "Looking for:",file_path
 
+			# original
+			orig_handle = eulfedora.models.FileDatastreamObject(ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
+			orig_handle.label = ds['label']
+			orig_handle.content = open(file_path)
+			orig_handle.save()
+			
+			# make thumb			
+			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+			im = Image.open(file_path)
+			width, height = im.size
+			max_width = 200	
+			max_height = 200
+			im.thumbnail((max_width, max_height), Image.ANTIALIAS)
+			if im.mode != "RGB":
+				im = im.convert("RGB")
+			im.save(temp_filename,'JPEG')
+			thumb_handle = eulfedora.models.FileDatastreamObject(ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), ds['label'], mimetype=ds['mimetype'], control_group='M')
+			thumb_handle.label = ds['label']
+			thumb_handle.content = open(temp_filename)
+			thumb_handle.save()
 
-		# write binary datastreams
-		# eulfedora.models.FileDatastreamObject(obj, id, label, mimetype=None, versionable=False, state='A', format=None, control_group='M', checksum=None, checksum_type='MD5')
+			# make preview
+
+			# make jp2
+
+		# write RELS-INT
+
 
 
 		# finally, save and commit object
 		return ohandle.save()
-
-		# TESTING, PURGE OBJECT
-		# return fedora_handle.purge_object('wayne:BAGTESTtree1')
-
 		
 
 

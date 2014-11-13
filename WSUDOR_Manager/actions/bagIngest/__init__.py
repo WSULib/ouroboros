@@ -61,9 +61,9 @@ def singleBag_ingest_worker(request):
 	# quick validate
 	print "Bag is valid:",bag_handle.Bag.validate()	
 
-	# ingest bag, as determined by ojbMeta.content_model, and defined in bags.ingestBag
-	ingest_bag = bag_handle.ingestBag()
-
+	# ingest bag
+	ingest_bag = bag_handle.ContentType.ingestBag()
+	return ingest_bag
 
 
 # ingest singleBag

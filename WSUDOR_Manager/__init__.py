@@ -6,9 +6,12 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
 
+# import WSUDOR_ContentTypes
+import WSUDOR_ContentTypes
+
 # create app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://fm2:fm2@localhost/fedoraManager2'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://WSUDOR_Manager:WSUDOR_Manager@localhost/WSUDOR_Manager'
 # app.config['LOG_REQUESTS'] = True
 # app.debug = True
 

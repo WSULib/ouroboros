@@ -30,10 +30,6 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from availableFunctions import *
 
 
-
-
-
-
 # next gen singleObject function
 def singleObjectPackage(getParams):
 	
@@ -50,6 +46,24 @@ def singleObjectPackage(getParams):
 		# runs hasPartOf(), gets components and their representations ()
 		# saves to 'hasPartOf'	
 		return json.loads(hasPartOf(getParams))
+
+	def main_imageDict_func():
+		# create small dictinoary with image datastreams for main intellectual object
+		# saves to 'main_imageDict'
+		query = {
+			"q" : "id:*{PID_suffix}".format(PID_suffix=PID_suffix),
+			"rows" : 1,
+			"start" : 0		
+		}
+		# perform query
+		doc_handle = solr_handle.search(**query).documents[0]
+		main_imageDict = {
+			"thumbnail" : doc_handle['rels_isRepresentedBy'][0].split("/")[2]+"_THUMBNAIL",
+			"preview" : doc_handle['rels_isRepresentedBy'][0].split("/")[2]+"_PREVIEW",
+			"access" : doc_handle['rels_isRepresentedBy'][0].split("/")[2],
+			"jp2" : doc_handle['rels_isRepresentedBy'][0].split("/")[2]+"_JP2"
+		}
+		return main_imageDict
 
 	def parts_imageDict_func():
 		# returns image dictionary for parts, reusing hasPartOf_results
@@ -69,26 +83,6 @@ def singleObjectPackage(getParams):
 			}
 		print "PARTS DICT",parts_imageDict
 		return parts_imageDict
-
-
-	def main_imageDict_func():
-		# create small dictinoary with image datastreams for main intellectual object
-		# saves to 'main_imageDict'
-		query = {
-			"q" : "id:*{PID_suffix}".format(PID_suffix=PID_suffix),
-			"rows" : 1,
-			"start" : 0		
-		}
-		# perform query
-		doc_handle = solr_handle.search(**query).documents[0]
-		main_imageDict = {
-			"thumbnail" : doc_handle['rels_hasThumbnail'][0].split("/")[2],
-			"preview" : doc_handle['rels_hasPreview'][0].split("/")[2],
-			"access" : doc_handle['rels_hasAccess'][0].split("/")[2],
-			"jp2" : doc_handle['rels_hasJP2'][0].split("/")[2]
-		}
-		return main_imageDict
-
 
 	def objectSolrDoc_func():
 		# return entire solr doc for object, straight through
@@ -124,8 +118,8 @@ def singleObjectPackage(getParams):
 	# run all functions and return
 	return_dict = {
 		'hasPartOf':hasPartOf_func(),
+		'main_imageDict':main_imageDict_func(),		
 		'parts_imageDict':parts_imageDict_func(),
-		'main_imageDict':main_imageDict_func(),
 		'objectSolrDoc':objectSolrDoc_func(),
 		'isMemberOfCollection':isMemberOfCollection_func(),
 		'hasMemberOf':hasMemberOf_func(),

@@ -123,8 +123,44 @@ class WSUDOR_Image:
 			thumb_handle.save()
 			os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
+			# add to RELS-INT
+			# fedora_handle.api.addRelationship('wayne:BAGTESTtree1','info:fedora/wayne:BAGTESTtree1/TREE1','info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/wayne:BAGTESTtree1')
+			fedora_handle.api.addRelationship(ohandle,'info:fedora/{pid}/{ds_id}'.format(pid=ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/{pid}'.format(pid=ohandle.pid))
+			fedora_handle.api.addRelationship(ohandle,'info:fedora/{pid}/{ds_id}_THUMBNAIL'.format(pid=ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/{pid}/{ds_id}'.format(pid=ohandle.pid,ds_id=ds['ds_id']))
+			fedora_handle.api.addRelationship(ohandle,'info:fedora/{pid}/{ds_id}_JP2'.format(pid=ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/{pid}/{ds_id}'.format(pid=ohandle.pid,ds_id=ds['ds_id']))
+			fedora_handle.api.addRelationship(ohandle,'info:fedora/{pid}/{ds_id}_PREVIEW'.format(pid=ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/{pid}/{ds_id}'.format(pid=ohandle.pid,ds_id=ds['ds_id']))
 
-		# write RELS-INT
+
+
+
+
 
 		# finally, save and commit object
 		return ohandle.save()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

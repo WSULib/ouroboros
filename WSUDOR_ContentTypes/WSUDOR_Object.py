@@ -23,39 +23,56 @@ Would be possible to combine these, just with an arg flag
 See this for inspiration: https://github.com/emory-libraries/eulfedora/blob/5916c0cf8d30247ec5cfe04803089c275cdf15da/eulfedora/models.py
 '''
 
-
-# WSUDOR object class
-class WSUDORobject:
+class WSUDOR_Object:
 
 	'''
-	This class represents objects that are already ingested in Fedora.  They are technically not "bags"
-	at this point, but this class is designed to export to bags, validate as potential bags, etc.
+	This class represents an object already present, or destined, for Ouroboros.  
+	"objType" is required for discerning between the two.
+
+	objType = 'WSUDOR'
+		- object is present in WSUDOR, actions include management and export
+
+	objType = 'bag'
+		- object is present outside of WSUDOR, actions include primarily ingest and validation
 	'''
 
 	# init
-	def __init__(self, eulfedoraObject):
-		self.pid = eulfedoraObject.pid
-		self.pid_suffix = eulfedoraObject.pid.split(":")[1]
-		self.ohandle = eulfedoraObject
+	def __init__(self,objType=False,bag_dir=False,eulfedoraObject=False):
+		
+		if objType == "bag":
+			# read objMeta.json
+			path = bag_dir + '/data/objMeta.json'
+			fhand = open(path,'r')
+			self.objMeta = json.loads(fhand.read())
+			print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
 
-		#######################################
-		# MOVE TO SOMEWHERE CENTRAL		
-		#######################################
-		# import WSUDOR opinionated mimes
-		opinionated_mimes = {
-			# images
-			"image/jp2":".jp2"		
-		}	
+			# BagIt methods
+			self.Bag = bagit.Bag(bag_dir)
 
-		# push to mimetypes.types_map
-		for k, v in opinionated_mimes.items():
-			# reversed here
-			mimetypes.types_map[v] = k
-		#######################################
 
-	
+		if objType == "WSUDOR":
+			self.pid = eulfedoraObject.pid
+			self.pid_suffix = eulfedoraObject.pid.split(":")[1]
+			self.ohandle = eulfedoraObject
+
+			#######################################
+			# MOVE TO SOMEWHERE CENTRAL		
+			#######################################
+			# import WSUDOR opinionated mimes
+			opinionated_mimes = {
+				# images
+				"image/jp2":".jp2"		
+			}	
+
+			# push to mimetypes.types_map
+			for k, v in opinionated_mimes.items():
+				# reversed here
+				mimetypes.types_map[v] = k
+			#######################################
+
+
 	# export WSUDOR objectBag
-	def exportObjectBag(self):
+	def exportBag(self):
 		'''
 		This function expects an eulfedora object, then exports entire object as WSUDOR objectBag.
 		We will want to return a Bag object, complete with the manifest information.
@@ -114,37 +131,9 @@ class WSUDORobject:
 		return "The results of {PID} objectBag exporting...".format(PID=self.pid)
 
 
-	# export WSUDOR collectionBag
-	def exportCollectionBag(self):
-		pass
-
-
-
-# Class for ingesting already formed BagIt bags
-class ingestBag:
-
-	'''
-	POLICY datastreams:
-		unrestricted --> wayne:WSUDORSecurity-permit-apia-unrestricted
-		WSU only --> wayne:WSUDORSecurity-permit-apia-WSUComm
-	'''
-
-	# init
-	def __init__(self,bag_dir):
-		
-		# read objMeta.json
-		path = bag_dir + '/data/objMeta.json'
-		fhand = open(path,'r')
-		self.objMeta = json.loads(fhand.read())
-		print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
-
-		# BagIt methods
-		self.Bag = bagit.Bag(bag_dir)
-
-
 
 	# ignest parent script, will run sub-ingest scripts based on content_model
-	def ingest(self):
+	def ingestBag(self):
 		print "Bag content_type reads:",self.objMeta['content_model']
 
 		# Image
@@ -154,9 +143,6 @@ class ingestBag:
 		
 		# finis
 		print ingest_result
-
-
-
 
 	# ingest image type
 	def ingestImage(self):
@@ -221,6 +207,7 @@ class ingestBag:
 			thumb_handle.label = ds['label']
 			thumb_handle.content = open(temp_filename)
 			thumb_handle.save()
+			os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
 			# make preview
 
@@ -232,19 +219,6 @@ class ingestBag:
 
 		# finally, save and commit object
 		return ohandle.save()
-		
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

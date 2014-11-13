@@ -22,7 +22,7 @@ import lockfile
 from mainRouter import mainRouter
 from localConfig import *
 
-# import fedoraManger2 (fm2) app
+# import WSUDOR_Manager app
 from WSUDOR_Manager import app
 
 # import WSUAPI app

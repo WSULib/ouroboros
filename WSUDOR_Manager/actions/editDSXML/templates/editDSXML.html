@@ -1,0 +1,61 @@
+<!-- load in-page css before header -->
+<link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/css/stylesheets/reset.css') }}" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/css/stylesheets/simple.css') }}" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('editDSXML.static',filename='UNC_xmleditor/css/jquery.xmleditor.css') }}" type="text/css" />
+<!-- end pre-load -->
+
+{% include 'header.html' %}
+
+<!-- load dependencies -->
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/lib/ace/src-min/ace.js') }}"></script>
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/lib/jquery.min.js') }}"></script>
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/lib/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/lib/json2.js') }}"></script>
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/lib/cycle.js') }}"></script>
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/lib/jquery.autosize-min.js') }}"></script>
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/lib/vkbeautify.js') }}"></script>
+<script src="{{ url_for('editDSXML.static', filename='UNC_xmleditor/jquery.xmleditor.js') }}"></script>
+<!-- end load -->
+
+	<div class="row">
+		<div class="col-md-12">		
+			{% include "PIDiterator.html" %}
+		</div>
+	</div>
+
+	
+	<br>
+
+	<div id="xml_editor">
+		<mods xmlns="http://www.loc.gov/mods/v3"> </mods>
+	</div>
+	
+	<script type="text/javascript">		
+		var PID = "{{PIDlet.cPID}}";
+		var DS = "MODS";
+		
+		$(function() {
+			$("#xml_editor").xmlEditor({				
+				// from Flask with reverse-proxy (works)
+				// schema : "http://digital.library.wayne.edu/WSUDOR_Manager-graham/static/UNC_xmleditor/inc/schema_json/mods.json",
+				// attempting static relative pull
+				// schema : "{{ url_for('editDSXML.static', filename='UNC_xmleditor/inc/schema_json/mods.json') }}",
+				// attempting static full path pull
+				// WORKAROUND: treat static directory as if it were relative, do not include the url_for()
+				// schema : "static/editDSXML/UNC_xmleditor/inc/schema_json/mods.json",
+				// static from web directory (works)
+				// schema : "http://digital.library.wayne.edu/dev/graham/XML_editing/UNC_xmleditor/demo/examples/mods.json",
+				// hard-coded full URL?
+				schema : "{{APP_BASE_URL}}/tasks/static/editDSXML/UNC_xmleditor/inc/schema_json/mods.json",
+				documentTitle: "{{PIDlet.cPID}}",
+				ajaxOptions: {					
+					xmlRetrievalPath: "http://{{APP_HOST}}/fedora/objects/"+PID+"/datastreams/"+DS+"/content",
+					xmlUploadPath: "/tasks/editDSXML/update"
+				}
+			});
+		});	
+	</script>	
+</body>
+
+</html>
+

@@ -23,7 +23,7 @@ from mainRouter import mainRouter
 from localConfig import *
 
 # import fedoraManger2 (fm2) app
-from fedoraManager2 import app
+from WSUDOR_Manager import app
 
 # import WSUAPI app
 from WSUAPI import WSUAPI_app
@@ -116,7 +116,7 @@ class fedoraConsumerWorker(object):
 # twisted liseners
 logging.basicConfig(level=logging.DEBUG)
 
-# fedoraManager2
+# WSUDOR_Manager
 resource = WSGIResource(reactor, reactor.getThreadPool(), app)
 site = Site(resource)
 
@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
 	# fedoraManagere2
 	if FEDORA_MANAGER_2_FIRE == True:
-		print "Starting fedoraManager2..."
+		print "Starting WSUDOR_Manager..."
 		reactor.listenTCP( FEDORA_MANAGER_2_PORT, site)
 
 	# WSUAPI

@@ -23,9 +23,9 @@ from utils import *
 # config
 from localConfig import *
 
-# modules from fedoraManager2
-from fedoraManager2.fedoraHandles import fedora_handle
-from fedoraManager2.solrHandles import solr_handle
+# modules from WSUDOR_Manager
+from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 
 from availableFunctions import *
 

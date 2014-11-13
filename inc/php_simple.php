@@ -40,7 +40,7 @@ $columns = array(
 $sql_details = array(
     'user' => 'fm2',
     'pass' => 'fm2',
-    'db'   => 'fedoraManager2',
+    'db'   => 'WSUDOR_Manager',
     'host' => 'localhost'
 );
  

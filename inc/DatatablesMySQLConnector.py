@@ -30,7 +30,7 @@ _databaseInfo = dict(
   host   = "localhost",
   user   = "fm2",
   passwd = "fm2",
-  db     = "fedoraManager2"
+  db     = "WSUDOR_Manager"
 )
  
  

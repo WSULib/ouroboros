@@ -3,6 +3,8 @@ import bagit
 import os
 import mimetypes
 import json
+import traceback
+import sys
 
 # celery
 from cl.cl import celery
@@ -35,46 +37,53 @@ class WSUDOR_Object:
 	# init
 	def __init__(self,objType=False,bag_dir=False,eulfedoraObject=False):
 		
+		
 		if objType == "bag":
-			# read objMeta.json
-			path = bag_dir + '/data/objMeta.json'
-			fhand = open(path,'r')
-			self.objMeta = json.loads(fhand.read())
-			print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
+			self.objType = objType
+			try:
+				# read objMeta.json
+				path = bag_dir + '/data/objMeta.json'
+				fhand = open(path,'r')
+				self.objMeta = json.loads(fhand.read())
+				print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
 
-			self.pid = self.objMeta['id']
-			self.label = self.objMeta['label']
-			self.content_type = self.objMeta['content_type']
+				self.pid = self.objMeta['id']
+				self.label = self.objMeta['label']
+				self.content_type = self.objMeta['content_type']
 
-			# BagIt methods
-			self.Bag = bagit.Bag(bag_dir)
+				# BagIt methods
+				self.Bag = bagit.Bag(bag_dir)
 
+				# validate object, log to "error_dict" attribute if invalid
+				try:
+					self.Bag.validate()
+				except Exception,e:
+					print traceback.format_exc()
+					print e.message
+					error_dict = {
+						"traceback":traceback.format_exc(),
+						"error_message":e.message,
+						"error_details":e.details
+					}
+					self.instantiateError = error_dict					
+			
+			except Exception,e:
+				print traceback.format_exc()
+				print e
 
 		if objType == "WSUDOR":
+			self.objType = objType
 			self.pid = eulfedoraObject.pid
 			self.pid_suffix = eulfedoraObject.pid.split(":")[1]
 			self.ohandle = eulfedoraObject
 
 			# GET object content_model
 			# Using prefix "WSUDOR_" for v2, consider adding this to RELS for all objects!?
-			self.content_type = None
+			content_type = self.ohandle.risearch.get_objects(self.ohandle.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel')
+			content_type = content_type.next().split(":")[-1]			
+			self.content_type = "WSUDOR_"+str(content_type)
 
-			#######################################
-			# MOVE TO SOMEWHERE CENTRAL		
-			#######################################
-			# import WSUDOR opinionated mimes
-			opinionated_mimes = {
-				# images
-				"image/jp2":".jp2"		
-			}	
-
-			# push to mimetypes.types_map
-			for k, v in opinionated_mimes.items():
-				# reversed here
-				mimetypes.types_map[v] = k
-			#######################################
-
-
+			
 		# Retrieve ContentType specifics
 		self.ContentType = getattr(WSUDOR_ContentTypes,self.content_type)(self)		
 

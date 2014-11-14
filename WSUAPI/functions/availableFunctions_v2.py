@@ -41,6 +41,15 @@ def singleObjectPackage(getParams):
 	each sub-component returns a tuple with desired name and results as dictionary
 	'''
 
+	# determine if object exists and is active
+	isActive_dict = json.loads(getObjectXML(getParams))
+	if isActive_dict['object_status'] == "Absent" or isActive_dict['object_status'] == "Inactive":
+		# not present, return reduced dictionary
+		return_dict = {		
+			'isActive':isActive_dict
+		}
+		return json.dumps(return_dict)	
+
 
 	def hasPartOf_func():
 		# runs hasPartOf(), gets components and their representations ()
@@ -58,10 +67,10 @@ def singleObjectPackage(getParams):
 		# perform query
 		doc_handle = solr_handle.search(**query).documents[0]
 		main_imageDict = {
-			"thumbnail" : doc_handle['rels_isRepresentedBy'][0].split("/")[2]+"_THUMBNAIL",
-			"preview" : doc_handle['rels_isRepresentedBy'][0].split("/")[2]+"_PREVIEW",
-			"access" : doc_handle['rels_isRepresentedBy'][0].split("/")[2],
-			"jp2" : doc_handle['rels_isRepresentedBy'][0].split("/")[2]+"_JP2"
+			"thumbnail" : doc_handle['rels_isRepresentedBy'][0]+"_THUMBNAIL",
+			"preview" : doc_handle['rels_isRepresentedBy'][0]+"_PREVIEW",
+			"access" : doc_handle['rels_isRepresentedBy'][0],
+			"jp2" : doc_handle['rels_isRepresentedBy'][0]+"_JP2"
 		}
 		return main_imageDict
 
@@ -107,13 +116,6 @@ def singleObjectPackage(getParams):
 		# returns collections the object is a part of
 		# saves to 'hasMemberOf'
 		return json.loads(hasMemberOf(getParams))
-
-
-	def isActive_func():
-		# returns collections the object is a part of
-		# saves to 'isActive'
-		return json.loads(getObjectXML(getParams))
-
 		
 	# run all functions and return
 	return_dict = {
@@ -123,7 +125,7 @@ def singleObjectPackage(getParams):
 		'objectSolrDoc':objectSolrDoc_func(),
 		'isMemberOfCollection':isMemberOfCollection_func(),
 		'hasMemberOf':hasMemberOf_func(),
-		'isActive':isActive_func()
+		'isActive':isActive_dict
 	}
 
 	return json.dumps(return_dict)

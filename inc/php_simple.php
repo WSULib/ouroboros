@@ -38,8 +38,8 @@ $columns = array(
  
 // SQL server connection information
 $sql_details = array(
-    'user' => 'fm2',
-    'pass' => 'fm2',
+    'user' => 'WSUDOR_Manager',
+    'pass' => 'WSUDOR_Manager',
     'db'   => 'WSUDOR_Manager',
     'host' => 'localhost'
 );

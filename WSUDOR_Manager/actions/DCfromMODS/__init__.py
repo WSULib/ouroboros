@@ -127,7 +127,7 @@ def DCfromMODS_worker(job_package):
  		print "DC from MODS derivation successful"
  		return "success"
 	else:
-		print "Unsuccessful transformation.  Need to elevate this to exception..."
+		print "Unsuccessful transformation."
 		return "fail"
 
 

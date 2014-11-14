@@ -1,1 +1,2 @@
 Copy php_simple.php to cgi directory, needs to be changed in PIDmanage.js
+e.g. root@Silo:/var/opt/dev/graham/ouroboros-dev/inc# cp php_simple.php /usr/lib/cgi-bin/

@@ -13,7 +13,7 @@ from lxml import etree
 from flask import Blueprint, render_template, make_response, abort, request
 import json
 
-# revise
+# celery
 from cl.cl import celery
 from celery import Task
 
@@ -143,7 +143,7 @@ def FOXML2Solr(fedEvent, PID):
 
 			#index Solr-ready XML (SolrXML)		 
 			try:
-				print SolrXML
+				# print SolrXML
 				updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/"								
 				headers = {'Content-Type': 'application/xml'}
 				r = requests.post(updateURL, data=str(SolrXML), headers=headers)

@@ -149,15 +149,6 @@ class WSUDOR_GenObject(object):
 						"error_details":e.details
 					}
 					self.instantiateError = error_dict
-
-
-				# load also, WSUDOR object handle
-
-				# # check if payload actual eulfedora object or string literal
-				# # in latter case, attempt to open eul object
-				# if type(payload) != eulfedora.models.DigitalObject:
-				# 	payload = fedora_handle.get_object(payload)
-				# self.ohandle = payload
 				
 
 			# Active, WSUDOR object

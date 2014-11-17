@@ -30,7 +30,8 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from availableFunctions import *
 
 
-# next gen singleObject function
+# function package for singleObject view
+# mapping can be found here: https://docs.google.com/spreadsheets/d/1YyOKj1DwmsLDTAU-FsZJUndcPZFGfVn-zdTlyNJrs2Q/edit#gid=0
 def singleObjectPackage(getParams):
 	
 	# get PID
@@ -131,6 +132,11 @@ def singleObjectPackage(getParams):
 	return json.dumps(return_dict)
 
 
+
+# function package for search view
+# mapping can be found here: https://docs.google.com/spreadsheets/d/1DFHm2lfGjrFn5SgmeWeFX6Db3ba1IfX7EvcVbsc_zw0/edit?usp=sharing
+def searchObjectPackage(getParams):
+	pass
 
 
 

@@ -14,7 +14,7 @@ import re
 # WSUDOR_API modules
 from functions.utils import *
 from functions.availableFunctions import *
-from functions.availableFunctions_v2 import *
+from functions.packagedFunctions import *
 
 def WSUDOR_API_main(getParams):
 

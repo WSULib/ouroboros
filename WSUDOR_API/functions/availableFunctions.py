@@ -291,7 +291,7 @@ def getUserFavorites(getParams):
 def solrTranslationHash(args):
 # function to return PIDs and their Labels in JS Hash that can / is used to cleanup front-end interfaces, 
 # and interact with things in meaningful ways
-# Note: Makes sense to key off PID however for logic, as these are less likely to change than the Object Label / DC Title field
+# Note: Makes sense to key off PID for logic, as these are less likely to change than the Object Label / DC Title field
 ######################################################################################################################	
 
 
@@ -309,7 +309,10 @@ def solrTranslationHash(args):
 		r = requests.get(query)
 		tempDict = ast.literal_eval(r.text)['response']['docs']
 		for each in tempDict:
-			transDict[("info:fedora/"+each['id'])] = each['dc_title'][0]
+			try:
+				transDict[("info:fedora/"+each['id'])] = each['dc_title'][0]
+			except:
+				print "solrTranslationHash could not unite PID and dc_title"
 
 	# churn to JSON and return
 	transJSONpackage = json.dumps(transDict)

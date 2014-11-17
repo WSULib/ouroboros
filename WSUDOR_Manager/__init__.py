@@ -6,7 +6,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
 
-# import WSUDOR_ContentTypes
+# import WSUDOR ContentTypes
 import WSUDOR_ContentTypes
 
 # create app

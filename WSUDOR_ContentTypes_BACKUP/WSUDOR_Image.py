@@ -15,24 +15,35 @@ from cl.cl import celery
 # eulfedora
 import eulfedora
 
+# handles
+from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager import redisHandles
 
 
-class WSUDOR_Collection:
+class WSUDOR_Image:	
+
+	# expects parent WSUDOR_Object as parameter
+	def __init__(self,WSUDOR_Object):		
+		self.WSUDOR_Object = WSUDOR_Object
 
 	# ingest image type
 	def ingestBag(self):
+
 		if self.WSUDOR_Object.objType != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")		
 
-		# ingest collection object
-		try:			
+		# attempt to ingest bag / object
+		try:		
+			
 			ohandle = fedora_handle.get_object(self.WSUDOR_Object.objMeta['id'],create=True)
 			ohandle.save()
 
 			# set base properties of object
 			ohandle.label = self.WSUDOR_Object.objMeta['label']
 
-			# write POLICY datastream (NOTE: 'E' management type required, not 'R')
+			# write POLICY datastream
+			# NOTE: 'E' management type required, not 'R'
 			print "Using policy:",self.WSUDOR_Object.objMeta['policy']
 			policy_suffix = self.WSUDOR_Object.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
@@ -48,9 +59,12 @@ class WSUDOR_Collection:
 
 			# write explicit RELS-EXT relationships
 			for pred_key in self.WSUDOR_Object.objMeta['object_relationships'].keys():
-				ohandle.add_relationship(pred_key,self.WSUDOR_Object.objMeta['object_relationships'][pred_key])			
+				ohandle.add_relationship(pred_key,self.WSUDOR_Object.objMeta['object_relationships'][pred_key])
+			
 			# writes derived RELS-EXT
+			# isRepresentedBy
 			ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.WSUDOR_Object.objMeta['isRepresentedBy'])
+			# hasContentModel
 			content_type_string = "info:fedora/CM:"+self.WSUDOR_Object.objMeta['content_type'].split("_")[1]
 			ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
@@ -59,7 +73,7 @@ class WSUDOR_Collection:
 			objMeta_handle.label = "MODS descriptive metadata"
 			file_path = self.WSUDOR_Object.Bag.path + "/data/MODS.xml"
 			objMeta_handle.content = open(file_path)
-			objMeta_handle.save()			
+			objMeta_handle.save()
 
 			# create derivatives and write datastreams
 			for ds in self.WSUDOR_Object.objMeta['datastreams']:
@@ -128,31 +142,8 @@ class WSUDOR_Collection:
 				thumb_rep_handle.save()
 
 
-			# save and commit object
-			ohandle.save()
-
-
-			# for each bag in objects directory
-			'''
-			- write "info:fedora/fedora-system:def/relations-external#isMemberOfCollection" for each
-			'''
-			child_objects = os.walk(self.WSUDOR_Object.Bag.path+"/data/objects").next()[1]
-			for child_object in child_objects:
-				print "\n\n\nWORKING ON child_object",child_object,"\n\n\n"
-				child_handle = WSUDOR_ContentTypes.WSUDOR_Object(objType="bag", bag_dir=self.WSUDOR_Object.Bag.path+"/data/objects/"+child_object)
-				child_handle.ContentType.ingestBag()
-
-				# open object as ingested WSUDOR type, write collection specific RELS for that object
-				# child_handle = WSUDOR_ContentTypes.WSUDOR_Object(objType="WSUDOR", eulfedoraObject=fedora_handle.get_object(self.WSUDOR_Object.objMeta['id']))
-
-
-
-
-			return "finis."
-
-
-
-
+			# finally, save and commit object
+			return ohandle.save()
 
 
 
@@ -161,6 +152,29 @@ class WSUDOR_Collection:
 			print traceback.format_exc()
 			print "General Error:",e
 
-		
 
-		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

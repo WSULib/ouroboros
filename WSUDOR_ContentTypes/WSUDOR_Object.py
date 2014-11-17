@@ -17,11 +17,56 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles
 
-# import WSUDOR_ContentTypes
+
 import WSUDOR_ContentTypes
 
 
-class WSUDOR_Object:
+def WSUDOR_Object(objType,payload):
+
+	'''	
+	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
+	'''
+
+	try:
+		# Future WSUDOR object, BagIt object
+		if objType == "bag":		
+			# read objMeta.json
+			path = payload + '/data/objMeta.json'
+			fhand = open(path,'r')
+			objMeta = json.loads(fhand.read())
+			print "objMeta.json loaded for:",objMeta['id'],"/",objMeta['label']
+
+			# only need content_type
+			content_type = objMeta['content_type']		
+			
+		
+		# Active, WSUDOR object
+		if objType == "WSUDOR":
+
+			# check if payload actual eulfedora object or string literal
+			# in latter case, attempt to open eul object
+			if type(payload) != eulfedora.models.DigitalObject:
+				payload = fedora_handle.get_object(payload)
+			
+			# GET object content_model
+			# Using prefix "WSUDOR_" for v2, consider adding this to RELS for all objects!?
+			content_type = payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel')
+			content_type = content_type.next().split(":")[-1]			
+			content_type = "WSUDOR_"+str(content_type)
+
+		print "Our content type is:",content_type
+
+	except Exception,e:
+		print traceback.format_exc()
+		print e
+		return "Failure"
+	
+	# need check if valid subclass of WSUDOR_GenObject
+	return getattr(WSUDOR_ContentTypes,str(content_type))(objType=objType,content_type=content_type,payload=payload)
+
+
+# WSUDOR Generic Object class (meant to be extended by ContentTypes)
+class WSUDOR_GenObject:
 
 	'''
 	This class represents an object already present, or destined, for Ouroboros.  
@@ -32,27 +77,60 @@ class WSUDOR_Object:
 
 	objType = 'bag'
 		- object is present outside of WSUDOR, actions include primarily ingest and validation
-	'''
+	'''	
+
+	# Space for general WSUDOR object requirements
+	WSUDOR_GenObject_struct_requirements = {
+		"datastreams":[
+			{
+				"id":"THUMBNAIL",
+				"purpose":"Thumbnail of image",
+				"mimetype":"image/jpeg"
+			},
+			{
+				"id":"PREVIEW",
+				"purpose":"Medium sized preview image",
+				"mimetype":"image/jpeg"
+			},			
+			{
+				"id":"MODS",
+				"purpose":"Descriptive MODS",
+				"mimetype":"text/xml"
+			},
+			{
+				"id":"RELS-EXT",
+				"purpose":"RDF relationships",
+				"mimetype":"application/rdf+xml"
+			},
+			{
+				"id":"POLICY",
+				"purpose":"XACML Policy",
+				"mimetype":"text/xml"
+			}
+		]
+	}	
 
 	# init
-	def __init__(self,objType=False,bag_dir=False,eulfedoraObject=False):
-		
-		
-		if objType == "bag":
-			self.objType = objType
-			try:
+	def __init__(self,objType=False,content_type=False,payload=False):		
+
+		try:
+
+			# Future WSUDOR object, BagIt object
+			if objType == "bag":
+				self.objType = objType
+
 				# read objMeta.json
-				path = bag_dir + '/data/objMeta.json'
+				path = payload + '/data/objMeta.json'
 				fhand = open(path,'r')
 				self.objMeta = json.loads(fhand.read())
 				print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
 
 				self.pid = self.objMeta['id']
 				self.label = self.objMeta['label']
-				self.content_type = self.objMeta['content_type']
+				self.content_type = content_type # use content_type as derived from WSUDOR_Object factory
 
 				# BagIt methods
-				self.Bag = bagit.Bag(bag_dir)
+				self.Bag = bagit.Bag(payload)
 
 				# validate object, log to "error_dict" attribute if invalid
 				try:
@@ -65,36 +143,28 @@ class WSUDOR_Object:
 						"error_message":e.message,
 						"error_details":e.details
 					}
-					self.instantiateError = error_dict					
-			
-			except Exception,e:
-				print traceback.format_exc()
-				print e
+					self.instantiateError = error_dict		
+				
 
-		if objType == "WSUDOR":
-			self.objType = objType
-			self.pid = eulfedoraObject.pid
-			self.pid_suffix = eulfedoraObject.pid.split(":")[1]
-			self.ohandle = eulfedoraObject
+			# Active, WSUDOR object
+			if objType == "WSUDOR":
 
-			# GET object content_model
-			# Using prefix "WSUDOR_" for v2, consider adding this to RELS for all objects!?
-			content_type = self.ohandle.risearch.get_objects(self.ohandle.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel')
-			content_type = content_type.next().split(":")[-1]			
-			self.content_type = "WSUDOR_"+str(content_type)
+				# check if payload actual eulfedora object or string literal
+				# in latter case, attempt to open eul object
+				if type(payload) != eulfedora.models.DigitalObject:
+					payload = fedora_handle.get_object(payload)
 
-			
-		# Retrieve ContentType specifics
-		self.ContentType = getattr(WSUDOR_ContentTypes,self.content_type)(self)		
+				self.objType = objType
+				self.pid = payload.pid
+				self.pid_suffix = payload.pid.split(":")[1]
+				self.ohandle = payload
+				self.content_type = content_type
+
+		except Exception,e:
+			print traceback.format_exc()
+			print e
 
 
 	
-
-
-
-
-
-
-
 
 

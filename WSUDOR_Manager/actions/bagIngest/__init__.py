@@ -12,7 +12,7 @@ import WSUDOR_Manager.actions as actions
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 # Content Types
-from WSUDOR_ContentTypes.WSUDOR_Object import WSUDOR_Object
+# from WSUDOR_ContentTypes.WSUDOR_Object import WSUDOR_Object
 
 #python modules
 from lxml import etree

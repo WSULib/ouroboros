@@ -15,9 +15,23 @@ from cl.cl import celery
 # eulfedora
 import eulfedora
 
+# handles
+from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager import redisHandles
+
+# import WSUDOR_ContentTypes
+import WSUDOR_ContentTypes
+
 
 
 class WSUDOR_Collection:
+	
+	# expects parent WSUDOR_Object as parameter
+	def __init__(self,WSUDOR_Object):
+		print WSUDOR_Object
+		self.WSUDOR_Object = WSUDOR_Object
+
 
 	# ingest image type
 	def ingestBag(self):

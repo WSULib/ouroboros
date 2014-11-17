@@ -29,7 +29,7 @@ from WSUDOR_Manager.solrHandles import solr_handle
 
 
 '''
-Description: This file represents all functions available to the WSUAPI.  
+Description: This file represents all functions available to the WSUDOR_API.  
 
 Function Format:
 	def [functionName](getParams):
@@ -671,7 +671,7 @@ def integrityTest(getParams):
 ################################################################################################
 def getSingleObjectSolrMetadata(getParams):
 	'''
-	returns the metadata for a single object, from Solr, via the WSUAPI
+	returns the metadata for a single object, from Solr, via the WSUDOR_API
 	SUCCESS: solr.response.docs > 0
 	FAILURE: solr.response.docs == 0
 	'''
@@ -711,7 +711,7 @@ def singleObjectPageRender(getParams):
 	URL = "http://digital.library.wayne.edu/digitalcollections/item?id={PID}".format(PID=PID)
 
 	try:				
-		http_status_string = subprocess.check_output("python WSUAPI/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
 		http_status = int(http_status_string)
 
 		print "http status:", http_status
@@ -743,7 +743,7 @@ def singleObjectPageRender(getParams):
 ################################################################################################
 def solrSearchCollectionObjects(getParams):
 	'''
-	returns results for all collection objects, from Solr, via the WSUAPI
+	returns results for all collection objects, from Solr, via the WSUDOR_API
 	SUCCESS: solr.response.docs > 0
 	FAILURE: solr.response.docs == 0
 	'''
@@ -776,7 +776,7 @@ def solrSearchCollectionObjects(getParams):
 
 def solrSearchKnownTerm(getParams):
 	'''
-	returns results for word "Michigan", from Solr, via the WSUAPI
+	returns results for word "Michigan", from Solr, via the WSUDOR_API
 	SUCCESS: solr.response.docs > 0
 	FAILURE: solr.response.docs == 0
 	'''
@@ -817,7 +817,7 @@ def searchPageRender(getParams):
 	URL = "http://digital.library.wayne.edu/digitalcollections/search.php?q={search_term}".format(search_term=getParams['search_term'])
 
 	try:				
-		http_status_string = subprocess.check_output("python WSUAPI/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
 		http_status = int(http_status_string)
 
 		print "http status:", http_status
@@ -854,7 +854,7 @@ def collectionPageRender(getParams):
 	URL = "http://digital.library.wayne.edu/digitalcollections/allcollections.php"
 
 	try:				
-		http_status_string = subprocess.check_output("python WSUAPI/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
 		http_status = int(http_status_string)
 
 		print "http status:", http_status

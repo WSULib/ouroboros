@@ -21,7 +21,7 @@ from WSUDOR_Manager import redisHandles
 import WSUDOR_ContentTypes
 
 
-def WSUDOR_Object(objType,payload):
+def WSUDOR_Object(object_type,payload):
 
 	'''	
 	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
@@ -29,19 +29,17 @@ def WSUDOR_Object(objType,payload):
 
 	try:
 		# Future WSUDOR object, BagIt object
-		if objType == "bag":		
+		if object_type == "bag":		
 			# read objMeta.json
 			path = payload + '/data/objMeta.json'
 			fhand = open(path,'r')
 			objMeta = json.loads(fhand.read())
-			print "objMeta.json loaded for:",objMeta['id'],"/",objMeta['label']
-
 			# only need content_type
 			content_type = objMeta['content_type']		
 			
 		
 		# Active, WSUDOR object
-		if objType == "WSUDOR":
+		if object_type == "WSUDOR":
 
 			# check if payload actual eulfedora object or string literal
 			# in latter case, attempt to open eul object
@@ -54,70 +52,77 @@ def WSUDOR_Object(objType,payload):
 			content_type = content_type.next().split(":")[-1]			
 			content_type = "WSUDOR_"+str(content_type)
 
+		
 		print "Our content type is:",content_type
 
 	except Exception,e:
 		print traceback.format_exc()
 		print e
-		return "Failure"
+		return "Could not load WSUDOR or Bag object."
 	
-	# need check if valid subclass of WSUDOR_GenObject
-	return getattr(WSUDOR_ContentTypes,str(content_type))(objType=objType,content_type=content_type,payload=payload)
+	# need check if valid subclass of WSUDOR_GenObject	
+	return getattr(WSUDOR_ContentTypes,str(content_type))(object_type=object_type,content_type=content_type,payload=payload)
+
 
 
 # WSUDOR Generic Object class (meant to be extended by ContentTypes)
-class WSUDOR_GenObject:
+class WSUDOR_GenObject(object):
 
 	'''
 	This class represents an object already present, or destined, for Ouroboros.  
-	"objType" is required for discerning between the two.
+	"object_type" is required for discerning between the two.
 
-	objType = 'WSUDOR'
+	object_type = 'WSUDOR'
 		- object is present in WSUDOR, actions include management and export
 
-	objType = 'bag'
+	object_type = 'bag'
 		- object is present outside of WSUDOR, actions include primarily ingest and validation
 	'''	
 
-	# Space for general WSUDOR object requirements
-	WSUDOR_GenObject_struct_requirements = {
-		"datastreams":[
-			{
-				"id":"THUMBNAIL",
-				"purpose":"Thumbnail of image",
-				"mimetype":"image/jpeg"
-			},
-			{
-				"id":"PREVIEW",
-				"purpose":"Medium sized preview image",
-				"mimetype":"image/jpeg"
-			},			
-			{
-				"id":"MODS",
-				"purpose":"Descriptive MODS",
-				"mimetype":"text/xml"
-			},
-			{
-				"id":"RELS-EXT",
-				"purpose":"RDF relationships",
-				"mimetype":"application/rdf+xml"
-			},
-			{
-				"id":"POLICY",
-				"purpose":"XACML Policy",
-				"mimetype":"text/xml"
-			}
-		]
-	}	
+	# ContentType rquirements dictionary
+	# initialized here, added to by sub-classes		
 
 	# init
-	def __init__(self,objType=False,content_type=False,payload=False):		
+	def __init__(self,object_type=False,content_type=False,payload=False):	
 
-		try:
+		self.struct_requirements = {
+			"WSUDOR_GenObject":{
+				"datastreams":[
+					{
+						"id":"THUMBNAIL",
+						"purpose":"Thumbnail of image",
+						"mimetype":"image/jpeg"
+					},
+					{
+						"id":"PREVIEW",
+						"purpose":"Medium sized preview image",
+						"mimetype":"image/jpeg"
+					},			
+					{
+						"id":"MODS",
+						"purpose":"Descriptive MODS",
+						"mimetype":"text/xml"
+					},
+					{
+						"id":"RELS-EXT",
+						"purpose":"RDF relationships",
+						"mimetype":"application/rdf+xml"
+					},
+					{
+						"id":"POLICY",
+						"purpose":"XACML Policy",
+						"mimetype":"text/xml"
+					}
+				],
+				"external_relationships":[]
+			}		
+		}	
+
+		try:			
 
 			# Future WSUDOR object, BagIt object
-			if objType == "bag":
-				self.objType = objType
+			if object_type == "bag":
+				self.object_type = object_type
 
 				# read objMeta.json
 				path = payload + '/data/objMeta.json'
@@ -143,18 +148,27 @@ class WSUDOR_GenObject:
 						"error_message":e.message,
 						"error_details":e.details
 					}
-					self.instantiateError = error_dict		
+					self.instantiateError = error_dict
+
+
+				# load also, WSUDOR object handle
+
+				# # check if payload actual eulfedora object or string literal
+				# # in latter case, attempt to open eul object
+				# if type(payload) != eulfedora.models.DigitalObject:
+				# 	payload = fedora_handle.get_object(payload)
+				# self.ohandle = payload
 				
 
 			# Active, WSUDOR object
-			if objType == "WSUDOR":
+			if object_type == "WSUDOR":
 
 				# check if payload actual eulfedora object or string literal
 				# in latter case, attempt to open eul object
 				if type(payload) != eulfedora.models.DigitalObject:
 					payload = fedora_handle.get_object(payload)
 
-				self.objType = objType
+				self.object_type = object_type
 				self.pid = payload.pid
 				self.pid_suffix = payload.pid.split(":")[1]
 				self.ohandle = payload

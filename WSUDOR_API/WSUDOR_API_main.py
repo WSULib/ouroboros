@@ -1,4 +1,4 @@
-# WSU Digital Collections Infrastructure API (WSUAPI)
+# WSU Digital Collections Infrastructure API (WSUDOR_API)
 # Designed to query and combine results from multiple back-end systems into a single JSON package.
 
 # IMPORTS
@@ -11,12 +11,12 @@ import argparse
 import ast
 import re
 
-# WSUAPI modules
+# WSUDOR_API modules
 from functions.utils import *
 from functions.availableFunctions import *
 from functions.availableFunctions_v2 import *
 
-def WSUAPImain(getParams):
+def WSUDOR_API_main(getParams):
 
 	# ITERATE THROUGH FUNCTION LIST 
 	####################################################################################################
@@ -72,11 +72,11 @@ def WSUAPImain(getParams):
 		return JSONreturn() # this returns that dictionary and outputs as JSON
 	# NO functions declared
 	else:
-		return '{"WSUAPI_status": "No functions declared."}'	
+		return '{"WSUDOR_API_status": "No functions declared."}'	
 
 
 if __name__ == '__main__':	
-	WSUAPImain()
+	WSUDOR_API_main()
 	
 
 

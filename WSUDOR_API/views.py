@@ -7,33 +7,33 @@ import json
 # flask proper
 from flask import render_template, request, session, redirect, make_response, Response
 
-# WSUAPI_app
-from WSUAPI import WSUAPI_app
-from WSUAPImain import WSUAPImain
+# WSUDOR_API_app
+from WSUDOR_API import WSUDOR_API_app
+from WSUDOR_API_main import WSUDOR_API_main
 
 
 # session data secret key
 ####################################
-WSUAPI_app.secret_key = 'WSUDOR-WSUAPI'
+WSUDOR_API_app.secret_key = 'WSUDOR-WSUDOR_API'
 ####################################
 
 
 # GENERAL
 #########################################################################################################
-@WSUAPI_app.route("/{WSUAPI_PREFIX}/".format(WSUAPI_PREFIX=localConfig.WSUAPI_PREFIX), methods=['POST', 'GET'])
-@WSUAPI_app.route("/{WSUAPI_PREFIX}".format(WSUAPI_PREFIX=localConfig.WSUAPI_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}/".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def index():		
 
 	print "HTTP METHOD:",request.method
 	
 	'''
 	Twisted must have this parameter parsing built-in.
-	For feeding WSUAPImain in Flask app form, we perform here.
+	For feeding WSUDOR_API_main in Flask app form, we perform here.
 	'''	
 	getParams = {each:request.values.getlist(each) for each in request.values}	
 
 	try:
-		response = make_response(WSUAPImain(getParams))
+		response = make_response(WSUDOR_API_main(getParams))
 		response.headers['Access-Control-Allow-Origin'] = '*'
 		response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
 		response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
@@ -44,7 +44,7 @@ def index():
 		return response
 
 	except Exception,e:
-		print "WSUAPI call unsuccessful.  Error:",str(e)
-		return '{{"WSUAPIstatus":"WSUAPI call unsuccessful.","WSUAPIstatus message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
+		print "WSUDOR_API call unsuccessful.  Error:",str(e)
+		return '{{"WSUDOR_APIstatus":"WSUDOR_API call unsuccessful.","WSUDOR_APIstatus message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
 	
 

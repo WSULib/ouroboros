@@ -25,8 +25,8 @@ from localConfig import *
 # import WSUDOR_Manager app
 from WSUDOR_Manager import app
 
-# import WSUAPI app
-from WSUAPI import WSUAPI_app
+# import WSUDOR_API app
+from WSUDOR_API import WSUDOR_API_app
 
 
 
@@ -120,9 +120,9 @@ logging.basicConfig(level=logging.DEBUG)
 resource = WSGIResource(reactor, reactor.getThreadPool(), app)
 site = Site(resource)
 
-# WSUAPI_app
-WSUAPI_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUAPI_app)
-WSUAPI_site = Site(WSUAPI_resource)
+# WSUDOR_API_app
+WSUDOR_API_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUDOR_API_app)
+WSUDOR_API_site = Site(WSUDOR_API_resource)
 
 if __name__ == '__main__':
 
@@ -130,15 +130,15 @@ if __name__ == '__main__':
 	atexit.register(pidfileRemove)
 	ouroboros_pidlock = pidfileCreate()
 
-	# fedoraManagere2
-	if FEDORA_MANAGER_2_FIRE == True:
+	# WSUDOR Manager
+	if WSUDOR_MANAGER_FIRE == True:
 		print "Starting WSUDOR_Manager..."
-		reactor.listenTCP( FEDORA_MANAGER_2_PORT, site)
+		reactor.listenTCP( WSUDOR_MANAGER_PORT, site)
 
-	# WSUAPI
-	if WSUAPI_FIRE == True:
-		print "Starting WSUAPI_app..."
-		reactor.listenTCP( WSUAPI_LISTENER_PORT, WSUAPI_site )	
+	# WSUDOR_API
+	if WSUDOR_API_FIRE == True:
+		print "Starting WSUDOR_API_app..."
+		reactor.listenTCP( WSUDOR_API_LISTENER_PORT, WSUDOR_API_site )	
 	
 	# imageServer
 	if IMAGESERVER_FIRE == True:

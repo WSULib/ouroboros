@@ -9,6 +9,8 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, jobs, models, db, forms
 import WSUDOR_Manager.actions as actions
+import WSUDOR_ContentTypes
+
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 # Content Types
@@ -54,15 +56,20 @@ def singleBag_ingest_worker(request):
 	print request.args		
 
 	# load bag_handle
-	bag_dir = "/tmp/Ouroboros/ingest_bags/"+request.args.get("bag_dir")
+	bag_dir = request.args.get("bag_dir")
 	print "Working on:",bag_dir
-	bag_handle = WSUDOR_Object(objType="bag",bag_dir=bag_dir)
+	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag",payload=bag_dir)
 	
-	# quick validate
-	print "Bag is valid:",bag_handle.Bag.validate()	
+	# validate bag for WSUDOR ingest	
+	valid_results = bag_handle.validIngestBag()
+	if valid_results['verdict'] != True:
+		print "Bag is not valid for the following reasons, aborting."
+		print valid_results
+		return False
+
 
 	# ingest bag
-	ingest_bag = bag_handle.ContentType.ingestBag()
+	ingest_bag = bag_handle.ingestBag()
 	return ingest_bag
 
 

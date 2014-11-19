@@ -80,9 +80,10 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 		# check that objMeta.id is NOT already an object in WSUDOR
-		ohandle = fedora_handle.get_object(self.pid)
-		if ohandle.exists == True:
-			report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))						
+		# UPDATE : on back burner, Eulfedora seems to create a placeholder object in Fedora somehow...
+		# ohandle = fedora_handle.get_object(self.pid)
+		# if ohandle.exists == True:
+		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))						
 		
 		
 		# finally, return verdict

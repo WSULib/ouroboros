@@ -4,10 +4,25 @@
 <p>This is where you can upload your bag, and perhaps, create it as well.  For development, it will be automatically uploading bags from /tmp/Ouroboros/ingest_bags, and the name of the bag as a get parameter.  Below are two examples:</p>
 
 
-<ul>
-	<li><a href="/tasks/bagIngest/singleBag?bag_dir=tree1_bagged">tree1 (single image)</a></li>
-	<li><a href="/tasks/bagIngest/singleBag?bag_dir=woodTypes_bagged">woodTypes (multiple images)</a></li>
-</ul>
+<div class="row">
+	<div class="col-md-4">
+		<h4>Temp Examples:</h4>
+		<ul>
+			<li><a href="/tasks/bagIngest/singleBag?bag_dir=/tmp/Ouroboros/ingest_bags/tree1_bagged">tree1 (single image)</a></li>
+			<li><a href="/tasks/bagIngest/singleBag?bag_dir=/tmp/Ouroboros/ingest_bags/woodTypes_bagged">woodTypes (multiple images)</a></li>
+			<li><a href="/tasks/bagIngest/singleBag?bag_dir=/tmp/Ouroboros/ingest_bags/randoCollection_bagged">randoCollections (collection object)</a></li>
+		</ul>
+	</div>
+</div>
 
+<div class="row">
+	<div class="col-md-4">
+		<h4>Form Submission</h4>
+		<form class="form-horizontal" action="/tasks/bagIngest/singleBag">
+			<label class="control-label">Full path of BagIt directory:</label>
+			<input class="form-control" type="text" name="bag_dir" rows=80/>
+		</form>
+	</div>
+</div>
 
 {% include 'footer.html' %}

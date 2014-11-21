@@ -68,10 +68,11 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))			
 
 
-		# check that objMeta.id is NOT already an object in WSUDOR
-		ohandle = fedora_handle.get_object(self.pid)
-		if ohandle.exists == True:
-			report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))		
+		# # check that objMeta.id is NOT already an object in WSUDOR
+		# UPDATE : on back burner, Eulfedora seems to create a placeholder object in Fedora somehow...
+		# ohandle = fedora_handle.get_object(self.pid)
+		# if ohandle.exists == True:
+		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))		
 
 		# validate children (collection) objects
 		child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
@@ -208,8 +209,8 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				child_bag_handle.ingestBag()
 
 				# open object as ingested WSUDOR type, write collection specific RELS for that object
-				child_WSUDOR_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=fedora_handle.get_object(self.objMeta['id']))
-				child_WSUDOR_handle.add_relationship("info:fedora/fedora-system:def/relations-internal#isMemberOfCollection",self.pid)
+				child_WSUDOR_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=fedora_handle.get_object(child_bag_handle.objMeta['id']))
+				child_WSUDOR_handle.ohandle.add_relationship("info:fedora/fedora-system:def/relations-internal#isMemberOfCollection",self.objMeta['id'])
 
 
 			return "finis."

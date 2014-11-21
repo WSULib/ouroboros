@@ -5,12 +5,12 @@
 
 
 <div class="row">
-	<div class="col-md-4">
-		<h4>Temp Examples:</h4>
+	<div class="col-md-6">
+		<h4>Temp Examples (copy path and paste below):</h4>
 		<ul>
-			<li><a href="/tasks/bagIngest/singleBag?bag_dir=/tmp/Ouroboros/ingest_bags/tree1_bagged">tree1 (single image)</a></li>
-			<li><a href="/tasks/bagIngest/singleBag?bag_dir=/tmp/Ouroboros/ingest_bags/woodTypes_bagged">woodTypes (multiple images)</a></li>
-			<li><a href="/tasks/bagIngest/singleBag?bag_dir=/tmp/Ouroboros/ingest_bags/randoCollection_bagged">randoCollections (collection object)</a></li>
+			<li>tree1 (single image) --- "/tmp/Ouroboros/ingest_bags/tree1_bagged"</a></li>
+			<li>woodTypes (multiple images) --- "/tmp/Ouroboros/ingest_bags/woodTypes_bagged"</a></li>
+			<li>randoCollections (collection object) --- "/tmp/Ouroboros/ingest_bags/randoCollection_bagged"</a></li>
 		</ul>
 	</div>
 </div>
@@ -18,7 +18,7 @@
 <div class="row">
 	<div class="col-md-4">
 		<h4>Form Submission</h4>
-		<form class="form-horizontal" action="/tasks/bagIngest/singleBag">
+		<form class="form-horizontal" method="POST" action="/tasks/bagIngest/singleBag/fire" enctype="multipart/form-data">
 			<label class="control-label">Full path of BagIt directory:</label>
 			<input class="form-control" type="text" name="bag_dir" rows=80/>
 		</form>

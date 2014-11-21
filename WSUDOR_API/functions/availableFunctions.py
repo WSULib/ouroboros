@@ -342,7 +342,6 @@ def pubStore(getParams):
 	# get
 	if "select" in urlsuff:
 		solrParams = ast.literal_eval(solrString)
-		print "Is this a dictionary?",solrParams		
 		r = requests.get(baseURL, params=solrParams)
 
 	jsonString = r.text

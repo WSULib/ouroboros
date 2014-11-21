@@ -144,7 +144,8 @@ def celeryTaskFactory(**kwargs):
 		time.sleep(.001)
 					
 		job_package['step'] = step	
-		job_package['PID'] = PID		
+		job_package['PID'] = PID
+
 		# fire off async task via taskWrapper		
 		result = taskWrapper.delay(job_package)		
 		task_id = result.id
@@ -163,11 +164,6 @@ def celeryTaskFactory(**kwargs):
 
 #TASKS
 ##################################################################
-'''
-max_retries = 100
-countdown defaulting to 3 seconds
-	- stressed with same PID 50+ times over, seems pretty resilient to exceptions
-'''
 @celery.task(base=postTask,bind=True,max_retries=100,name="taskWrapper")
 def taskWrapper(self,job_package,*args, **kwargs):
 	

@@ -217,6 +217,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		except Exception,e:
 			print traceback.format_exc()
 			print "General Error:",e
+			return False
 
 
 

@@ -227,7 +227,8 @@ def fireTask(task_name):
 	# create job_package	
 	job_package = {		
 		"username":username,
-		"form_data":request.values			
+		"form_data":request.values,
+		"job_type":"PID_iterate"			
 	}
 
 	# pass along binary uploaded data if included in job task
@@ -338,7 +339,7 @@ def userJobs():
 		
 		# get completed tasks
 		job_complete_count = redisHandles.r_job_handle.get("job_{job_num}_complete_count".format(job_num=job_num))
-		if job_complete_count == None:
+		if job_complete_count == None:			
 			job_complete_count = 0
 
 		# compute percentage complete
@@ -349,13 +350,11 @@ def userJobs():
 
 		# spooling, works on stable jobHand object
 		if job_assign_count > 0 and job_assign_count < job_est_count :
-			# print "Job spooling..."
 			status_package['job_status'] = "spooling"
 			job.status = "spooling"
 
 		# check if pending
-		elif job_complete_count == 0:
-			# print "Job Pending, waiting for others to complete.  Isn't that polite?"
+		elif job_assign_count == job_est_count and job_complete_count == 0:
 			status_package['job_status'] = "pending"	
 			job.status = "pending"	
 
@@ -369,6 +368,8 @@ def userJobs():
 		# else, must be running
 		else:
 			status_package['job_status'] = "running"	
+
+
 
 		# data return 
 		response_dict = {

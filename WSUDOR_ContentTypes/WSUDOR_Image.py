@@ -211,7 +211,12 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 			# save and commit object
-			return ohandle.save()			
+			final_save = ohandle.save()		
+
+			# finally, derive DC from MODS
+			WSUDOR_Manager.actions.DCfromMODS.DCfromMODS_single(self.objMeta['id'])
+
+			return final_save
 
 
 		# exception handling

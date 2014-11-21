@@ -15,6 +15,8 @@ from cl.cl import celery
 # eulfedora
 import eulfedora
 
+import WSUDOR_Manager
+
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
@@ -198,7 +200,10 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 			# save and commit object
-			ohandle.save()
+			final_save = ohandle.save()
+
+			# finally, derive DC from MODS
+			WSUDOR_Manager.actions.DCfromMODS.DCfromMODS_single(self.objMeta['id'])
 
 
 			# for each bag in objects directory, perform collection tying
@@ -213,7 +218,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				child_WSUDOR_handle.ohandle.add_relationship("info:fedora/fedora-system:def/relations-internal#isMemberOfCollection",self.objMeta['id'])
 
 
-			return "finis."
+			return final_save
 
 
 		# exception handling

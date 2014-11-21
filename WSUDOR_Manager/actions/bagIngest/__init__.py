@@ -11,6 +11,7 @@ from WSUDOR_Manager import redisHandles, jobs, models, db, forms
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 
+
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules
@@ -57,7 +58,7 @@ def singleBag_ingest():
 	celery_task_id = celeryTaskFactoryUnique.delay(job_num,job_package)		 
 
 	# send job to user_jobs SQL table
-	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init"))	
+	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", "singleBagItIngest"))	
 	db.session.commit()		
 
 	print "Started job #",job_num,"Celery task #",celery_task_id
@@ -67,8 +68,6 @@ def singleBag_ingest():
 
 @celery.task(name="celeryTaskFactoryUnique")
 def celeryTaskFactoryUnique(job_num,job_package):
-
-	print job_package
 	
 	# reconstitute
 	job_num = job_package['job_num']	
@@ -94,7 +93,6 @@ def celeryTaskFactoryUnique(job_num,job_package):
 	step += 1
 
 
-
 def singleBag_ingest_worker(job_package):	
 
 	# load bag_handle
@@ -110,7 +108,7 @@ def singleBag_ingest_worker(job_package):
 		return False
 
 	# ingest bag
-	ingest_bag = bag_handle.ingestBag()
+	ingest_bag = bag_handle.ingestBag()	
 	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label,bag_pid=bag_handle.pid):ingest_bag})
 
 

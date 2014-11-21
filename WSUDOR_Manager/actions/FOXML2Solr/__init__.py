@@ -20,6 +20,8 @@ from celery import Task
 # augmentCore 
 from augmentCore import augmentCore
 
+import WSUDOR_Manager.actions as actions
+
 # define blueprint
 FOXML2Solr_blue = Blueprint('FOXML2Solr', __name__, template_folder='templates')
 

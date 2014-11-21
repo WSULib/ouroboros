@@ -27,12 +27,14 @@ class user_jobs(db.Model):
 	# for status, expecting: spooling, pending, running, completed, supressed
 	status = db.Column(db.String(255))
 	celery_task_id = db.Column(db.String(255))
+	job_name = db.Column(db.String(255))
 
-	def __init__(self, job_num, username, celery_task_id, status):
+	def __init__(self, job_num, username, celery_task_id, status, job_name):
 		self.job_num = job_num
 		self.username = username
 		self.celery_task_id = celery_task_id
 		self.status = status
+		self.job_name = job_name
 
 	def __repr__(self):    	
 		return '<Job# {job_num}, username: {username}, celery_task_id: {celery_task_id}, status: {status}>'.format(job_num=self.job_num,username=self.username, celery_task_id=self.celery_task_id, status=self.status)

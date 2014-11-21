@@ -1,10 +1,10 @@
 {% include 'header.html' %}
 
-<p>All jobs for {{username}}<p>
+<p>All jobs for user: {{username}}<p>
 
 <ul>
 	{% for job in return_package %}
-		<li>{{job.job_num}} - {{job.status}} - <a href="/jobDetails/{{job.job_num}}">Details</a> / <a href="/jobRemove/{{job.job_num}}">Remove</a></li>
+		<li>#{{job.job_num}}, <strong>{{job.job_name}}</strong> - {{job.status}} - <a href="/jobDetails/{{job.job_num}}">Details</a> / <a href="/jobRemove/{{job.job_num}}">Remove</a></li>
 	{% endfor %}
 </ul>
 

@@ -37,46 +37,7 @@ def index():
 	return render_template("bagIngestIndex.html")
 
 
-# # singleBag view
-# @bagIngest.route('/bagIngest/singleBag', methods=['POST', 'GET'])
-# def singleBag_index():
-
-# 	if request.args.get('bag_dir'):		
-# 		payload = request.args.get('bag_dir')
-# 		singleBag_ingest_worker.delay(payload)
-
-# 	return render_template("singleBagIndex.html")
-
-# # ingest singleBag
-# @celery.task(name="singleBag_ingest_worker")
-# def singleBag_ingest_worker(payload):	
-
-# 	# load bag_handle
-# 	bag_dir = payload
-# 	print "Working on:",bag_dir
-# 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag",payload=bag_dir)
-	
-# 	# validate bag for WSUDOR ingest	
-# 	valid_results = bag_handle.validIngestBag()
-# 	if valid_results['verdict'] != True:
-# 		print "Bag is not valid for the following reasons, aborting."
-# 		print valid_results
-# 		return False
-
-# 	# ingest bag
-# 	ingest_bag = bag_handle.ingestBag()
-# 	return ingest_bag# ingest singleBag
-
-
-#############################################################################
-
-# singleBag view
-@bagIngest.route('/bagIngest/singleBag', methods=['POST', 'GET'])
-def singleBag_index():	
-
-	return render_template("singleBagIndex.html")
-
-
+# singleBag worker
 @bagIngest.route('/bagIngest/singleBag/fire', methods=['POST', 'GET'])
 def singleBag_ingest():	
 	# get new job num

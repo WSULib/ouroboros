@@ -301,7 +301,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 	celery_task_id = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)	
 
 	# send job to user_jobs SQL table
-	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init"))	
+	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", task_name))	
 	db.session.commit() 
 
 	print "Started job #",job_num,"Celery task #",celery_task_id	
@@ -374,6 +374,7 @@ def userJobs():
 		# data return 
 		response_dict = {
 			"job_num":job_num,
+			"job_name":job.job_name,
 			"job_status":status_package['job_status'],
 			"assigned_tasks":job_assign_count,
 			"completed_tasks":job_complete_count,
@@ -414,6 +415,7 @@ def userAllJobs():
 		job_package = {}
 		job_package['job_num'] = job.job_num		
 		job_package['status'] = job.status
+		job_package['job_name'] = job.job_name
 
 		# push to return package
 		return_package.append(job_package)

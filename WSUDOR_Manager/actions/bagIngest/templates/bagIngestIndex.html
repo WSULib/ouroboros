@@ -1,11 +1,35 @@
 {% include 'header.html' %}
 <h1>BagIt-based Ingest</h1>
 
-<p><strong>Update</strong>: As of 11/2014, we are looking into leveraging the BagIt file packaging format all object import / export, all collection ingests.  BagIt is widely used in the digital collections / preservation arena, and provides additional preservation information before and after deposit in Fedora.  This not only brings us closer in-line with the OAIS model (SIPs, AIPs, DIPs), but also provides a simpler and more standardized mechanism for depositing materials in WSUDOR.</p>
+<h2>Single Bag Ingest</h2>
 
-<p>Ingest types:</p>
-<ul>
-	<li><a href="/tasks/bagIngest/singleBag">Single Bag</a></li>	
-</ul>
+<p>Below you can enter a full OS path where a valid BagIt directory is located.  As of this writing (11/2014), even a BagIt object that contains multiple children bags (e.g. a collection Bag), will show up as only 1 task for this particular WSUDOR_Manager job.  Looking into making that reflect how many children objects there are.</p>
+
+
+<div class="row">
+	<div class="col-md-6">
+		<h4>Example Bags for Testing:</h4>
+		<p>Copy path and paste below...</p>
+		<ul>
+			<li>tree1 (single image) ---> /tmp/Ouroboros/ingest_bags/tree1_bagged</a></li>
+			<li>woodTypes (multiple images) ---> /tmp/Ouroboros/ingest_bags/woodTypes_bagged</a></li>
+			<li>randoCollections (collection object) ---> /tmp/Ouroboros/ingest_bags/randoCollection_bagged</a></li>
+		</ul>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-4">
+		<form class="form" id="form" role="form" method="POST" action="/tasks/bagIngest/singleBag/fire" enctype="multipart/form-data">
+			<div class="form-group">
+				<label class="control-label">Full path of BagIt directory:</label>
+				<input class="form-control" type="text" name="bag_dir" rows=80/ placeholder="e.g. /tmp/Ouroboros/ingest_bags/woodTypes_bagged">
+			</div>
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Ingest Bag">
+			</div>
+		</form>
+	</div>
+</div>
 
 {% include 'footer.html' %}

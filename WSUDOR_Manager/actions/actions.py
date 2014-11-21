@@ -56,7 +56,7 @@ from editRELS import editRELS, editRELS_add_worker, editRELS_purge_worker, editR
 app.register_blueprint(editRELS, url_prefix=tasks_URL_prefix)
 
 #DCfromMODS
-from DCfromMODS import DCfromMODS, DCfromMODS_worker
+from DCfromMODS import DCfromMODS, DCfromMODS_worker, DCfromMODS_single
 app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
 
 #addDS

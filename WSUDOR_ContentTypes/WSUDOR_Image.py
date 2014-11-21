@@ -15,6 +15,8 @@ from cl.cl import celery
 # eulfedora
 import eulfedora
 
+import WSUDOR_Manager
+
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
@@ -208,9 +210,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				thumb_rep_handle.save()
 
 
-			# finally, save and commit object
-			return ohandle.save()
-
+			# save and commit object
+			return ohandle.save()			
 
 
 		# exception handling

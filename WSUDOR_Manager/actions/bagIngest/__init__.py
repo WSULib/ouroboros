@@ -55,7 +55,7 @@ def singleBag_ingest():
 	}	
 
 	# job celery_task_id
-	celery_task_id = celeryTaskFactoryUnique.delay(job_num,job_package)		 
+	celery_task_id = celeryTaskFactoryBagIngest.delay(job_num,job_package)		 
 
 	# send job to user_jobs SQL table
 	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", "singleBagItIngest"))	
@@ -66,8 +66,8 @@ def singleBag_ingest():
 
 
 
-@celery.task(name="celeryTaskFactoryUnique")
-def celeryTaskFactoryUnique(job_num,job_package):
+@celery.task(name="celeryTaskFactoryBagIngest")
+def celeryTaskFactoryBagIngest(job_num,job_package):
 	
 	# reconstitute
 	job_num = job_package['job_num']	

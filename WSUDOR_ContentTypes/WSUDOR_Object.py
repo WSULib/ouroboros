@@ -5,6 +5,9 @@ import mimetypes
 import json
 import traceback
 import sys
+from lxml import etree
+import tarfile
+import uuid
 
 # celery
 from cl.cl import celery
@@ -21,6 +24,7 @@ from WSUDOR_Manager import redisHandles
 import WSUDOR_ContentTypes
 
 
+# class factory, returns WSUDOR_GenObject as extended by specific ContentType
 def WSUDOR_Object(object_type,payload):
 
 	'''	
@@ -51,7 +55,6 @@ def WSUDOR_Object(object_type,payload):
 			content_type = payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel')
 			content_type = content_type.next().split(":")[-1]			
 			content_type = "WSUDOR_"+str(content_type)
-
 		
 		print "Our content type is:",content_type
 
@@ -65,7 +68,7 @@ def WSUDOR_Object(object_type,payload):
 
 
 
-# WSUDOR Generic Object class (meant to be extended by ContentTypes)
+# WSUDOR Generic Object class (designed to be extended by ContentTypes)
 class WSUDOR_GenObject(object):
 
 	'''
@@ -134,6 +137,9 @@ class WSUDOR_GenObject(object):
 				self.label = self.objMeta['label']
 				self.content_type = content_type # use content_type as derived from WSUDOR_Object factory
 
+				# placeholder for potential ohandle
+				self.ohandle = None
+
 				# BagIt methods
 				self.Bag = bagit.Bag(payload)
 
@@ -168,6 +174,90 @@ class WSUDOR_GenObject(object):
 		except Exception,e:
 			print traceback.format_exc()
 			print e
+
+
+	# function that runs at end of ContentType ingestBag(), pulling in generic BagIt metadata to made object
+	def finishIngest(self):
+
+		# as object finishes ingest, it can be granted eulfedora methods, its 'ohandle' attribute
+		if self.ohandle != None:
+			self.ohandle = fedora_handle.get_object(self.objMeta['id'])
+
+		# pull in BagIt metadata as BAG_META datastream tarball
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".tar"
+		tar_handle = tarfile.open(temp_filename,'w')
+		for bag_meta_file in ['bag-info.txt','bagit.txt','manifest-md5.txt','tagmanifest-md5.txt']:
+			tar_handle.add(self.Bag.path + "/" + bag_meta_file, recursive=False, arcname=bag_meta_file)
+		tar_handle.close()
+		bag_meta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "BAGIT_META", "BagIt Metadata Tarball", mimetype="application/x-tar", control_group='M')
+		bag_meta_handle.label = "BagIt Metadata Tarball"
+		bag_meta_handle.content = open(temp_filename)
+		bag_meta_handle.save()
+		os.system('rm {temp_filename}'.format(temp_filename=temp_filename))		
+
+		# derive Dublin Core from MODS, update DC datastream
+		self.DCfromMODS()
+		
+		# finally, return
+		return True
+
+
+	# derive DC from MODS (experimental action in Gen ContentType)
+	def DCfromMODS(self):
+		# retrieve MODS		
+		MODS_handle = self.ohandle.getDatastreamObject('MODS')		
+		XMLroot = etree.fromstring(MODS_handle.content.serialize())
+
+		# 2) transform downloaded MODS to DC with LOC stylesheet
+		print "XSLT Transforming: {PID}".format(PID=self.pid)
+		# Saxon transformation
+		XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+		transform = etree.XSLT(xslt_tree)
+		DC = transform(XMLroot)		
+
+		# 3) save to DC datastream
+		DS_handle = self.ohandle.getDatastreamObject("DC")
+		DS_handle.content = str(DC)
+		derive_results = DS_handle.save()
+		print "DCfromMODS result:",derive_results
+		return derive_results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	

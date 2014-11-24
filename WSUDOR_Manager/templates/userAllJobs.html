@@ -1,11 +1,21 @@
 {% include 'header.html' %}
 
-<p>All jobs for user: {{username}}<p>
+<div class="row">
+	<div class="col-md-12">
+		<p>All jobs for user: {{username}} (<a href="/userJobs">Click here for all currently running jobs</a>)<p>
+	</div>
+</div>
 
-<ul>
-	{% for job in return_package %}
-		<li>#{{job.job_num}}, <strong>{{job.job_name}}</strong> - {{job.status}} - <a href="/jobDetails/{{job.job_num}}">Details</a> / <a href="/jobRemove/{{job.job_num}}">Remove</a></li>
-	{% endfor %}
-</ul>
+<div class="row">
+	<div class="col-md-5">
+		<div class="well">
+			<ul>
+				{% for job in return_package %}
+					<li>#{{job.job_num}}, <strong>{{job.job_name}}</strong> - {{job.status}} - <a href="/jobDetails/{{job.job_num}}">Details</a> / <a href="/jobRemove/{{job.job_num}}">Remove</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+</div>
 
 {% include 'footer.html' %}

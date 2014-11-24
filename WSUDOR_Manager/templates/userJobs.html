@@ -1,8 +1,23 @@
 {% include 'header.html' %}
-</p>Please keep in mind that all jobs share the same few workers, and that sometimes, it may take a minute or two for jobs to start or finish if other jobs are in the queue.</p>
-<p>Below are jobs currently running for <strong>{{username}}</strong> (If empty, no jobs currently running.  <a href="/userAllJobs">Click here for all user jobs</a>):</p>
+<div class="row">
+	<div class="col-md-12">
+		</p>Please keep in mind that all jobs share the same few workers, and that sometimes, it may take a minute or two for jobs to start or finish if other jobs are in the queue.</p>
+		<p>Below are jobs currently running for <strong>{{username}}</strong>:</p>
+	</div>
+</div>
 
-<ul id="job_list"></ul>
+<div class="row">
+	<div class="col-md-5 well">
+		<ul id="job_list"></ul>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<p>If empty, no jobs currently running, <a href="/userAllJobs">click here for all user jobs.</a></p>
+		<p>If jobs stalled or did not complete, <a href="/retireAllJobs">click here to "retire" all non-completed jobs</a>.</p>
+	</div>
+</div>
 
 <!-- script to long-poll update above, proof of concept -->
 <script type="text/javascript" src="{{ url_for('static',filename='userJobs.js')}}"></script>

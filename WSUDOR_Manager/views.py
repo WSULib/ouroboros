@@ -506,6 +506,25 @@ def flushPIDLock():
 	return render_template("flushPIDLock.html",result=result)
 
 
+# see all user jobs, including completed
+@app.route("/retireAllJobs")
+def retireAllJobs():
+
+	username = session['username']
+
+	# get user jobs
+	user_jobs_list = models.user_jobs.query.filter(models.user_jobs.username == username)
+
+	# return package
+	return_package = []
+
+	for job in user_jobs_list:
+		if job.status != "complete":
+			result = jobs.jobRetire_worker(job.job_num)		
+
+	print "All non-complete jobs, retired"
+
+	return redirect("/userJobs")
 
 
 # OBJECT MANAGEMENT

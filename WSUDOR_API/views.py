@@ -13,9 +13,9 @@ from WSUDOR_API_main import WSUDOR_API_main
 
 
 # session data secret key
-####################################
+###############################################
 WSUDOR_API_app.secret_key = 'WSUDOR-WSUDOR_API'
-####################################
+###############################################
 
 
 # GENERAL
@@ -23,13 +23,12 @@ WSUDOR_API_app.secret_key = 'WSUDOR-WSUDOR_API'
 @WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}/".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 @WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def index():		
-
-	print "HTTP METHOD:",request.method
 	
 	'''
 	Twisted must have this parameter parsing built-in.
 	For feeding WSUDOR_API_main in Flask app form, we perform here.
 	'''	
+
 	getParams = {each:request.values.getlist(each) for each in request.values}	
 
 	try:

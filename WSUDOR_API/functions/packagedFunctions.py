@@ -121,7 +121,6 @@ def singleObjectPackage(getParams):
 					'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "{object}".format(object=each['object'])).next().split("/")[-1],
 					'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "{object}".format(object=each['object'])).next().split("/")[-1]
 				}
-			print "PARTS DICT",parts_imageDict
 			return parts_imageDict	
 
 		else:

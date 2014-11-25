@@ -66,8 +66,8 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 		# check that objMeta.id starts with "wayne:"
-		if not self.pid.startswith("wayne:"):
-			report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))			
+		# if not self.pid.startswith("wayne:"):
+		# 	report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))
 
 
 		# # check that objMeta.id is NOT already an object in WSUDOR
@@ -205,11 +205,10 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# for each bag in objects directory, ingest child
 			child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
 			for child_object in child_objects:
-				print "WORKING ON child_object",child_object
-
 				child_bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=self.Bag.path+"/data/objects/"+child_object)
-				ingest_result = child_bag_handle.ingestBag()				
-				child_bag_handle.ohandle.add_relationship("info:fedora/fedora-system:def/relations-internal#isMemberOfCollection",self.objMeta['id'])
+				ingest_result = child_bag_handle.ingestBag()	
+				# add relationships relative to collection object			
+				child_bag_handle.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isMemberOfCollection","info:fedora/{pid}".format(pid=self.objMeta['id']))
 
 
 			# finish generic ingest

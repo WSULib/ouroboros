@@ -34,7 +34,7 @@ def augmentCore(toUpdate):
 		#######################################################
 
 		else:
-			print "Does not have 'wayne' prefix, skipping..."		
+			print "Does not have 'wayne' prefix, skipping augmentCore()..."		
 
 def ebookText(PID):		
 			

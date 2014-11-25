@@ -40,6 +40,8 @@ def singleObjectPackage(getParams):
 
 	'''
 	each sub-component returns a tuple with desired name and results as dictionary
+
+	IMPROVEMENT: consider grabbing ContentType here, then making decisions as to what to return in singleObjectPackage() based on that
 	'''
 
 	# determine if object exists and is active
@@ -51,12 +53,42 @@ def singleObjectPackage(getParams):
 		}
 		return json.dumps(return_dict)	
 
+	def objectSolrDoc_func():
+		# return entire solr doc for object, straight through
+		# saves to 'objectSolrDoc'		
+		query = {
+			"q" : "id:*{PID_suffix}".format(PID_suffix=PID_suffix),
+			"rows" : 1,
+			"start" : 0		
+		}
+		# perform query
+		objectSolrDoc = solr_handle.search(**query).documents[0]
+		return objectSolrDoc
+
 
 	def hasPartOf_func():
 		# runs hasPartOf(), gets components and their representations ()
 		# saves to 'hasPartOf'	
-		return json.loads(hasPartOf(getParams))
+		return json.loads(hasPartOf(getParams))	
 
+
+	def isMemberOfCollection_func():
+		# returns collections the object is a part of
+		# saves to 'isMemberOfCollection'
+		return json.loads(isMemberOfCollection(getParams))
+
+
+	def hasMemberOf_func():
+		# returns collections the object is a part of
+		# saves to 'hasMemberOf'
+		return json.loads(hasMemberOf(getParams))
+
+
+	# WSUDOR_Image / CM:Image
+	############################################################################################################################################
+	'''
+	IMPROVEMENT: break out ContentType specific functions
+	'''
 	def main_imageDict_func():
 		# create small dictinoary with image datastreams for main intellectual object
 		# saves to 'main_imageDict'
@@ -75,6 +107,7 @@ def singleObjectPackage(getParams):
 		}
 		return main_imageDict
 
+
 	def parts_imageDict_func():
 		# returns image dictionary for parts, reusing hasPartOf_results
 		# saves to 'parts_imageDict'	
@@ -92,32 +125,9 @@ def singleObjectPackage(getParams):
 				'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "{object}".format(object=each['object'])).next().split("/")[-1]
 			}
 		print "PARTS DICT",parts_imageDict
-		return parts_imageDict
+		return parts_imageDict			
+	############################################################################################################################################
 
-	def objectSolrDoc_func():
-		# return entire solr doc for object, straight through
-		# saves to 'objectSolrDoc'
-		query = {
-			"q" : "id:*{PID_suffix}".format(PID_suffix=PID_suffix),
-			"rows" : 1,
-			"start" : 0		
-		}
-		# perform query
-		objectSolrDoc = solr_handle.search(**query).documents[0]
-		return objectSolrDoc
-
-
-	def isMemberOfCollection_func():
-		# returns collections the object is a part of
-		# saves to 'isMemberOfCollection'
-		return json.loads(isMemberOfCollection(getParams))
-
-
-	def hasMemberOf_func():
-		# returns collections the object is a part of
-		# saves to 'hasMemberOf'
-		return json.loads(hasMemberOf(getParams))
-		
 	# run all functions and return
 	return_dict = {
 		'hasPartOf':hasPartOf_func(),
@@ -135,9 +145,8 @@ def singleObjectPackage(getParams):
 
 # function package for search view
 # mapping can be found here: https://docs.google.com/spreadsheets/d/1DFHm2lfGjrFn5SgmeWeFX6Db3ba1IfX7EvcVbsc_zw0/edit?usp=sharing
-def searchObjectPackage(getParams):
+def searchPackage(getParams):
 	pass
-
 
 
 

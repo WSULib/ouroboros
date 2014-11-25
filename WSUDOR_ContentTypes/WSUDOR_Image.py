@@ -77,8 +77,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 		# check that objMeta.id starts with "wayne:"
-		if not self.pid.startswith("wayne:"):
-			report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))			
+		# if not self.pid.startswith("wayne:"):
+		# 	report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))
 
 
 		# check that objMeta.id is NOT already an object in WSUDOR

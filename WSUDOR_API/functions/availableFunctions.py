@@ -96,7 +96,7 @@ def solrSearch(getParams):
 	baseURL	+= "q="+getParams['q'][0]+"&"
 
 	## BACKDOOR FOR VIEWING ALL ITEMS, NOT JUST isDiscoverableTrue	
-	if 'fullView' in getParams and getParams['fullView'][0] == "fullview123456789":
+	if 'fullview' in getParams and getParams['fullview'][0] == "true":
 		pass
 	else:
 		baseURL	+= "fq=rels_isDiscoverable:True&"

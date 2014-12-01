@@ -120,7 +120,9 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write objMeta as datastream
 			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
 			objMeta_handle.label = "Ingest Bag Object Metadata"
-			objMeta_handle.content = json.dumps(self.objMeta)
+			# objMeta_handle.content = json.dumps(self.objMeta)
+			file_path = self.Bag.path + "/data/objMeta.json"
+			objMeta_handle.content = open(file_path)
 			objMeta_handle.save()
 
 			# write explicit RELS-EXT relationships
@@ -135,11 +137,11 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
 			# write MODS datastream
-			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='X')
-			objMeta_handle.label = "MODS descriptive metadata"
+			MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+			MODS_handle.label = "MODS descriptive metadata"
 			file_path = self.Bag.path + "/data/MODS.xml"
-			objMeta_handle.content = open(file_path)
-			objMeta_handle.save()
+			MODS_handle.content = open(file_path)
+			MODS_handle.save()
 
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:

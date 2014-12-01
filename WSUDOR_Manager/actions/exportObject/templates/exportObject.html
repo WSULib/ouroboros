@@ -1,4 +1,25 @@
 {% include 'header.html' %}
-<h2>Export Object</h2>
+<h2>Export Objects</h2>
+<p>This utility exports objects as BagIt archives, identical in structure to the BagIt's used to ingest them.  Objects will be validated on export, and barring failure, tarred up and copied to a web accessible directory.</p>
 
-<a class="btn btn-default" href="/fireTask/exportObject_worker">Do it!</a>
+<form class="form" action="/fireTask/exportObject_worker" method="POST">
+	<div class="form-group">
+		<label>If collection objects selected, include all child objects with collection object?</label>
+		<div class="radio">
+			<label>
+			<input type="radio" name="tar_all" value="true">
+				Yes
+			</label>
+		</div>
+		<div class="radio">
+			<label>
+			<input type="radio" name="tar_all" value="false" checked>
+				No
+			</label>
+		</div>
+	</div>
+	<div class="form-group">
+		<input class="btn btn-default" type="submit" value="Export!"/>
+	</div>
+</form>
+

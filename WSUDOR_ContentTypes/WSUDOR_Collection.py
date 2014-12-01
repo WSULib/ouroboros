@@ -126,7 +126,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
 			# write MODS datastream
-			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='X')
+			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
 			objMeta_handle.label = "MODS descriptive metadata"
 			file_path = self.Bag.path + "/data/MODS.xml"
 			objMeta_handle.content = open(file_path)
@@ -201,14 +201,16 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
+			
 
+			# REMOVED 12/1/2014 - NOT INGESTING "BAGS OF BAGS" IN THE STRICT SENSE, WILL ACCEPT SIMPLE ARCHIVES INSTEAD ALONGSIDE COLLECTION BAGS
 			# for each bag in objects directory, ingest child
-			child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
-			for child_object in child_objects:
-				child_bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=self.Bag.path+"/data/objects/"+child_object)
-				ingest_result = child_bag_handle.ingestBag()	
-				# add relationships relative to collection object			
-				child_bag_handle.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isMemberOfCollection","info:fedora/{pid}".format(pid=self.objMeta['id']))
+			# child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
+			# for child_object in child_objects:
+			# 	child_bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=self.Bag.path+"/data/objects/"+child_object)
+			# 	ingest_result = child_bag_handle.ingestBag()	
+			# 	# add relationships relative to collection object			
+			# 	child_bag_handle.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isMemberOfCollection","info:fedora/{pid}".format(pid=self.objMeta['id']))
 
 
 			# finish generic ingest

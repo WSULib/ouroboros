@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # module for management of bags in the WSUDOR environment
 import bagit
 import os
@@ -8,6 +11,8 @@ import sys
 from lxml import etree
 import tarfile
 import uuid
+import StringIO
+import tarfile
 
 # celery
 from cl.cl import celery
@@ -45,10 +50,13 @@ def WSUDOR_Object(object_type,payload):
 		# Active, WSUDOR object
 		if object_type == "WSUDOR":
 
-			# check if payload actual eulfedora object or string literal
-			# in latter case, attempt to open eul object
+			# check if payload actual eulfedora object or string literal, in latter case, attempt to open eul object
 			if type(payload) != eulfedora.models.DigitalObject:
 				payload = fedora_handle.get_object(payload)
+
+			if payload.exists == False:
+				print "Object does not exist, cannot instantiate as WSUDOR type object."
+				return False
 			
 			# GET object content_model
 			# Using prefix "WSUDOR_" for v2, consider adding this to RELS for all objects!?
@@ -117,7 +125,10 @@ class WSUDOR_GenObject(object):
 						"mimetype":"text/xml"
 					}
 				],
-				"external_relationships":[]
+				"external_relationships":[
+					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
+					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy"					
+				]
 			}		
 		}	
 
@@ -133,11 +144,12 @@ class WSUDOR_GenObject(object):
 				self.objMeta = json.loads(fhand.read())
 				print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
 
+				# instantiate bag propoerties
 				self.pid = self.objMeta['id']
 				self.label = self.objMeta['label']
 				self.content_type = content_type # use content_type as derived from WSUDOR_Object factory
 
-				# placeholder for potential ohandle
+				# placeholder for future ohandle
 				self.ohandle = None
 
 				# BagIt methods
@@ -161,15 +173,17 @@ class WSUDOR_GenObject(object):
 			if object_type == "WSUDOR":
 
 				# check if payload actual eulfedora object or string literal
-				# in latter case, attempt to open eul object
 				if type(payload) != eulfedora.models.DigitalObject:
 					payload = fedora_handle.get_object(payload)
 
+				# instantiate WSUDOR propoerties
 				self.object_type = object_type
 				self.pid = payload.pid
 				self.pid_suffix = payload.pid.split(":")[1]
-				self.ohandle = payload
 				self.content_type = content_type
+				self.ohandle = payload
+				self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
+
 
 		except Exception,e:
 			print traceback.format_exc()
@@ -202,8 +216,102 @@ class WSUDOR_GenObject(object):
 		return True
 
 
-	# derive DC from MODS (experimental action in Gen ContentType)
+	def exportBag(self,job_package):
+
+		'''
+		Target Example:
+		.
+		├── bag-info.txt
+		├── bagit.txt
+		├── data
+		│   ├── datastreams
+		│   │   ├── roots.jpg
+		│   │   └── trunk.jpg
+		│   ├── MODS.xml
+		│   └── objMeta.json
+		├── manifest-md5.txt
+		└── tagmanifest-md5.txt
+
+		Consider extending this to ContentTypes if becomes to complex for genObjects...
+		'''
+		
+		# get PID
+		PID = self.pid
+		form_data = job_package['form_data']
+
+		# create temp dir structure
+		working_dir = "/tmp/Ouroboros/export_bags"
+		temp_dir = working_dir + "/" + str(uuid.uuid4())
+		os.system("mkdir {temp_dir}".format(temp_dir=temp_dir))
+		os.system("mkdir {temp_dir}/data".format(temp_dir=temp_dir))
+		os.system("mkdir {temp_dir}/data/datastreams".format(temp_dir=temp_dir))
+
+		# move bagit files to temp dir, and unpack
+		bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
+		bagitIO = StringIO.StringIO(bagit_files)
+		tar_handle = tarfile.open(fileobj=bagitIO)
+		tar_handle.extractall(path=temp_dir)
+		
+		'''
+		This section might become much more complex - might need handlers for different mimetypes?
+		*This would support delegating exportObjects() to the ContentType*
+		'''
+		
+		# export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
+		def writeDS(write_tuple):
+			print "WORKING ON {ds_id}".format(ds_id=write_tuple[0])
+
+			ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
+			fhand = open(write_tuple[1],'w')
+
+			# XML ds model
+			if isinstance(ds_handle,eulfedora.models.XmlDatastreamObject):
+				print "FIRING XML"
+				fhand.write(ds_handle.content.serialize())
+				fhand.close() 
+
+			# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
+			else:
+				print "FIRING GENERIC"
+				fhand.write(ds_handle.content)
+				fhand.close()
+
+
+		# write original datastreams
+		for ds in self.objMeta['datastreams']:
+			writeDS((ds['ds_id'],"{temp_dir}/data/datastreams/{filename}".format(temp_dir=temp_dir, filename=ds['filename'])))
+
+
+		# write MODS and objMeta files
+		simple = [
+			("MODS","{temp_dir}/data/MODS.xml".format(temp_dir=temp_dir)),
+			("OBJMETA","{temp_dir}/data/objMeta.json".format(temp_dir=temp_dir))
+		]
+		for ds in simple:
+			writeDS(ds)
+
+		# tarball it up
+		named_dir = self.pid.replace(":","-")
+		os.system("mv {temp_dir} {working_dir}/{named_dir}".format(temp_dir=temp_dir, working_dir=working_dir, named_dir=named_dir))
+		os.chdir(working_dir)
+		os.system("tar -cvf {named_dir}.tar {named_dir}".format(working_dir=working_dir, named_dir=named_dir))
+		os.system("rm -r {working_dir}/{named_dir}".format(working_dir=working_dir, named_dir=named_dir))
+
+		# move to web accessible location, with username as folder
+		username = job_package['username']
+		target_dir = "/var/www/wsuls/Ouroboros/export/{username}".format(username=username)
+		if os.path.exists(target_dir) == False:
+			os.system("mkdir {target_dir}".format(target_dir=target_dir))
+		os.system("mv {named_dir}.tar {target_dir}".format(named_dir=named_dir,target_dir=target_dir))
+
+		return "http://digital.library.wayne.edu{target_dir}/{named_dir}.tar".format(named_dir=named_dir,target_dir=target_dir)
+
+
+	# derive DC from MODS (experimental action in Gen ContentType)	
 	def DCfromMODS(self):
+		'''
+		Experimental - needs celery processing
+		'''
 		# retrieve MODS		
 		MODS_handle = self.ohandle.getDatastreamObject('MODS')		
 		XMLroot = etree.fromstring(MODS_handle.content.serialize())

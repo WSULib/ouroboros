@@ -149,9 +149,9 @@ def datastreamManagement():
 def objectManagement():
 	return render_template("objectManagement.html")
 
-@app.route('/serverManagement', methods=['GET', 'POST'])
-def serverManagement():
-	return render_template("serverManagement.html")
+@app.route('/WSUDORManagement', methods=['GET', 'POST'])
+def WSUDORManagement():
+	return render_template("WSUDORManagement.html")
 
 # LOGIN
 #########################################################################################################

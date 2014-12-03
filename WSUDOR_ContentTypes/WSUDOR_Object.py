@@ -24,8 +24,6 @@ import eulfedora
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles
-
-
 import WSUDOR_ContentTypes
 
 
@@ -190,7 +188,7 @@ class WSUDOR_GenObject(object):
 			print e
 
 
-	# function that runs at end of ContentType ingestBag(), pulling in generic BagIt metadata to made object
+	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
 	def finishIngest(self):
 
 		# as object finishes ingest, it can be granted eulfedora methods, its 'ohandle' attribute
@@ -304,7 +302,7 @@ class WSUDOR_GenObject(object):
 			os.system("mkdir {target_dir}".format(target_dir=target_dir))
 		os.system("mv {named_dir}.tar {target_dir}".format(named_dir=named_dir,target_dir=target_dir))
 
-		return "http://digital.library.wayne.edu{target_dir}/{named_dir}.tar".format(named_dir=named_dir,target_dir=target_dir)
+		return "http://digital.library.wayne.edu/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username)
 
 
 	# derive DC from MODS (experimental action in Gen ContentType)	

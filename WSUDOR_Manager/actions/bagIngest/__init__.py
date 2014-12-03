@@ -18,6 +18,9 @@ from flask import Blueprint, render_template, abort, request, redirect, session
 from lxml import etree
 import re
 import json
+import os
+import tarfile
+import uuid
 
 # eulfedora
 import eulfedora
@@ -40,7 +43,7 @@ def index():
 
 # singleBag worker
 @bagIngest.route('/bagIngest/singleBag/fire', methods=['POST', 'GET'])
-def singleBag_ingest():	
+def bagIngest_router():	
 	# get new job num
 	job_num = jobs.jobStart()
 
@@ -50,7 +53,7 @@ def singleBag_ingest():
 	# prepare job_package for boutique celery wrapper
 	job_package = {
 		'job_num':job_num,
-		'task_name':"singleBag_ingest_worker",
+		'task_name':"bagIngest_worker",
 		'form_data':request.form
 	}	
 
@@ -93,27 +96,98 @@ def celeryTaskFactoryBagIngest(job_num,job_package):
 	step += 1
 
 
-def singleBag_ingest_worker(job_package):	
+def bagIngest_worker(job_package):	
 
-	# load bag_handle
-	bag_dir = job_package['form_data']['bag_dir']
+	# get form data
+	form_data = job_package['form_data']
+	if "ingest_type" in form_data:
+		ingest_type = form_data['ingest_type']
+	else:
+		return "No ingest type selected, aborting."
+
+	if ingest_type == "single":
+		singleBag_ingest_worker(job_package)
+
+	if ingest_type == "multiple":
+		multipleBag_ingest_worker(job_package)	
+
+
+def singleBag_ingest_worker(job_package):
+	'''
+	This function expects a single BagIt object, either directory or archive, for ingest.
+	'''
+
+	# extract payload_location
+	payload_location = job_package['form_data']['payload_location']
+
+	# payload as archive
+	if os.path.isfile(payload_location):
+		print "payload_location is a file, extracting singleBag directory"
+		filename = os.path.basename(payload_location)
+		print "filename is",filename
+
+		# move file
+		os.system("cp {payload_location} /tmp/Ouroboros/ingest_workspace/".format(payload_location=payload_location))
+
+		# extract to temp dir
+		temp_dir = str(uuid.uuid4())
+		tar_handle = tarfile.open("/tmp/Ouroboros/ingest_workspace/{filename}".format(filename=filename))
+		tar_handle.extractall(path="/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir))
+
+		# remove archive after copy
+		os.system("rm {payload_location}".format(payload_location=payload_location))
+
+		# extracted bag_dir
+		bag_dir = os.walk("/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir)).next()[1][0]
+		bag_dir = "/tmp/Ouroboros/ingest_workspace/{temp_dir}/".format(temp_dir=temp_dir) + bag_dir
+
+
+	# payload as directory
+	elif os.path.isdir(payload_location):
+		print "payload_location is a dir"
+		bag_dir = payload_location
+
+
+	# payload not file or dir
+	else:
+		print "payload_location does not appear to be a valid directory or file, or cannot be found at all.  Aborting."
+		return False
+
+
+	# load bag_handle and ingest	
 	print "Working on:",bag_dir
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag",payload=bag_dir)
+	if bag_dir == 'Could not load WSUDOR or Bag object.':
+		print "Aborting, bag_handle initiziation was unsuccessful."
+		return False
 	
 	# validate bag for WSUDOR ingest	
 	valid_results = bag_handle.validIngestBag()
 	if valid_results['verdict'] != True:
-		print "Bag is not valid for the following reasons, aborting."
-		print valid_results
+		print "Bag is not valid for the following reasons, aborting.", valid_results
 		return False
 
 	# ingest bag
-	ingest_bag = bag_handle.ingestBag()	
+	ingest_bag = bag_handle.ingestBag()
+
+	# Remove bag_dir (temp location for archive, original payload_location for dir)
+	os.system("rm -r {bag_dir}".format(bag_dir=bag_dir))
+
 	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label,bag_pid=bag_handle.pid):ingest_bag})
 
 
 
+def multipleBag_ingest_worker(job_package):
+	'''
+	This function expects multiple BagIt objects, either directory or archive, for ingest.
+	'''
 
+
+
+	
+
+
+		
 
 
 

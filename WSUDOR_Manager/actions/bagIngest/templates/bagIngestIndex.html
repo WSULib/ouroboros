@@ -1,34 +1,61 @@
 {% include 'header.html' %}
-<h1>BagIt-based Ingest</h1>
+<h1>WSUDOR Object Ingest</h1>
 
-<h2>Single Bag Ingest</h2>
 
-<p>Below you can enter a full OS path where a valid BagIt directory is located.  As of this writing (11/2014), even a BagIt object that contains multiple children bags (e.g. a collection Bag), will show up as only 1 task for this particular WSUDOR_Manager job.  Looking into making that reflect how many children objects there are.</p>
+<p>Below is a form used to ingest single, or multiple, BagIt archives as new objects in WSUDOR.  The BagIt standard was chosen for a variety of reasons, not the least of them it being a) a widely used and recognized wrapper for complex digital objects, and b) the ability to validate checksums for BagIt archives, providing an additional level of preservation checking for objects in and out of WSUDOR.</p>
 
+<p>There are two main approaches for ingesting objects: <strong>BagIt directories</strong> or <strong>BagIt archives</strong>.</p>
+
+<p><strong>Archives</strong> are handy for moving BagIt objects around easily, or uploading a small-to-medium batch of objects.  When ingesting an archive, WSUDOR_Manager has to extract the bags and then ingest them, resulting in a momentary doubling of the archive size.  By contrast, ingesting objects by pointing WSUDOR_Manager at a <strong>directory</strong>, containing one or multiple objects, there is no doubling in size, the ingest process will simply work through all the objects.  BUT directories are more difficult to move around on the server.</p>
+
+<p>Depending on the type of objects being ingested, both options are available from this form.</p>
 
 <div class="row">
-	<div class="col-md-6">
-		<h4>Example Bags for Testing:</h4>
-		<p>Copy path and paste below...</p>
-		<ul>
-			<li>tree1 (single image) ---> /tmp/Ouroboros/ingest_bags/tree1_bagged</a></li>
-			<li>woodTypes (multiple images) ---> /tmp/Ouroboros/ingest_bags/woodTypes_bagged</a></li>
-			<li>randoCollections (collection object) ---> /tmp/Ouroboros/ingest_bags/randoCollection_bagged</a></li>
-		</ul>
+	<div class="col-md-5">
+		<form class="form" id="form" role="form" method="POST" action="/tasks/bagIngest/singleBag/fire" enctype="multipart/form-data">
+			<div class="form-group">
+				<label>Ingest Type (required):</label>
+				<div class="radio">
+					<label>
+					<input type="radio" name="ingest_type" value="single">
+						Single Object
+					</label>
+				</div>
+				<div class="radio">
+					<label>
+					<input type="radio" name="ingest_type" value="multiple">
+						Multiple Objects
+					</label>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Full path of BagIt directory or archive file:</label>
+				<input class="form-control" type="text" name="payload_location" placeholder="e.g. /tmp/Ouroboros/ingest_bags/woodTypes_bagged, /tmp/Ouroboros/ingest_bags/randoCollection_bagged.tar">
+			</div>
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Ingest">
+			</div>
+		</form>
 	</div>
 </div>
 
 <div class="row">
-	<div class="col-md-4">
-		<form class="form" id="form" role="form" method="POST" action="/tasks/bagIngest/singleBag/fire" enctype="multipart/form-data">
-			<div class="form-group">
-				<label class="control-label">Full path of BagIt directory:</label>
-				<input class="form-control" type="text" name="bag_dir" rows=80/ placeholder="e.g. /tmp/Ouroboros/ingest_bags/woodTypes_bagged">
-			</div>
-			<div class="form-group">
-				<input type="submit" class="btn btn-primary" value="Ingest Bag">
-			</div>
-		</form>
+	<div class="col-md-6">
+		<h4 onclick="$('#examples').slideToggle();" style="cursor:pointer;">-- Example Files --</h4>
+		<div id="examples" style="display:none;">
+			<h4>-- BagIt dirs --</h4>
+			<ul>
+				<li>tree1 (single image) ---> /tmp/Ouroboros/ingest_bags/tree1_bagged</a></li>
+				<li>woodTypes (multiple images) ---> /tmp/Ouroboros/ingest_bags/woodTypes_bagged</a></li>
+				<li>randoCollections (collection object) ---> /tmp/Ouroboros/ingest_bags/randoCollection_bagged</a></li>
+			</ul>
+			<h4>-- BagIt archives --</h4>
+			<ul>
+				<li>tree1 (single image) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTtree1.tar</a></li>
+				<li>woodTypes (multiple images) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTwoodtypes.tar</a></li>
+				<li>randoCollections (collection object) ---> /var/www/wsuls/Ouroboros/export/grahamwaynev2-BAGTESTmapleleaf.tar</a></li>
+			</ul>
+		</div>
 	</div>
 </div>
 

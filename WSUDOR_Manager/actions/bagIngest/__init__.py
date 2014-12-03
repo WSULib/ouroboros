@@ -178,8 +178,21 @@ def singleBag_ingest_worker(job_package):
 
 
 def multipleBag_ingest_worker(job_package):
+
 	'''
 	This function expects multiple BagIt objects, either directory or archive, for ingest.
+
+	Steps:
+
+		- if archive
+			- move / copy to ingest_workspace (define this in config BTW)
+			- extract what should be multiple dirs
+			- iterate through, use singleBag_ingest_worker()!?  That would be great.
+
+		if dir
+			- iterate through, use singleBag_ingest_worker()!?  That would be great.
+
+		* for both, consider checking if actually /root/multiple_bags, by looking for /bag/data/objMeta.json files...
 	'''
 
 

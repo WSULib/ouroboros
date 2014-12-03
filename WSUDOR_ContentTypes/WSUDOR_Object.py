@@ -67,7 +67,7 @@ def WSUDOR_Object(object_type,payload):
 	except Exception,e:
 		print traceback.format_exc()
 		print e
-		return "Could not load WSUDOR or Bag object."
+		return False
 	
 	# need check if valid subclass of WSUDOR_GenObject	
 	return getattr(WSUDOR_ContentTypes,str(content_type))(object_type=object_type,content_type=content_type,payload=payload)
@@ -87,9 +87,6 @@ class WSUDOR_GenObject(object):
 	object_type = 'bag'
 		- object is present outside of WSUDOR, actions include primarily ingest and validation
 	'''	
-
-	# ContentType rquirements dictionary
-	# initialized here, added to by sub-classes		
 
 	# init
 	def __init__(self,object_type=False,content_type=False,payload=False):	

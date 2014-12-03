@@ -145,17 +145,14 @@ def multipleBag_ingest_worker(job_package):
 		return False
 	print "Bag dir at this point:",bag_dir
 
-	# all the directories inside bag_dir
-	'''
-	Logic can go here to determine if archive of bags or dirs.
-		If bag_dirs_tuple is full of files, archives.
-		If bag_dirs_tuple is full of dirs, dirs.
-	'''
+	# all items inside bag_dir	
 	bag_dirs_tuple = os.walk(bag_dir).next()
 
+	# dirs
 	if len(bag_dirs_tuple[1]) > 0:
 		print "Directories detected, continuing"
 
+	# archives
 	if len(bag_dirs_tuple[2]) > 0:
 		print "Archive files detected. Extracting and continuing."
 		for archive in bag_dirs_tuple[2]:

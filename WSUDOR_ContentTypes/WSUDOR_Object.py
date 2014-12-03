@@ -57,7 +57,6 @@ def WSUDOR_Object(object_type,payload):
 				return False
 			
 			# GET object content_model
-			# Using prefix "WSUDOR_" for v2, consider adding this to RELS for all objects!?
 			content_type = payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel')
 			content_type = content_type.next().split(":")[-1]			
 			content_type = "WSUDOR_"+str(content_type)
@@ -245,12 +244,7 @@ class WSUDOR_GenObject(object):
 		bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
 		bagitIO = StringIO.StringIO(bagit_files)
 		tar_handle = tarfile.open(fileobj=bagitIO)
-		tar_handle.extractall(path=temp_dir)
-		
-		'''
-		This section might become much more complex - might need handlers for different mimetypes?
-		*This would support delegating exportObjects() to the ContentType*
-		'''
+		tar_handle.extractall(path=temp_dir)		
 		
 		# export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
 		def writeDS(write_tuple):
@@ -261,13 +255,13 @@ class WSUDOR_GenObject(object):
 
 			# XML ds model
 			if isinstance(ds_handle,eulfedora.models.XmlDatastreamObject):
-				print "FIRING XML"
+				print "FIRING XML WRITER"
 				fhand.write(ds_handle.content.serialize())
 				fhand.close() 
 
 			# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
 			else:
-				print "FIRING GENERIC"
+				print "FIRING GENERIC WRITER"
 				fhand.write(ds_handle.content)
 				fhand.close()
 

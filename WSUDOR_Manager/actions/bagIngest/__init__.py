@@ -42,7 +42,7 @@ def index():
 
 
 # singleBag worker
-@bagIngest.route('/bagIngest/singleBag/fire', methods=['POST', 'GET'])
+@bagIngest.route('/bagIngest/ingest', methods=['POST', 'GET'])
 def bagIngest_router():	
 	# get new job num
 	job_num = jobs.jobStart()
@@ -109,7 +109,7 @@ def bagIngest_worker(job_package):
 		singleBag_ingest_worker(job_package)
 
 	if ingest_type == "multiple":
-		multipleBag_ingest_worker(job_package)	
+		multipleBag_ingest_worker(job_package)
 
 
 def singleBag_ingest_worker(job_package):
@@ -119,33 +119,111 @@ def singleBag_ingest_worker(job_package):
 
 	# extract payload_location
 	payload_location = job_package['form_data']['payload_location']
+	ingest_type = job_package['form_data']['ingest_type']
+
+	# create working directory in workspace
+	bag_dir = payloadExtractor(payload_location,ingest_type)
+
+	return ingestBag(bag_dir)
+
+
+
+def multipleBag_ingest_worker(job_package):
+
+	'''
+	This function expects multiple BagIt objects, either directory or archive, for ingest.	
+	'''
+
+	# extract payload_location
+	payload_location = job_package['form_data']['payload_location']
+	ingest_type = job_package['form_data']['ingest_type']
+
+	# create working directory in workspace
+	bag_dir = payloadExtractor(payload_location,ingest_type)
+	if bag_dir == False:
+		print "Aborting"
+		return False
+	print "Bag dir at this point:",bag_dir
+
+	# all the directories inside bag_dir
+	'''
+	Logic can go here to determine if archive of bags or dirs.
+		If bag_dirs_tuple is full of files, archives.
+		If bag_dirs_tuple is full of dirs, dirs.
+	'''
+	bag_dirs_tuple = os.walk(bag_dir).next()
+
+	if len(bag_dirs_tuple[1]) > 0:
+		print "Directories detected, continuing"
+
+	if len(bag_dirs_tuple[2]) > 0:
+		print "Archive files detected. Extracting and continuing."
+		for archive in bag_dirs_tuple[2]:
+			archive_filename = bag_dirs_tuple[0] + "/" + archive
+			print archive_filename
+
+			# extract to temp dir
+			tar_handle = tarfile.open(archive_filename)
+			tar_handle.extractall(path=bag_dirs_tuple[0])
+			os.system("rm {archive_filename}".format(archive_filename=archive_filename))
+
+		# finally, rewalk
+		bag_dirs_tuple = os.walk(bag_dir).next()
+
+	# dirs
+	bag_dirs = [ bag_dirs_tuple[0] + "/" + bag_name for bag_name in bag_dirs_tuple[1] ]
+	print bag_dirs
+
+	# iterate through BagIt dirs
+	count = 1
+	for bag in bag_dirs:
+		print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
+		ingestBag(bag)
+
+	print "Batch ingest complete."
+	return True
+
+
+ 
+def payloadExtractor(payload_location,ingest_type):	
+	
+	'''
+	function to detect archive or dir, extract where necessary, and return path (bag_dir) of extracted directory in workspace
+	'''
 
 	# payload as archive
 	if os.path.isfile(payload_location):
-		print "payload_location is a file, extracting singleBag directory"
-		filename = os.path.basename(payload_location)
-		print "filename is",filename
+		print "payload_location is a file, extracting archive of BagIt directory(s)"
+		archive_filename = os.path.basename(payload_location)
 
 		# move file
 		os.system("cp {payload_location} /tmp/Ouroboros/ingest_workspace/".format(payload_location=payload_location))
 
 		# extract to temp dir
 		temp_dir = str(uuid.uuid4())
-		tar_handle = tarfile.open("/tmp/Ouroboros/ingest_workspace/{filename}".format(filename=filename))
+		tar_handle = tarfile.open("/tmp/Ouroboros/ingest_workspace/{archive_filename}".format(archive_filename=archive_filename))
 		tar_handle.extractall(path="/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir))
 
 		# remove archive after copy
-		os.system("rm {payload_location}".format(payload_location=payload_location))
+		os.system("rm /tmp/Ouroboros/ingest_workspace/{archive_filename}".format(archive_filename=archive_filename))
 
-		# extracted bag_dir
-		bag_dir = os.walk("/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir)).next()[1][0]
-		bag_dir = "/tmp/Ouroboros/ingest_workspace/{temp_dir}/".format(temp_dir=temp_dir) + bag_dir
+		# extracted bag_dir for single, return directory of single BagIt directory
+		if ingest_type == "single":
+			bag_dir = os.walk("/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir)).next()[1][0]
+			bag_dir = "/tmp/Ouroboros/ingest_workspace/{temp_dir}/".format(temp_dir=temp_dir) + bag_dir
+
+		# extracted bag_dir for multiple, return temp directory full of BagIt archives
+		if ingest_type == "multiple":
+			bag_dir = "/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir)
+
+		return bag_dir
 
 
 	# payload as directory
 	elif os.path.isdir(payload_location):
-		print "payload_location is a dir"
+		print "payload_location is a dir, no extraction required"
 		bag_dir = payload_location
+		return bag_dir
 
 
 	# payload not file or dir
@@ -153,6 +231,9 @@ def singleBag_ingest_worker(job_package):
 		print "payload_location does not appear to be a valid directory or file, or cannot be found at all.  Aborting."
 		return False
 
+
+		
+def ingestBag(bag_dir):
 
 	# load bag_handle and ingest	
 	print "Working on:",bag_dir
@@ -174,33 +255,5 @@ def singleBag_ingest_worker(job_package):
 	os.system("rm -r {bag_dir}".format(bag_dir=bag_dir))
 
 	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label,bag_pid=bag_handle.pid):ingest_bag})
-
-
-
-def multipleBag_ingest_worker(job_package):
-
-	'''
-	This function expects multiple BagIt objects, either directory or archive, for ingest.
-
-	Steps:
-
-		- if archive
-			- move / copy to ingest_workspace (define this in config BTW)
-			- extract what should be multiple dirs
-			- iterate through, use singleBag_ingest_worker()!?  That would be great.
-
-		if dir
-			- iterate through, use singleBag_ingest_worker()!?  That would be great.
-
-		* for both, consider checking if actually /root/multiple_bags, by looking for /bag/data/objMeta.json files...
-	'''
-
-
-
-	
-
-
-		
-
 
 

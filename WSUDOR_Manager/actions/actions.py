@@ -24,7 +24,7 @@ from exportObject import exportObject, exportObject_worker
 app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
 
 #exportObject to objectBag
-from bagIngest import bagIngest, bagIngest_worker
+from bagIngest import bagIngest, bagIngest_worker 
 app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
 
 #MODSexport

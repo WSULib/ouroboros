@@ -12,7 +12,7 @@
 
 <div class="row">
 	<div class="col-md-5">
-		<form class="form" id="form" role="form" method="POST" action="/tasks/bagIngest/singleBag/fire" enctype="multipart/form-data">
+		<form class="form" id="form" role="form" method="POST" action="/tasks/bagIngest/ingest" enctype="multipart/form-data">
 			<div class="form-group">
 				<label>Ingest Type (required):</label>
 				<div class="radio">
@@ -53,7 +53,9 @@
 			<ul>
 				<li>tree1 (single image) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTtree1.tar</a></li>
 				<li>woodTypes (multiple images) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTwoodtypes.tar</a></li>
-				<li>randoCollections (collection object) ---> /var/www/wsuls/Ouroboros/export/grahamwaynev2-BAGTESTmapleleaf.tar</a></li>
+				<li>randoCollections (collection object) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTmapleleaf.tar</a></li>
+				<li><span style="color:red;">multBags (multiple BagIt archives, in .tar archive) ---> /var/www/wsuls/Ouroboros/export/graham/multBags.tar</span></a></li>
+				<li>multBags (multiple BagIt directories, in .tar archive) ---> /var/www/wsuls/Ouroboros/export/graham/multDirs.tar</a></li>
 			</ul>
 		</div>
 	</div>

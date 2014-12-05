@@ -77,13 +77,13 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))		
 
 		# validate children (collection) objects
-		child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
-		for child_object in child_objects:
-			print "Validating child object:",child_object
-			child_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=self.Bag.path+"/data/objects/"+child_object)			
-			validate_results = child_handle.validIngestBag()
-			if validate_results['verdict'] == False:
-				report_failure(("Child Validation","Child {label}, at path {path}, failed to validate for these reasons: {fail_dict}".format(label=child_handle.label,path=self.Bag.path+"/data/objects/"+child_object,fail_dict=validate_results)))
+		# child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
+		# for child_object in child_objects:
+		# 	print "Validating child object:",child_object
+		# 	child_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=self.Bag.path+"/data/objects/"+child_object)			
+		# 	validate_results = child_handle.validIngestBag()
+		# 	if validate_results['verdict'] == False:
+		# 		report_failure(("Child Validation","Child {label}, at path {path}, failed to validate for these reasons: {fail_dict}".format(label=child_handle.label,path=self.Bag.path+"/data/objects/"+child_object,fail_dict=validate_results)))
 
 		
 		# finally, return verdict

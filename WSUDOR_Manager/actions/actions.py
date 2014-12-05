@@ -27,12 +27,12 @@ app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
 from bagIngest import bagIngest, bagIngest_worker 
 app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
 
-#MODSexport
+#createObjectIndex
 from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)
 
 #MODSexport
-from MODSexport import MODSexport, MODSexport_worker
+from MODSexport import MODSexport, importMODS_worker
 app.register_blueprint(MODSexport, url_prefix=tasks_URL_prefix)
 
 #editDSXMLAdv

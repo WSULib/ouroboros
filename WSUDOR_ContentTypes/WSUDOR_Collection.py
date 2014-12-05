@@ -117,9 +117,10 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			objMeta_handle.content = json.dumps(self.objMeta)
 			objMeta_handle.save()
 
-			# write explicit RELS-EXT relationships
-			for pred_key in self.objMeta['object_relationships'].keys():
-				self.ohandle.add_relationship(pred_key,self.objMeta['object_relationships'][pred_key])			
+			# write explicit RELS-EXT relationships			
+			for relationship in self.objMeta['object_relationships']:
+				self.ohandle.add_relationship(relationship['predicate'],relationship['object'])	
+					
 			# writes derived RELS-EXT
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 			content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]

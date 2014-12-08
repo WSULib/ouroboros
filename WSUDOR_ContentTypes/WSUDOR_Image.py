@@ -127,7 +127,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
-				self.ohandle.add_relationship(relationship['predicate'],relationship['object'])
+				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 			
 			# writes derived RELS-EXT
 			# isRepresentedBy
@@ -180,19 +180,25 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				if im.mode != "RGB":
 					im = im.convert("RGB")
 				im.save(temp_filename,'JPEG')
-				thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_PREVIEW".format(ds_id=ds['ds_id']), "{label}_PREVIEW".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-				thumb_handle.label = "{label}_PREVIEW".format(label=ds['label'])
-				thumb_handle.content = open(temp_filename)
-				thumb_handle.save()
+				preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_PREVIEW".format(ds_id=ds['ds_id']), "{label}_PREVIEW".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
+				preview_handle.label = "{label}_PREVIEW".format(label=ds['label'])
+				preview_handle.content = open(temp_filename)
+				preview_handle.save()
 				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
 				# make jp2
 				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jp2"
 				os.system("convert {input} {output}[256x256]".format(input=file_path,output=temp_filename))
-				thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
-				thumb_handle.label = "{label}_JP2".format(label=ds['label'])
-				thumb_handle.content = open(temp_filename)
-				thumb_handle.save()
+				jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
+				jp2_handle.label = "{label}_JP2".format(label=ds['label'])
+				try:
+					jp2_handle.content = open(temp_filename)
+				except:
+					# sometimes jp2 creation results in two files, look for first one in this instance
+					temp_filename = temp_filename.split(".")[0]
+					temp_filename = temp_filename + "-0.jp2"
+					jp2_handle.content = open(temp_filename)
+				jp2_handle.save()
 				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
 				# add to RELS-INT

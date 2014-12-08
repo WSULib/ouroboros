@@ -180,7 +180,8 @@ class WSUDOR_GenObject(object):
 				self.content_type = content_type
 				self.ohandle = payload
 				self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
-				self.MODS = WSUDOR_MODS(self.ohandle.getDatastreamObject('MODS').content.serialize()).asDictionary
+				self.MODS = xmltodict.parse(self.ohandle.getDatastreamObject('MODS').content.serialize())
+				self.DC = xmltodict.parse(self.ohandle.getDatastreamObject('DC').content.serialize())
 
 
 			# create SolrLink attribute
@@ -389,11 +390,18 @@ class SolrLink(object):
 
 
 
-# class for MODS object
-class WSUDOR_MODS(object):
+# # class for MODS object
+# class WSUDOR_MODS(object):
 		
-		def __init__(self, xml):			
-			self.asDictionary = xmltodict.parse(xml)
+# 		def __init__(self, xml):			
+# 			self.asDictionary = xmltodict.parse(xml)
+
+
+# # class for MODS object
+# class WSUDOR_DC(object):
+		
+# 		def __init__(self, xml):			
+# 			self.asDictionary = xmltodict.parse(xml)
 
 
 

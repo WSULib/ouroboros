@@ -13,6 +13,7 @@ import tarfile
 import uuid
 import StringIO
 import tarfile
+import xmltodict
 
 # celery
 from cl.cl import celery
@@ -21,7 +22,7 @@ from cl.cl import celery
 import eulfedora
 
 # handles
-from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles
 import WSUDOR_ContentTypes
@@ -73,6 +74,8 @@ def WSUDOR_Object(object_type,payload):
 
 
 
+
+
 # WSUDOR Generic Object class (designed to be extended by ContentTypes)
 class WSUDOR_GenObject(object):
 
@@ -88,7 +91,7 @@ class WSUDOR_GenObject(object):
 	'''	
 
 	# init
-	def __init__(self,object_type=False,content_type=False,payload=False):	
+	def __init__(self,object_type=False,content_type=False,payload=False):		
 
 		self.struct_requirements = {
 			"WSUDOR_GenObject":{
@@ -177,11 +180,18 @@ class WSUDOR_GenObject(object):
 				self.content_type = content_type
 				self.ohandle = payload
 				self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
+				self.MODS = WSUDOR_MODS(self.ohandle.getDatastreamObject('MODS').content.serialize()).asDictionary
+
+
+			# create SolrLink attribute
+			self.SolrLink = SolrLink(self)
 
 
 		except Exception,e:
 			print traceback.format_exc()
 			print e
+
+
 
 
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
@@ -320,6 +330,70 @@ class WSUDOR_GenObject(object):
 		print "DCfromMODS result:",derive_results
 		return derive_results
 
+
+
+
+
+
+# SolrDoc - 1:1 link with object representation in Solr
+class SolrLink(object):
+
+	'''
+	1:1, WSUDOR PID : Solr ID
+	'''
+
+	class SolrDoc(object):
+		def __init__(self, **fields): 
+			self.__dict__.update(fields)
+
+	# init
+	def __init__(self,WSUDOR_Object):
+		self.pid = WSUDOR_Object.pid
+		self.escaped_pid = self.pid.replace(":","\:")
+
+		# get stateful, current Solr doc
+		query_params = {
+			"q":'id:{escaped_pid}'.format(escaped_pid=self.escaped_pid),
+			"rows":1
+		}
+		response = solr_manage_handle.search(**query_params)
+		if len(response.documents) > 0:
+			self.doc = self.SolrDoc(**response.documents[0])
+			#store version, remove from doc
+			self.version = self.doc._version_ 
+			del self.doc._version_
+		else:
+			self.doc = self.SolrDoc()
+			self.doc.id = self.pid # automatically set ID as PID
+
+
+	# delete doc in Solr
+	def delete(self):
+		# use pid as key - should be same as self.doc.ic, but ALWAYS exists
+		delete_response = solr_manage_handle.delete_by_key(self.pid, commit=True)
+		return delete_response
+
+
+	# update doc to Solr
+	def update(self):
+		update_response = solr_handle.update([self.doc.__dict__], commit=True)
+		return update_response
+
+
+	def commit(self):
+		return solr_manage_handle.commit()
+
+
+	def asDictionary(self):
+		return self.doc.__dict__
+
+
+
+# class for MODS object
+class WSUDOR_MODS(object):
+		
+		def __init__(self, xml):			
+			self.asDictionary = xmltodict.parse(xml)
 
 
 

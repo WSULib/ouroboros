@@ -6,9 +6,6 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
 
-# import WSUDOR ContentTypes
-import WSUDOR_ContentTypes
-
 # create app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://WSUDOR_Manager:WSUDOR_Manager@localhost/WSUDOR_Manager'
@@ -25,6 +22,9 @@ db_con = engine.connect()
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# import WSUDOR ContentTypes
+import WSUDOR_ContentTypes
 
 # get handlers
 import views

@@ -1,4 +1,6 @@
 from WSUDOR_Manager import db
+from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle
 from datetime import datetime
 import sqlalchemy
 
@@ -124,7 +126,53 @@ class ingest_MODS(db.Model):
 
 
 
+class SolrDoc(object):	
 
+	class SolrFields(object):
+		def __init__(self, **fields): 
+			self.__dict__.update(fields)
+
+	# init
+	def __init__(self,id):
+		self.id = id
+		self.escaped_id = self.id.replace(":","\:")
+
+		# get stateful, current Solr doc
+		query_params = {
+			"q":'id:{escaped_id}'.format(escaped_id=self.escaped_id),
+			"rows":1
+		}
+		response = solr_manage_handle.search(**query_params)
+		if len(response.documents) > 0:
+			self.doc = self.SolrFields(**response.documents[0])
+			#store version, remove from doc
+			self.version = self.doc._version_ 
+			del self.doc._version_
+			# finally, set exists to True
+			self.exists = True
+		else:
+			self.doc = self.SolrFields()
+			self.doc.id = self.id # automatically set ID as PID
+			self.exists = False
+
+	# delete doc in Solr
+	def delete(self):
+		delete_response = solr_manage_handle.delete_by_key(self.id, commit=False)
+		return delete_response
+
+
+	# update doc to Solr
+	def update(self):
+		update_response = solr_handle.update([self.doc.__dict__], commit=False)
+		return update_response
+
+
+	def commit(self):
+		return solr_manage_handle.commit()
+
+
+	def asDictionary(self):
+		return self.doc.__dict__
 
 
 

@@ -1,6 +1,5 @@
 #Utility to link Fedora Commons objects and Solr, with augmentation in /search core
 
-from localConfig import *
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -17,13 +16,30 @@ import json
 from cl.cl import celery
 from celery import Task
 
+# WSUDOR
+from localConfig import *
+from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle
+import WSUDOR_ContentTypes
+from WSUDOR_Manager import models
+import WSUDOR_Manager.actions as actions
+
 # augmentCore 
 from augmentCore import augmentCore
 
-import WSUDOR_Manager.actions as actions
-
 # define blueprint
 solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates')
+
+
+'''
+ToDo
+- create function to return clean PIDs (.rstrip())
+- finish up the others - FullIndex, single PID
+- REALWORK: redo indexFOXMLinSolr()
+	- use SolrLink object? or SolrDoc?
+	- generate object.doc dictionary, then .update()
+'''
+
 
 @solrIndexer_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
 def updateSolr(update_type):			
@@ -31,7 +47,8 @@ def updateSolr(update_type):
 	if update_type == "fullIndex":				
 		index_handle = solrIndexer.delay('fullIndex','')
 
-	if update_type == "timestamp":		
+	if update_type == "timestamp":
+		print "Updating by timestamp"	
 		index_handle = solrIndexer.delay('timestampIndex','')
 		
 	# return logic
@@ -58,115 +75,115 @@ def updateSolr(update_type):
 
 
 
-@celery.task()
-def solrIndexer(fedEvent, PID):	
+class SolrIndexerWorker(object):
 
-	#Get DT Threshold
-	def getLastFedoraIndexDate():	
-		#evaluate solr response string as python dictionary
-		LastFedoraIndexDict = eval(urllib.urlopen("http://silo.lib.wayne.edu/solr4/fedobjs/select?q=id%3ALastFedoraIndex&fl=last_modified&wt=python&indent=true").read())	
-		LastFedoraIndexDate = LastFedoraIndexDict['response']['docs'][0]['last_modified']
-		print "Last Indexing of FOXML in Solr:",LastFedoraIndexDate,"\n"
-		return LastFedoraIndexDate
+	def __init__(self):
+		self.startTime = int(time.time())
+
+	@property
+	def endTime(self):
+		return int(time.time())
+
+	@property
+	def totalTime(self):
+		return self.endTime - self.startTime
+
+	
+	@property
+	def lastFedoraIndexDate(self):
+		
+		'''
+		Function to retrieve last Fedora Update
+		'''
+
+		doc_handle = models.SolrDoc("LastFedoraIndex")
+		if doc_handle.exists == True:
+			return doc_handle.doc.last_modified
+		else:
+			return False
 
 
-	#Get Objects/Datastreams modified on or after this date
-	def getToUpdate(LastFedoraIndexDate):
-		print LastFedoraIndexDate
-		# Pulls date last time Fedora was indexed in Solr
+	
+	def getToUpdate(self, lastFedoraIndexDate):
+
+		'''
+		# Get Objects/Datastreams modified on or after this date
 		# FYI, this line will limit to only objects: and $object<info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/wayne:collectionBMC>
-		# This will need to be paginate, broken up, something - quite slow at even 6,000+
-		risearch_query = "select $object from <#ri> where $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '{LastFedoraIndexDate}'^^<xml-schema:dateTime> in <#xsd>".format(LastFedoraIndexDate=LastFedoraIndexDate)	
+		# Returns streaming socket iterator with PIDs
+		'''
+		
+		risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/fedora-system:FedoraObject-3.0> and $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '{lastFedoraIndexDate}'^^<xml-schema:dateTime> in <#xsd>".format(lastFedoraIndexDate=lastFedoraIndexDate)
+
+		print risearch_query
 
 		risearch_params = urllib.urlencode({
 			'type': 'tuples', 
 			'lang': 'itql', 
 			'format': 'CSV',
 			'limit':'',
-			'dt': 'on', 
+			'dt': 'on',
+			'stream':'on',
 			'query': risearch_query
 			})
 		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+
+		modified_objects = urllib.urlopen(risearch_host,risearch_params)
+		# bump past headers
+		modified_objects.next()
+		return modified_objects
+
+			
+	def indexFOXMLinSolr(self, PID, outputs):
+
+		print "Indexing PID:",PID
 		
-		print risearch_query
-		print risearch_host
+		#get object FOXML and parse as XML
+		try:
+			response = urllib.urlopen("http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/objects/{PID}/objectXML".format(PID=PID,FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD))
+			FOXML = response.read()
+			XMLroot = etree.fromstring(FOXML)		
+		except:
+			print "Could not DOWNLOAD FOXML for",PID
+			fhand_exceptions = open(outputs['downloadExcepts'],'a')
+			fhand_exceptions.write(str(PID)+"\n")
+			fhand_exceptions.close()
 
-		modified_PIDs = urllib.urlopen(risearch_host,risearch_params)	
-		iterPIDs = iter(modified_PIDs)	
-		next(iterPIDs)	
-		for PIDstring in iterPIDs:
-			PIDproper = PIDstring.split("/")[1].rstrip()
-			if PIDproper not in toUpdate:
-				toUpdate.append(PIDproper)
+		#get XSL doc, parse as XSL, transform FOXML as Solr add-doc
+		try:			
+			XSLhand = open('inc/xsl/FOXML_to_Solr.xsl','r')		
+			xslt_tree = etree.parse(XSLhand)
+	  		transform = etree.XSLT(xslt_tree)
+			SolrXML = transform(XMLroot)
+		except:
+			print "Could not TRANSFORM FOXML for",PID
+			fhand_exceptions = open(outputs['transformExcepts'],'a')
+			fhand_exceptions.write(str(PID)+"\n")
+			fhand_exceptions.close()
 
-		# print "PIDs to update:",toUpdate,"\n"
-		print "Total to update:",len(toUpdate),"\n"		
-
-		#exit if nothing to update
-		if len(toUpdate) < 1:
-			print "It does not appear any Fedora Objects have been modified since last Solr Indexing.  You may also enter a date stamp argument, formatted thusly '1969-12-31T12:59:59.265Z', when running solrIndexer as stand-alone script to index all records modified after that date."
-			
-			return False
-
-		else:
-			return True
-
-			
-	def indexFOXMLinSolr(toUpdate):
-
-		count = 0
-		for PID in toUpdate:
-			count += 1
-			print "Indexing PID:",PID,count," / ",len(toUpdate)
-			
-			#get object FOXML and parse as XML
-			try:
-				response = urllib.urlopen("http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/objects/{PID}/objectXML".format(PID=PID,FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD))
-				FOXML = response.read()
-				XMLroot = etree.fromstring(FOXML)		
-			except:
-				print "Could not DOWNLOAD FOXML for",PID
-				fhand_exceptions = open(Outputs['downloadExcepts'],'a')
-				fhand_exceptions.write(str(PID)+"\n")
-				fhand_exceptions.close()
-
-			#get XSL doc, parse as XSL, transform FOXML as Solr add-doc
-			try:			
-				XSLhand = open('inc/xsl/FOXML_to_Solr.xsl','r')		
-				xslt_tree = etree.parse(XSLhand)
-		  		transform = etree.XSLT(xslt_tree)
-				SolrXML = transform(XMLroot)
-			except:
-				print "Could not TRANSFORM FOXML for",PID
-				fhand_exceptions = open(Outputs['transformExcepts'],'a')
-				fhand_exceptions.write(str(PID)+"\n")
-				fhand_exceptions.close()
-
-			#index Solr-ready XML (SolrXML)		 
-			try:
-				# print SolrXML
-				updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/"								
-				headers = {'Content-Type': 'application/xml'}
-				r = requests.post(updateURL, data=str(SolrXML), headers=headers)
-				print r.text
-			except:
-				print "Could not INDEX FOXML for",PID
-				fhand_exceptions = open(Outputs['indexExcepts'],'a')
-				fhand_exceptions.write(str(PID)+"\n")
-				fhand_exceptions.close()	
+		#index Solr-ready XML (SolrXML)		 
+		try:
+			# print SolrXML
+			updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/"								
+			headers = {'Content-Type': 'application/xml'}
+			r = requests.post(updateURL, data=str(SolrXML), headers=headers)
+			print r.text
+		except:
+			print "Could not INDEX FOXML for",PID
+			fhand_exceptions = open(outputs['indexExcepts'],'a')
+			fhand_exceptions.write(str(PID)+"\n")
+			fhand_exceptions.close()	
 	
 	
-	def commitSolrChanges():		
+	def commitSolrChanges(self):		
 
-		# commit changes in Solr
-		print "*** Committing Changes ***"
-		baseurl = 'http://silo.lib.wayne.edu/solr4/fedobjs/update/' 
-		data = {'commit':'true'}
-		r = requests.post(baseurl,data=data)
-		print r.text
+		return solr_manage_handle.commit()
 
 	
-	def replicateToSearch():
+	def replicateToSearch(self):
+
+		'''
+		Consider adding to MySolr module....
+		'''
 		
 		# replicate to "search core"
 		print "*** Replicating Changes ***"
@@ -176,73 +193,71 @@ def solrIndexer(fedEvent, PID):
 		print r.text	
 
 	
-	def updateLastFedoraIndexDate():		
+	def updateLastFedoraIndexDate(self):		
 
-		#Updated LastFedoraIndex in Solr
-		print "*** Updating LastFedoraIndex in Solr ***"
-		updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/?commit=true"
-		dateUpdateXML = "<add><doc><field name='id'>LastFedoraIndex</field><field name='last_modified'>NOW</field></doc></add>"
-		headers = {'Content-Type': 'application/xml'}
-		r = requests.post(updateURL, data=dateUpdateXML, headers=headers)
-		print r.text
+		doc_handle = models.SolrDoc("LastFedoraIndex")
+		# doc_handle.doc.last_modified = "NOW"
+		doc_handle.doc.last_modified = "2014-12-08T15:29:22.417Z"
+		result = doc_handle.update()
+		return result.raw_content
 
 	
-	def removeFOXMLinSolr(PID):		
-		
-		print "*** Removing document from Solr ***"		
-		PID = PID.replace(":","\:")
-		updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/"			
-		deleteXML = "<delete><query>id:{PID}</query></delete>".format(PID=PID)
-		headers = {'Content-Type': 'application/xml'}
-		r = requests.post(updateURL, data=deleteXML, headers=headers)
-		print r.text
+	def removeFOXMLinSolr(self, PID):		
+
+		doc_handle = models.SolrDoc(PID)
+		result = doc_handle.delete()		
+		return result.raw_content
 
 
 
-	# determine Solr action
-	#################################################################################################################	
+
+@celery.task()
+def solrIndexer(fedEvent, PID):	
+
+	# determine action based on fedEvent
+
 	#Set output filenames
 	now = datetime.datetime.now().isoformat()
-	Outputs = {}
-	Outputs['downloadExcepts'] = './reports/'+now+'_downloadExcepts.csv'
-	Outputs['transformExcepts'] = './reports/'+now+'_transformExcepts.csv'
-	Outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
+	outputs = {}
+	outputs['downloadExcepts'] = './reports/'+now+'_downloadExcepts.csv'
+	outputs['transformExcepts'] = './reports/'+now+'_transformExcepts.csv'
+	outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
 
+
+	# timestamp based
 	if fedEvent == "timestampIndex":
-		print "Indexing all Fedora items since last full index."
+
+		print "Indexing all Fedora items that have been modified since last solrIndexer run"
 		
-		#Globals
-		toUpdate = []				
-
-		#start timer
-		startTime = int(time.time())
-
-		#run funcs
-		LastFedoraIndexDate = getLastFedoraIndexDate()
+		# init worker
+		worker = SolrIndexerWorker()
 		
 		# generate list of PIDs to update
-		result = getToUpdate(LastFedoraIndexDate)		
-		
-		if result == True:
+		# toUpdate = worker.getToUpdate(worker.lastFedoraIndexDate)
+		toUpdate = worker.getToUpdate('2014-12-08T01:12:05.589Z')
+
+		# begin iterating through
+		for PID in toUpdate.readlines():
+			PID = PID.split("/")[1].rstrip()
 			# index PIDs in Solr
-			indexFOXMLinSolr(toUpdate)
+			worker.indexFOXMLinSolr(PID,outputs)
 			# augment documents - from augmentCore.py
-			augmentCore(toUpdate)	
-			# update timestamp in Solr		
-			updateLastFedoraIndexDate()
-			# commit changes
-			commitSolrChanges()
-			# replicate changes to /search core
-			replicateToSearch()			
+			augmentCore(PID)
+		# close handle
+		toUpdate.close()
+		# update timestamp in Solr		
+		worker.updateLastFedoraIndexDate()
+		# commit changes
+		worker.commitSolrChanges()
+		# replicate changes to /search core
+		worker.replicateToSearch()			
 
-			#end timer
-			endTime = int(time.time())
-			totalTime = endTime - startTime
-			print "Total seconds elapsed",totalTime	
+		print "Total seconds elapsed",worker.totalTime	
 
-		else:
-			print "Nothing to do. Finis."
+		
 
+
+	# fullindex
 	if fedEvent == "fullIndex":
 		print "Indexing ALL Fedora items."
 		
@@ -277,9 +292,6 @@ def solrIndexer(fedEvent, PID):
 	# Index single item per fedEvent
 	if fedEvent == "modifyDatastreamByValue" or fedEvent == "ingest" or fedEvent == "modifyObject":
 
-		# pause
-		# time.sleep(1)
-
 		print "Updating / Indexing",PID
 		toUpdate = [PID]
 		# index PIDs in Solr
@@ -304,9 +316,12 @@ def solrIndexer(fedEvent, PID):
 		replicateToSearch()
 		return
 
-	#################################################################################################################
+
+
+
 
 if __name__ == '__main__':
+	# running as OS script indexes all recently modified
     solrIndexer("timestampIndex","")
 
 

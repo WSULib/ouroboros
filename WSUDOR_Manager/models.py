@@ -163,7 +163,7 @@ class SolrDoc(object):
 
 	# update doc to Solr
 	def update(self):
-		update_response = solr_handle.update([self.doc.__dict__], commit=False)
+		update_response = solr_manage_handle.update([self.doc.__dict__], commit=False)
 		return update_response
 
 

@@ -14,6 +14,8 @@ import uuid
 import StringIO
 import tarfile
 import xmltodict
+from lxml import etree
+import requests
 
 # celery
 from cl.cl import celery
@@ -24,8 +26,7 @@ import eulfedora
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import models
-from WSUDOR_Manager import redisHandles
+from WSUDOR_Manager import models, helpers, redisHandles
 import WSUDOR_ContentTypes
 
 
@@ -130,6 +131,7 @@ class WSUDOR_GenObject(object):
 			}		
 		}	
 
+		# two roads - WSUDOR or BagIt archive for the object returned
 		try:			
 
 			# Future WSUDOR object, BagIt object
@@ -183,12 +185,6 @@ class WSUDOR_GenObject(object):
 				# only fires for v2 objects
 				if "OBJMETA" in self.ohandle.ds_list:
 					self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
-				self.MODS = xmltodict.parse(self.ohandle.getDatastreamObject('MODS').content.serialize())
-				self.DC = xmltodict.parse(self.ohandle.getDatastreamObject('DC').content.serialize())
-
-
-			# create WSUDOR_SolrLink attribute
-			self.SolrDoc = models.SolrDoc(self.pid)
 
 
 		except Exception,e:
@@ -197,6 +193,84 @@ class WSUDOR_GenObject(object):
 
 
 
+	# Lazy Loaded properties
+	'''
+	These properties use helpers.LazyProperty decorator, to avoid loading them if not called.
+	'''
+	
+	# MODS metadata
+	@helpers.LazyProperty
+	def MODS_XML(self):
+		return self.ohandle.getDatastreamObject('MODS').content.serialize()
+
+	@helpers.LazyProperty
+	def MODS_dict(self):
+		return xmltodict.parse(self.MODS_XML)
+
+	@helpers.LazyProperty
+	def MODS_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/MODS_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		XMLroot = etree.fromstring(self.MODS_XML)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+	
+	#DC metadata
+	@helpers.LazyProperty
+	def DC_XML(self):
+		return self.ohandle.getDatastreamObject('DC').content.serialize()
+
+	@helpers.LazyProperty
+	def DC_dict(self):
+		return xmltodict.parse(self.DC_XML)
+
+	@helpers.LazyProperty
+	def DC_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/DC_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		XMLroot = etree.fromstring(self.DC_XML)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+
+	#RELS-EXT and RELS-INT metadata
+	@helpers.LazyProperty
+	def RELS_EXT_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		# raw, unmodified RDF
+  		raw_xml_URL = "http://localhost/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=self.pid)
+  		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+  		XMLroot = etree.fromstring(raw_xml)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+
+	@helpers.LazyProperty
+	def RELS_INT_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		# raw, unmodified RDF
+  		raw_xml_URL = "http://localhost/fedora/objects/{PID}/datastreams/RELS-INT/content".format(PID=self.pid)
+  		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+  		XMLroot = etree.fromstring(raw_xml)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+
+
+	# SolrDoc class
+	@helpers.LazyProperty
+	def SolrDoc(self):
+		return models.SolrDoc(self.pid)
+
+
+	# WSUDOR_Object Methods
 
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
 	def finishIngest(self):
@@ -312,6 +386,9 @@ class WSUDOR_GenObject(object):
 		return "http://digital.library.wayne.edu/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username)
 
 
+	################################################################
+	# Consider moving
+	################################################################
 	# derive DC from MODS (experimental action in Gen ContentType)	
 	def DCfromMODS(self):
 		'''

@@ -23,10 +23,6 @@ tasks_URL_prefix = "/tasks"
 from solrIndexer import solrIndexer_blue
 app.register_blueprint(solrIndexer_blue, url_prefix=tasks_URL_prefix)
 
-# #FOXML2Solr
-# from FOXML2Solr import FOXML2Solr_blue
-# app.register_blueprint(FOXML2Solr_blue, url_prefix=tasks_URL_prefix)
-
 #exportObject to objectBag
 from exportObject import exportObject, exportObject_worker
 app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)

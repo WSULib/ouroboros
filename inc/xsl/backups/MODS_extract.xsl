@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--MODS datastream-->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-  xmlns:mods="http://www.loc.gov/mods/v3" exclude-result-prefixes="mods">
-  <xsl:output method="xml" indent="yes" omit-xml-declaration="yes"/>
+  xmlns:mods="http://www.loc.gov/mods/v3" exclude-result-prefixes="mods"
+  xmlns:foxml="info:fedora/fedora-system:def/foxml#">
 
-  <xsl:template name="MODS" match="/">
-      
+  <xsl:template name="MODS">
     <xsl:param name="prefix">mods_</xsl:param>
     <xsl:param name="suffix">_ms</xsl:param>    
-    <xsl:param name="MODSroot" select="//mods:mods"/>
-    
-    <!-- Wrap in MODS_fields -->
-    <fields>
+    <xsl:param name="MODSroot"
+      select="/foxml:digitalObject/foxml:datastream[@ID='MODS']/foxml:datastreamVersion[last()]/foxml:xmlContent/mods:mods"/>
 
     <!-- Titles, with non-sorting prefixes -->
     <!-- ...specifically, this avoids catching relatedItem titles -->
@@ -672,8 +670,6 @@
         <xsl:value-of select="text()"/>
       </field>      
     </xsl:for-each>
-      
-    </fields>
 
   </xsl:template>
 

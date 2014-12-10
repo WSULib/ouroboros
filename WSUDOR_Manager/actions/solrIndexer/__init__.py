@@ -33,7 +33,6 @@ solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates
 
 '''
 ToDo
-- consider function to return clean PIDs (.rstrip())
 - REALWORK: redo indexFOXMLinSolr()
 	- use SolrLink object? or SolrDoc?
 	- generate object.doc dictionary, then .update()
@@ -129,46 +128,74 @@ class SolrIndexerWorker(object):
 		modified_objects.next() # bump past headers
 		return modified_objects
 
+
 	### REWORK ########################################################################################
 	def indexFOXMLinSolr(self, PID, outputs):
 
-		print "Indexing PID:",PID
-		
-		#get object FOXML and parse as XML
-		try:
-			response = urllib.urlopen("http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/objects/{PID}/objectXML".format(PID=PID,FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD))
-			FOXML = response.read()
-			XMLroot = etree.fromstring(FOXML)		
-		except:
-			print "Could not DOWNLOAD FOXML for",PID
-			fhand_exceptions = open(outputs['downloadExcepts'],'a')
-			fhand_exceptions.write(str(PID)+"\n")
-			fhand_exceptions.close()
+		print "Indexing PID:",PID		
 
-		#get XSL doc, parse as XSL, transform FOXML as Solr add-doc
-		try:			
-			XSLhand = open('inc/xsl/FOXML_to_Solr.xsl','r')		
-			xslt_tree = etree.parse(XSLhand)
-	  		transform = etree.XSLT(xslt_tree)
-			SolrXML = transform(XMLroot)
-		except:
-			print "Could not TRANSFORM FOXML for",PID
-			fhand_exceptions = open(outputs['transformExcepts'],'a')
-			fhand_exceptions.write(str(PID)+"\n")
-			fhand_exceptions.close()
+		# instantiate handle
+		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=PID)
 
-		#index Solr-ready XML (SolrXML)		 
+		# build obj_handle.SolrDoc.doc 
+
+		# built-ins from ohandle
+		obj_handle.SolrDoc.doc.obj_label = obj_handle.ohandle.label
+		obj_handle.SolrDoc.doc.obj_createdDate = obj_handle.ohandle.created.isoformat()
+		obj_handle.SolrDoc.doc.obj_modifiedDate = obj_handle.ohandle.modified.isoformat()
+
+		# MODS
 		try:
-			# print SolrXML
-			updateURL = "http://silo.lib.wayne.edu/solr4/fedobjs/update/"								
-			headers = {'Content-Type': 'application/xml'}
-			r = requests.post(updateURL, data=str(SolrXML), headers=headers)
-			print r.text
+			for each in obj_handle.MODS_Solr_flat['fields']['field']:
+				try:
+					if type(each['@name']) == unicode:
+						print each
+						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+				except:
+					print "Could not add",each
 		except:
-			print "Could not INDEX FOXML for",PID
-			fhand_exceptions = open(outputs['indexExcepts'],'a')
-			fhand_exceptions.write(str(PID)+"\n")
-			fhand_exceptions.close()
+			print "Could not find datastream MODS"
+
+		# DC
+		try:
+			for each in obj_handle.DC_Solr_flat['fields']['field']:
+				try:
+					if type(each['@name']) == unicode:
+						print each
+						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+				except:
+					print "Could not add",each
+		except:
+			print "Could not find datastream DC"
+
+		# RELS-EXT
+		try:
+			for each in obj_handle.RELS_EXT_Solr_flat['fields']['field']:
+				try:
+					if type(each['@name']) == unicode:
+						print each
+						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+				except:
+					print "Could not add",each
+		except:
+			print "Could not find datastream RELS-EXT"
+
+		# RELS-INT
+		try:
+			for each in obj_handle.RELS_INT_Solr_flat['fields']['field']:
+				try:
+					if type(each['@name']) == unicode:
+						print each
+						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+				except:
+					print "Could not add",each
+		except:
+			print "Could not find datastream RELS-INT"
+
+		# update object, no commit yet
+		obj_handle.SolrDoc.update()
+
+
 	### REWORK ########################################################################################
 	
 	
@@ -211,8 +238,11 @@ class SolrIndexerWorker(object):
 @celery.task()
 def solrIndexer(fedEvent, PID):	
 
-	# determine action based on fedEvent
+	# simple function to clean PID from /risearch
+	def cleanPID(PID):
+		return PID.split("/")[1].rstrip()
 
+	
 	#Set output filenames
 	now = datetime.datetime.now().isoformat()
 	outputs = {}
@@ -223,6 +253,7 @@ def solrIndexer(fedEvent, PID):
 	# init worker
 	worker = SolrIndexerWorker()
 
+	# determine action based on fedEvent
 	# timestamp based
 	if fedEvent == "timestampIndex":
 
@@ -233,7 +264,7 @@ def solrIndexer(fedEvent, PID):
 
 		# begin iterating through
 		for PID in toUpdate.readlines():
-			PID = PID.split("/")[1].rstrip()
+			PID = cleanPID(PID)
 			# index PIDs in Solr
 			worker.indexFOXMLinSolr(PID,outputs)
 			# augment documents - from augmentCore.py
@@ -259,7 +290,7 @@ def solrIndexer(fedEvent, PID):
 		
 		# begin iterating through
 		for PID in toUpdate.readlines():
-			PID = PID.split("/")[1].rstrip()
+			PID = cleanPID(PID)
 			# index PIDs in Solr
 			worker.indexFOXMLinSolr(PID, outputs)
 			# augment documents - from augmentCore.py
@@ -303,7 +334,7 @@ def solrIndexer(fedEvent, PID):
 
 if __name__ == '__main__':
 	# running as OS script indexes all recently modified
-    solrIndexer("timestampIndex","")
+	solrIndexer("timestampIndex","")
 
 
 

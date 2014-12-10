@@ -33,11 +33,11 @@ solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates
 
 '''
 ToDo
-- create function to return clean PIDs (.rstrip())
-- finish up the others - FullIndex, single PID
+- consider function to return clean PIDs (.rstrip())
 - REALWORK: redo indexFOXMLinSolr()
 	- use SolrLink object? or SolrDoc?
 	- generate object.doc dictionary, then .update()
+- change out references to "FOXML2Solr"
 '''
 
 
@@ -77,6 +77,7 @@ def updateSolr(update_type):
 
 class SolrIndexerWorker(object):
 
+	# init worker with built-in timers
 	def __init__(self):
 		self.startTime = int(time.time())
 
@@ -108,13 +109,10 @@ class SolrIndexerWorker(object):
 
 		'''
 		# Get Objects/Datastreams modified on or after this date
-		# FYI, this line will limit to only objects: and $object<info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/wayne:collectionBMC>
 		# Returns streaming socket iterator with PIDs
 		'''
 		
 		risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/fedora-system:FedoraObject-3.0> and $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '{lastFedoraIndexDate}'^^<xml-schema:dateTime> in <#xsd>".format(lastFedoraIndexDate=lastFedoraIndexDate)
-
-		print risearch_query
 
 		risearch_params = urllib.urlencode({
 			'type': 'tuples', 
@@ -128,11 +126,10 @@ class SolrIndexerWorker(object):
 		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
 
 		modified_objects = urllib.urlopen(risearch_host,risearch_params)
-		# bump past headers
-		modified_objects.next()
+		modified_objects.next() # bump past headers
 		return modified_objects
 
-			
+	### REWORK ########################################################################################
 	def indexFOXMLinSolr(self, PID, outputs):
 
 		print "Indexing PID:",PID
@@ -171,7 +168,8 @@ class SolrIndexerWorker(object):
 			print "Could not INDEX FOXML for",PID
 			fhand_exceptions = open(outputs['indexExcepts'],'a')
 			fhand_exceptions.write(str(PID)+"\n")
-			fhand_exceptions.close()	
+			fhand_exceptions.close()
+	### REWORK ########################################################################################
 	
 	
 	def commitSolrChanges(self):		
@@ -196,8 +194,7 @@ class SolrIndexerWorker(object):
 	def updateLastFedoraIndexDate(self):		
 
 		doc_handle = models.SolrDoc("LastFedoraIndex")
-		# doc_handle.doc.last_modified = "NOW"
-		doc_handle.doc.last_modified = "2014-12-08T15:29:22.417Z"
+		doc_handle.doc.last_modified = "NOW"
 		result = doc_handle.update()
 		return result.raw_content
 
@@ -223,18 +220,16 @@ def solrIndexer(fedEvent, PID):
 	outputs['transformExcepts'] = './reports/'+now+'_transformExcepts.csv'
 	outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
 
+	# init worker
+	worker = SolrIndexerWorker()
 
 	# timestamp based
 	if fedEvent == "timestampIndex":
 
 		print "Indexing all Fedora items that have been modified since last solrIndexer run"
 		
-		# init worker
-		worker = SolrIndexerWorker()
-		
 		# generate list of PIDs to update
-		# toUpdate = worker.getToUpdate(worker.lastFedoraIndexDate)
-		toUpdate = worker.getToUpdate('2014-12-08T01:12:05.589Z')
+		toUpdate = worker.getToUpdate(worker.lastFedoraIndexDate)
 
 		# begin iterating through
 		for PID in toUpdate.readlines():
@@ -252,72 +247,58 @@ def solrIndexer(fedEvent, PID):
 		# replicate changes to /search core
 		worker.replicateToSearch()			
 
-		print "Total seconds elapsed",worker.totalTime	
-
-		
+		print "Total seconds elapsed",worker.totalTime		
 
 
 	# fullindex
 	if fedEvent == "fullIndex":
 		print "Indexing ALL Fedora items."
 		
-		#Globals
-		toUpdate = []				
-
-		#start timer
-		startTime = int(time.time())		
-
-		LastFedoraIndexDate = "1969-12-31T12:59:59.265Z"
-		
 		# generate list of PIDs to update
-		result = getToUpdate(LastFedoraIndexDate)		
+		toUpdate = worker.getToUpdate("1969-12-31T12:59:59.265Z")		
 		
-		# index PIDs in Solr
-		indexFOXMLinSolr(toUpdate)
-		# augment documents - from augmentCore.py
-		augmentCore(toUpdate)	
+		# begin iterating through
+		for PID in toUpdate.readlines():
+			PID = PID.split("/")[1].rstrip()
+			# index PIDs in Solr
+			worker.indexFOXMLinSolr(PID, outputs)
+			# augment documents - from augmentCore.py
+			augmentCore(PID)
 		# update timestamp in Solr		
-		updateLastFedoraIndexDate()
+		worker.updateLastFedoraIndexDate()
 		# commit changes
-		commitSolrChanges()
+		worker.commitSolrChanges()
 		# replicate changes to /search core
-		replicateToSearch()			
-
-		#end timer
-		endTime = int(time.time())
-		totalTime = endTime - startTime
-		print "Total seconds elapsed",totalTime	
+		worker.replicateToSearch()
+		
+		print "Total seconds elapsed",worker.totalTime	
 		
 
 	# Index single item per fedEvent
 	if fedEvent == "modifyDatastreamByValue" or fedEvent == "ingest" or fedEvent == "modifyObject":
 
 		print "Updating / Indexing",PID
-		toUpdate = [PID]
 		# index PIDs in Solr
-		indexFOXMLinSolr(toUpdate)
+		worker.indexFOXMLinSolr(PID,outputs)
 		# augment documents - from augmentCore.py
-		augmentCore(toUpdate)
+		augmentCore(PID)
 		# update timestamp in Solr		
-		updateLastFedoraIndexDate()
+		worker.updateLastFedoraIndexDate()
 		# commit changes
-		commitSolrChanges()
+		worker.commitSolrChanges()
 		# replicate changes to /search core
-		replicateToSearch()		
-		return
+		worker.replicateToSearch()		
+		return True
 
 	# Remove Object from Solr Index on Purge
 	if fedEvent == "purgeObject":
 		print "Removing the following from Solr Index",PID		
-		removeFOXMLinSolr(PID)
+		worker.removeFOXMLinSolr(PID)
 		# commit changes
-		commitSolrChanges()
+		worker.commitSolrChanges()
 		# replicate changes to /search core
-		replicateToSearch()
-		return
-
-
-
+		worker.replicateToSearch()
+		return True
 
 
 if __name__ == '__main__':

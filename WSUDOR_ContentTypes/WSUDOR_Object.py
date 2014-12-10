@@ -219,6 +219,8 @@ class WSUDOR_GenObject(object):
 
 		# derive Dublin Core from MODS, update DC datastream
 		self.DCfromMODS()
+
+		# CONSIDER WRITING RELS-EXT RELATIONSHIP: "WSUDOR:isValidWSUDORObject"
 		
 		# finally, return
 		return True

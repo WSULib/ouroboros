@@ -31,15 +31,6 @@ from augmentCore import augmentCore
 solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates')
 
 
-'''
-ToDo
-- REALWORK: redo indexFOXMLinSolr()
-	- use SolrLink object? or SolrDoc?
-	- generate object.doc dictionary, then .update()
-- change out references to "FOXML2Solr"
-'''
-
-
 @solrIndexer_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
 def updateSolr(update_type):			
 
@@ -129,7 +120,6 @@ class SolrIndexerWorker(object):
 		return modified_objects
 
 
-	### REWORK ########################################################################################
 	def indexFOXMLinSolr(self, PID, outputs):
 
 		print "Indexing PID:",PID		
@@ -141,15 +131,14 @@ class SolrIndexerWorker(object):
 
 		# built-ins from ohandle
 		obj_handle.SolrDoc.doc.obj_label = obj_handle.ohandle.label
-		obj_handle.SolrDoc.doc.obj_createdDate = obj_handle.ohandle.created.isoformat()
-		obj_handle.SolrDoc.doc.obj_modifiedDate = obj_handle.ohandle.modified.isoformat()
+		obj_handle.SolrDoc.doc.obj_createdDate = obj_handle.ohandle.created.isoformat()+"Z"
+		obj_handle.SolrDoc.doc.obj_modifiedDate = obj_handle.ohandle.modified.isoformat()+"Z"
 
 		# MODS
 		try:
 			for each in obj_handle.MODS_Solr_flat['fields']['field']:
 				try:
 					if type(each['@name']) == unicode:
-						print each
 						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
 				except:
 					print "Could not add",each
@@ -161,7 +150,6 @@ class SolrIndexerWorker(object):
 			for each in obj_handle.DC_Solr_flat['fields']['field']:
 				try:
 					if type(each['@name']) == unicode:
-						print each
 						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
 				except:
 					print "Could not add",each
@@ -173,7 +161,6 @@ class SolrIndexerWorker(object):
 			for each in obj_handle.RELS_EXT_Solr_flat['fields']['field']:
 				try:
 					if type(each['@name']) == unicode:
-						print each
 						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
 				except:
 					print "Could not add",each
@@ -185,7 +172,6 @@ class SolrIndexerWorker(object):
 			for each in obj_handle.RELS_INT_Solr_flat['fields']['field']:
 				try:
 					if type(each['@name']) == unicode:
-						print each
 						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
 				except:
 					print "Could not add",each
@@ -196,12 +182,11 @@ class SolrIndexerWorker(object):
 		obj_handle.SolrDoc.update()
 
 
-	### REWORK ########################################################################################
-	
-	
 	def commitSolrChanges(self):		
-
-		return solr_manage_handle.commit()
+		print "*** Committing Changes ***"
+		result = solr_manage_handle.commit()
+		print result
+		return result
 
 	
 	def replicateToSearch(self):

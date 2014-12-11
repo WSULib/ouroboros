@@ -72,7 +72,11 @@ def WSUDOR_Object(object_type,payload):
 		return False
 	
 	# need check if valid subclass of WSUDOR_GenObject	
-	return getattr(WSUDOR_ContentTypes,str(content_type))(object_type=object_type,content_type=content_type,payload=payload)
+	try:
+		return getattr(WSUDOR_ContentTypes,str(content_type))(object_type=object_type,content_type=content_type,payload=payload)
+	except:
+		print "Could not find appropriate ContentType, returning False."
+		return False
 
 
 
@@ -389,12 +393,10 @@ class WSUDOR_GenObject(object):
 	################################################################
 	# Consider moving
 	################################################################
-	# derive DC from MODS (experimental action in Gen ContentType)	
+	# derive DC from MODS
 	def DCfromMODS(self):
-		'''
-		Experimental - needs celery processing
-		'''
-		# retrieve MODS		
+		
+		# 1) retrieve MODS		
 		MODS_handle = self.ohandle.getDatastreamObject('MODS')		
 		XMLroot = etree.fromstring(MODS_handle.content.serialize())
 

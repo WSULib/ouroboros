@@ -3,8 +3,9 @@
 {% if update_type == 'select' %}
 	<p>Freshen Solr?</p>
 	<ul>
-		<li><a href="/tasks/updateSolr/fullIndex">All:</a> Index ALL Fedora Objects</a></li>
+		<li><a href="/tasks/updateSolr/userObjects">Currently selected Objects</a></li>
 		<li><a href="/tasks/updateSolr/timestamp">Recently Modified:</a> Index Fedora Objects since <a href="http://digital.library.wayne.edu/solr4/fedobjs/select?q=id%3ALastFedoraIndex&fl=last_modified&wt=json&indent=true">last full index</a></li>
+		<li><a href="/tasks/updateSolr/fullIndex">All:</a> Index ALL Fedora Objects</a></li>
 	</ul>
 {% endif %}
 

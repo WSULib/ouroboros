@@ -21,7 +21,7 @@ from localConfig import *
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 import WSUDOR_ContentTypes
-from WSUDOR_Manager import models
+from WSUDOR_Manager import models, jobs
 import WSUDOR_Manager.actions as actions
 
 # augmentCore 
@@ -40,7 +40,13 @@ def updateSolr(update_type):
 	if update_type == "timestamp":
 		print "Updating by timestamp"	
 		index_handle = solrIndexer.delay('timestampIndex','')
-		
+
+	if update_type == "userObjects":
+		print "Updating by userObjects"	
+		PIDs = jobs.getSelPIDs()
+		for PID in PIDs:
+			index_handle = solrIndexer.delay('modifyObject', PID)		
+
 	# return logic
 	if "APIcall" in request.values and request.values['APIcall'] == "True":
 
@@ -125,10 +131,13 @@ class SolrIndexerWorker(object):
 		print "Indexing PID:",PID		
 
 		# instantiate handle
-		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=PID)
+		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=PID)	
 
-		# build obj_handle.SolrDoc.doc 
+		# skip if no valid WSUDOR_ContentType object
+		if obj_handle == False:
+			return False
 
+		# build obj_handle.SolrDoc.doc
 		# built-ins from ohandle
 		obj_handle.SolrDoc.doc.obj_label = obj_handle.ohandle.label
 		obj_handle.SolrDoc.doc.obj_createdDate = obj_handle.ohandle.created.isoformat()+"Z"
@@ -258,10 +267,9 @@ def solrIndexer(fedEvent, PID):
 		toUpdate.close()
 		# update timestamp in Solr		
 		worker.updateLastFedoraIndexDate()
-		# commit changes
+		# manually commit and replicate changes
 		worker.commitSolrChanges()
-		# replicate changes to /search core
-		worker.replicateToSearch()			
+		worker.replicateToSearch()		
 
 		print "Total seconds elapsed",worker.totalTime		
 
@@ -282,11 +290,9 @@ def solrIndexer(fedEvent, PID):
 			augmentCore(PID)
 		# update timestamp in Solr		
 		worker.updateLastFedoraIndexDate()
-		# commit changes
+		# manually commit and replicate changes
 		worker.commitSolrChanges()
-		# replicate changes to /search core
 		worker.replicateToSearch()
-		
 		print "Total seconds elapsed",worker.totalTime	
 		
 
@@ -297,23 +303,14 @@ def solrIndexer(fedEvent, PID):
 		# index PIDs in Solr
 		worker.indexFOXMLinSolr(PID,outputs)
 		# augment documents - from augmentCore.py
-		augmentCore(PID)
-		# update timestamp in Solr		
-		worker.updateLastFedoraIndexDate()
-		# commit changes
-		worker.commitSolrChanges()
-		# replicate changes to /search core
-		worker.replicateToSearch()		
+		augmentCore(PID)		
 		return True
+
 
 	# Remove Object from Solr Index on Purge
 	if fedEvent == "purgeObject":
 		print "Removing the following from Solr Index",PID		
 		worker.removeFOXMLinSolr(PID)
-		# commit changes
-		worker.commitSolrChanges()
-		# replicate changes to /search core
-		worker.replicateToSearch()
 		return True
 
 

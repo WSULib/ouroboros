@@ -134,15 +134,11 @@ class SolrIndexerWorker(object):
 		# instantiate handle
 		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=PID)	
 
-		# skip if no valid WSUDOR_ContentType object
-
-		
+		# skip if no valid WSUDOR_ContentType object		
 		if obj_handle == False:
 			return False
 
-		# build obj_handle.SolrDoc.doc
-
-		# purge current
+		# purge previous Solr doc content
 		obj_handle.SolrDoc.doc = helpers.BlankObject()
 		obj_handle.SolrDoc.doc.id = obj_handle.pid
 
@@ -224,17 +220,17 @@ class SolrIndexerWorker(object):
 		# Here, we have the opportunity to do some cleanup, addition, and finagling of fields.
 		#######################################################################################
 		
-		
+		print "printOnly status is",self.printOnly
 		if self.printOnly == True:
 			# print and return dicitonary, but do NOT update, commit, or replicate
 			print "DEBUG: printing only"
 			print obj_handle.SolrDoc.doc.__dict__
 			return obj_handle.SolrDoc.doc.__dict__
 
-		# else:
-		# 	# update object, no commit yet
-		# 	obj_handle.SolrDoc.update()
-		# 	return True
+		else:
+			# update object, no commit yet
+			obj_handle.SolrDoc.update()
+			return True
 
 
 	def commitSolrChanges(self):		
@@ -276,7 +272,8 @@ class SolrIndexerWorker(object):
 
 
 @celery.task()
-def solrIndexer(fedEvent, PID, printOnly=True):	
+def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
+	print "printOnly is",SOLR_INDEXER_WRITE_DEFAULT	
 
 	# simple function to clean PID from /risearch
 	def cleanPID(PID):

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# module for management of bags in the WSUDOR environment
-import bagit
 import os
 import mimetypes
 import json
@@ -17,17 +15,21 @@ import xmltodict
 from lxml import etree
 import requests
 
+# library for working with LOC BagIt standard 
+import bagit
+
 # celery
 from cl.cl import celery
 
 # eulfedora
 import eulfedora
 
-# handles
+# WSUDOR
+import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import models, helpers, redisHandles, actions
-import WSUDOR_ContentTypes
+
 
 
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType

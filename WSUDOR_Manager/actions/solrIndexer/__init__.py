@@ -21,7 +21,7 @@ from localConfig import *
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 import WSUDOR_ContentTypes
-from WSUDOR_Manager import models, jobs
+from WSUDOR_Manager import models, jobs, helpers
 import WSUDOR_Manager.actions as actions
 
 # augmentCore 
@@ -74,8 +74,9 @@ def updateSolr(update_type):
 class SolrIndexerWorker(object):
 
 	# init worker with built-in timers
-	def __init__(self):
+	def __init__(self,printOnly):
 		self.startTime = int(time.time())
+		self.printOnly = printOnly
 
 	@property
 	def endTime(self):
@@ -134,10 +135,17 @@ class SolrIndexerWorker(object):
 		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=PID)	
 
 		# skip if no valid WSUDOR_ContentType object
+
+		
 		if obj_handle == False:
 			return False
 
 		# build obj_handle.SolrDoc.doc
+
+		# purge current
+		obj_handle.SolrDoc.doc = helpers.BlankObject()
+		obj_handle.SolrDoc.doc.id = obj_handle.pid
+
 		# built-ins from ohandle
 		obj_handle.SolrDoc.doc.obj_label = obj_handle.ohandle.label
 		obj_handle.SolrDoc.doc.obj_createdDate = obj_handle.ohandle.created.isoformat()+"Z"
@@ -147,48 +155,86 @@ class SolrIndexerWorker(object):
 		try:
 			for each in obj_handle.MODS_Solr_flat['fields']['field']:
 				try:
-					if type(each['@name']) == unicode:
-						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+					if type(each['@name']) == unicode:				
+						fname = each['@name']
+						fvalue = each['#text'].rstrip()
+						if hasattr(obj_handle.SolrDoc.doc, fname) == False:
+							# create empty list
+							setattr(obj_handle.SolrDoc.doc, fname, [])
+						# append to list
+						getattr(obj_handle.SolrDoc.doc, fname).append(fvalue)
 				except:
 					print "Could not add",each
 		except:
-			print "Could not find datastream MODS"
+			print "Could not find or index datastream MODS"
 
 		# DC
 		try:
 			for each in obj_handle.DC_Solr_flat['fields']['field']:
 				try:
-					if type(each['@name']) == unicode:
-						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+					if type(each['@name']) == unicode:				
+						fname = each['@name']
+						fvalue = each['#text'].rstrip()
+						if hasattr(obj_handle.SolrDoc.doc, fname) == False:
+							# create empty list
+							setattr(obj_handle.SolrDoc.doc, fname, [])
+						# append to list
+						getattr(obj_handle.SolrDoc.doc, fname).append(fvalue)
 				except:
 					print "Could not add",each
 		except:
-			print "Could not find datastream DC"
+			print "Could not find or index datastream DC"
 
 		# RELS-EXT
 		try:
 			for each in obj_handle.RELS_EXT_Solr_flat['fields']['field']:
 				try:
-					if type(each['@name']) == unicode:
-						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+					if type(each['@name']) == unicode:				
+						fname = each['@name']
+						fvalue = each['#text'].rstrip()
+						if hasattr(obj_handle.SolrDoc.doc, fname) == False:
+							# create empty list
+							setattr(obj_handle.SolrDoc.doc, fname, [])
+						# append to list
+						getattr(obj_handle.SolrDoc.doc, fname).append(fvalue)
 				except:
 					print "Could not add",each
 		except:
-			print "Could not find datastream RELS-EXT"
+			print "Could not find or index datastream RELS-EXT"
 
 		# RELS-INT
 		try:
 			for each in obj_handle.RELS_INT_Solr_flat['fields']['field']:
 				try:
-					if type(each['@name']) == unicode:
-						setattr(obj_handle.SolrDoc.doc,each['@name'],each['#text'])
+					if type(each['@name']) == unicode:				
+						fname = each['@name']
+						fvalue = each['#text'].rstrip()
+						if hasattr(obj_handle.SolrDoc.doc, fname) == False:
+							# create empty list
+							setattr(obj_handle.SolrDoc.doc, fname, [])
+						# append to list
+						getattr(obj_handle.SolrDoc.doc, fname).append(fvalue)
 				except:
 					print "Could not add",each
 		except:
-			print "Could not find datastream RELS-INT"
+			print "Could not find or index datastream RELS-INT"
 
-		# update object, no commit yet
-		obj_handle.SolrDoc.update()
+
+		#######################################################################################
+		# Here, we have the opportunity to do some cleanup, addition, and finagling of fields.
+		#######################################################################################
+		
+		
+		if self.printOnly == True:
+			# print and return dicitonary, but do NOT update, commit, or replicate
+			print "DEBUG: printing only"
+			print obj_handle.SolrDoc.doc.__dict__
+			return obj_handle.SolrDoc.doc.__dict__
+
+		# else:
+		# 	# update object, no commit yet
+		# 	obj_handle.SolrDoc.update()
+		# 	return True
 
 
 	def commitSolrChanges(self):		
@@ -230,7 +276,7 @@ class SolrIndexerWorker(object):
 
 
 @celery.task()
-def solrIndexer(fedEvent, PID):	
+def solrIndexer(fedEvent, PID, printOnly=True):	
 
 	# simple function to clean PID from /risearch
 	def cleanPID(PID):
@@ -245,7 +291,7 @@ def solrIndexer(fedEvent, PID):
 	outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
 
 	# init worker
-	worker = SolrIndexerWorker()
+	worker = SolrIndexerWorker(printOnly=printOnly)
 
 	# determine action based on fedEvent
 	# timestamp based
@@ -265,13 +311,19 @@ def solrIndexer(fedEvent, PID):
 			augmentCore(PID)
 		# close handle
 		toUpdate.close()
+
+		# printOnly
+		if worker.printOnly == True:
+			return True
+
 		# update timestamp in Solr		
 		worker.updateLastFedoraIndexDate()
 		# manually commit and replicate changes
 		worker.commitSolrChanges()
-		worker.replicateToSearch()		
+		worker.replicateToSearch()
 
-		print "Total seconds elapsed",worker.totalTime		
+		print "Total seconds elapsed",worker.totalTime	
+		return True	
 
 
 	# fullindex
@@ -288,12 +340,21 @@ def solrIndexer(fedEvent, PID):
 			worker.indexFOXMLinSolr(PID, outputs)
 			# augment documents - from augmentCore.py
 			augmentCore(PID)
+		# close handle
+		toUpdate.close()
+
+		# printOnly
+		if worker.printOnly == True:
+			return True
+
 		# update timestamp in Solr		
 		worker.updateLastFedoraIndexDate()
 		# manually commit and replicate changes
 		worker.commitSolrChanges()
 		worker.replicateToSearch()
+
 		print "Total seconds elapsed",worker.totalTime	
+		return True
 		
 
 	# Index single item per fedEvent
@@ -301,7 +362,12 @@ def solrIndexer(fedEvent, PID):
 
 		print "Updating / Indexing",PID
 		# index PIDs in Solr
-		worker.indexFOXMLinSolr(PID,outputs)
+		result = worker.indexFOXMLinSolr(PID,outputs)
+
+		# printOnly
+		if worker.printOnly == True:
+			return result
+		
 		# augment documents - from augmentCore.py
 		augmentCore(PID)		
 		return True

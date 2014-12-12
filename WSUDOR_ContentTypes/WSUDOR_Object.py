@@ -26,7 +26,7 @@ import eulfedora
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import models, helpers, redisHandles
+from WSUDOR_Manager import models, helpers, redisHandles, actions
 import WSUDOR_ContentTypes
 
 
@@ -60,8 +60,19 @@ def WSUDOR_Object(object_type,payload):
 				return False
 			
 			# GET object content_model
-			content_type = payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel')
-			content_type = content_type.next().split(":")[-1]			
+			'''
+			This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off 
+			to use, "Image".  Then, we append that to "WSUDOR_" to get ContentTypes such as "WSUDOR_Image", or "WSUDOR_Collection", etc.
+			'''
+			content_types = list(payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel'))
+			if len(content_types) == 1:
+				content_type = content_types[0].split(":")[-1]
+			else:
+				# use preferredContentModel relationship to disambiguate
+				pref_type = list(payload.risearch.get_objects(payload.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel'))
+				pref_type = pref_type[0].split(":")[-1]
+				content_type = pref_type
+
 			content_type = "WSUDOR_"+str(content_type)
 		
 		print "Our content type is:",content_type
@@ -275,7 +286,6 @@ class WSUDOR_GenObject(object):
 
 
 	# WSUDOR_Object Methods
-
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
 	def finishIngest(self):
 
@@ -298,8 +308,9 @@ class WSUDOR_GenObject(object):
 		# derive Dublin Core from MODS, update DC datastream
 		self.DCfromMODS()
 
-		# CONSIDER WRITING RELS-EXT RELATIONSHIP: "WSUDOR:isValidWSUDORObject"
-		
+		# Write isWSUDORObject RELS-EXT relationship
+		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
+
 		# finally, return
 		return True
 
@@ -388,6 +399,22 @@ class WSUDOR_GenObject(object):
 		os.system("mv {named_dir}.tar {target_dir}".format(named_dir=named_dir,target_dir=target_dir))
 
 		return "http://digital.library.wayne.edu/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username)
+
+
+
+	# Solr Indexing
+	def indexToSolr(self, printOnly=False):
+		return actions.solrIndexer.solrIndexer('modifyObject',self.pid, printOnly)
+
+	def previewSolrDict(self):
+		'''
+		Function to run current WSUDOR object through indexSolr() transforms
+		'''
+		try:
+			return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly=True)
+		except:
+			print "Could not run indexSolr() transform."
+			return False
 
 
 	################################################################

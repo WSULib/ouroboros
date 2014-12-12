@@ -19,3 +19,8 @@ class LazyProperty(object):
 		value = self.fget(obj)
 		setattr(obj,self.func_name,value)
 		return value
+
+
+# generic, empty object class
+class BlankObject(object):
+    pass

@@ -1,4 +1,4 @@
-from WSUDOR_Manager import db
+from WSUDOR_Manager import db, actions
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from datetime import datetime
@@ -173,6 +173,8 @@ class SolrDoc(object):
 
 	def asDictionary(self):
 		return self.doc.__dict__
+
+	
 
 
 

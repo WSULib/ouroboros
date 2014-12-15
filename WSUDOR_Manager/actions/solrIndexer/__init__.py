@@ -74,7 +74,7 @@ def updateSolr(update_type):
 class SolrIndexerWorker(object):
 
 	# init worker with built-in timers
-	def __init__(self,printOnly):
+	def __init__(self, printOnly):
 		self.startTime = int(time.time())
 		self.printOnly = printOnly
 
@@ -220,7 +220,6 @@ class SolrIndexerWorker(object):
 		# Here, we have the opportunity to do some cleanup, addition, and finagling of fields.
 		#######################################################################################
 		
-		print "printOnly status is",self.printOnly
 		if self.printOnly == True:
 			# print and return dicitonary, but do NOT update, commit, or replicate
 			print "DEBUG: printing only"
@@ -287,7 +286,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 	outputs['transformExcepts'] = './reports/'+now+'_transformExcepts.csv'
 	outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
 
-	# init worker
+	# init worker, always with printOnly parameter, defaulting to localConfig unless explicitly set 
 	worker = SolrIndexerWorker(printOnly=printOnly)
 
 	# determine action based on fedEvent
@@ -309,7 +308,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 		# close handle
 		toUpdate.close()
 
-		# printOnly
+		# printOnly, do not continue with updates
 		if worker.printOnly == True:
 			return True
 
@@ -340,7 +339,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 		# close handle
 		toUpdate.close()
 
-		# printOnly
+		# printOnly, do not continue with updates
 		if worker.printOnly == True:
 			return True
 
@@ -361,9 +360,10 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 		# index PIDs in Solr
 		result = worker.indexFOXMLinSolr(PID,outputs)
 
-		# printOnly
+		# printOnly, do not continue with updates
 		if worker.printOnly == True:
 			return result
+			# return True
 		
 		# augment documents - from augmentCore.py
 		augmentCore(PID)		

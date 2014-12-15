@@ -9,12 +9,14 @@
     xmlns:fedora="info:fedora/fedora-system:def/relations-external#"
     xmlns:myns="http://www.nsdl.org/ontologies/relationships#"
     xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">
-    <xsl:template name="DC">
-        <xsl:param name="prefix">dc_</xsl:param>
-        <xsl:param name="suffix">_ms</xsl:param> 
 
-        <xsl:param name="DCroot"
-            select="/foxml:digitalObject/foxml:datastream[@ID='DC']/foxml:datastreamVersion[last()]/foxml:xmlContent/oai_dc:dc"/>
+    <xsl:template name="DC" match="/">
+        <xsl:param name="prefix">dc_</xsl:param>
+        <xsl:param name="suffix">_ms</xsl:param>
+        <xsl:param name="DCroot" select="//oai_dc:dc"/>
+
+        <!-- Wrap in MODS_fields -->
+    	<fields>
 
         <xsl:for-each select="$DCroot/*">
             <field>
@@ -24,5 +26,7 @@
                 <xsl:value-of select="text()"/>
             </field>
         </xsl:for-each>
+
+    	</fields>
     </xsl:template>
 </xsl:stylesheet>

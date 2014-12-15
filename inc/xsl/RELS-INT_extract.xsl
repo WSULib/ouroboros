@@ -4,10 +4,11 @@
     xmlns:mods="http://www.loc.gov/mods/v3" exclude-result-prefixes="mods"
     xmlns:foxml="info:fedora/fedora-system:def/foxml#"
     xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:fedora="info:fedora/fedora-system:def/relations-external#" xmlns:myns="http://www.nsdl.org/ontologies/relationships#">
-    <xsl:template name="RELS-INT">        
-        <xsl:param name="RELSroot"
-            select="/foxml:digitalObject/foxml:datastream[@ID='RELS-INT']/foxml:datastreamVersion[last()]/foxml:xmlContent/rdf:RDF/rdf:Description"/>        
-        <xsl:for-each select="$RELSroot/*">     
+    <xsl:template name="RELS-INT" match="/">        
+        <xsl:param name="RELSroot" select="//rdf:RDF/rdf:Description"/>        
+        <xsl:for-each select="$RELSroot/*">  
+
+        	<fields>   
             
             <field> 
                 <xsl:attribute name="name"> 
@@ -40,6 +41,8 @@
                 <xsl:text>]</xsl:text>
 
             </field> 
-        </xsl:for-each>        
+        </xsl:for-each>   
+
+        </fields>     
     </xsl:template>
 </xsl:stylesheet>

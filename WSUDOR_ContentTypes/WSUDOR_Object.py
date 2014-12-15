@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# module for management of bags in the WSUDOR environment
-import bagit
 import os
 import mimetypes
 import json
@@ -13,6 +11,12 @@ import tarfile
 import uuid
 import StringIO
 import tarfile
+import xmltodict
+from lxml import etree
+import requests
+
+# library for working with LOC BagIt standard 
+import bagit
 
 # celery
 from cl.cl import celery
@@ -20,11 +24,12 @@ from cl.cl import celery
 # eulfedora
 import eulfedora
 
-# handles
-from WSUDOR_Manager.solrHandles import solr_handle
-from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles
+# WSUDOR
 import WSUDOR_ContentTypes
+from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager import models, helpers, redisHandles, actions
+
 
 
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
@@ -57,8 +62,19 @@ def WSUDOR_Object(object_type,payload):
 				return False
 			
 			# GET object content_model
-			content_type = payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel')
-			content_type = content_type.next().split(":")[-1]			
+			'''
+			This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off 
+			to use, "Image".  Then, we append that to "WSUDOR_" to get ContentTypes such as "WSUDOR_Image", or "WSUDOR_Collection", etc.
+			'''
+			content_types = list(payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel'))
+			if len(content_types) == 1:
+				content_type = content_types[0].split(":")[-1]
+			else:
+				# use preferredContentModel relationship to disambiguate
+				pref_type = list(payload.risearch.get_objects(payload.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel'))
+				pref_type = pref_type[0].split(":")[-1]
+				content_type = pref_type
+
 			content_type = "WSUDOR_"+str(content_type)
 		
 		print "Our content type is:",content_type
@@ -69,7 +85,13 @@ def WSUDOR_Object(object_type,payload):
 		return False
 	
 	# need check if valid subclass of WSUDOR_GenObject	
-	return getattr(WSUDOR_ContentTypes,str(content_type))(object_type=object_type,content_type=content_type,payload=payload)
+	try:
+		return getattr(WSUDOR_ContentTypes,str(content_type))(object_type=object_type,content_type=content_type,payload=payload)
+	except:
+		print "Could not find appropriate ContentType, returning False."
+		return False
+
+
 
 
 
@@ -88,7 +110,7 @@ class WSUDOR_GenObject(object):
 	'''	
 
 	# init
-	def __init__(self,object_type=False,content_type=False,payload=False):	
+	def __init__(self,object_type=False,content_type=False,payload=False):		
 
 		self.struct_requirements = {
 			"WSUDOR_GenObject":{
@@ -126,6 +148,7 @@ class WSUDOR_GenObject(object):
 			}		
 		}	
 
+		# two roads - WSUDOR or BagIt archive for the object returned
 		try:			
 
 			# Future WSUDOR object, BagIt object
@@ -176,7 +199,9 @@ class WSUDOR_GenObject(object):
 				self.pid_suffix = payload.pid.split(":")[1]
 				self.content_type = content_type
 				self.ohandle = payload
-				self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
+				# only fires for v2 objects
+				if "OBJMETA" in self.ohandle.ds_list:
+					self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
 
 
 		except Exception,e:
@@ -184,6 +209,85 @@ class WSUDOR_GenObject(object):
 			print e
 
 
+
+	# Lazy Loaded properties
+	'''
+	These properties use helpers.LazyProperty decorator, to avoid loading them if not called.
+	'''
+	
+	# MODS metadata
+	@helpers.LazyProperty
+	def MODS_XML(self):
+		return self.ohandle.getDatastreamObject('MODS').content.serialize()
+
+	@helpers.LazyProperty
+	def MODS_dict(self):
+		return xmltodict.parse(self.MODS_XML)
+
+	@helpers.LazyProperty
+	def MODS_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/MODS_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		XMLroot = etree.fromstring(self.MODS_XML)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+	
+	#DC metadata
+	@helpers.LazyProperty
+	def DC_XML(self):
+		return self.ohandle.getDatastreamObject('DC').content.serialize()
+
+	@helpers.LazyProperty
+	def DC_dict(self):
+		return xmltodict.parse(self.DC_XML)
+
+	@helpers.LazyProperty
+	def DC_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/DC_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		XMLroot = etree.fromstring(self.DC_XML)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+
+	#RELS-EXT and RELS-INT metadata
+	@helpers.LazyProperty
+	def RELS_EXT_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		# raw, unmodified RDF
+  		raw_xml_URL = "http://localhost/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=self.pid)
+  		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+  		XMLroot = etree.fromstring(raw_xml)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+
+	@helpers.LazyProperty
+	def RELS_INT_Solr_flat(self):
+		# flattens MODS with GSearch XSLT and loads as dictionary
+		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
+		xslt_tree = etree.parse(XSLhand)
+  		transform = etree.XSLT(xslt_tree)
+  		# raw, unmodified RDF
+  		raw_xml_URL = "http://localhost/fedora/objects/{PID}/datastreams/RELS-INT/content".format(PID=self.pid)
+  		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+  		XMLroot = etree.fromstring(raw_xml)
+		SolrXML = transform(XMLroot)
+		return xmltodict.parse(str(SolrXML))
+
+
+	# SolrDoc class
+	@helpers.LazyProperty
+	def SolrDoc(self):
+		return models.SolrDoc(self.pid)
+
+
+	# WSUDOR_Object Methods
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
 	def finishIngest(self):
 
@@ -205,7 +309,10 @@ class WSUDOR_GenObject(object):
 
 		# derive Dublin Core from MODS, update DC datastream
 		self.DCfromMODS()
-		
+
+		# Write isWSUDORObject RELS-EXT relationship
+		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
+
 		# finally, return
 		return True
 
@@ -296,12 +403,29 @@ class WSUDOR_GenObject(object):
 		return "http://digital.library.wayne.edu/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username)
 
 
-	# derive DC from MODS (experimental action in Gen ContentType)	
+
+	# Solr Indexing
+	def indexToSolr(self, printOnly=False):
+		return actions.solrIndexer.solrIndexer('modifyObject',self.pid, printOnly)
+
+	def previewSolrDict(self):
+		'''
+		Function to run current WSUDOR object through indexSolr() transforms
+		'''
+		try:
+			return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly=True)
+		except:
+			print "Could not run indexSolr() transform."
+			return False
+
+
+	################################################################
+	# Consider moving
+	################################################################
+	# derive DC from MODS
 	def DCfromMODS(self):
-		'''
-		Experimental - needs celery processing
-		'''
-		# retrieve MODS		
+		
+		# 1) retrieve MODS		
 		MODS_handle = self.ohandle.getDatastreamObject('MODS')		
 		XMLroot = etree.fromstring(MODS_handle.content.serialize())
 
@@ -319,41 +443,6 @@ class WSUDOR_GenObject(object):
 		derive_results = DS_handle.save()
 		print "DCfromMODS result:",derive_results
 		return derive_results
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

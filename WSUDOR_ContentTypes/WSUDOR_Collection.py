@@ -76,6 +76,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# if ohandle.exists == True:
 		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))		
 
+
 		# validate children (collection) objects
 		# child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
 		# for child_object in child_objects:

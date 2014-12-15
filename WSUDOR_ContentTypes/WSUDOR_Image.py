@@ -1,5 +1,6 @@
-# module for management of bags in the WSUDOR environment
-import bagit
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import mimetypes
 import json
@@ -9,21 +10,20 @@ import time
 import traceback
 import sys
 
+# library for working with LOC BagIt standard 
+import bagit
+
 # celery
 from cl.cl import celery
 
 # eulfedora
 import eulfedora
 
-import WSUDOR_Manager
-
-# handles
+# WSUDOR
+import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles
-
-# import WSUDOR_ContentTypes
-import WSUDOR_ContentTypes
 
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):

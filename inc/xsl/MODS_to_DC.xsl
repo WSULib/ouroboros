@@ -360,12 +360,20 @@
 			</dc:rights>
 		</xsl:template>
 	
+		<!-- template used for deriving names for variety of fields -->
 		<xsl:template name="name">
 			<xsl:variable name="name">
 				<xsl:for-each select="mods:namePart[not(@type)]">
 					<xsl:value-of select="."/>
 					<xsl:text> </xsl:text>
 				</xsl:for-each>
+				
+				<!-- if 'termsofAddress' present, add that before comma, surname, etc. -->				
+				<xsl:for-each select="mods:namePart[@type='termsOfAddress']">
+					<xsl:value-of select="."/>
+					<xsl:text> </xsl:text>
+				</xsl:for-each>
+				
 				<xsl:value-of select="mods:namePart[@type='family']"/>
 				<xsl:if test="mods:namePart[@type='given']">
 					<xsl:text>, </xsl:text>

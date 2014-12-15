@@ -1,1 +1,0 @@
-- validate functions should be ContenType specific, inheriting more general tests from GenObject (currently isolated to ContentType)

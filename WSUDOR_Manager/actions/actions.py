@@ -19,6 +19,10 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#solrIndexer
+from solrIndexer import solrIndexer_blue
+app.register_blueprint(solrIndexer_blue, url_prefix=tasks_URL_prefix)
+
 #exportObject to objectBag
 from exportObject import exportObject, exportObject_worker
 app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
@@ -82,10 +86,6 @@ app.register_blueprint(purgeObject, url_prefix=tasks_URL_prefix)
 #editDSXML
 from editDSXML import editDSXML
 app.register_blueprint(editDSXML, url_prefix=tasks_URL_prefix)
-
-#FOXML2Solr
-from FOXML2Solr import FOXML2Solr_blue
-app.register_blueprint(FOXML2Solr_blue, url_prefix=tasks_URL_prefix)
 
 #checksum
 from checksum import checksum, checksum_worker

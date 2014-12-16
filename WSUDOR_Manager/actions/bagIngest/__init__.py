@@ -85,9 +85,10 @@ def celeryTaskFactoryBagIngest(job_num,job_package):
 	job_package['step'] = step		
 
 	# fire ingester
-	result = actions.actions.taskWrapper.delay(job_package)
+	result = actions.actions.taskWrapper.delay(job_package)	
 
 	task_id = result.id		
+	print task_id
 		
 	# update incrementer for total assigned
 	jobs.jobUpdateAssignedCount(job_num)
@@ -176,6 +177,7 @@ def multipleBag_ingest_worker(job_package):
 	for bag in bag_dirs:
 		print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
 		ingestBag(bag)
+		count += 1
 
 	print "Batch ingest complete."
 	return True

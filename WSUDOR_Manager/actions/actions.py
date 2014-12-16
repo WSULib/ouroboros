@@ -164,7 +164,7 @@ def celeryTaskFactory(**kwargs):
 
 #TASKS
 ##################################################################
-@celery.task(base=postTask,bind=True,max_retries=100,name="taskWrapper")
+@celery.task(base=postTask,bind=True,max_retries=3,name="taskWrapper")
 def taskWrapper(self,job_package,*args, **kwargs):
 	
 	# check PIDlock

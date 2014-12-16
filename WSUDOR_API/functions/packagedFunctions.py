@@ -55,7 +55,7 @@ def singleObjectPackage(getParams):
 	# return entire solr doc for object, straight through
 	# saves to 'objectSolrDoc'		
 	query = {
-		"q" : "id:*{PID_suffix}".format(PID_suffix=PID_suffix),
+		"q" : "id:{PID}".format(PID=PID.replace(":","\:")),
 		"rows" : 1,
 		"start" : 0		
 	}
@@ -86,7 +86,7 @@ def singleObjectPackage(getParams):
 		# saves to 'main_imageDict'
 		if objectSolrDoc['rels_hasContentModel'][0] == "info:fedora/CM:Image":
 			query = {
-				"q" : "id:*{PID_suffix}".format(PID_suffix=PID_suffix),
+				"q" : "id:{PID}".format(PID=PID.replace(":","\:")),
 				"rows" : 1,
 				"start" : 0		
 			}

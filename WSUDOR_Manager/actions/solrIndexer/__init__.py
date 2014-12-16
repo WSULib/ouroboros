@@ -272,7 +272,6 @@ class SolrIndexerWorker(object):
 
 @celery.task()
 def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
-	print "printOnly is",SOLR_INDEXER_WRITE_DEFAULT	
 
 	# simple function to clean PID from /risearch
 	def cleanPID(PID):

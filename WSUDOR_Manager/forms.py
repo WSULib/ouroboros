@@ -40,6 +40,23 @@ class addDSForm(Form):
 	content = TextAreaField('Paste Content:')
 	upload = FileField('Upload Content')
 
+# form for creating a manifest needed for bag ingest
+class createManifestForm(Form):
+	# object info
+	objID = StringField('Object ID:')
+	objLabel = StringField('Object Label:')
+	isDiscoverable = SelectField('Object Options:', choices=[('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","object":"info:fedora/True"}', 'Discoverable'), ('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","object":"info:fedora/False"}', 'Not Discoverable')])
+	lockDown = SelectField('Object Options:', choices=[('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy","object":"info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"}', 'Unrestricted Access by Users'), ('"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy":"info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"', '')])
+	contentModel = SelectField('Content Model:', choices=[('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel","object":"info:fedora/CM:Image"}', 'Image'), ('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel","object":"info:fedora/CM:Audio"}', 'Audio'), ('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel","object":"info:fedora/CM:Video"}', 'Video')])
+
+	# datastream info
+	fileName_1 = StringField('Name of File:')
+	dsID_1 = StringField('Datastream ID:')
+	isRepresentedBy_1 = BooleanField('Make Thumbnail for Object', default=False)
+	MIMEType_1 = StringField('MIME-Type:')
+	dsLabel_1 = StringField('Label:')
+	internalRelationships_1 = StringField('Type Out Internal Relationships')
+
 
 # form for importing <mods:modsCollection>
 class importMODS(Form):

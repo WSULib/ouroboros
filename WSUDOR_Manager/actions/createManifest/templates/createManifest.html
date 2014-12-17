@@ -1,0 +1,50 @@
+{% include 'header.html' %}
+<h1>Create Ingest Manifest</h1>
+<form class="form-horizontal" id="form" role="form" method="POST" action="/tasks/stagingManifest" enctype="multipart/form-data">
+	<div class="col-md-3">
+            <div class="form-group">
+				{{ form.csrf_token }} 
+				{{ form.objID.label(class="control-label") }} {{ form.objID(class="form-control input-sm") }}
+            </div>
+            <div class="form-group">
+				{{ form.objLabel.label(class="control-label") }} {{ form.objLabel(class="form-control input-sm") }}
+            </div>    
+            <div class="form-group">
+                {{ form.isDiscoverable.label(class="control-label") }} {{ form.isDiscoverable(class="form-control dataType input-sm") }} 
+            </div>
+            <div class="form-group">
+                {{ form.lockDown.label(class="control-label") }} {{ form.lockDown(class="form-control input-sm") }}
+            </div>
+            <div class="form-group">
+                {{ form.contentModel.label(class="control-label") }} {{ form.contentModel(class="form-control input-sm") }}
+            </div>
+	        <div class="datastream">
+	            <a href="#" class="deleteDS">Delete</a>
+            <div class="form-group">
+                {{ form.fileName_1.label(class="control-label") }} {{ form.fileName_1(class="form-control input-sm") }}
+            </div>
+            <div class="form-group">
+                {{ form.dsID_1.label(class="control-label") }} {{ form.dsID_1(class="form-control input-sm") }}
+            </div>
+			<div class="form-group">
+				{{ form.isRepresentedBy_1.label(class="control-label") }} {{ form.isRepresentedBy_1(class="form-control input-sm") }} 
+			</div>
+			<div class="form-group">
+                <a href="/tasks/mimeTypeSearch"><span class="glyphicon glyphicon-question-sign"></span></a>
+				{{ form.MIMEType_1.label(class="control-label") }} {{ form.MIMEType_1(class="form-control input-sm") }}
+			</div>
+			<div class="form-group">
+				{{ form.dsLabel_1.label(class="control-label") }} {{ form.dsLabel_1(class="form-control input-sm") }}
+			</div>
+			<div class="form-group">
+				{{ form.internalRelationships_1.label(class="control-label") }} {{ form.internalRelationships_1(class="form-control input-sm") }}
+			</div>
+        </div>
+        <div class="formRowRepeatingSection">
+                <a href="#" class="addDS">Add</a>
+            </div>
+        <div class="form-group">
+            <input type="submit" class="btn btn-primary" value="Submit" />
+        </div>
+    </div>
+    </form>

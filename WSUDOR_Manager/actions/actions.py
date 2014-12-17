@@ -91,6 +91,9 @@ app.register_blueprint(editDSXML, url_prefix=tasks_URL_prefix)
 from checksum import checksum, checksum_worker
 app.register_blueprint(checksum, url_prefix=tasks_URL_prefix)
 
+#createManifest
+from createManifest import createManifest
+app.register_blueprint(createManifest, url_prefix=tasks_URL_prefix)
 
 # task firing
 ###########################################################################

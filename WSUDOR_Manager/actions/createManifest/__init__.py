@@ -30,7 +30,7 @@ def stagingManifest():
 		'label' : request.form['objLabel'],
 		'policy' : str(json.loads(request.form['lockDown'])['object']),
 		'content_type' : "WSUDOR_"+str(json.loads(request.form['contentModel'])['object']).replace('info:fedora/CM:',''),
-		'object_relationships' : [s
+		'object_relationships' : [
 			json.loads(request.form['isDiscoverable']),
 			json.loads(request.form['lockDown']),
 			json.loads(request.form['contentModel'])

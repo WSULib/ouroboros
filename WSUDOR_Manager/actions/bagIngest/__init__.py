@@ -253,6 +253,6 @@ def ingestBag(bag_dir):
 	# Remove bag_dir (temp location for archive, original payload_location for dir)
 	# os.system("rm -r {bag_dir}".format(bag_dir=bag_dir))
 
-	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label,bag_pid=bag_handle.pid):ingest_bag})
+	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label.encode('utf-8'),bag_pid=bag_handle.pid):ingest_bag})
 
 

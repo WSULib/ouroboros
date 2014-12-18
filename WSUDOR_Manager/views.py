@@ -527,6 +527,25 @@ def retireAllJobs():
 	return redirect("/userJobs")
 
 
+# Flush all User Jobs (clear Celery tasks from Redis DB)
+@app.route("/flushCeleryTasks")
+def flushCeleryTasks():
+
+	# get username from session
+	username = session['username']
+
+	# clear broker
+	broker_size = redisHandles.r_broker.dbsize()
+	broker_clear = redisHandles.r_broker.flushdb()
+	
+	if broker_clear == True:
+		msg = "{broker_size} tasks cleared from Celery broker.".format(broker_size=str(broker_size))
+	else:
+		msg = "Errors were had."
+		
+	return render_template("flushCeleryTasks.html",msg=msg)
+
+
 # OBJECT MANAGEMENT
 ####################################################################################
 
@@ -852,6 +871,29 @@ def imgServerCacheClear():
 		msg = "An error was had: {results}".format(results=results)
 		
 	return render_template("imgServerCacheClear.html",msg=msg)
+
+
+
+# Clear user exported BagIt object archives
+@app.route("/clearExportBagItArchives")
+def clearExportBagItArchives():
+
+	# get username from session
+	username = session['username']	
+	target_dir = "/var/www/wsuls/Ouroboros/export/{username}".format(username=username)
+
+	# run os command and return results
+	results = os.system("rm -r {target_dir}/*".format(target_dir=target_dir))	
+	
+	if results == 0:
+		msg = "User exported, BagIt archives successfully cleared."
+	else:
+		msg = "An error was had: {results}".format(results=results)
+		
+	return render_template("exportBagClear.html",msg=msg)
+
+
+
 
 
 # EXPERIMENTAL SERVICES

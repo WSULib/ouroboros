@@ -1,4 +1,6 @@
-# Helper Classes for Ouroboros
+# Helper Classes and Functions for Ouroboros
+
+import time
 
 
 # LazyProperty Decorator
@@ -24,3 +26,14 @@ class LazyProperty(object):
 # generic, empty object class
 class BlankObject(object):
     pass
+
+
+# small decorator to time functions
+def timing(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        print '%s function took %0.3f ms, %0.3f s' % (f.func_name, (time2-time1)*1000.0, (time2-time1))
+        return ret
+    return wrap

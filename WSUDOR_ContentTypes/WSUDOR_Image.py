@@ -23,7 +23,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles
+from WSUDOR_Manager import redisHandles, helpers
 
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -93,6 +93,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
+	@helpers.timing
 	def ingestBag(self):
 
 		if self.object_type != "bag":
@@ -127,13 +128,17 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
+				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 			
 			# writes derived RELS-EXT
+			
 			# isRepresentedBy
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+			
 			# hasContentModel
-			content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]
+			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
+			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
 			# write MODS datastream

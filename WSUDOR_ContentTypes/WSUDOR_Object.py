@@ -66,16 +66,29 @@ def WSUDOR_Object(object_type,payload):
 			This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off 
 			to use, "Image".  Then, we append that to "WSUDOR_" to get ContentTypes such as "WSUDOR_Image", or "WSUDOR_Collection", etc.
 			'''
-			content_types = list(payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel'))
-			if len(content_types) == 1:
-				content_type = content_types[0].split(":")[-1]
-			else:
-				# use preferredContentModel relationship to disambiguate
-				pref_type = list(payload.risearch.get_objects(payload.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel'))
-				pref_type = pref_type[0].split(":")[-1]
-				content_type = pref_type
+			try:
+				content_types = list(payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel'))
+				if len(content_types) <= 1:
+					content_type = content_types[0].split(":")[-1]
+				else:
+					try:
+						# use preferredContentModel relationship to disambiguate
+						pref_type = list(payload.risearch.get_objects(payload.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel'))
+						pref_type = pref_type[0].split(":")[-1]
+						content_type = pref_type
+					except:
+						print "More than one hasContentModel found, but no preferredContentModel.  Aborting."
+						return False
 
-			content_type = "WSUDOR_"+str(content_type)
+				content_type = "WSUDOR_"+str(content_type)
+
+			# fallback, grab straight from OBJMETA datastream / only fires for v2 objects
+			except:				
+				if "OBJMETA" in payload.ds_list:
+					print "Race conditions detected, grabbing content_type from objMeta"
+					objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
+					content_type = objmeta['content_type']
+
 		
 		print "Our content type is:",content_type
 

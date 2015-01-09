@@ -898,7 +898,7 @@ def clearExportBagItArchives():
 
 # EXPERIMENTAL SERVICES
 ####################################################################################
-# stream bits from Fedora through fm2
+# stream bits from Fedora through WSUDOR_Manager
 @app.route("/strDS/<PID>/<DS>", methods=['POST', 'GET'])
 def strDS(PID,DS):
 	obj_handle = fedora_handle.get_object(PID)

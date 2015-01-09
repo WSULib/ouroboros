@@ -53,40 +53,25 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"failed_tests":[]
 		}
 
-
 		# check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
 		ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
 		if self.objMeta['isRepresentedBy'] not in ds_ids:
 			report_failure(("isRepresentedBy_check","{isRep} is not in {ds_ids}".format(isRep=self.objMeta['isRepresentedBy'],ds_ids=ds_ids)))
 
-
 		# check that content_type is a valid ContentType				
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
 
-
-		# check that objMeta.id starts with "wayne:"
+		# # check that objMeta.id starts with "wayne:"
 		# if not self.pid.startswith("wayne:"):
 		# 	report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))
-
 
 		# # check that objMeta.id is NOT already an object in WSUDOR
 		# UPDATE : on back burner, Eulfedora seems to create a placeholder object in Fedora somehow...
 		# ohandle = fedora_handle.get_object(self.pid)
 		# if ohandle.exists == True:
 		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))		
-
-
-		# validate children (collection) objects
-		# child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
-		# for child_object in child_objects:
-		# 	print "Validating child object:",child_object
-		# 	child_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=self.Bag.path+"/data/objects/"+child_object)			
-		# 	validate_results = child_handle.validIngestBag()
-		# 	if validate_results['verdict'] == False:
-		# 		report_failure(("Child Validation","Child {label}, at path {path}, failed to validate for these reasons: {fail_dict}".format(label=child_handle.label,path=self.Bag.path+"/data/objects/"+child_object,fail_dict=validate_results)))
-
-		
+				
 		# finally, return verdict
 		return results_dict
 
@@ -120,7 +105,8 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
-				self.ohandle.add_relationship(relationship['predicate'],relationship['object'])	
+				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 					
 			# writes derived RELS-EXT
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])

@@ -16,7 +16,7 @@
 	<div class="col-md-5">
 		<form class="form" id="form" role="form" method="POST" action="/tasks/bagIngest/ingest" enctype="multipart/form-data">
 			<div class="form-group">
-				<label>Ingest Type (required):</label>
+				<label>Ingest Type (<span style="color:red;">required</span>):</label>
 				<div class="radio">
 					<label>
 					<input type="radio" name="ingest_type" value="single">
@@ -32,7 +32,7 @@
 			</div>
 			<div class="form-group">
 				<label class="control-label">Full path of BagIt directory or archive file:</label>
-				<input class="form-control" type="text" name="payload_location" placeholder="e.g. /tmp/Ouroboros/ingest_bags/woodTypes_bagged, /tmp/Ouroboros/ingest_bags/randoCollection_bagged.tar">
+				<input class="form-control" type="text" name="payload_location" placeholder="type or paste">
 			</div>
 			<div class="form-group">
 				<input type="submit" class="btn btn-primary" value="Ingest">
@@ -41,29 +41,6 @@
 	</div>
 </div>
 
-<div class="row">
-	<div class="col-md-6">
-		<h4 onclick="$('#examples').slideToggle();" style="cursor:pointer;">-- Example Files --</h4>
-		<div id="examples" style="display:none;">
-			<h4>-- BagIt dirs --</h4>
-			<ul>
-				<li>tree1 (single image) ---> /tmp/Ouroboros/ingest_bags/tree1_bagged</a></li>
-				<li>woodTypes (multiple images) ---> /tmp/Ouroboros/ingest_bags/woodTypes_bagged</a></li>
-				<li>randoCollections (collection object) ---> /tmp/Ouroboros/ingest_bags/randoCollection_bagged</a></li>
-				<li>Multiple Dirs, "Bag of Bags" ---> /tmp/Ouroboros/ingest_bags/bag_of_bags</a></li>
 
-			</ul>
-			<h4>-- BagIt archives --</h4>
-			<ul>
-				<li>tree1 (single image) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTtree1.tar</a></li>
-				<li>woodTypes (multiple images) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTwoodtypes.tar</a></li>
-				<li>randoCollections (collection object) ---> /var/www/wsuls/Ouroboros/export/graham/waynev2-BAGTESTmapleleaf.tar</a></li>
-				<li>multBags (multiple BagIt archives, in .tar archive) ---> /var/www/wsuls/Ouroboros/export/graham/multBags.tar</span></a></li>
-				<li>multDirs (multiple BagIt directories, in .tar archive) ---> /var/www/wsuls/Ouroboros/export/graham/multDirs.tar</a></li>
-				<li>TinyCollection (multiple BagIt directories, in .tar archive) ---> /var/www/wsuls/Ouroboros/export/graham/collection.tar</a></li>
-			</ul>
-		</div>
-	</div>
-</div>
 
 {% include 'footer.html' %}

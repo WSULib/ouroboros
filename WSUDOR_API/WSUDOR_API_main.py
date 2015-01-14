@@ -9,6 +9,7 @@ import json
 import argparse
 import ast
 import re
+import traceback
 
 # WSUDOR_API modules
 from functions.utils import *
@@ -30,6 +31,7 @@ def WSUDOR_API_main(getParams):
 				try:
 					JSONdict[funcName.__name__] = funcName(getParams) #passes *all* GET params from mainRouter()
 				except Exception,e:
+					traceback.print_exc(file=sys.stdout)
 					JSONdict[funcName.__name__] = '{{"status":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
 			else:
 				print "Function not found"

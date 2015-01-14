@@ -201,7 +201,7 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				e.g. audiowaveform -i rainforest.wav -o /var/www/wsuls/dev/graham/dropbox/test2.png -w 640 --waveform-color 0c5449ff --background-color 00000000 --no-axis-labels
 				'''
 				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".png"
-				os.system("audiowaveform -i {input_file} -o {temp_filename} -w 1280 --waveform-color 0c5449ff --background-color FFFFFFFF --no-axis-labels".format(input_file=isRepresentedBy_filepath, temp_filename=temp_filename))
+				os.system("audiowaveform -i {input_file} -o {temp_filename} -w 1280 --waveform-color 0c5449ff --background-color FFFFFFFF --no-axis-labels".format(input_file=file_path, temp_filename=temp_filename))
 				
 				# preview (do first, downsizing from here)				
 				im = Image.open(temp_filename)	

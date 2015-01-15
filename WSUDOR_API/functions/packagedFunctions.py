@@ -30,6 +30,10 @@ from WSUDOR_Manager.solrHandles import solr_handle
 
 from availableFunctions import *
 
+'''
+Next steps - move to use ContentTypes!
+'''
+
 
 # class to hold all methods for singleObjectPackage
 class SingleObjectMethods(object):	
@@ -73,7 +77,7 @@ class SingleObjectMethods(object):
 	def runAll(self):
 		for method in inspect.getmembers(self, predicate=inspect.ismethod):		
 			if method[0] != "__init__" and method[0] != "runAll":
-				print "Running",method[0]
+				# print "Running",method[0]
 				response_tuple = method[1](self.getParams)
 				print response_tuple
 				# if not False, add to response
@@ -123,7 +127,7 @@ class SingleObjectMethods(object):
 	def main_imageDict_comp(self,getParams):
 		# create small dictinoary with image datastreams for main intellectual object
 		# saves to 'main_imageDict'
-		if self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] == "info:fedora/CM:Image":
+		if self.return_dict['objectSolrDoc'] != False and self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] == "info:fedora/CM:Image":
 			query = {
 				"q" : "id:{PID}".format(PID=self.PID.replace(":","\:")),
 				"rows" : 1,
@@ -146,7 +150,7 @@ class SingleObjectMethods(object):
 	def parts_imageDict_comp(self,getParams):
 		# returns image dictionary for parts, reusing hasPartOf_results
 		# saves to 'parts_imageDict'	
-		if self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] == "info:fedora/CM:Image":
+		if self.return_dict['objectSolrDoc'] != False and self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] == "info:fedora/CM:Image":
 			handle = json.loads(hasPartOf(getParams))	
 			print "HANDLE HERE:",handle
 			parts_imageDict = {}
@@ -173,16 +177,16 @@ class SingleObjectMethods(object):
 	def audio_playlist_comp(self, getParams):
 		# return JSON object of audio objectc PLAYLIST datastream
 		
-		if self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] == "info:fedora/CM:Audio":
+		if self.return_dict['objectSolrDoc'] != False and self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] in ["info:fedora/CM:Audio","info:fedora/CM:Video"]:
 			
 			# get JSON from PLAYLIST datastream
 			obj_handle = fedora_handle.get_object(self.PID)
 			ds_handle = obj_handle.getDatastreamObject("PLAYLIST")
 			playlist_json = json.loads(ds_handle.content)
-			return ("audio_playlist",playlist_json)
+			return ("playlist",playlist_json)
 
 		else:
-			return ("audio_playlist",False)
+			return ("playlist",False)
 	
 
 

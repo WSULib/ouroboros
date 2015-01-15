@@ -25,23 +25,22 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
 
-# audio conversions and libraries
-from pydub import AudioSegment
 
 
-class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
+
+class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	def __init__(self,object_type=False,content_type=False,payload=False):
 		
 		# run __init__ from parent class
 		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload)
 		
-		# Add WSUDOR_Audio struct_requirements to WSUDOR_Object instance struct_requirements
-		self.struct_requirements['WSUDOR_Audio'] = {
+		# Add WSUDOR_Video struct_requirements to WSUDOR_Object instance struct_requirements
+		self.struct_requirements['WSUDOR_Video'] = {
 			"datastreams":[
 				{
-					"id":"*_MP3",
-					"purpose":"Access MP3 derivative",
+					"id":"*_MP4",
+					"purpose":"Access MP4 derivative",
 					"mimetype":"audio/mpeg"
 				}				
 			],
@@ -155,7 +154,7 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			playlist_list = []
 
 			# create derivatives and write datastreams
-			count = 1			
+			count = 1
 			for ds in self.objMeta['datastreams']:
 
 				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
@@ -176,7 +175,7 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				# make mp3 derivative				
 				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".mp3"
-				audio_file_handle = AudioSegment.from_file(file_path)
+				audio_file_handle = VideoSegment.from_file(file_path)
 				mp3_file_handle = audio_file_handle.export(temp_filename,format="mp3")
 				mp3_file_handle.close()
 				if os.path.getsize(temp_filename) < 1:

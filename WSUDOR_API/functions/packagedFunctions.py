@@ -138,8 +138,9 @@ class SingleObjectMethods(object):
 			main_imageDict = {
 				"thumbnail" : doc_handle['rels_isRepresentedBy'][0]+"_THUMBNAIL",
 				"preview" : doc_handle['rels_isRepresentedBy'][0]+"_PREVIEW",
-				"access" : doc_handle['rels_isRepresentedBy'][0],
-				"jp2" : doc_handle['rels_isRepresentedBy'][0]+"_JP2"
+				"access" : doc_handle['rels_isRepresentedBy'][0]+"_ACCESS",				
+				"jp2" : doc_handle['rels_isRepresentedBy'][0]+"_JP2",
+				"original" : doc_handle['rels_isRepresentedBy'][0],
 			}
 			return ("main_imageDict",main_imageDict)
 

@@ -158,6 +158,18 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				orig_handle.label = ds['label']
 				orig_handle.content = open(file_path)
 				orig_handle.save()
+
+				# make access
+				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+				im = Image.open(file_path)				
+				if im.mode != "RGB":
+					im = im.convert("RGB")
+				im.save(temp_filename,'JPEG')
+				preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_ACCESS".format(ds_id=ds['ds_id']), "{label}_ACCESS".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
+				preview_handle.label = "{label}_ACCESS".format(label=ds['label'])
+				preview_handle.content = open(temp_filename)
+				preview_handle.save()
+				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 				
 				# make thumb			
 				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
@@ -211,6 +223,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_THUMBNAIL'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_JP2'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_PREVIEW'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_ACCESS'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isAccessOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
 
 
 			# write generic thumbnail and preview

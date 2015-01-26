@@ -27,6 +27,7 @@ from localConfig import *
 # modules from WSUDOR_Manager
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager import WSUDOR_ContentTypes
 
 from availableFunctions import *
 
@@ -35,46 +36,39 @@ Next steps - move to use ContentTypes!
 '''
 
 
+
 # class to hold all methods for singleObjectPackage
 class SingleObjectMethods(object):	
 
 	def __init__(self, getParams):
+
 		self.getParams = getParams
 		self.return_dict = {}
 
 		# get PID
 		self.PID = getParams['PID'][0]
-		self.PID_suffix = self.PID.split(":")[1]
+		self.PID_suffix = self.PID.split(":")[1]		
+
+		# instantiate WSUDOR object
+		self.obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=self.PID)
 
 		# determine if object exists and is active
-		isActive_dict = json.loads(getObjectXML(getParams))
-		if isActive_dict['object_status'] == "Absent" or isActive_dict['object_status'] == "Inactive":
-			# not present, return reduced dictionary
-			self.return_dict = {		
-				'isActive':isActive_dict
-			}
-			self.active = False
-		else:
+		if self.obj_handle != False and self.obj_handle.ohandle.exists == True and self.obj_handle.ohandle.state == "A":
 			self.active = True
-			self.return_dict['isActive'] = isActive_dict
+			self.return_dict['isActive'] = {"object_status":"Active"}
 
+			# retrieve Solr doc
+			self.return_dict['objectSolrDoc'] = self.obj_handle.SolrDoc.asDictionary()
 
-		# return entire solr doc for object, straight through
-		query = {
-			"q" : "id:{PID}".format(PID=self.PID.replace(":","\:")),
-			"rows" : 1,
-			"start" : 0		
-		}
-		# perform query	
-		search_results = solr_handle.search(**query)
-		if len(search_results.documents) > 0:
-			self.return_dict['objectSolrDoc'] = search_results.documents[0]
 		else:
-			self.return_dict['objectSolrDoc'] = False
+			self.active = False
+			self.return_dict['isActive'] = {"object_status":"Absent"}
 
 
+	
 	# function to return all methods for this package Class
-	def runAll(self):
+	def runAll(self):		
+
 		for method in inspect.getmembers(self, predicate=inspect.ismethod):		
 			if method[0] != "__init__" and method[0] != "runAll":
 				# print "Running",method[0]
@@ -127,33 +121,28 @@ class SingleObjectMethods(object):
 	def main_imageDict_comp(self,getParams):
 		# create small dictinoary with image datastreams for main intellectual object
 		# saves to 'main_imageDict'
-		if self.return_dict['objectSolrDoc'] != False and self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] == "info:fedora/CM:Image":
-			query = {
-				"q" : "id:{PID}".format(PID=self.PID.replace(":","\:")),
-				"rows" : 1,
-				"start" : 0		
-			}
-			# perform query
-			doc_handle = solr_handle.search(**query).documents[0]
+		if self.obj_handle.content_type == "WSUDOR_Image":
+			
+			# perform query			
 			main_imageDict = {
-				"thumbnail" : doc_handle['rels_isRepresentedBy'][0]+"_THUMBNAIL",
-				"preview" : doc_handle['rels_isRepresentedBy'][0]+"_PREVIEW",
-				"access" : doc_handle['rels_isRepresentedBy'][0]+"_ACCESS",				
-				"jp2" : doc_handle['rels_isRepresentedBy'][0]+"_JP2",
-				"original" : doc_handle['rels_isRepresentedBy'][0],
+				"thumbnail" : self.return_dict['objectSolrDoc']['rels_isRepresentedBy'][0]+"_THUMBNAIL",
+				"preview" : self.return_dict['objectSolrDoc']['rels_isRepresentedBy'][0]+"_PREVIEW",
+				"access" : self.return_dict['objectSolrDoc']['rels_isRepresentedBy'][0]+"_ACCESS",				
+				"jp2" : self.return_dict['objectSolrDoc']['rels_isRepresentedBy'][0]+"_JP2",
+				"original" : self.return_dict['objectSolrDoc']['rels_isRepresentedBy'][0],
 			}
 			return ("main_imageDict",main_imageDict)
 
 		else:
-			return ("main_imageDict",False)
+			return ("main_imageDict", False)
 
 
 	def parts_imageDict_comp(self,getParams):
 		# returns image dictionary for parts, reusing hasPartOf_results
 		# saves to 'parts_imageDict'	
-		if self.return_dict['objectSolrDoc'] != False and self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] == "info:fedora/CM:Image":
+		if self.obj_handle.content_type == "WSUDOR_Image":
+
 			handle = json.loads(hasPartOf(getParams))	
-			print "HANDLE HERE:",handle
 			parts_imageDict = {}
 			parts_imageDict['parts_list'] = []
 			for each in handle['results']:
@@ -172,17 +161,16 @@ class SingleObjectMethods(object):
 
 
 	####################################################################################
-	# WSUDOR_Audio ContentType
+	# WSUDOR_Audio, WSUDOR_Video ContentType
 	####################################################################################
 
 	def audio_playlist_comp(self, getParams):
 		# return JSON object of audio objectc PLAYLIST datastream
 		
-		if self.return_dict['objectSolrDoc'] != False and self.return_dict['objectSolrDoc']['rels_hasContentModel'][0] in ["info:fedora/CM:Audio","info:fedora/CM:Video"]:
+		if self.obj_handle.content_type in ["WSUDOR_Audio","WSUDOR_Video"]:
 			
 			# get JSON from PLAYLIST datastream
-			obj_handle = fedora_handle.get_object(self.PID)
-			ds_handle = obj_handle.getDatastreamObject("PLAYLIST")
+			ds_handle = self.obj_handle.ohandle.getDatastreamObject("PLAYLIST")
 			playlist_json = json.loads(ds_handle.content)
 			return ("playlist",playlist_json)
 
@@ -195,12 +183,15 @@ class SingleObjectMethods(object):
 # mapping can be found here: https://docs.google.com/spreadsheets/d/1YyOKj1DwmsLDTAU-FsZJUndcPZFGfVn-zdTlyNJrs2Q/edit#gid=0
 def singleObjectPackage(getParams):		
 	
+	# instantiate
 	singlePackage = SingleObjectMethods(getParams)
 
+	# object exists, and is active
 	if singlePackage.active == True:
 		return_dict = singlePackage.runAll()
 		return json.dumps(return_dict)
 
+	# fails for whatever reason - does not exist, is not active, etc.
 	else:
 		return json.dumps(singlePackage.return_dict)
 

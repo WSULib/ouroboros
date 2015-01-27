@@ -27,6 +27,7 @@ from localConfig import *
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager import utilities
 
 
 '''
@@ -567,11 +568,31 @@ def getObjectSize(getParams):
 	PID = getParams['PID'][0]
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=PID)
 
-	if obj_handle != False:
-		return json.dumps( obj_handle.objSizeDict )
+	try:
+		# normalized WSUDOR ContentType
+		if obj_handle != False:
+			return json.dumps( obj_handle.objSizeDict )
 
-	else:
-		return json.dumps({"message":"Could not open object"})
+		# else, try use Eulfedora API raw	
+		else:
+
+			ohandle = fedora_handle.get_object(PID)
+
+			size_dict = {}
+			tot_size = 0
+
+			# loop through datastreams, append size to return dictionary
+			for ds in ohandle.ds_list:
+				ds_handle = ohandle.getDatastreamObject(ds)
+				ds_size = ds_handle.size
+				tot_size += ds_size
+				size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+			size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+			return json.dumps( size_dict )
+
+	except Exception,e:
+		return json.dumps({"message":"Could not determine size of object. Error: {e}".format(e=str(e))})		
 
 
 

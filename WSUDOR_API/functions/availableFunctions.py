@@ -24,6 +24,7 @@ from utils import *
 from localConfig import *
 
 # modules from WSUDOR_Manager
+import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
 
@@ -558,6 +559,19 @@ def hasPartOf(getParams):
 	jsonString = json.dumps(handle)
 
 	return jsonString
+
+
+# get total size of object
+def getObjectSize(getParams):
+	
+	PID = getParams['PID'][0]
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=PID)
+
+	if obj_handle != False:
+		return json.dumps( obj_handle.objSizeDict )
+
+	else:
+		return json.dumps({"message":"Could not open object"})
 
 
 

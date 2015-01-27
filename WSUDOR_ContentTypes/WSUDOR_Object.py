@@ -28,7 +28,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import models, helpers, redisHandles, actions
+from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 
 
 
@@ -123,6 +123,7 @@ class WSUDOR_GenObject(object):
 	'''	
 
 	# init
+	############################################################################################################
 	def __init__(self,object_type=False,content_type=False,payload=False):		
 
 		self.struct_requirements = {
@@ -224,6 +225,7 @@ class WSUDOR_GenObject(object):
 
 
 	# Lazy Loaded properties
+	############################################################################################################
 	'''
 	These properties use helpers.LazyProperty decorator, to avoid loading them if not called.
 	'''
@@ -300,7 +302,26 @@ class WSUDOR_GenObject(object):
 		return models.SolrDoc(self.pid)
 
 
+	@helpers.LazyProperty
+	def objSizeDict(self):
+
+		size_dict = {}
+		tot_size = 0
+
+		# loop through datastreams, append size to return dictionary
+		for ds in self.ohandle.ds_list:
+			ds_handle = self.ohandle.getDatastreamObject(ds)
+			ds_size = ds_handle.size
+			tot_size += ds_size
+			size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+		size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+		return size_dict
+
+
+
 	# WSUDOR_Object Methods
+	############################################################################################################
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
 	def finishIngest(self):
 

@@ -59,28 +59,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"failed_tests":[]
 		}
 
-
-		# check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
-		# ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
-		# if self.objMeta['isRepresentedBy'] not in ds_ids:
-		# 	report_failure(("isRepresentedBy_check","{isRep} is not in {ds_ids}".format(isRep=self.objMeta['isRepresentedBy'],ds_ids=ds_ids)))
-
-
 		# check that content_type is a valid ContentType				
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
-			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
-
-
-		# check that objMeta.id starts with "wayne:"
-		# if not self.pid.startswith("wayne:"):
-		# 	report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))
-
-
-		# check that objMeta.id is NOT already an object in WSUDOR
-		# UPDATE : on back burner, Eulfedora seems to create a placeholder object in Fedora somehow...
-		# ohandle = fedora_handle.get_object(self.pid)
-		# if ohandle.exists == True:
-		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))						
+			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))				
 		
 		
 		# finally, return verdict

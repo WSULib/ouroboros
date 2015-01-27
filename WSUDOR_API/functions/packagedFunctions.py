@@ -161,18 +161,32 @@ class SingleObjectMethods(object):
 
 
 	####################################################################################
-	# WSUDOR_Audio, WSUDOR_Video ContentType
+	# WSUDOR_Audio ContentType
 	####################################################################################
 
-	def audio_playlist_comp(self, getParams):
+	def playlist_comprehension(self, getParams):
 		# return JSON object of audio objectc PLAYLIST datastream
 		
-		if self.obj_handle.content_type in ["WSUDOR_Audio","WSUDOR_Video"]:
+		if self.obj_handle.content_type in ["WSUDOR_Audio"]:
 			
 			# get JSON from PLAYLIST datastream
 			ds_handle = self.obj_handle.ohandle.getDatastreamObject("PLAYLIST")
-			playlist_json = json.loads(ds_handle.content)
-			return ("playlist",playlist_json)
+			playlist_handle = json.loads(ds_handle.content)
+
+			# add symlink URLs
+			for each in playlist_handle:
+
+				#MP3 symlink
+				mp3_symlink = makeSymLink( self.PID, (each['ds_id']+"_MP3") )
+				mp3_symlink_URL = "http://digital.library.wayne.edu/symLinks/"+mp3_symlink['symlink'].split("/")[-1]
+				each['streaming_mp3'] = mp3_symlink_URL
+
+				#original DS symlink
+				original_symlink = makeSymLink( self.PID, each['ds_id'] )
+				original_symlink_URL = "http://digital.library.wayne.edu/symLinks/"+original_symlink['symlink'].split("/")[-1]
+				each['streaming_original'] = original_symlink_URL
+
+			return ("playlist",playlist_handle)
 
 		else:
 			return ("playlist",False)

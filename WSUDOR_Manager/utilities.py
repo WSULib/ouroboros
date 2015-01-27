@@ -8,6 +8,7 @@ from WSUDOR_Manager import models
 from flask import render_template, session
 import json
 from functools import wraps
+import mimetypes
 from localConfig import *
 
 
@@ -108,6 +109,21 @@ def objects_needed(f):
 	return decorated_function
 
 
+
+# OPINIONATED MIMETYPES
+#########################################################################################################
+# WSUDOR opinionated mimes
+opinionated_mimes = {
+	# images
+	"image/jp2":".jp2",
+	"image/jpeg":".jpg",
+	"audio/wav":".wav"
+}	
+
+# push to mimetypes.types_map
+for k, v in opinionated_mimes.items():
+	# reversed here
+	mimetypes.types_map[v] = k
 
 
 

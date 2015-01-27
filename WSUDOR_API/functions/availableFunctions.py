@@ -12,7 +12,7 @@ import ldap
 import mimetypes
 
 # Fedora and Risearch imports
-from fedDataSpy import checkSymlink
+from fedDataSpy import checkSymlink, makeSymLink
 
 # Solr imports
 import sunburnt
@@ -524,9 +524,11 @@ def serialWalk(getParams):
 def fedDataSpy(getParams):
 
 	outputDict = {}
+
 	PID = getParams['PID'][0]
 	DS = getParams['DS'][0]	
-	outputDict = checkSymlink(PID,DS)
+	
+	outputDict = makeSymLink(PID, DS)
 
 	jsonString = json.dumps(outputDict)
 	return jsonString
@@ -1430,10 +1432,10 @@ def saveSearch(getParams):
 
 
 
-# function to return mimetypes, file extensions, or dictionary thereof
+# function to return mimetypes, file extensions, or dictionary
 def mimetypeDictionary(getParams):
 	'''
-	function to return mimetypes, file extensions, or dictionary thereof
+	function to return mimetypes, file extensions, or dictionary
 
 	two "direction" dicitonaries:
 		mime2extension
@@ -1447,37 +1449,41 @@ def mimetypeDictionary(getParams):
 	flip dictionary - inv_map = {v: k for k, v in map.items()}
 	'''
 
+	# # MOVE TO SOMEWHERE CENTRAL
+	# ###########################################################################################
+	# # import WSUDOR opinionated mimes
+	# opinionated_mimes = {
+	# 	# images
+	# 	"image/jp2":".jp2"		
+	# }	
+
+	# # push to mimetypes.types_map
+	# for k, v in opinionated_mimes.items():
+	# 	# reversed here
+	# 	mimetypes.types_map[v] = k
+	# ###########################################################################################
+
 	# grab requisite parameters		
 	try:
 		direction = getParams['direction'][0]
-		inputFilter = getParams['inputFilter'][0]
+		if direction != "DS2extension":
+			inputFilter = getParams['inputFilter'][0]
 	except:
-		return json.dumps({"status":"Parameters incorrect. Requires 'direction' parameter ('mime2extension' to return extension from mime, 'extension2mime' for mime from extension) and 'inputFilter' parameter ('all', mimetype, or file extension)."})
+		return json.dumps({"status":"Parameters incorrect. Requires 'direction' parameter ('mime2extension' to return extension from mime, 'extension2mime' for mime from extension, or 'DS2extension' for file extension from WSUDOR object datastream), and 'inputFilter' parameter ('all', mimetype, or file extension) when direction is NOT 'DS2extension'."})
 
-	# MOVE TO SOMEWHERE CENTRAL
-	# mimetypes.types_map
-	###########################################################################################
-	# import WSUDOR opinionated mimes
-	opinionated_mimes = {
-		# images
-		"image/jp2":".jp2"		
-	}	
-
-	# push to mimetypes.types_map
-	for k, v in opinionated_mimes.items():
-		# reversed here
-		mimetypes.types_map[v] = k
-	###########################################################################################
-	
+	# return file extension based on WSUDOR Datastream mimetype
+	if direction == "DS2extension":		
+		return_string = mimetypes.guess_extension(fedora_handle.get_object(getParams['PID'][0]).getDatastreamObject(getParams['DS'][0]).mimetype)
+		return json.dumps(return_string)
 
 	# return straight dictionary
-	if inputFilter == "all":
+	elif inputFilter == "all":
 		if direction == "mime2extension":
 			# flip mimetypes.types_map
 			flipped = {v: k for k, v in mimetypes.types_map.items()}
 			return json.dumps(flipped)
 		if direction == "extension2mime":			
-			return json.dumps(mimetypes.types_map)
+			return json.dumps(mimetypes.types_map)	
 
 	# return file extension
 	elif direction == "mime2extension":

@@ -233,6 +233,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				ds['thumbnail'] = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_THUMBNAIL/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
 				ds['preview'] = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_PREVIEW/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
 				ds['mp3'] = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_MP3/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
+				ds['steaming_mp3'] = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_MP3/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
 
 			playlist_handle = eulfedora.models.DatastreamObject(self.ohandle,"PLAYLIST", "PLAYLIST", mimetype="application/json", control_group="M")
 			playlist_handle.content = json.dumps( sorted(playlist_list, key=lambda k: k['order']) )

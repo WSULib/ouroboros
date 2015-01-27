@@ -37,18 +37,21 @@
 <div class="row">
 	<div class="col-md-6">
 		<h3><a href="/datastreamManagement">Datastreams</a></h3>
+		<p style="color:red;">PUT GRAPH HERE</p>
 		<table style="font-size:90%;" style="margin:auto;" class="table">
 			<tr class="headers">
 				<td><strong>ID</strong></td>
 				<td><strong>Label</strong></td>
 				<td><strong>Mime Type</strong></td>
+				<td><strong>Size</strong></td>
 				<td><strong>Direct Link</strong></td>				
 			</tr>
 			{% for ds in object_package.datastream_package %}				
 				<tr>						
 					<td>{{ds}}</td>
 					<td>{{object_package.datastream_package[ds].label}}</td>
-					<td>{{object_package.datastream_package[ds].mimeType}}</td>					
+					<td>{{object_package.datastream_package[ds].mimeType}}</td>
+					<td>{{object_package.size_dict[ds].1}}</td>					
 					<td><a target="_blank" href="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
 				</tr>
 			{% endfor %}

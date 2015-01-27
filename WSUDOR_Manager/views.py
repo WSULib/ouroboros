@@ -1,10 +1,3 @@
-# fm2
-from WSUDOR_Manager import app
-from WSUDOR_Manager import models
-from WSUDOR_Manager import db
-from WSUDOR_Manager.actions import actions
-from WSUDOR_Manager import redisHandles
-from WSUDOR_Manager import login_manager
 
 # python modules
 import time
@@ -24,12 +17,14 @@ from flask import render_template, request, session, redirect, make_response, Re
 from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-# fm2
+# WSUDOR_Manager
 from WSUDOR_Manager import app
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
 from WSUDOR_Manager.actions import actions
 from WSUDOR_Manager import redisHandles
+from WSUDOR_Manager import login_manager
+from WSUDOR_Manager import WSUDOR_ContentTypes
 import utilities
 
 # login
@@ -100,6 +95,10 @@ def userPage():
 	# info to render page
 	userData = {}
 	userData['username'] = username
+
+	# get selected PIDs to show user
+	userData['selected_objects'] = len(jobs.getSelPIDs())
+
 	return render_template("userPage.html",userData=userData)	
 
 
@@ -563,8 +562,12 @@ def objPreview(PIDnum):
 	PIDlet['pURL'] = "/objPreview/"+str(int(PIDnum)-1)
 	PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)	
 
+	# WSUDOR handle
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=PIDlet['cPID'])
+
 	# get handle
-	obj_handle = fedora_handle.get_object(PIDlet['cPID'])
+	# obj_handle = fedora_handle.get_object(PIDlet['cPID'])
+
 
 	# General Metadata
 	solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
@@ -599,8 +602,11 @@ def objPreview(PIDnum):
 
 	
 	# DATASTREAMS		
-	ds_list = obj_handle.ds_list
+	ds_list = obj_handle.ohandle.ds_list
 	object_package['datastream_package'] = ds_list
+
+	# Object size of datastreams
+	object_package['size_dict'] =obj_handle.objSizeDict
 
 	
 	# OAI

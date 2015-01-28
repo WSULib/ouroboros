@@ -1,4 +1,8 @@
 {% include 'header.html' %}
+<!-- Imports -->
+<script type="text/javascript" src="{{ url_for('static',filename='chartjs/Chart.js')}}"></script>
+
+
 
 <div class="row">
 		<div class="col-md-12">		
@@ -37,7 +41,43 @@
 <div class="row">
 	<div class="col-md-6">
 		<h3><a href="/datastreamManagement">Datastreams</a></h3>
-		<p style="color:red;">PUT GRAPH HERE</p>
+
+		<div id="size">			
+			<canvas id="size_chart" width="400" height="400"></canvas>
+			<script type="text/javascript">
+				// console.log( JSON.parse('{{ object_package.size_chart_data|safe }}') );
+				// Get context with jQuery - using jQuery's .get() method.
+				var ctx = $("#size_chart").get(0).getContext("2d");
+
+				// data
+				var data = JSON.parse('{{ object_package.size_chart_data|safe }}');
+
+				var options = {
+				    //Boolean - Whether we should show a stroke on each segment
+				    segmentShowStroke : true,
+				    //String - The colour of each segment stroke
+				    segmentStrokeColor : "#fff",
+				    //Number - The width of each segment stroke
+				    segmentStrokeWidth : 2,
+				    //Number - The percentage of the chart that we cut out of the middle
+				    percentageInnerCutout : 50, // This is 0 for Pie charts
+				    //Number - Amount of animation steps
+				    animationSteps : 100,
+				    //String - Animation easing effect
+				    animationEasing : "easeOutBounce",
+				    //Boolean - Whether we animate the rotation of the Doughnut
+				    animateRotate : true,
+				    //Boolean - Whether we animate scaling the Doughnut from the centre
+				    animateScale : false				    
+				}
+
+				// This will get the first returned node in the jQuery collection.				
+				var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
+			</script>
+			<p>Total Object Size: <strong>{{object_package.size_dict.total_size.1}}</strong></p>
+		</div>
+		
+
 		<table style="font-size:90%;" style="margin:auto;" class="table">
 			<tr class="headers">
 				<td><strong>ID</strong></td>

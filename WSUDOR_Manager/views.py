@@ -590,13 +590,7 @@ def objPreview(PIDnum):
 	# parse
 	riquery_filtered = []
 	for s,p,o in riquery:	
-		riquery_filtered.append((p,o))	
-		# optional filtering
-		# try:
-		# 	if "relations-external" in p or "WSUDOR-Fedora-Relations" in p or "model#" in p:
-		# 		riquery_filtered.append((p,o))	
-		# except:
-		# 	print "Could not parse RDF relationship"
+		riquery_filtered.append((p,o))
 	riquery_filtered.sort()
 	object_package['rdf_package'] = riquery_filtered
 
@@ -606,7 +600,24 @@ def objPreview(PIDnum):
 	object_package['datastream_package'] = ds_list
 
 	# Object size of datastreams
-	object_package['size_dict'] =obj_handle.objSizeDict
+	size_dict = obj_handle.objSizeDict
+	object_package['size_dict'] = size_dict
+
+	#Object size prepared for chart
+	
+	ds_segments = []
+	for ds in size_dict:
+		if ds == "total_size":
+			continue
+		temp_dict = {
+			"value": size_dict[ds][0],
+			"human_value": size_dict[ds][1],
+			"label": ds,
+			"color": "Green"
+		}
+		ds_segments.append(temp_dict)
+	object_package['size_chart_data'] = json.dumps(ds_segments)
+
 
 	
 	# OAI

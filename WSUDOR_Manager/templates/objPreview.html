@@ -49,8 +49,26 @@
 				// Get context with jQuery - using jQuery's .get() method.
 				var ctx = $("#size_chart").get(0).getContext("2d");
 
-				// data
-				var data = JSON.parse('{{ object_package.size_chart_data|safe }}');
+				// data (preformed)
+				// var data = JSON.parse('{{ object_package.size_chart_data|safe }}');
+
+				// prepare data
+				var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');
+				// console.log(raw_data);				
+
+				// loop through
+				data = [];
+				for (var key in raw_data) {
+				  if ( raw_data.hasOwnProperty(key) && key != "total_size" ) {
+				    var temp_obj = {
+				    	"label":key,
+				    	"value":raw_data[key][0],
+				    	"color":"green"
+				    }
+				    data.push(temp_obj);
+				  }				  
+				}
+				console.log("Your data object sir:",data);
 
 				var options = {
 				    //Boolean - Whether we should show a stroke on each segment
@@ -58,13 +76,13 @@
 				    //String - The colour of each segment stroke
 				    segmentStrokeColor : "#fff",
 				    //Number - The width of each segment stroke
-				    segmentStrokeWidth : 2,
+				    segmentStrokeWidth : 1,
 				    //Number - The percentage of the chart that we cut out of the middle
 				    percentageInnerCutout : 50, // This is 0 for Pie charts
 				    //Number - Amount of animation steps
-				    animationSteps : 100,
+				    animationSteps : 50,
 				    //String - Animation easing effect
-				    animationEasing : "easeOutBounce",
+				    animationEasing : "easeOutCirc",
 				    //Boolean - Whether we animate the rotation of the Doughnut
 				    animateRotate : true,
 				    //Boolean - Whether we animate scaling the Doughnut from the centre

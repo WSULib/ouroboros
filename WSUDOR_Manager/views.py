@@ -602,23 +602,7 @@ def objPreview(PIDnum):
 	# Object size of datastreams
 	size_dict = obj_handle.objSizeDict
 	object_package['size_dict'] = size_dict
-
-	#Object size prepared for chart
-	
-	ds_segments = []
-	for ds in size_dict:
-		if ds == "total_size":
-			continue
-		temp_dict = {
-			"value": size_dict[ds][0],
-			"human_value": size_dict[ds][1],
-			"label": ds,
-			"color": "Green"
-		}
-		ds_segments.append(temp_dict)
-	object_package['size_chart_data'] = json.dumps(ds_segments)
-
-
+	object_package['size_dict_json'] = json.dumps(size_dict)
 	
 	# OAI
 	OAI_dict = {}	

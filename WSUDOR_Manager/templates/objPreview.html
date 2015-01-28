@@ -52,22 +52,42 @@
 				// data (preformed)
 				// var data = JSON.parse('{{ object_package.size_chart_data|safe }}');
 
-				// prepare data
+				
+
+								// prepare data
 				var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');
-				// console.log(raw_data);				
+
+				
+				// number of keys
+				var ds_count = Object.keys(raw_data).length
+				var red = 120;
+				// var red_slice = 255 / ds_count;
+				var red_slice = Math.floor(255 / ds_count);
 
 				// loop through
 				data = [];
 				for (var key in raw_data) {
-				  if ( raw_data.hasOwnProperty(key) && key != "total_size" ) {
+				  red = red + red_slice;
+				  if ( raw_data.hasOwnProperty(key) && key != "total_size" && raw_data[key][0] > 0 ) {				  	
 				    var temp_obj = {
 				    	"label":key,
 				    	"value":raw_data[key][0],
-				    	"color":"green"
+				    	"color":"rgb("+red+",200,120)"
 				    }
 				    data.push(temp_obj);
 				  }				  
+				}				
+
+				// quick sort based on value (passes as param to .sort() method)
+				function compare(a,b) {
+				  if (a.value < b.value)
+				     return -1;
+				  if (a.value > b.value)
+				    return 1;
+				  return 0;
 				}
+				data = data.sort(compare);
+
 				console.log("Your data object sir:",data);
 
 				var options = {
@@ -92,7 +112,7 @@
 				// This will get the first returned node in the jQuery collection.				
 				var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
 			</script>
-			<p>Total Object Size: <strong>{{object_package.size_dict.total_size.1}}</strong></p>
+			<h3>Total Object Size: <strong>{{object_package.size_dict.total_size.1}}</strong></h3>
 		</div>
 		
 

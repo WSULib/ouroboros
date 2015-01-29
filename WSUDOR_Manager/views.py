@@ -991,7 +991,7 @@ def collectionsOverview():
 			collection_obj_sum = results.stats['obj_size_i']['sum']		
 			object_package['coll_size_dict'][collection] = (collection_obj_sum,utilities.sizeof_fmt(collection_obj_sum),results.total_results)
 
-	print object_package['coll_size_dict']
+	# print object_package['coll_size_dict']
 	object_package['coll_size_dict'] = json.dumps(object_package['coll_size_dict'])
 		
 	return render_template("collectionsOverview.html", object_package=object_package)

@@ -96,10 +96,9 @@ var options = {
                 // This will get the first returned node in the jQuery collection.              
                 var myBarChart = new Chart(ctx).Bar(data,options);
             </script>
-        </div>
-
-        
+        </div>        
     </div>
+
     <div class="col-md-12">
     	<h3>Collection Object Count</h3>
     	<div id="count">         
@@ -127,6 +126,104 @@ var options = {
             </script>
         </div>
     </div>
+
+    <div class="col-md-12">
+    	<h3>Collection Object Radar (experimental)</h3>
+    	<div id="count">         
+            <canvas id="radar_chart" width="800" height="500"></canvas>
+            <script type="text/javascript">
+                // Get context with jQuery - using jQuery's .get() method.
+                var ctx = $("#radar_chart").get(0).getContext("2d");        
+
+                // calibrate data size for object counts
+                // 20,000,000 seems to be the golden ratio
+                cal_values = []
+                for (var i = 0; i < values.length; i++){
+                	cal_values.push( values[i] / 20000000 )
+                }       
+
+                data = {
+                	labels: labels,
+                	datasets: [
+                		{
+	                		label:"Collection Total Size",
+		                	fillColor: "rgba(151,187,205,0.5)",
+				            strokeColor: "rgba(151,187,205,0.8)",
+				            highlightFill: "rgba(151,187,205,0.75)",
+				            highlightStroke: "rgba(151,187,205,1)",
+				            data:cal_values
+	                	},
+	                	{
+	                		label:"Collection Object Counts",
+		                	fillColor: "rgba(110,110,110,0.3)",
+				            strokeColor: "rgba(110,110,110,0.8)",
+				            highlightFill: "rgba(110,110,110,0.75)",
+				            highlightStroke: "rgba(110,110,110,1)",
+				            data:counts
+	                	}	                	
+                	]                			            
+                };  
+
+                var radar_options = {
+				    //Boolean - Whether to show lines for each scale point
+				    scaleShowLine : true,
+
+				    //Boolean - Whether we show the angle lines out of the radar
+				    angleShowLineOut : true,
+
+				    //Boolean - Whether to show labels on the scale
+				    scaleShowLabels : false,
+
+				    // Boolean - Whether the scale should begin at zero
+				    scaleBeginAtZero : true,
+
+				    //String - Colour of the angle line
+				    angleLineColor : "rgba(0,0,0,.1)",
+
+				    //Number - Pixel width of the angle line
+				    angleLineWidth : 1,
+
+				    //String - Point label font declaration
+				    pointLabelFontFamily : "'Arial'",
+
+				    //String - Point label font weight
+				    pointLabelFontStyle : "normal",
+
+				    //Number - Point label font size in pixels
+				    pointLabelFontSize : 10,
+
+				    //String - Point label font colour
+				    pointLabelFontColor : "#666",
+
+				    //Boolean - Whether to show a dot for each point
+				    pointDot : true,
+
+				    //Number - Radius of each point dot in pixels
+				    pointDotRadius : 3,
+
+				    //Number - Pixel width of point dot stroke
+				    pointDotStrokeWidth : 1,
+
+				    //Number - amount extra to add to the radius to cater for hit detection outside the drawn point
+				    pointHitDetectionRadius : 20,
+
+				    //Boolean - Whether to show a stroke for datasets
+				    datasetStroke : true,
+
+				    //Number - Pixel width of dataset stroke
+				    datasetStrokeWidth : 2,
+
+				    //Boolean - Whether to fill the dataset with a colour
+				    datasetFill : true   
+
+				}             
+
+                // This will get the first returned node in the jQuery collection.              
+                var myBarChart = new Chart(ctx).Radar(data,radar_options);
+            </script>
+        </div>
+    </div>
+
 </div>
 
 {% include 'footer.html' %}

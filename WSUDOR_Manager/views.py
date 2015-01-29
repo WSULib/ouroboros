@@ -564,11 +564,7 @@ def objPreview(PIDnum):
 
 	# WSUDOR handle
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=PIDlet['cPID'])
-
-	# get handle
-	# obj_handle = fedora_handle.get_object(PIDlet['cPID'])
-
-
+	
 	# General Metadata
 	solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
 	solr_results = solr_handle.search(**solr_params)
@@ -627,12 +623,12 @@ def objPreview(PIDnum):
 	print object_package['OAI_package']
 
 	# RENDER
-	return render_template("objPreview.html",PIDlet=PIDlet,object_package=object_package)	
+	return render_template("objPreview.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet,object_package=object_package)	
 
 
 # PID check for user
-@app.route("/PIDmanage")
-def PIDmanage():	
+@app.route("/userWorkspace")
+def userWorkspace():	
 	# get username from session
 	username = session['username']
 
@@ -641,7 +637,65 @@ def PIDmanage():
 	group_names = [each.group_name.encode('ascii','ignore') for each in user_pid_groups]	
 
 	# pass the current PIDs to page as list	
-	return render_template("PIDManage.html",username=username, group_names=group_names, localConfig=localConfig)
+	return render_template("userWorkspace.html",username=username, group_names=group_names, localConfig=localConfig)
+
+
+# PID check for user
+@app.route("/selObjsOverview")
+def selObjsOverview():	
+	
+	# get username from session
+	username = session['username']	
+	PIDs = jobs.getSelPIDs()
+
+	# get objects size dictionary
+	'''
+	{
+	    labels: ["January", "February", "March", "April", "May", "June", "July"],
+	    datasets: [
+	        {
+	            label: "My First dataset",
+	            fillColor: "rgba(220,220,220,0.5)",
+	            strokeColor: "rgba(220,220,220,0.8)",
+	            highlightFill: "rgba(220,220,220,0.75)",
+	            highlightStroke: "rgba(220,220,220,1)",
+	            data: [65, 59, 80, 81, 56, 55, 40]
+	        },
+	        {
+	            label: "My Second dataset",
+	            fillColor: "rgba(151,187,205,0.5)",
+	            strokeColor: "rgba(151,187,205,0.8)",
+	            highlightFill: "rgba(151,187,205,0.75)",
+	            highlightStroke: "rgba(151,187,205,1)",
+	            data: [28, 48, 40, 19, 86, 27, 90]
+	        }
+	    ]
+	}
+	'''
+
+	# WSUDOR ContentType approach
+		# slow, but rich
+	# tup_list = []
+	# for each in PIDs:
+	# 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=each)
+	# 	tup_list.append( ( obj_handle.SolrDoc.asDictionary()['obj_size_i'], each ) )
+	
+	# print tup_list
+
+
+	# Solr based approach
+		# fast, not as rich
+	# results = solr_handle.search(**{ "q":"*:*", "fq":["obj_size_i:*","id:*RENCEN*"], "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+
+
+
+
+
+
+
+
+	# pass the current PIDs to page as list	
+	return render_template("selObjsOverview.html",username=username, localConfig=localConfig)
 
 
 # Select / Deselect / Remove PIDs from user list
@@ -857,7 +911,7 @@ def userPin():
 	# render page
 	return render_template("userPin.html",username=username,date=date_obj)
 	
-# SERVER MANAGEMENT
+# WSUDOR MANAGEMENT
 ####################################################################################
 
 # Clear imageServer Cache
@@ -871,7 +925,21 @@ def imgServerCacheClear():
 	else:
 		msg = "An error was had: {results}".format(results=results)
 		
-	return render_template("imgServerCacheClear.html",msg=msg)
+	return render_template("simpleMessage.html",msg=msg, heading="imageServer Cache Management")
+
+
+# Clear imageServer Cache
+@app.route("/clearSymLinks")
+def clearSymLinks():
+
+	# run os command an return results
+	results = os.system("rm /var/www/wsuls/symLinks/*")	
+	if results == 0:
+		msg = "symLInks successfully cleared."
+	else:
+		msg = "An error was had: {results}".format(results=results)
+		
+	return render_template("simpleMessage.html",msg=msg, heading="symLinks Management")
 
 
 
@@ -892,6 +960,41 @@ def clearExportBagItArchives():
 		msg = "An error was had: {results}".format(results=results)
 		
 	return render_template("exportBagClear.html",msg=msg)
+
+
+
+# Collections Overview
+@app.route("/collectionsOverview")
+def collectionsOverview():
+
+	# get username from session
+	username = session['username']
+	# get objects
+	PIDs = jobs.getSelPIDs()
+
+	object_package = {}
+
+	# get collection objects
+	'''
+	This can be improved
+	'''
+	riquery = fedora_handle.risearch.get_subjects(predicate="info:fedora/fedora-system:def/relations-external#hasContentModel", object="info:fedora/CM:Collection")
+	collections = list(riquery)
+
+	# assemble sizes
+	object_package['coll_size_dict'] = {}
+	for collection in collections:
+		print "Working on",collection
+		results = solr_handle.search(**{ "q":"rels_isMemberOfCollection:"+collection.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+
+		if results.total_results > 0 and results.stats['obj_size_i'] != None:
+			collection_obj_sum = results.stats['obj_size_i']['sum']		
+			object_package['coll_size_dict'][collection] = (collection_obj_sum,utilities.sizeof_fmt(collection_obj_sum),results.total_results)
+
+	print object_package['coll_size_dict']
+	object_package['coll_size_dict'] = json.dumps(object_package['coll_size_dict'])
+		
+	return render_template("collectionsOverview.html", object_package=object_package)
 
 
 

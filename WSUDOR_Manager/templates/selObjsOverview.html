@@ -1,0 +1,94 @@
+{% include 'header.html' %}
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>Selected Objects Overview</h2>
+        <p>This space is designed to provide a birds eye view of currently selected objects including collections they belong to, sizes, shared relationships, and other essential qualities.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h3>Object sizes</h3>
+        <p>Coming soon.</p>
+        <div id="size">         
+            <canvas id="size_chart" width="400" height="400"></canvas>
+            <script type="text/javascript">
+                // // Get context with jQuery - using jQuery's .get() method.
+                // var ctx = $("#size_chart").get(0).getContext("2d");                             
+
+                // // prepare data
+                // var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');
+
+                // // loop through
+                // data = [];
+                // for (var key in raw_data) {
+
+                //   // skip datastreams with 0 size, and "total_size" key
+                //   if ( raw_data.hasOwnProperty(key) && key != "total_size" && raw_data[key][0] > 0 ) {                    
+
+                //     var temp_obj = {
+                //         "label":key,
+                //         "value":raw_data[key][0],
+                //         "human_value":raw_data[key][1],
+                //         "color":"#428bca"
+                //     }
+                //     data.push(temp_obj);
+                //   }               
+                // }               
+
+                // // quick sort based on value (passes as param to .sort() method)
+                // function compare(a,b) {
+                //   if (a.value < b.value)
+                //      return -1;
+                //   if (a.value > b.value)
+                //     return 1;
+                //   return 0;
+                // }
+                // data = data.sort(compare);
+
+                // var options = {
+                //     //Boolean - Whether the scale should start at zero, or an order of magnitude down from the lowest value
+                //     scaleBeginAtZero : false,
+
+                //     //Boolean - Whether grid lines are shown across the chart
+                //     scaleShowGridLines : true,
+
+                //     //String - Colour of the grid lines
+                //     scaleGridLineColor : "rgba(0,0,0,.05)",
+
+                //     //Number - Width of the grid lines
+                //     scaleGridLineWidth : 1,
+
+                //     //Boolean - Whether to show horizontal lines (except X axis)
+                //     scaleShowHorizontalLines: true,
+
+                //     //Boolean - Whether to show vertical lines (except Y axis)
+                //     scaleShowVerticalLines: true,
+
+                //     //Boolean - If there is a stroke on each bar
+                //     barShowStroke : true,
+
+                //     //Number - Pixel width of the bar stroke
+                //     barStrokeWidth : 2,
+
+                //     //Number - Spacing between each of the X value sets
+                //     barValueSpacing : 5,
+
+                //     //Number - Spacing between data sets within X values
+                //     barDatasetSpacing : 1,
+
+                //     //String - A legend template
+                //     legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].lineColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+
+                // }
+
+                // // This will get the first returned node in the jQuery collection.              
+                // var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
+            </script>
+            <h3>Total Object Size: <strong>{{object_package.size_dict.total_size.1}}</strong></h3>
+        </div>
+    </div>
+</div>
+
+{% include 'footer.html' %}

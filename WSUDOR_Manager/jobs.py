@@ -131,6 +131,12 @@ def getSelPIDs():
 	return PIDlist
 
 
+def getSelPIDs_noFlask(username):
+	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
+	PIDlist = [PID.PID for PID in userSelectedPIDs]
+	return PIDlist
+
+
 # function to create small object with current, previous, and next PIDs for views
 def genPIDlet(cursor):
 

@@ -442,6 +442,7 @@ class WSUDOR_GenObject(object):
 	def indexToSolr(self, printOnly=False):
 		return actions.solrIndexer.solrIndexer('modifyObject',self.pid, printOnly)
 
+
 	def previewSolrDict(self):
 		'''
 		Function to run current WSUDOR object through indexSolr() transforms

@@ -1,0 +1,81 @@
+{% include 'header.html' %}
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>User Workspace</h2>
+        <p>The WSUDOR_Manager "Workspace" is where you can save objects for working on now, later, or in particular groups.  All objects found and selected in the <a href="/PIDSolr">search interface</a> are sent here, to your Workspace.  By default, they are unselected at first.  From here, you can select specific objects (or groups of objects) to actuall work on.</p>
+        <p>If you still need to find objects to work on, <a href="/PIDSolr">click here to search for WSUDOR objects.</a></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h2>Actions</h2>
+        <p>Below, select and deselect currently active objects in your Workspace.  When running batch jobs, all "active" objects in your workspace will be included in the queue.</p>
+        <ul>
+            <li><a href="#" onclick="PIDmanageAction('s_all'); return false;">Select All</a></li>      
+            <li><a href="#" onclick="PIDmanageAction('s_none'); return false;">Select None</a></li>    
+            <li><a href="#" onclick="PIDmanageAction('s_toggle'); return false;">Toggle All</a></li>  
+           
+            <li>        
+                Toggle Group:
+                <select id="group_name" name="group_name" onchange="PIDmanageAction('group_toggle'); return false;">
+                    <option>Select a group...</option>
+                    {% for group_name in group_names %}
+                        <option value="{{group_name}}">{{group_name}}</option>
+                    {% endfor %}
+                </select>        
+            </li>
+            <li><a href="#" onclick="PIDmanageAction('s_del'); return false;">Remove Selected Objects from Workspace</a></li>
+        </ul>
+    </div>
+    <!-- <div class="col-md-6">
+        <h2>Analysis</h2>
+        <p>Below are tools for quick analysis and overview of currently selected objects.</p>
+        <ul>
+            <li><a href="#" target="_tab">Object Sizes</a></li>
+        </ul>
+    </div> -->
+</div>
+
+<div id="selection_table" class="row" style="margin-top:20px;">
+    <div class="col-md-12">
+        <select id="group_filter" name="group_filter" onchange="filterGroup();">
+            <option value="">Filter by group...</option>
+            {% for group_name in group_names %}
+                <option value="{{group_name}}">{{group_name}}</option>
+            {% endfor %}
+        </select>
+        <table id="PIDtable" class="display" cellspacing="0" width="100%">
+            <thead>
+                <tr>            
+                    <th>id</th>
+                    <th>PID</th>
+                    <th>username</th>    
+                    <th>status</th>
+                    <th id="group_name_col">group</th>
+                    <th>actions</th>                  
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>            
+                    <th>id</th>
+                    <th>PID</th>
+                    <th>username</th>    
+                    <th>status</th>
+                    <th>group</th>
+                    <th>actions</th>                  
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+
+<script type="text/javascript" src="{{ url_for('static',filename='PIDmanage.js')}}"></script>
+<script type="text/javascript">
+    $(document).ready(function(){
+        paintTable("{{username}}","{{localConfig.DATATABLES_HANDLE}}");
+    });    
+</script>
+{% include 'footer.html' %}

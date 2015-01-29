@@ -216,6 +216,14 @@ class SolrIndexerWorker(object):
 			print "Could not find or index datastream RELS-INT"
 
 
+		# Add object and datastream sizes
+		try:
+			setattr(obj_handle.SolrDoc.doc, "obj_size_i", obj_handle.objSizeDict['total_size'][0] )
+			setattr(obj_handle.SolrDoc.doc, "obj_size_human", obj_handle.objSizeDict['total_size'][1] )
+		except:
+			print "Could not determine object size, skipping"
+
+
 		#######################################################################################
 		# Here, we have the opportunity to do some cleanup, addition, and finagling of fields.
 		#######################################################################################

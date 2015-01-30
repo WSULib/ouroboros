@@ -589,6 +589,7 @@ def getObjectSize(getParams):
 				size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
 
 			size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+			print size_dict
 			return json.dumps( size_dict )
 
 	except Exception,e:

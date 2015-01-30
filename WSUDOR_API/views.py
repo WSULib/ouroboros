@@ -17,18 +17,18 @@ from WSUDOR_API_main import WSUDOR_API_main
 WSUDOR_API_app.secret_key = 'WSUDOR-WSUDOR_API'
 ###############################################
 
-# CACHE
-#########################################################################################################
-# small function to skip caching, reads from localConfig.py
-def skipCache():
-	return localConfig.API_SKIP_CACHE
+# # CACHE
+# #########################################################################################################
+# # small function to skip caching, reads from localConfig.py
+# def skipCache():
+# 	return localConfig.API_SKIP_CACHE
 
 
 # MAIN
 #########################################################################################################
 @WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}/".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 @WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
-@cache.cached(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
+# @cache.cached(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def index():		
 	
 	'''

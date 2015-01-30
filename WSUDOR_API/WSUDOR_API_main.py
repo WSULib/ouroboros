@@ -11,11 +11,25 @@ import ast
 import re
 import traceback
 
+import localConfig
+
 # WSUDOR_API modules
+from WSUDOR_API import cache
 from functions.utils import *
 from functions.availableFunctions import *
 from functions.packagedFunctions import *
 
+# CACHE
+#########################################################################################################
+# small function to skip caching, reads from localConfig.py
+def skipCache():
+	return localConfig.API_SKIP_CACHE
+
+
+'''
+Consider using 'make_cache_key'
+'''
+@cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def WSUDOR_API_main(getParams):
 
 	# ITERATE THROUGH FUNCTION LIST 	

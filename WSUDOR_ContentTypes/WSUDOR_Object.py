@@ -33,7 +33,7 @@ from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 
 
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
-def WSUDOR_Object(object_type,payload):
+def WSUDOR_Object(payload, object_type="WSUDOR"):
 
 	'''	
 	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
@@ -99,7 +99,7 @@ def WSUDOR_Object(object_type,payload):
 	
 	# need check if valid subclass of WSUDOR_GenObject	
 	try:
-		return getattr(WSUDOR_ContentTypes,str(content_type))(object_type=object_type,content_type=content_type,payload=payload)
+		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload)
 	except:
 		print "Could not find appropriate ContentType, returning False."
 		return False

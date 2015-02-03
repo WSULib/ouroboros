@@ -563,7 +563,7 @@ def objPreview(PIDnum):
 	PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)	
 
 	# WSUDOR handle
-	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=PIDlet['cPID'])
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PIDlet['cPID'])
 	
 	# General Metadata
 	solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
@@ -677,7 +677,7 @@ def selObjsOverview():
 		# slow, but rich
 	# tup_list = []
 	# for each in PIDs:
-	# 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=each)
+	# 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(each)
 	# 	tup_list.append( ( obj_handle.SolrDoc.asDictionary()['obj_size_i'], each ) )
 	
 	# print tup_list

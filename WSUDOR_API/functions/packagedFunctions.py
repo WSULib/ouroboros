@@ -50,7 +50,7 @@ class SingleObjectMethods(object):
 		self.PID_suffix = self.PID.split(":")[1]		
 
 		# instantiate WSUDOR object
-		self.obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=self.PID)
+		self.obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.PID)
 
 		# determine if object exists and is active
 		if self.obj_handle != False and self.obj_handle.ohandle.exists == True and self.obj_handle.ohandle.state == "A":

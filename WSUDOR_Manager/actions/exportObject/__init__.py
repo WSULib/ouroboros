@@ -43,7 +43,7 @@ def index():
 
 def exportObject_worker(job_package):	 
 
-	export_result = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=job_package['PID']).exportBag(job_package)
+	export_result = WSUDOR_ContentTypes.WSUDOR_Object(job_package['PID']).exportBag(job_package)
 	return export_result
 
 

@@ -566,7 +566,7 @@ def hasPartOf(getParams):
 def getObjectSize(getParams):
 	
 	PID = getParams['PID'][0]
-	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR", payload=PID)
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PID)
 
 	try:
 		# normalized WSUDOR ContentType

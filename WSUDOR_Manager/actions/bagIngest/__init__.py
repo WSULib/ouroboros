@@ -236,7 +236,7 @@ def ingestBag(bag_dir):
 
 	# load bag_handle and ingest	
 	print "Working on:",bag_dir
-	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag",payload=bag_dir)
+	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=bag_dir)
 	if bag_dir == 'Could not load WSUDOR or Bag object.':
 		print "Aborting, bag_handle initiziation was unsuccessful."
 		return False

@@ -132,7 +132,7 @@ class SolrIndexerWorker(object):
 		print "Indexing PID:",PID		
 
 		# instantiate handle
-		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="WSUDOR",payload=PID)	
+		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PID)	
 
 		# skip if no valid WSUDOR_ContentType object		
 		if obj_handle == False:

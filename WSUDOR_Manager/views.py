@@ -986,9 +986,10 @@ def collectionsOverview():
 	for collection in collections:
 		print "Working on",collection
 		results = solr_handle.search(**{ "q":"rels_isMemberOfCollection:"+collection.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+		print results
 
-		if results.total_results > 0 and results.stats['obj_size_i'] != None:
-			collection_obj_sum = results.stats['obj_size_i']['sum']		
+		if results.total_results > 0 and results.stats['obj_size_i'] != None:			
+			collection_obj_sum = results.stats['obj_size_i']['sum']					
 			object_package['coll_size_dict'][collection] = (collection_obj_sum,utilities.sizeof_fmt(collection_obj_sum),results.total_results)
 
 	# print object_package['coll_size_dict']

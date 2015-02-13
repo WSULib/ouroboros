@@ -14,6 +14,7 @@ import tarfile
 import xmltodict
 from lxml import etree
 import requests
+import time
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -351,7 +352,7 @@ class WSUDOR_GenObject(object):
 		return True
 
 
-	def exportBag(self,job_package):
+	def exportBag(self, job_package):
 
 		'''
 		Target Example:
@@ -377,8 +378,11 @@ class WSUDOR_GenObject(object):
 		# create temp dir structure
 		working_dir = "/tmp/Ouroboros/export_bags"
 		temp_dir = working_dir + "/" + str(uuid.uuid4())
+		time.sleep(.25)
 		os.system("mkdir {temp_dir}".format(temp_dir=temp_dir))
+		time.sleep(.25)
 		os.system("mkdir {temp_dir}/data".format(temp_dir=temp_dir))
+		time.sleep(.25)
 		os.system("mkdir {temp_dir}/data/datastreams".format(temp_dir=temp_dir))
 
 		# move bagit files to temp dir, and unpack

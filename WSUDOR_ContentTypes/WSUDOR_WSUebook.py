@@ -23,7 +23,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles
+from WSUDOR_Manager import redisHandles, helpers, utilities
 
 
 class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -71,6 +71,53 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# ingest 
 	def ingestBag(self):
 		pass
+
+
+	# complex size determination, overrides WSUDOR_Generic
+	@helpers.LazyProperty
+	def objSizeDict(self):
+
+		print "Determining size of WSUDOR_WSUebook object"
+
+		size_dict = {}
+		tot_size = 0
+
+		# loop through datastreams, append size to return dictionary
+		for ds in self.ohandle.ds_list:
+			ds_handle = self.ohandle.getDatastreamObject(ds)
+			ds_size = ds_handle.size
+			tot_size += ds_size
+			size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+		# get constituents and determine total size		
+		riquery = fedora_handle.risearch.get_subjects(predicate="info:fedora/fedora-system:def/relations-external#isMemberOf", object=self.ohandle.uri)
+		members = list(riquery)		
+
+		for PID in members:
+
+			print "Working on",PID
+			
+			loop_ohandle = fedora_handle.get_object(PID)
+
+			loop_size_dict = {}
+			loop_tot_size = 0
+
+			# loop through datastreams, append size to return dictionary
+			for ds in loop_ohandle.ds_list:
+				ds_handle = loop_ohandle.getDatastreamObject(ds)
+				ds_size = ds_handle.size
+				loop_tot_size += ds_size
+				
+				# holding off for now - would be thousdands of lines long
+				# loop_size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+			size_dict["isMemberOf_"+PID] = ( loop_tot_size, utilities.sizeof_fmt(loop_tot_size) )
+			tot_size += loop_tot_size
+
+		size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+		print size_dict
+
+		return size_dict
 
 
 

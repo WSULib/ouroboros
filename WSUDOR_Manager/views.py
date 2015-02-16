@@ -71,6 +71,7 @@ app.secret_key = 'WSUDOR'
 #########################################################################################################
 
 @app.route("/")
+@login_required
 def index():
 	if "username" in session:
 		username = session['username']		
@@ -81,6 +82,7 @@ def index():
 
 
 @app.route("/about")
+@login_required
 def about():
 
 	return render_template("about.html")
@@ -126,6 +128,7 @@ def systemStatus():
 # MAJOR SUB-SECTIONS	
 #########################################################################################################
 @app.route('/contentModels', methods=['GET', 'POST'])
+@login_required
 def contentModels():
 	
 	# get all registered Content Models
@@ -137,18 +140,22 @@ def contentModels():
 	return render_template("contentModels.html",CM_list=CM_list)
 
 @app.route('/MODSedit', methods=['GET', 'POST'])
+@login_required
 def MODSedit():
 	return render_template("MODSedit.html")
 
 @app.route('/datastreamManagement', methods=['GET', 'POST'])
+@login_required
 def datastreamManagement():
 	return render_template("datastreamManagement.html")
 
 @app.route('/objectManagement', methods=['GET', 'POST'])
+@login_required
 def objectManagement():
 	return render_template("objectManagement.html")
 
 @app.route('/WSUDORManagement', methods=['GET', 'POST'])
+@login_required
 def WSUDORManagement():
 	return render_template("WSUDORManagement.html")
 
@@ -399,6 +406,7 @@ def userJobs():
 
 # see all user jobs, including completed
 @app.route("/userAllJobs")
+@login_required
 def userAllJobs():
 
 	username = session['username']
@@ -550,6 +558,7 @@ def flushCeleryTasks():
 
 # View to get 30,000 ft handle one Objects slated to be acted on
 @app.route("/objPreview/<PIDnum>", methods=['POST', 'GET'])
+@login_required
 @utilities.objects_needed
 def objPreview(PIDnum):	
 
@@ -628,6 +637,7 @@ def objPreview(PIDnum):
 
 # PID check for user
 @app.route("/userWorkspace")
+@login_required
 def userWorkspace():	
 	# get username from session
 	username = session['username']
@@ -642,6 +652,7 @@ def userWorkspace():
 
 # PID check for user
 @app.route("/selObjsOverview")
+@login_required
 def selObjsOverview():	
 	
 	# get username from session
@@ -773,6 +784,7 @@ def PIDRowUpdate(id,action,status):
 
 # PID selection via Solr
 @app.route("/PIDSolr", methods=['POST', 'GET'])
+@login_required
 def PIDSolr():	
 	'''
 	Current Approach: If POST, send results as large array to template, save as JS variable
@@ -882,6 +894,7 @@ def updatePIDsfromSolr(update_type):
 
 # PID check for user
 @app.route("/userPin", methods=['POST', 'GET'])
+@login_required
 def userPin():	
 	# get username from session
 	username = session['username']	
@@ -965,6 +978,7 @@ def clearExportBagItArchives():
 
 # Collections Overview
 @app.route("/collectionsOverview")
+@login_required
 def collectionsOverview():
 
 	# get username from session

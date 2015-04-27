@@ -71,7 +71,7 @@ class SingleObjectMethods(object):
 
 		for method in inspect.getmembers(self, predicate=inspect.ismethod):		
 			if method[0] != "__init__" and method[0] != "runAll":
-				# print "Running",method[0]
+				print "Running",method[0]
 				response_tuple = method[1](self.getParams)
 				print response_tuple
 				# if not False, add to response
@@ -109,6 +109,7 @@ class SingleObjectMethods(object):
 
 
 	def hasMemberOf_comp(self,getParams):
+		print hasMemberOf(getParams)
 		# returns collections the object is a part of
 		# saves to 'hasMemberOf'
 		return ("hasMemberOf",json.loads(hasMemberOf(getParams)))

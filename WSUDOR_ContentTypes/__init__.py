@@ -3,3 +3,5 @@ from WSUDOR_Image import WSUDOR_Image
 from WSUDOR_Collection import WSUDOR_Collection
 from WSUDOR_Audio import WSUDOR_Audio
 from WSUDOR_WSUebook import WSUDOR_WSUebook 
+from WSUDOR_HierarchicalFiles import WSUDOR_HierarchicalFiles 
+

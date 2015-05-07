@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # TASK: import / export MODS batch update
 
 # celery
@@ -158,6 +159,7 @@ def celeryTaskFactoryImportMODS(job_num,job_package):
 		form_data['content'] = False #scrub data
 
 	# shunt each MODS record to list
+	MODS_collection = unicode(MODS_collection, 'utf-8')
 	XMLroot = etree.fromstring(MODS_collection.encode('utf-8'))	
 	MODS_list = XMLroot.findall('{http://www.loc.gov/mods/v3}mods')	
 

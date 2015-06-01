@@ -597,6 +597,150 @@ def getObjectSize(getParams):
 
 
 
+# generate hierarchical family tree
+def hierarchicalTree(getParams):
+
+	# parent
+	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	risearch_query = '''
+	select $parent $parentTitle from <#ri> where
+	    <info:fedora/{PID}> 
+	    <wsudor:hasParent> 
+	    $parent
+	and 
+	    $parent
+	    <dc:title>
+	    $parentTitle	
+    order by $parentTitle
+
+	'''.format(PID=getParams['PID'][0])
+	risearch_params = {
+	'type': 'tuples',
+	'lang': 'itql',
+	'format': 'json',
+	'limit':'',
+	'dt': 'on',
+	'query': risearch_query
+	}
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# strip risearch namespace "info:fedora"
+	parent_jsonString = r.text.replace('info:fedora/','')
+	parent_dict = json.loads(parent_jsonString)
+
+	# parent siblings
+	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	risearch_query = '''
+	select $parentSibling $parentSiblingTitle from <#ri> where 
+	    <info:fedora/{PID}> 
+	    <wsudor:hasParent> 
+	    $parent
+	and 
+	    $parent
+	    <dc:title>
+	    $parentTitle
+	and
+	    $parent
+	    <wsudor:hasParent>
+	    $grandParent
+	and
+	    $parentSibling
+	    <wsudor:hasParent>
+	    $grandParent
+	and 
+	    $parentSibling
+	    <dc:title>
+	    $parentSiblingTitle
+    order by $parentSiblingTitle
+
+	'''.format(PID=getParams['PID'][0])
+	risearch_params = {
+	'type': 'tuples',
+	'lang': 'itql',
+	'format': 'json',
+	'limit':'',
+	'dt': 'on',
+	'query': risearch_query
+	}
+
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# strip risearch namespace "info:fedora"
+	parent_sibling_jsonString = r.text.replace('info:fedora/','')
+	parent_sibling_dict = json.loads(parent_sibling_jsonString)
+
+	# siblings
+	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	risearch_query = '''
+	select $sibling $siblingTitle from <#ri> where 
+	    <info:fedora/{PID}> 
+	    <wsudor:hasParent> 
+	    $parent
+	and 
+	    $sibling
+	    <wsudor:hasParent>
+	    $parent
+	and 
+	    $sibling
+	    <dc:title>
+	    $siblingTitle
+    order by $siblingTitle
+
+	'''.format(PID=getParams['PID'][0])
+	risearch_params = {
+	'type': 'tuples',
+	'lang': 'itql',
+	'format': 'json',
+	'limit':'',
+	'dt': 'on',
+	'query': risearch_query
+	}
+
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# strip risearch namespace "info:fedora"
+	sibling_jsonString = r.text.replace('info:fedora/','')
+	sibling_dict = json.loads(sibling_jsonString)
+	# CONSIDER POPPING OUT CURRENT ITEM BY PID HERE
+
+	# children
+	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	risearch_query = '''
+	select $child $childTitle from <#ri> where 
+	    $child
+	    <wsudor:hasParent> 
+	    <info:fedora/{PID}> 
+	and
+	    $child
+	    <dc:title>
+	    $childTitle
+    order by $childTitle
+
+	'''.format(PID=getParams['PID'][0])
+	risearch_params = {
+	'type': 'tuples',
+	'lang': 'itql',
+	'format': 'json',
+	'limit':'',
+	'dt': 'on',
+	'query': risearch_query
+	}
+
+	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# strip risearch namespace "info:fedora"
+	child_jsonString = r.text.replace('info:fedora/','')
+	child_dict = json.loads(child_jsonString)
+
+
+	treeDict = {
+		"parent":parent_dict,
+		"parent_siblings":parent_sibling_dict,
+		"siblings":sibling_dict,
+		"children":child_dict
+	}
+
+
+	return json.dumps(treeDict)
+
+
+
 #######################################################################################################################
 # --------------------------------------------------------------------------------------------------------------------#
 # DIAGNOSTICS / TESTING                                                                                               #

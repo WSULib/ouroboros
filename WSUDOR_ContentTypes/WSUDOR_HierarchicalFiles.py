@@ -54,9 +54,9 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		}
 
 		# check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
-		ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
-		if self.objMeta['isRepresentedBy'] not in ds_ids:
-			report_failure(("isRepresentedBy_check","{isRep} is not in {ds_ids}".format(isRep=self.objMeta['isRepresentedBy'],ds_ids=ds_ids)))
+		# ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
+		# if self.objMeta['isRepresentedBy'] not in ds_ids:
+		# 	report_failure(("isRepresentedBy_check","{isRep} is not in {ds_ids}".format(isRep=self.objMeta['isRepresentedBy'],ds_ids=ds_ids)))
 
 
 		# check that content_type is a valid ContentType				
@@ -97,12 +97,11 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write objMeta as datastream
 			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
 			objMeta_handle.label = "Ingest Bag Object Metadata"
-			# objMeta_handle.content = json.dumps(self.objMeta)
 			file_path = self.Bag.path + "/data/objMeta.json"
 			objMeta_handle.content = open(file_path)
 			objMeta_handle.save()
 
-			# write explicit RELS-EXT relationships			
+			# write explicit RELS-EXT relationships
 			for relationship in self.objMeta['object_relationships']:
 				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
@@ -115,27 +114,69 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
 			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
+			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel",content_type_string)
+
+			# set discoverability if datastreams present
+			if len(self.objMeta['datastreams']) > 0:
+				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","info:fedora/True")
+			else:
+				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","info:fedora/False")
 
 			# write MODS datastream
 			MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
 			MODS_handle.label = "MODS descriptive metadata"
-			file_path = self.Bag.path + "/data/MODS.xml"
-			MODS_handle.content = open(file_path)
+
+			raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+  <mods:titleInfo>
+    <mods:title>{label}</mods:title>
+  </mods:titleInfo>
+  <mods:identifier type="local">{identifier}</mods:identifier>
+  <mods:extension>
+    <PID>{PID}</PID>
+  </mods:extension>
+</mods:mods>
+			'''.format(label=self.objMeta['label'], identifier=self.objMeta['id'].split(":")[1], PID=self.objMeta['id'])
+			print raw_MODS
+			MODS_handle.content = raw_MODS		
 			MODS_handle.save()
 
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
 
-				# do document stuff?  Derive PDF or HTML? 
-				print "skipping here"
+				# set file_path
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+				print "Operating on:",file_path
 
+				# original
+				orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
+				orig_handle.label = ds['label']
+				orig_handle.content = open(file_path)
+				orig_handle.save()
 
-			# write generic thumbnail and preview
-			for gen_type in ['THUMBNAIL','PREVIEW']:
-				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="R")
-				rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type)
-				rep_handle.label = gen_type
+				# write gen FILE datastream
+				rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="R")
+				rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
+				rep_handle.label = "FILE"
 				rep_handle.save()
+
+				# make thumb for PDF
+				if ds['mimetype'] == "application/pdf":
+					print "Creating derivative thumbnail from PDF"					
+					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+					os.system('convert -thumbnail 200x200 -background white {file_path}[0] {temp_filename}'.format(file_path=file_path,temp_filename=temp_filename))
+					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
+					thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
+					thumb_handle.content = open(temp_filename)
+					thumb_handle.save()
+					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+
+					# write generic thumbnail for what should be SINGLE file per object
+					for gen_type in ['THUMBNAIL']:
+						rep_handle = eulfedora.models.DatastreamObject(self.ohandle, gen_type, gen_type, mimetype="image/jpeg", control_group="R")
+						rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type)
+						rep_handle.label = gen_type
+						rep_handle.save()
 
 
 			# save and commit object before finishIngest()

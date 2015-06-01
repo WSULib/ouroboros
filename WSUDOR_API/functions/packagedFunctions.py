@@ -114,6 +114,12 @@ class SingleObjectMethods(object):
 		# saves to 'hasMemberOf'
 		return ("hasMemberOf",json.loads(hasMemberOf(getParams)))
 
+	def hierarchicalTree_comp(self,getParams):
+		print hierarchicalTree(getParams)
+		# returns collections the object is a part of
+		# saves to 'hasParent'
+		return ("hierarchicalTree",json.loads(hierarchicalTree(getParams)))
+
 
 	####################################################################################
 	# WSUDOR_Image ContentType

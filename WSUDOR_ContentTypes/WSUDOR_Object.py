@@ -458,16 +458,7 @@ class WSUDOR_GenObject(object):
 
 	# reingest bag
 	def reingestBag(self, removeExportTar = False):
-		'''
-		Rough overview:
-			from WSUDOR_Manager import *
-			fedora_handle = fedoraHandles.fedora_handle
-			obj_handle = WSUDOR_ContentTypes.WSUDOR_Object('wayne:MOTA_PH_19751976_2r_066')
-			obj_handle.exportBag(returnTargetDir=True)
-			fedora_handle.purge_object(obj_handle.pid)
-			actions.bagIngest.ingestBag(actions.bagIngest.payloadExtractor('/var/www/wsuls/Ouroboros/export/consoleUser/wayne-MOTA_PH_19751976_2r_066.tar','single'))
-		'''
-
+		
 		# get PID
 		PID = self.pid
 

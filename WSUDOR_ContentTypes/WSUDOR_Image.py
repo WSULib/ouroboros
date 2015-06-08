@@ -5,7 +5,8 @@ import os
 import mimetypes
 import json
 import uuid
-import Image
+# import Image
+from PIL import Image
 import time
 import traceback
 import sys
@@ -126,13 +127,14 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			objMeta_handle.content = open(file_path)
 			objMeta_handle.save()
 
+			# -------------------------------------- RELS-EXT ---------------------------------------#
+
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
 				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 			
-			# writes derived RELS-EXT
-			
+			# writes derived RELS-EXT			
 			# isRepresentedBy
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 			
@@ -141,12 +143,35 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
-			# write MODS datastream
-			MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
-			MODS_handle.label = "MODS descriptive metadata"
-			file_path = self.Bag.path + "/data/MODS.xml"
-			MODS_handle.content = open(file_path)
-			MODS_handle.save()
+			# -------------------------------------- RELS-EXT ---------------------------------------#
+
+			# write MODS datastream if MODS.xml exists
+			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+				file_path = self.Bag.path + "/data/MODS.xml"
+				MODS_handle.content = open(file_path)
+				MODS_handle.save()
+
+			else:
+				# write generic MODS datastream
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+
+				raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+  <mods:titleInfo>
+    <mods:title>{label}</mods:title>
+  </mods:titleInfo>
+  <mods:identifier type="local">{identifier}</mods:identifier>
+  <mods:extension>
+    <PID>{PID}</PID>
+  </mods:extension>
+</mods:mods>
+				'''.format(label=self.objMeta['label'], identifier=self.objMeta['id'].split(":")[1], PID=self.objMeta['id'])
+				print raw_MODS
+				MODS_handle.content = raw_MODS		
+				MODS_handle.save()
 
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
@@ -161,9 +186,11 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				# make access
 				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
-				im = Image.open(file_path)				
-				if im.mode != "RGB":
-					im = im.convert("RGB")
+				im = Image.open(file_path)
+				
+				# run through filter
+				im = imMode(im)
+
 				im.save(temp_filename,'JPEG')
 				preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_ACCESS".format(ds_id=ds['ds_id']), "{label}_ACCESS".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
 				preview_handle.label = "{label}_ACCESS".format(label=ds['label'])
@@ -177,9 +204,11 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				width, height = im.size
 				max_width = 200	
 				max_height = 200
+
+				# run through filter
+				im = imMode(im)
+
 				im.thumbnail((max_width, max_height), Image.ANTIALIAS)
-				if im.mode != "RGB":
-					im = im.convert("RGB")
 				im.save(temp_filename,'JPEG')
 				thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
 				thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
@@ -193,9 +222,11 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				width, height = im.size
 				max_width = 1280	
 				max_height = 960
+				
+				# run through filter
+				im = imMode(im)
+
 				im.thumbnail((max_width, max_height), Image.ANTIALIAS)
-				if im.mode != "RGB":
-					im = im.convert("RGB")
 				im.save(temp_filename,'JPEG')
 				preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_PREVIEW".format(ds_id=ds['ds_id']), "{label}_PREVIEW".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
 				preview_handle.label = "{label}_PREVIEW".format(label=ds['label'])
@@ -218,12 +249,16 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				jp2_handle.save()
 				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
+				# -------------------------------------- RELS-INT ---------------------------------------#
+
 				# add to RELS-INT
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/{pid}'.format(pid=self.ohandle.pid))
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_THUMBNAIL'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_JP2'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_PREVIEW'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
 				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_ACCESS'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isAccessOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+
+				# -------------------------------------- RELS-INT ---------------------------------------#
 
 
 			# write generic thumbnail and preview
@@ -250,7 +285,20 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 
+# helpers
+def imMode(im):
+	# check for 16-bit tiffs
+	print "Image mode:",im.mode				
+	if im.mode in ['I;16','I;16B']:
+		print "I;16 tiff detected, converting..."
+		im.mode = 'I'
+		im = im.point(lambda i:i*(1./256)).convert('L')
+	# else if not RGB, convert
+	elif im.mode != "RGB" :
+		print "Converting to RGB"
+		im = im.convert("RGB")
 
+	return im
 
 
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import os
@@ -352,7 +351,7 @@ class WSUDOR_GenObject(object):
 		return True
 
 
-	def exportBag(self, job_package):
+	def exportBag(self, job_package=False, returnTargetDir=False, includeRELS=False):
 
 		'''
 		Target Example:
@@ -373,7 +372,6 @@ class WSUDOR_GenObject(object):
 		
 		# get PID
 		PID = self.pid
-		form_data = job_package['form_data']
 
 		# create temp dir structure
 		working_dir = "/tmp/Ouroboros/export_bags"
@@ -416,6 +414,12 @@ class WSUDOR_GenObject(object):
 			writeDS((ds['ds_id'],"{temp_dir}/data/datastreams/{filename}".format(temp_dir=temp_dir, filename=ds['filename'])))
 
 
+		# include RELS
+		if includeRELS == True:
+			for ds in ['RELS-EXT','RELS-INT']:
+				writeDS((ds['ds_id'],"{temp_dir}/data/datastreams/{filename}".format(temp_dir=temp_dir, filename=ds['filename'])))
+
+
 		# write MODS and objMeta files
 		simple = [
 			("MODS","{temp_dir}/data/MODS.xml".format(temp_dir=temp_dir)),
@@ -427,18 +431,65 @@ class WSUDOR_GenObject(object):
 		# tarball it up
 		named_dir = self.pid.replace(":","-")
 		os.system("mv {temp_dir} {working_dir}/{named_dir}".format(temp_dir=temp_dir, working_dir=working_dir, named_dir=named_dir))
+		orig_dir = os.getcwd()
 		os.chdir(working_dir)
 		os.system("tar -cvf {named_dir}.tar {named_dir}".format(working_dir=working_dir, named_dir=named_dir))
 		os.system("rm -r {working_dir}/{named_dir}".format(working_dir=working_dir, named_dir=named_dir))
 
+
 		# move to web accessible location, with username as folder
-		username = job_package['username']
+		if job_package != False:
+			username = job_package['username']
+		else:
+			username = "consoleUser"
 		target_dir = "/var/www/wsuls/Ouroboros/export/{username}".format(username=username)
 		if os.path.exists(target_dir) == False:
 			os.system("mkdir {target_dir}".format(target_dir=target_dir))
 		os.system("mv {named_dir}.tar {target_dir}".format(named_dir=named_dir,target_dir=target_dir))
 
-		return "http://digital.library.wayne.edu/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username)
+		# jump back to origina working dir
+		os.chdir(orig_dir)
+
+		if returnTargetDir == True:
+			return "{target_dir}/{named_dir}.tar".format(target_dir=target_dir,named_dir=named_dir)
+		else:
+			return "http://digital.library.wayne.edu/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username)
+
+
+	# reingest bag
+	def reingestBag(self, removeExportTar = False):
+		'''
+		Rough overview:
+			from WSUDOR_Manager import *
+			fedora_handle = fedoraHandles.fedora_handle
+			obj_handle = WSUDOR_ContentTypes.WSUDOR_Object('wayne:MOTA_PH_19751976_2r_066')
+			obj_handle.exportBag(returnTargetDir=True)
+			fedora_handle.purge_object(obj_handle.pid)
+			actions.bagIngest.ingestBag(actions.bagIngest.payloadExtractor('/var/www/wsuls/Ouroboros/export/consoleUser/wayne-MOTA_PH_19751976_2r_066.tar','single'))
+		'''
+
+		# get PID
+		PID = self.pid
+
+		print "Roundrip Ingesting:",PID
+
+		# export bag, returning the file structure location of tar file
+		export_tar = self.exportBag(returnTargetDir=True)
+		print "Location of export tar file:",export_tar
+
+		# purge self
+		fedora_handle.purge_object(PID)
+
+		# reingest exported tar file
+		actions.bagIngest.ingestBag(actions.bagIngest.payloadExtractor(export_tar,'single'))
+
+		# delete exported tar
+		if removeExportTar == True:
+			print "Removing export tar..."
+			os.remove(export_tar)
+
+		# return 
+		return PID,"Reingested."
 
 
 

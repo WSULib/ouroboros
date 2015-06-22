@@ -3,8 +3,57 @@
 <div class="row">
 	<div class="col-md-12">
 		<h1>Manage OAI Server</h1>
-		<p>This module helps manage the OAI server for the Wayne State Digital Object Repository.  We currently use PROAI that comes bundled with Fedora 3.6.x, itself a Tomcat Application.  Objects are detected and indexed by PROAI, and "Sets" are created via a small set of RELS-EXT relationships.  Find below links to OAI server and repository wide settings, and  tools for managing OAI relationships for batches of objects.</p>
-		<p>OAI-PMH documentation on Digital Collections wiki: <a href="http://digital.library.wayne.edu/wiki/index.php/OAI">http://digital.library.wayne.edu/wiki/index.php/OAI</a><p>
+		<p>This module helps manage the OAI server for the Wayne State Digital Object Repository.  We currently use PROAI that comes bundled with Fedora 3.6.x, which is a Tomcat Application.  Objects are detected and indexed by PROAI, and "Sets" are created via a small set of RELS-EXT relationships.  Find below links to OAI server and repository wide settings, and tools for managing OAI relationships for batches of objects.</p>
+		<p>OAI-PMH documentation on Digital Collections wiki: <a href="http://digital.library.wayne.edu/mediawiki/index.php/OAI">http://digital.library.wayne.edu/wiki/index.php/OAI</a><p>
+	</div>
+
+	<div class="col-md-12">
+		<h3>Server Overview</h3>
+		
+		<div class="col-md-6">
+			<p><strong>Server Status</strong>: 
+				{% if overview.webapp_status == 'running' %}
+					<span style="font-size:120%; color:green;">{{overview.webapp_status}}</span>
+				{% else %}
+					<span style="font-size:120%; color:red;">{{overview.webapp_status}}</span>
+				{% endif %}
+			</p>
+			<p><strong>Total Items</strong>: <span style="font-size:120%; color:green;">{{overview.total_count}}</span></p>
+		</div>
+		
+		<!-- Metas -->
+		<!-- <div class="col-md-6" style="clear:both;">
+			<p><strong>Metadata Prefixes</strong></p>
+			<table class="table">
+				<tr>
+					<td><strong>Prefix</strong></td>
+					<td><strong>Namespace</strong></td>
+				</tr>
+				{% for prefix,ns,schema in overview.metas %}
+				<tr>
+					<td>{{prefix}}</td>
+					<td>{{ns}}</td>
+				</tr>
+				{% endfor %}
+			</table>
+		</div> -->
+
+		<!-- Sets -->
+		<div class="col-md-6" style="clear:both;">
+			<p onclick="$('#sets').fadeToggle();" style="cursor:pointer;"><strong>Sets</strong> (click to expand)</p>
+			<table id="sets" style="display:none;" class="table">				
+				{% for setSpec in overview.sets %}
+				<tr>
+					<td><a href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListRecords&metadataPrefix=oai_dc&set={{setSpec}}">{{setSpec}}</a></td>
+				</tr>
+				{% endfor %}
+			</table>
+		</div>
+
+	</div>
+
+	<div class="col-md-12">
+		<h3>Utilities</h3>
 		<ul>
 			<li>
 				<a href="./manageOAI/serverWide">OAI Server & Repository-wide Management</a>
@@ -14,8 +63,14 @@
 				<a href="./manageOAI/objectRelated">Manage OAI Relationships for Objects</a>
 				<p>Generate unique OAI identifiers for objects; View, add, and remove set affiliations for batches of objects</p>
 			</li>
+			<li>
+				<a href="./manageOAI/purgePROAI">Purge PROAI (Tomcat-based OAI-PMH server) records</a>
+				<p>This can be useful for syncing objects and collections from WSUDOR with PROAI.  When the status of objects changes, PROAI will sometimes drop or "lose" records.  Purging PROAI, then letting PROAI harvest records as per normal (every two minutes), should recalibrate everything.</p>
+			</li>
+
 		</ul>
 	</div>
+
 </div>
 
 

@@ -23,9 +23,15 @@ import requests
 from requests.auth import HTTPBasicAuth
 import json
 import time
+import os
+import shutil
+import _mysql
 
 # eulfedora
 import eulfedora
+
+# local
+from tomcat_manager import *
 
 manageOAI = Blueprint('manageOAI', __name__, template_folder='templates', static_folder="static")
 
@@ -38,9 +44,46 @@ ListIdentifiers: http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListIde
 @manageOAI.route('/manageOAI', methods=['POST', 'GET'])
 def index():	
 
+	overview = {}
+
+	# connect to DB
+	con = _mysql.connect('localhost','WSUDOR_Manager','WSUDOR_Manager','proai')
 	
+	# total items
+	con.query('SELECT * FROM rcItem')
+	t_results = con.store_result()
+	overview['total_count'] = t_results.num_rows()
+
+	# metadata prefixes
+	con.query('SELECT mdPrefix, namespaceURI, schemaLocation FROM rcFormat')
+	results = con.use_result()
+	overview['metas'] = []
+	while True:
+		record = results.fetch_row()
+		if not record:
+			break
+		overview['metas'].append(record[0])
+
+	# sets prefixes
+	con.query('SELECT setSpec FROM rcSet')
+	results = con.use_result()
+	overview['sets'] = []
+	while True:
+		record = results.fetch_row()
+		if not record:
+			break
+		overview['sets'].append(record[0][0])
+
+	# get status of Tomcat webapp
+	tm = TomcatManager(url="http://localhost:8080/manager/text", userid=TOMCAT_USER, password=TOMCAT_PASSWORD)
+	for each in tm.list():
+		if each[0] == TOMCAT_PROAI_PATH:
+			overview['webapp_status'] = each[1]
+
+	# DEBUG
+	# print overview
 	
-	return render_template("manageOAI_index.html")
+	return render_template("manageOAI_index.html", overview=overview)
 
 @manageOAI.route('/manageOAI/serverWide', methods=['POST', 'GET'])
 def serverWide():	
@@ -231,5 +274,73 @@ def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 	object_string = "info:fedora/{collectionPID}".format(collectionPID=collectionPID)	
 	return toggle_function(predicate_string, object_string)
 
+
+
+@manageOAI.route('/manageOAI/purgePROAI', methods=['POST', 'GET'])
+def purgePROAI():
+
+	'''
+	Our PROAI server operates under the Tomcat Webapp path '/oaiprovider'
+	'''
+
+	PROAI_TABLES = [
+		'rcAdmin',         
+		'rcFailure',       
+		'rcFormat',        
+		'rcItem',          
+		'rcMembership',    
+		'rcPrunable',      
+		'rcQueue',         
+		'rcRecord',        
+		'rcSet' 
+	]
+	
+	# connect to Tomcat
+	tm = TomcatManager(url="http://localhost:8080/manager/text", userid=TOMCAT_USER, password=TOMCAT_PASSWORD)
+
+	# stop PROAI (gets path from localConfig.py)
+	print "Stopping PROAI"
+	tm.stop(TOMCAT_PROAI_PATH)
+
+	# purge disc cache
+	print "Delete cache"
+	os.system('rm -r {PROAI_CACHE_LOCATION}/*'.format(PROAI_CACHE_LOCATION=PROAI_CACHE_LOCATION))
+
+	# truncate MySQL tables
+	con = _mysql.connect('localhost','WSUDOR_Manager','WSUDOR_Manager','proai')
+	for table in PROAI_TABLES:
+		print "Deleting rows from",table
+		con.query('DELETE FROM {table}'.format(table=table))
+	con.close()
+
+	# restart PROAI
+	print "Starting PROAI"
+	tm.start(TOMCAT_PROAI_PATH)
+
+	return redirect("/tasks/manageOAI")
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 
 

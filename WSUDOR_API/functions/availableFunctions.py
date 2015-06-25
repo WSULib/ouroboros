@@ -698,7 +698,11 @@ def hierarchicalTree(getParams):
 	# strip risearch namespace "info:fedora"
 	sibling_jsonString = r.text.replace('info:fedora/','')
 	sibling_dict = json.loads(sibling_jsonString)
-	# CONSIDER POPPING OUT CURRENT ITEM BY PID HERE
+
+	# reomve current PID from siblings
+	for idx, val in enumerate(sibling_dict['results']):
+		if val['sibling'] == getParams['PID'][0]:
+			del sibling_dict['results'][idx]
 
 	# children
 	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"

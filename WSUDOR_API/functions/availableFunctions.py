@@ -1657,8 +1657,9 @@ def mimetypeDictionary(getParams):
 
 	# return file extension based on WSUDOR Datastream mimetype
 	if direction == "DS2extension":		
-		return_string = mimetypes.guess_extension(fedora_handle.get_object(getParams['PID'][0]).getDatastreamObject(getParams['DS'][0]).mimetype)
-		return json.dumps(return_string)
+		input_mimetype = fedora_handle.get_object(getParams['PID'][0]).getDatastreamObject(getParams['DS'][0]).mimetype
+		return_string = mimetypes.guess_extension(input_mimetype)
+		return json.dumps({"extension":return_string,"input_mimetype":input_mimetype})
 
 	# return straight dictionary
 	elif inputFilter == "all":

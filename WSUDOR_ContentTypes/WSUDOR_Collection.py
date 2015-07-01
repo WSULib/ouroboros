@@ -122,81 +122,96 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
-				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				print "Looking for:",file_path
 
-				# original
-				orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
-				orig_handle.label = ds['label']
-				orig_handle.content = open(file_path)
-				orig_handle.save()
+				if "skip_processing" not in ds:
+					file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+					print "Looking for:",file_path
 
-				# make access
-				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
-				im = Image.open(file_path)				
-				if im.mode != "RGB":
-					im = im.convert("RGB")
-				im.save(temp_filename,'JPEG')
-				preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_ACCESS".format(ds_id=ds['ds_id']), "{label}_ACCESS".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-				preview_handle.label = "{label}_ACCESS".format(label=ds['label'])
-				preview_handle.content = open(temp_filename)
-				preview_handle.save()
-				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
-				
-				# make thumb			
-				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
-				im = Image.open(file_path)
-				width, height = im.size
-				max_width = 200	
-				max_height = 200
-				im.thumbnail((max_width, max_height), Image.ANTIALIAS)
-				if im.mode != "RGB":
-					im = im.convert("RGB")
-				im.save(temp_filename,'JPEG')
-				thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-				thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
-				thumb_handle.content = open(temp_filename)
-				thumb_handle.save()
-				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					# original
+					orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
+					orig_handle.label = ds['label']
+					orig_handle.content = open(file_path)
+					orig_handle.save()
 
-				# make preview
-				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
-				im = Image.open(file_path)
-				width, height = im.size
-				max_width = 1280	
-				max_height = 960
-				im.thumbnail((max_width, max_height), Image.ANTIALIAS)
-				if im.mode != "RGB":
-					im = im.convert("RGB")
-				im.save(temp_filename,'JPEG')
-				preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_PREVIEW".format(ds_id=ds['ds_id']), "{label}_PREVIEW".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-				preview_handle.label = "{label}_PREVIEW".format(label=ds['label'])
-				preview_handle.content = open(temp_filename)
-				preview_handle.save()
-				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					# make access
+					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+					im = Image.open(file_path)				
+					if im.mode != "RGB":
+						im = im.convert("RGB")
+					im.save(temp_filename,'JPEG')
+					preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_ACCESS".format(ds_id=ds['ds_id']), "{label}_ACCESS".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
+					preview_handle.label = "{label}_ACCESS".format(label=ds['label'])
+					preview_handle.content = open(temp_filename)
+					preview_handle.save()
+					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					
+					# make thumb			
+					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+					im = Image.open(file_path)
+					width, height = im.size
+					max_width = 200	
+					max_height = 200
+					im.thumbnail((max_width, max_height), Image.ANTIALIAS)
+					if im.mode != "RGB":
+						im = im.convert("RGB")
+					im.save(temp_filename,'JPEG')
+					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
+					thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
+					thumb_handle.content = open(temp_filename)
+					thumb_handle.save()
+					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
-				# make jp2
-				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jp2"
-				os.system("convert {input} {output}[256x256]".format(input=file_path,output=temp_filename))
-				jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
-				jp2_handle.label = "{label}_JP2".format(label=ds['label'])
-				try:
-					jp2_handle.content = open(temp_filename)
-				except:
-					# sometimes jp2 creation results in two files, look for first one in this instance
-					temp_filename = temp_filename.split(".")[0]
-					temp_filename = temp_filename + "-0.jp2"
-					jp2_handle.content = open(temp_filename)
-				jp2_handle.save()
-				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					# make preview
+					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+					im = Image.open(file_path)
+					width, height = im.size
+					max_width = 1280	
+					max_height = 960
+					im.thumbnail((max_width, max_height), Image.ANTIALIAS)
+					if im.mode != "RGB":
+						im = im.convert("RGB")
+					im.save(temp_filename,'JPEG')
+					preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_PREVIEW".format(ds_id=ds['ds_id']), "{label}_PREVIEW".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
+					preview_handle.label = "{label}_PREVIEW".format(label=ds['label'])
+					preview_handle.content = open(temp_filename)
+					preview_handle.save()
+					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
-				# add to RELS-INT
-				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/{pid}'.format(pid=self.ohandle.pid))
-				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_THUMBNAIL'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
-				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_JP2'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
-				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_PREVIEW'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
-				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_ACCESS'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isAccessOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+					# make jp2
+					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jp2"
+					os.system("convert {input} {output}[256x256]".format(input=file_path,output=temp_filename))
+					jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
+					jp2_handle.label = "{label}_JP2".format(label=ds['label'])
+					try:
+						jp2_handle.content = open(temp_filename)
+					except:
+						# sometimes jp2 creation results in two files, look for first one in this instance
+						temp_filename = temp_filename.split(".")[0]
+						temp_filename = temp_filename + "-0.jp2"
+						jp2_handle.content = open(temp_filename)
+					jp2_handle.save()
+					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
+					# add to RELS-INT
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/{pid}'.format(pid=self.ohandle.pid))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_THUMBNAIL'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_JP2'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_PREVIEW'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_ACCESS'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isAccessOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+
+
+				# else, skip processing and write straight 1:1 datastream
+				else:
+					print "Skipping derivative processing"
+					file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+					print "Looking for:",file_path
+
+					# original
+					generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
+					generic_handle.label = ds['label']
+					generic_handle.content = open(file_path)
+					generic_handle.save()
+					
 
 			# write generic thumbnail and preview
 			for gen_type in ['THUMBNAIL','PREVIEW']:

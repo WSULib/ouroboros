@@ -347,6 +347,9 @@ class WSUDOR_GenObject(object):
 		# Write isWSUDORObject RELS-EXT relationship
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
 
+		# Index in Solr
+		self.indexToSolr()
+
 		# finally, return
 		return True
 

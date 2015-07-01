@@ -114,6 +114,7 @@ class SingleObjectMethods(object):
 		# saves to 'hasMemberOf'
 		return ("hasMemberOf",json.loads(hasMemberOf(getParams)))
 
+
 	def hierarchicalTree_comp(self,getParams):
 		print hierarchicalTree(getParams)
 		# returns collections the object is a part of
@@ -149,22 +150,55 @@ class SingleObjectMethods(object):
 		# saves to 'parts_imageDict'	
 		if self.obj_handle.content_type == "WSUDOR_Image":
 
-			handle = json.loads(hasPartOf(getParams))	
+			# get parts
+			handle = json.loads(hasPartOf(getParams))
+
 			parts_imageDict = {}
 			parts_imageDict['parts_list'] = []
-			for each in handle['results']:
-				parts_imageDict['parts_list'].append(each['ds_id'])
+			for each in handle['results']:			
+
 				parts_imageDict[each['ds_id']] = {
 					'ds_id':each['ds_id'],
 					'pid':each['pid'],
 					'thumbnail' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "{object}".format(object=each['object'])).next().split("/")[-1],
 					'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "{object}".format(object=each['object'])).next().split("/")[-1],
-					'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "{object}".format(object=each['object'])).next().split("/")[-1]
+					'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "{object}".format(object=each['object'])).next().split("/")[-1],
+					# RIGHT HERE, PUT THE QUERY THAT GRABS THE ORDER THAT WE NOW HAVE AS A RELS-INT #
+
 				}
+
+				# check for order and assign
+				try:
+					order = int(fedora_handle.risearch.get_objects("{object}".format(object=each['object']), "info:fedora/fedora-system:def/relations-internal#isOrder").next())
+				except:
+					order = False
+				parts_imageDict[each['ds_id']]['order'] = order
+
+				# add to list
+				parts_imageDict['parts_list'].append((parts_imageDict[each['ds_id']]['order'],parts_imageDict[each['ds_id']]['ds_id']))
+			
+
+			# sort and make iterable list from dictionary
+			parts_imageDict['parts_list'].sort(key=lambda tup: tup[0])
+			parts_imageList = []
+			for each in parts_imageDict['parts_list']:
+				parts_imageList.append(parts_imageDict[each[1]])
+			
+			# reassign		
+			del parts_imageDict['parts_list']
+			parts_imageDict['sorted'] = parts_imageList
+
+
+			# debug
+			print "DEBUG ------------------->",parts_imageDict
+			print "DEBUG ------------------->",parts_imageList
+
 			return ("parts_imageDict",parts_imageDict)
 
 		else:
 			return ("parts_imageDict",False)
+
+
 
 
 	####################################################################################

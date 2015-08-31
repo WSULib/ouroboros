@@ -31,6 +31,13 @@ from pydub import AudioSegment
 
 class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
+	# static values for class
+	label = "Audio"
+
+	description = "Audio type object. (Needs more description...)"
+
+	Fedora_ContentType = "CM:Audio"
+
 	def __init__(self,object_type=False,content_type=False,payload=False):
 		
 		# run __init__ from parent class

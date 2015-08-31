@@ -58,6 +58,38 @@ class createManifestForm(Form):
 	internalRelationships_1 = StringField('Type Out Internal Relationships')
 
 
+# form for creating a manifest needed for bag ingest
+class createBagForm_WSUebook(Form):
+	
+	# IO
+	inputLocation = StringField('Files Location (absolute path):')
+	outputLocation = StringField('Path for bag directory (absolute path):')
+
+	# Basic
+	objID = StringField('Object ID:')
+	objLabel = StringField('Object Label:')
+
+	# RELS
+	isDiscoverable = SelectField('Discoverability:', choices=[
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","object":"info:fedora/True"}', 'Discoverable'),
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","object":"info:fedora/False"}', 'Not Discoverable')
+	])
+
+	hasSecurityPolicy = SelectField('Access Policy:', choices=[
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy","object":"info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"}', 'Unrestricted Access by Users'),
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy","object":"info:fedora/wayne:WSUDORSecurity-permit-apia-WSUComm"}', 'WSU Community Only')
+	])
+
+	hasContentModel = SelectField('Content Model:', choices=[
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel","object":"info:fedora/CM:Image"}', 'Image'),
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel","object":"info:fedora/CM:Audio"}', 'Audio'),
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel","object":"info:fedora/CM:Video"}', 'Video'),
+		('{"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel","object":"info:fedora/CM:WSUebook"}', 'WSUebook')
+	])
+
+	
+
+
 # form for importing <mods:modsCollection>
 class importMODS(Form):
 	# using params verbatim from Fedora documentation	

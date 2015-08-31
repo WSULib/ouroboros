@@ -134,7 +134,7 @@ class ObjMeta:
 		# required attributes
 		self.id = "Object ID"
 		self.policy = "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
-		self.content_type = "ContentTypes"
+		self.content_type = "ContentTypes" #WSUDOR_X, not CM:X
 		self.isRepresentedBy = "Datastream ID that represents object"
 		self.object_relationships = []
 		self.datastreams = []
@@ -169,8 +169,8 @@ class ObjMeta:
 		pass
 
 		#uses jsonify to set Content-Type headers to application/json
-	def displayJSONWeb(self, json_data):
-		return jsonify(**json_data)
+	def displayJSONWeb(self):
+		return jsonify(**self.__dict__)
 
 	#uses JSONEncoder class, exports only attributes
 	def toJSON(self):

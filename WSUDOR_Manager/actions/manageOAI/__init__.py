@@ -203,6 +203,10 @@ def manageOAI_toggleSet(PID):
 	dc_title_gen = obj_ohandle.risearch.get_objects(obj_ohandle.uriref,"dc:title")
 	dc_title = dc_title_gen.next()
 
+	'''
+	Can objects point to an OAI object that is non-existent as they setSpec Name?
+	'''
+
 	# toggle collection OAI relatedd RELS-EXT relationships	
 	if harvest_status == "False":
 		print "Object was not harvestable, enabling..."

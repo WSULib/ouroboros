@@ -35,6 +35,8 @@ from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
 def WSUDOR_Object(payload, object_type="WSUDOR"):
 
+	
+
 	'''	
 	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
 	'''

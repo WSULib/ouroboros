@@ -46,13 +46,14 @@ def stagingManifest():
 			flag = True
 			for key in f.keys():
 				# look for number and append each one that matches current number to a dictionary
-					if key.endswith(str(counter)):
-						flag = False
-						key_temp = re.sub('\_'+str(counter)+'$', '', key)
-						temp_dictionary[key_temp] = f[key]
-						if key.startswith('isRepresentedBy'):
-							form_data['isRepresentedBy'] = temp_dictionary['dsID_'+str(counter)]
-							temp_dictionary.pop(key, None)
+				if key.endswith(str(counter)):
+					flag = False
+					# key_temp = re.sub('\_'+str(counter)+'$', '', key)
+					key_temp = key
+					temp_dictionary[key_temp] = f[key]
+					if key.startswith('isRepresentedBy'):
+						form_data['isRepresentedBy'] = temp_dictionary['dsID_'+str(counter)]
+						temp_dictionary.pop(key, None)
 
 			if flag:
 				break

@@ -1,0 +1,74 @@
+{% include 'header.html' %}
+<div class="row">
+	<div class="col-md-12">
+		<h1>Create Bag</h1>
+		<p>This form is for creating bags meant for ingest.</p>
+	</div>
+</div>
+
+
+<div class="row">
+	<div class="col-md-12">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/tasks/createBag/create" enctype="multipart/form-data">
+			<div class="col-md-3">
+
+
+				<!-- Bag Metadata -->
+				<div class="form-group">
+					<h4>Metadata</h4>
+		        </div>
+
+		        <div class="form-group">
+					{{ form.csrf_token }} 
+					{{ form.objID.label(class="control-label") }} {{ form.objID(class="form-control input-sm") }}
+		        </div>
+
+		        <div class="form-group">
+					{{ form.objLabel.label(class="control-label") }} {{ form.objLabel(class="form-control input-sm") }}
+		        </div>  
+
+		        <div class="form-group">
+		            {{ form.isDiscoverable.label(class="control-label") }} {{ form.isDiscoverable(class="form-control dataType input-sm") }} 
+		        </div>
+
+		        <div class="form-group">
+		            {{ form.hasSecurityPolicy.label(class="control-label") }} {{ form.hasSecurityPolicy(class="form-control input-sm") }}
+		        </div>
+
+		        <div class="form-group">
+		            {{ form.hasContentModel.label(class="control-label") }} {{ form.hasContentModel(class="form-control input-sm") }}
+		        </div>		       
+
+		        <!-- Bag Make-Up -->
+			    <div class="form-group">
+					<h4>Contents</h4>
+		        </div>
+
+			    <div class="form-group">
+					{{ form.inputLocation.label(class="control-label") }} {{ form.inputLocation(class="form-control input-sm") }}
+		        </div>  
+
+			    <!-- Bag Output -->
+			    <div class="form-group">
+					<h4>Output</h4>
+		        </div>
+
+			    <div class="form-group">
+					{{ form.outputLocation.label(class="control-label") }} {{ form.outputLocation(class="form-control input-sm") }}
+		        </div>  
+
+			    <hr>
+
+
+			    <div class="form-group">
+			        <input type="submit" class="btn btn-primary" value="Submit" />
+			    </div>
+
+		    </div>
+
+		</form>
+	</div>
+</div>
+
+
+{% include 'footer.html' %}

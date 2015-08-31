@@ -28,6 +28,13 @@ from WSUDOR_Manager import redisHandles, helpers
 
 class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
+	# static values for class
+	label = "Hierarchical File"
+
+	description = "Still under development.  The Hierarchical File Content Type is meant to model content where the filesystem / archival hierarchical order is important for understanding the object."
+
+	Fedora_ContentType = "CM:HierarchicalFiles"
+
 	def __init__(self,object_type=False,content_type=False,payload=False):
 		
 		# run __init__ from parent class

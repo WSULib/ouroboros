@@ -28,6 +28,13 @@ from WSUDOR_Manager import redisHandles, helpers, utilities
 
 class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
+	# static values for class
+	label = "WSUeBook"
+
+	description = "The WSUDOR_WSUebook content type models most print (but some born digital) resources we have created digital components for each page.  This includes a page image, ALTO XML with information about the location of words on the page, a thumbnail, a PDF (with embedded text), and HTML that semi-closely matches the original formatting (suitable for flowing text).  These objects are best viewed with our eTextReader."
+
+	Fedora_ContentType = "CM:WSUebook"
+
 	def __init__(self,object_type=False,content_type=False,payload=False):
 		
 		# run __init__ from parent class
@@ -46,6 +53,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		}
 
 
+
+
 	# perform ingestTest
 	def validIngestBag(self):
 
@@ -62,6 +71,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# check that content_type is a valid ContentType				
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))				
+
+
+		# consider checking for "equality" in page derivative counts
+		# from main.py: if (len(page_images) - 1) == len(thumb_images) == len(HTML_docs) == len(altoXML_docs) == len(pdf_docs) == len(jp2_images):
+
 		
 		
 		# finally, return verdict
@@ -70,7 +84,138 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# ingest 
 	def ingestBag(self):
-		pass
+
+		#----------------- GENERIC INGEST PROCEDURES, CAN BE FOLDED INTO WSUDOR_Object -----------------#
+		
+		if self.object_type != "bag":
+			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
+
+
+		# attempt to ingest bag / object
+		try:		
+			
+			self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
+			self.ohandle.save()
+
+			# set base properties of object
+			self.ohandle.label = self.objMeta['label']
+
+			# write POLICY datastream
+			# NOTE: 'E' management type required, not 'R'
+			print "Using policy:",self.objMeta['policy']
+			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
+			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
+			policy_handle.ds_location = "http://localhost/fedora/objects/{policy}/datastreams/POLICY_XML/content".format(policy=policy_suffix)
+			policy_handle.label = "POLICY"
+			policy_handle.save()
+
+			# write objMeta as datastream
+			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+			objMeta_handle.label = "Ingest Bag Object Metadata"
+			# objMeta_handle.content = json.dumps(self.objMeta)
+			file_path = self.Bag.path + "/data/objMeta.json"
+			objMeta_handle.content = open(file_path)
+			objMeta_handle.save()
+
+			# -------------------------------------- RELS-EXT ---------------------------------------#
+
+			# write explicit RELS-EXT relationships			
+			for relationship in self.objMeta['object_relationships']:
+				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
+			
+			# writes derived RELS-EXT			
+			# isRepresentedBy
+			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+			
+			# hasContentModel
+			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
+			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
+			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
+
+			# -------------------------------------- RELS-EXT ---------------------------------------#
+
+			# write MODS datastream if MODS.xml exists
+			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+				file_path = self.Bag.path + "/data/MODS.xml"
+				MODS_handle.content = open(file_path)
+				MODS_handle.save()
+
+			else:
+				# write generic MODS datastream
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+
+				raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+  <mods:titleInfo>
+    <mods:title>{label}</mods:title>
+  </mods:titleInfo>
+  <mods:identifier type="local">{identifier}</mods:identifier>
+  <mods:extension>
+    <PID>{PID}</PID>
+  </mods:extension>
+</mods:mods>
+				'''.format(label=self.objMeta['label'], identifier=self.objMeta['id'].split(":")[1], PID=self.objMeta['id'])
+				print raw_MODS
+				MODS_handle.content = raw_MODS		
+				MODS_handle.save()
+
+
+
+			#----------------- / WSU_Ebook specific -----------------#
+
+			# create derivatives and write datastreams
+			for ds in self.objMeta['datastreams']:
+
+
+				'''
+				for each datastream:
+					- parse number from filename (x)
+
+					- determine mimetype
+					
+					- if image (maybe look at mimetype?):
+						- make THUMB_x
+						- make ACCESS_x (1700x1700)
+					
+					- create fullbook PDF and HTML files
+
+					- index book in bookreader core
+				'''
+
+
+			#----------------- GENERIC INGEST PROCEDURES, CAN BE FOLDED INTO WSUDOR_Object -----------------#
+
+			# write generic thumbnail and preview
+			for gen_type in ['THUMBNAIL','PREVIEW']:
+				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="R")
+				rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type)
+				rep_handle.label = gen_type
+				rep_handle.save()
+
+			#----------------- Finish up -----------------#
+
+			# save and commit object before finishIngest()
+			final_save = self.ohandle.save()
+
+
+
+			# finish generic ingest
+			return self.finishIngest()
+
+
+
+		# exception handling
+		except Exception,e:
+			print traceback.format_exc()
+			print "Ingest Error:",e
+			return False
+
+
+
 
 
 	# complex size determination, overrides WSUDOR_Generic
@@ -118,6 +263,25 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print size_dict
 
 		return size_dict
+
+
+
+	# ingest 
+	def migrate(self):
+
+		'''
+		This function will migrate bags from our multiple-object model (old) to a single-object model (new).
+		This will require the following work:
+			- export multi-object to single directory
+				- consider /repository for this amount of data
+			- write objMeta.json file for that object (first time)
+			- BagIt
+			- create ingest method for single-object ebooks
+			- ingest!
+			- purge old book?
+		'''
+
+		return True
 
 
 

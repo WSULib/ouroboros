@@ -25,6 +25,7 @@ login_manager.login_view = 'login'
 
 # import WSUDOR ContentTypes
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import *
 
 # get handlers
 import views

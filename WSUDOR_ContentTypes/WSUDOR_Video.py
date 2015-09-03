@@ -30,6 +30,13 @@ from WSUDOR_Manager import redisHandles, helpers
 
 class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
+	# static values for class
+	label = "Video"
+
+	description = "Video object type."
+
+	Fedora_ContentType = "CM:Video"
+
 	def __init__(self,object_type=False,content_type=False,payload=False):
 		
 		# run __init__ from parent class

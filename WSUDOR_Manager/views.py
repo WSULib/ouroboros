@@ -11,6 +11,7 @@ import shlex, subprocess
 import socket
 import hashlib
 import os
+import pkgutil
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response, Response, Blueprint
@@ -25,6 +26,7 @@ from WSUDOR_Manager.actions import actions
 from WSUDOR_Manager import redisHandles
 from WSUDOR_Manager import login_manager
 from WSUDOR_Manager import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import *
 import utilities
 
 # login
@@ -131,13 +133,11 @@ def systemStatus():
 @login_required
 def contentModels():
 	
-	# get all registered Content Models
-	CM_list = fedora_handle.risearch.sparql_query("select $label $CM from <#ri> where { \
-		$CM <fedora-rels-ext:isMemberOfCollection> <info:fedora/CM:ModelsCollection> . \
-		$CM <info:fedora/fedora-system:def/model#label> $label . \
-		}")
+	# WSUDOR_ContentTypes
+	wcts = [name for _, name, _ in pkgutil.iter_modules(['WSUDOR_ContentTypes'])]
+	print wcts
 
-	return render_template("contentModels.html",CM_list=CM_list)
+	return render_template("contentModels.html",wcts=wcts)
 
 @app.route('/MODSedit', methods=['GET', 'POST'])
 @login_required
@@ -804,6 +804,12 @@ def PIDSolr():
 	coll_query = {'q':"rels_hasContentModel:*Collection", 'fl':["id","dc_title"], 'rows':1000}
 	coll_results = solr_handle.search(**coll_query)
 	coll_docs = coll_results.documents
+
+	# check for title, give generic if not present
+	for each in coll_docs:
+		if 'dc_title' not in each:
+			each['dc_title'] = [ 'Unknown Collection Title' + each['id'].encode('ascii','ignore') ]
+
 	form.collection_object.choices = [(each['id'].encode('ascii','ignore'), each['dc_title'][0].encode('ascii','ignore')) for each in coll_docs]
 	form.collection_object.choices.insert(0,("","All Collections"))	
 
@@ -1012,28 +1018,42 @@ def collectionsOverview():
 	return render_template("collectionsOverview.html", object_package=object_package)
 
 
+# WSUDOR_ContentTypes (aka "wct")
+####################################################################################
+
+# wct investigator
+@app.route("/wcts/<wct>", methods=['POST', 'GET'])
+def wcts(wct):
+
+	print "Opening",wct
+	wct = globals()[wct]
+
+	return render_template("wctUtilities.html",wct=wct)
+
+
+
 
 
 
 # EXPERIMENTAL SERVICES
 ####################################################################################
 # stream bits from Fedora through WSUDOR_Manager
-@app.route("/strDS/<PID>/<DS>", methods=['POST', 'GET'])
-def strDS(PID,DS):
-	obj_handle = fedora_handle.get_object(PID)
-	obj_ds_handle = obj_handle.getDatastreamObject(DS)
+# @app.route("/strDS/<PID>/<DS>", methods=['POST', 'GET'])
+# def strDS(PID,DS):
+# 	obj_handle = fedora_handle.get_object(PID)
+# 	obj_ds_handle = obj_handle.getDatastreamObject(DS)
 
-	# chunked, generator
-	def stream():
-		step = 1024
-		pointer = 0
-		for chunk in range(0, len(obj_ds_handle.content), step):
-			yield obj_ds_handle.content[chunk:chunk+step]
+# 	# chunked, generator
+# 	def stream():
+# 		step = 1024
+# 		pointer = 0
+# 		for chunk in range(0, len(obj_ds_handle.content), step):
+# 			yield obj_ds_handle.content[chunk:chunk+step]
 
-	return Response(stream(), mimetype=obj_ds_handle.mimetype)
+# 	return Response(stream(), mimetype=obj_ds_handle.mimetype)
 
-	# straight pipe, thinking maybe download first?
-	# return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)	
+# 	# straight pipe, thinking maybe download first?
+# 	# return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)	
 
 
 

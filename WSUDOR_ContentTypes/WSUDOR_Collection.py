@@ -28,6 +28,13 @@ import WSUDOR_ContentTypes
 
 class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
+	# static values for class
+	label = "Collection"
+
+	description = "Content Type for Collection Objects."
+
+	Fedora_ContentType = "CM:Collection"
+
 	def __init__(self,object_type=False,content_type=False,payload=False):
 		
 		# run __init__ from parent class

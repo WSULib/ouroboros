@@ -95,6 +95,10 @@ app.register_blueprint(checksum, url_prefix=tasks_URL_prefix)
 from createManifest import createManifest
 app.register_blueprint(createManifest, url_prefix=tasks_URL_prefix)
 
+#createManifest
+from createBag import createBag
+app.register_blueprint(createBag, url_prefix=tasks_URL_prefix)
+
 # task firing
 ###########################################################################
 

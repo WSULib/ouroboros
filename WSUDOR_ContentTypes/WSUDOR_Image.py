@@ -29,6 +29,13 @@ from WSUDOR_Manager import redisHandles, helpers
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
+	# static values for class
+	label = "Image"
+
+	description = "The Image Content Type contains original / master images, with derivatives for online viewing."
+
+	Fedora_ContentType = "CM:Image"
+
 	def __init__(self,object_type=False,content_type=False,payload=False):
 		
 		# run __init__ from parent class

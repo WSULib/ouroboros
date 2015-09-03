@@ -103,7 +103,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			self.ohandle.save()
 
 			# set base properties of object
-			self.ohandle.label = self.label
+			self.ohandle.label = self.objMeta['label']
 
 			# write POLICY datastream
 			# NOTE: 'E' management type required, not 'R'

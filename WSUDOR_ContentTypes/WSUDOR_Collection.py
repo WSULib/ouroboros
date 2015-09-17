@@ -4,7 +4,7 @@ import os
 import mimetypes
 import json
 import uuid
-import Image
+from PIL import Image
 import time
 import traceback
 import sys

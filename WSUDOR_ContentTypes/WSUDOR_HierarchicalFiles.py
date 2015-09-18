@@ -129,11 +129,20 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			else:
 				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","info:fedora/False")
 
-			# write MODS datastream
-			MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
-			MODS_handle.label = "MODS descriptive metadata"
+			# write MODS datastream if MODS.xml exists
+			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+				file_path = self.Bag.path + "/data/MODS.xml"
+				MODS_handle.content = open(file_path)
+				MODS_handle.save()
 
-			raw_MODS = '''
+			else:
+				# write generic MODS datastream
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+
+				raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
     <mods:title>{label}</mods:title>
@@ -143,10 +152,10 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
     <PID>{PID}</PID>
   </mods:extension>
 </mods:mods>
-			'''.format(label=self.objMeta['label'], identifier=self.objMeta['id'].split(":")[1], PID=self.objMeta['id'])
-			print raw_MODS
-			MODS_handle.content = raw_MODS		
-			MODS_handle.save()
+				'''.format(label=self.objMeta['label'], identifier=self.objMeta['id'].split(":")[1], PID=self.objMeta['id'])
+				print raw_MODS
+				MODS_handle.content = raw_MODS		
+				MODS_handle.save()
 
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:

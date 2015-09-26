@@ -14,6 +14,24 @@ from WSUDOR_API import WSUDOR_API_app
 from manifest_factory import factory as iiif_manifest_factory
 
 
+# SETUP
+#########################################################################################################
+fac = iiif_manifest_factory.ManifestFactory()
+# Where the resources live on the web
+fac.set_base_metadata_uri("http:/digital.library.wayne.edu/iiif_manifest")
+# Where the resources live on disk
+fac.set_base_metadata_dir("/tmp/iiif_manifest")
+
+# Default Image API information
+fac.set_base_image_uri("http://digital.library.wayne.edu/loris")
+fac.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
+
+# 'warn' will print warnings, default level
+# 'error' will turn off warnings
+# 'error_on_warning' will make warnings into errors
+fac.set_debug("warn")
+
+
 # IIIF_MANIFEST MAIN
 #########################################################################################################
 @WSUDOR_API_app.route("/iiif_manifest/<identifier>", methods=['POST', 'GET'])
@@ -40,5 +58,12 @@ def iiif_manifest(identifier):
 
 
 def genManifest(identifier):
-	fac = iiif_manifest_factory.ManifestFactory()
-	return json.dumps({"id":identifier})
+
+	'''
+	Right here, you'll need to procure some information about the object from WSUDOR_Object handle
+	'''
+
+	# create root mani obj
+	manifest = fac.manifest(label="Example Manifest")
+
+	return json.dumps({'horse':'trap'})

@@ -14,3 +14,4 @@ cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 
 # get handlers
 import views
+import iiif_manifest

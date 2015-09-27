@@ -63,7 +63,7 @@ def iiif_manifest(identifier):
 	except Exception,e:
 		print "WSUDOR_API iiif_manifest call unsuccessful.  Error:",str(e)
 		return '{{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
-	
+		
 
 
 def genManifest(identifier,getParams):

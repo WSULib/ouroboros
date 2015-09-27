@@ -31,11 +31,6 @@ from WSUDOR_Manager import WSUDOR_ContentTypes
 
 from availableFunctions import *
 
-'''
-Next steps - move to use ContentTypes!
-'''
-
-
 
 # class to hold all methods for singleObjectPackage
 class SingleObjectMethods(object):	

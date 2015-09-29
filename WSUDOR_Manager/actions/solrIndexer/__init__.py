@@ -45,7 +45,16 @@ def updateSolr(update_type):
 		print "Updating by userObjects"	
 		PIDs = jobs.getSelPIDs()
 		for PID in PIDs:
-			index_handle = solrIndexer.delay('modifyObject', PID)		
+			index_handle = solrIndexer.delay('modifyObject', PID)	
+
+	if update_type == "purgeAndFullIndex":
+		print "Purging solr core and reindexing all objects"
+		# delete all from /fedobjs core
+		if 'fedobjs' in solr_manage_handle.base_url:
+			solr_manage_handle.delete_by_query('*:*',commit=True)
+		# run full index	
+		index_handle = solrIndexer.delay('fullIndex','')
+
 
 	# return logic
 	if "APIcall" in request.values and request.values['APIcall'] == "True":
@@ -250,15 +259,17 @@ class SolrIndexerWorker(object):
 	def replicateToSearch(self):
 
 		'''
-		Consider adding to MySolr module....
+		Currently skipping this - moving to manual replication from /fedobjs --> /search core
 		'''
+
+		pass
 		
-		# replicate to "search core"
-		print "*** Replicating Changes ***"
-		baseurl = 'http://silo.lib.wayne.edu/solr4/search/replication?command=fetchindex' 
-		data = {'commit':'true'}
-		r = requests.post(baseurl,data=data)
-		print r.text	
+		# # replicate to "search core"
+		# print "*** Replicating Changes ***"
+		# baseurl = 'http://silo.lib.wayne.edu/solr4/search/replication?command=fetchindex' 
+		# data = {'commit':'true'}
+		# r = requests.post(baseurl,data=data)
+		# print r.text	
 
 	
 	def updateLastFedoraIndexDate(self):		

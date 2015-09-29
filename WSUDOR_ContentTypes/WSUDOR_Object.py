@@ -35,8 +35,6 @@ from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
 def WSUDOR_Object(payload, object_type="WSUDOR"):
 
-	
-
 	'''	
 	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
 	'''
@@ -91,6 +89,14 @@ def WSUDOR_Object(payload, object_type="WSUDOR"):
 					objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
 					content_type = objmeta['content_type']
 
+
+		# # CM object
+		# if object_type == "WSUDOR":
+		# 	if type(payload) != eulfedora.models.DigitalObject:
+		# 		payload = fedora_handle.get_object(payload)
+
+		# 	content_type = "CM"
+
 		
 		print "Our content type is:",content_type
 
@@ -101,9 +107,9 @@ def WSUDOR_Object(payload, object_type="WSUDOR"):
 	
 	# need check if valid subclass of WSUDOR_GenObject	
 	try:
-		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload)
+		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload)	
 	except:
-		print "Could not find appropriate ContentType, returning False."
+		print "Could not find appropriate ContentType, returning False."		
 		return False
 
 
@@ -217,7 +223,7 @@ class WSUDOR_GenObject(object):
 				self.ohandle = payload
 				# only fires for v2 objects
 				if "OBJMETA" in self.ohandle.ds_list:
-					self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
+					self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)			
 
 
 		except Exception,e:
@@ -302,6 +308,12 @@ class WSUDOR_GenObject(object):
 	@helpers.LazyProperty
 	def SolrDoc(self):
 		return models.SolrDoc(self.pid)
+
+
+	# SolrSearchDoc class
+	@helpers.LazyProperty
+	def SolrSearchDoc(self):
+		return models.SolrSearchDoc(self.pid)
 
 
 	@helpers.LazyProperty

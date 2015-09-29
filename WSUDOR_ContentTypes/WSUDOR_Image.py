@@ -10,6 +10,7 @@ from PIL import Image
 import time
 import traceback
 import sys
+import ast
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -25,6 +26,9 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
+
+from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
+from WSUDOR_API.functions.fedDataSpy import makeSymLink
 
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -156,11 +160,11 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
-    <mods:title>{label}</mods:title>
+	<mods:title>{label}</mods:title>
   </mods:titleInfo>
   <mods:identifier type="local">{identifier}</mods:identifier>
   <mods:extension>
-    <PID>{PID}</PID>
+	<PID>{PID}</PID>
   </mods:extension>
 </mods:mods>
 				'''.format(label=self.objMeta['label'], identifier=self.objMeta['id'].split(":")[1], PID=self.objMeta['id'])
@@ -298,6 +302,69 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print traceback.format_exc()
 			print "Image Ingest Error:",e
 			return False
+
+
+
+	# ingest image type
+	def genIIIFManifest(self, iiif_manifest_factory_instance, identifier, getParams):
+
+		# run singleObjectPackage
+		getParams['PID'] = [identifier]	# current routes use GET params, using that here
+
+		# run singleObjectPackage() from API
+		single_json = json.loads(singleObjectPackage(getParams))
+			
+		# create root mani obj
+		manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
+		manifest.viewingDirection = "left-to-right"
+
+		# build metadata
+		'''
+		Order of preferred fields is the order they will show on the viewer
+		NOTE: solr items are stored here as strings so they won't evaluate
+		'''
+		preferred_fields = [
+			("Title", "single_json['objectSolrDoc']['mods_title_ms'][0]"),
+			("Description", "single_json['objectSolrDoc']['mods_abstract_ms'][0]"),
+			("Year", "single_json['objectSolrDoc']['mods_key_date_year'][0]"),
+			("Item URL", "\"<a href='{url}'>{url}</a>\".format(url=single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
+			("Original", "single_json['objectSolrDoc']['mods_otherFormat_note_ms'][0]")
+		]
+		for field_set in preferred_fields:
+			try:
+				manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
+			except:
+				print "Could Not Set Metadata Field, Skipping",field_set[0]
+	
+		# start anonymous sequence
+		seq = manifest.sequence(label="default sequence")
+
+		# iterate through component parts
+		for image in single_json['parts_imageDict']['sorted']:
+			
+			print image
+
+			# create symlink (CONSIDER USING HTTP RESOLVE IN LORIS)
+			symlink = makeSymLink(identifier,image['jp2'])['symlink']
+			symlink = symlink.split('/')[-1]
+
+			# Create a canvas with uri slug of page-1, and label of Page 1
+			cvs = seq.canvas(ident=symlink, label=image['ds_id'])
+
+			# Create an annotation on the Canvas
+			anno = cvs.annotation()
+
+			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
+			img = anno.image(symlink, iiif=True)
+
+			# OR if you have a IIIF service:
+			img.set_hw_from_iiif()
+
+			cvs.height = img.height
+			cvs.width = img.width
+
+
+		return manifest.toString()
 
 
 

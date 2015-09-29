@@ -60,16 +60,9 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"failed_tests":[]
 		}
 
-		# check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
-		# ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
-		# if self.objMeta['isRepresentedBy'] not in ds_ids:
-		# 	report_failure(("isRepresentedBy_check","{isRep} is not in {ds_ids}".format(isRep=self.objMeta['isRepresentedBy'],ds_ids=ds_ids)))
-
-
 		# check that content_type is a valid ContentType				
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
-
 
 		# finally, return verdict
 		return results_dict
@@ -208,6 +201,70 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print traceback.format_exc()
 			print "Image Ingest Error:",e
 			return False
+
+
+	# ingest image type
+	def genIIIFManifest(self, iiif_manifest_factory_instance, identifier, getParams):
+
+		pass
+
+		# # run singleObjectPackage
+		# getParams['PID'] = [identifier]	# current routes use GET params, using that here
+
+		# # run singleObjectPackage() from API
+		# single_json = json.loads(singleObjectPackage(getParams))
+			
+		# # create root mani obj
+		# manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
+		# manifest.viewingDirection = "left-to-right"
+
+		# # build metadata
+		# '''
+		# Order of preferred fields is the order they will show on the viewer
+		# NOTE: solr items are stored here as strings so they won't evaluate
+		# '''
+		# preferred_fields = [
+		# 	("Title", "single_json['objectSolrDoc']['mods_title_ms'][0]"),
+		# 	("Description", "single_json['objectSolrDoc']['mods_abstract_ms'][0]"),
+		# 	("Year", "single_json['objectSolrDoc']['mods_key_date_year'][0]"),
+		# 	("Item URL", "\"<a href='{url}'>{url}</a>\".format(url=single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
+		# 	("Original", "single_json['objectSolrDoc']['mods_otherFormat_note_ms'][0]")
+		# ]
+		# for field_set in preferred_fields:
+		# 	try:
+		# 		manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
+		# 	except:
+		# 		print "Could Not Set Metadata Field, Skipping",field_set[0]
+	
+		# # start anonymous sequence
+		# seq = manifest.sequence(label="default sequence")
+
+		# # iterate through component parts
+		# for image in single_json['parts_imageDict']['sorted']:
+			
+		# 	print image
+
+		# 	# create symlink (CONSIDER USING HTTP RESOLVE IN LORIS)
+		# 	symlink = makeSymLink(identifier,image['jp2'])['symlink']
+		# 	symlink = symlink.split('/')[-1]
+
+		# 	# Create a canvas with uri slug of page-1, and label of Page 1
+		# 	cvs = seq.canvas(ident=symlink, label=image['ds_id'])
+
+		# 	# Create an annotation on the Canvas
+		# 	anno = cvs.annotation()
+
+		# 	# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
+		# 	img = anno.image(symlink, iiif=True)
+
+		# 	# OR if you have a IIIF service:
+		# 	img.set_hw_from_iiif()
+
+		# 	cvs.height = img.height
+		# 	cvs.width = img.width
+
+
+		# return manifest.toString()
 
 
 

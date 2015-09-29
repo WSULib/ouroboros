@@ -53,7 +53,7 @@ def solrGetFedDoc(getParams):
 ######################################################################################################################
 	PID=getParams['PID'][0]
 	PID = PID.replace(":", "\:")
-	baseURL = "http://silo.lib.wayne.edu/solr4/search/select?"
+	baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 	solrParams = {
 		'q' : 'id:{PID}'.format(PID=PID),
 		'wt' : 'json',
@@ -70,7 +70,7 @@ def solrSearch(getParams):
 	if 'solrCore' in getParams:				
 		baseURL = "http://silo.lib.wayne.edu/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
 	else:
-		baseURL = "http://silo.lib.wayne.edu/solr4/search/select?"	
+		baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 
 	# hard-code some server side parameters	
 	# sorts date result 
@@ -137,7 +137,7 @@ def solrCoreGeneric(getParams):
 	if 'solrCore' in getParams:				
 		baseURL = "http://silo.lib.wayne.edu/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
 	else:
-		baseURL = "http://silo.lib.wayne.edu/solr4/search/select?"		
+		baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 
 	# q
 	if 'q' in getParams:	
@@ -181,7 +181,7 @@ def solrCoreGeneric(getParams):
 def solrFacetSearch(getParams):
 ######################################################################################################################
 	# establish baseURL
-	baseURL = "http://silo.lib.wayne.edu/solr4/search/select?"
+	baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 
 	# set solrParams
 	solrParams = ast.literal_eval(getParams['solrParams'][0])
@@ -300,9 +300,9 @@ def solrTranslationHash(args):
 	# list of queries to translate results
 	queriesToTrans = [
 		# all Collection objects
-		"http://silo.lib.wayne.edu/solr4/search/select?q=rels_hasContentModel%3Ainfo%5C%3Afedora%2FCM%5C%3ACollection&fl=id+dc_title&wt=json&indent=true&rows=100",
+		"http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?q=rels_hasContentModel%3Ainfo%5C%3Afedora%2FCM%5C%3ACollection&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE),
 		# all Content Models Types
-		"http://silo.lib.wayne.edu/solr4/search/select?q=id%3ACM*&rows=100&fl=id+dc_title&wt=json&indent=true&rows=100"
+		"http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?q=id%3ACM*&rows=100&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 	]
 
 	# run query and add to hash

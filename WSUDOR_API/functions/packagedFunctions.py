@@ -27,7 +27,7 @@ from localConfig import *
 # modules from WSUDOR_Manager
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
-from WSUDOR_Manager import WSUDOR_ContentTypes
+import WSUDOR_ContentTypes
 
 from availableFunctions import *
 
@@ -53,7 +53,8 @@ class SingleObjectMethods(object):
 			self.return_dict['isActive'] = {"object_status":"Active"}
 
 			# retrieve Solr doc
-			self.return_dict['objectSolrDoc'] = self.obj_handle.SolrDoc.asDictionary()
+			# self.return_dict['objectSolrDoc'] = self.obj_handle.SolrDoc.asDictionary()
+			self.return_dict['objectSolrDoc'] = self.obj_handle.SolrSearchDoc.asDictionary()
 
 		else:
 			self.active = False

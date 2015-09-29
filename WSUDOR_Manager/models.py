@@ -225,6 +225,40 @@ class SolrDoc(object):
 	def asDictionary(self):
 		return self.doc.__dict__
 
+
+class SolrSearchDoc(object):	
+
+	class SolrFields(object):
+		def __init__(self, **fields): 
+			self.__dict__.update(fields)
+
+	# init
+	def __init__(self,id):
+		self.id = id
+		self.escaped_id = self.id.replace(":","\:")
+
+		# get stateful, current Solr doc
+		query_params = {
+			"q":'id:{escaped_id}'.format(escaped_id=self.escaped_id),
+			"rows":1
+		}
+		response = solr_handle.search(**query_params)
+		if len(response.documents) > 0:
+			self.doc = self.SolrFields(**response.documents[0])
+			#store version, remove from doc
+			self.version = self.doc._version_ 
+			del self.doc._version_
+			# finally, set exists to True
+			self.exists = True
+		else:
+			self.doc = self.SolrFields()
+			self.doc.id = self.id # automatically set ID as PID
+			self.exists = False	
+
+
+	def asDictionary(self):
+		return self.doc.__dict__
+
 	
 
 

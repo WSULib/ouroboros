@@ -8,6 +8,7 @@ import json
 from flask import render_template, request, session, redirect, make_response, Response
 
 # WSUDOR_API_app
+from WSUDOR_API import cache
 from WSUDOR_API import WSUDOR_API_app
 import WSUDOR_ContentTypes
 from functions.packagedFunctions import singleObjectPackage
@@ -36,6 +37,9 @@ iiif_manifest_factory_instance.set_iiif_image_info(2.0, 2) # Version, Compliance
 iiif_manifest_factory_instance.set_debug("warn")
 
 
+# small function to skip caching, reads from localConfig.py
+def skipCache():
+	return localConfig.API_SKIP_CACHE
 
 
 # IIIF_MANIFEST MAIN
@@ -66,7 +70,7 @@ def iiif_manifest(identifier):
 	# 	return '{{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
 		
 
-
+@cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def genManifest(identifier,getParams):
 
 	'''

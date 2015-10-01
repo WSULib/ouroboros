@@ -4,4 +4,5 @@ from WSUDOR_Collection import WSUDOR_Collection
 from WSUDOR_Audio import WSUDOR_Audio
 from WSUDOR_WSUebook import WSUDOR_WSUebook 
 from WSUDOR_HierarchicalFiles import WSUDOR_HierarchicalFiles 
+from WSUDOR_ContentModel import WSUDOR_ContentModel 
 

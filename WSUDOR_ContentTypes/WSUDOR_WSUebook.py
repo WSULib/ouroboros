@@ -9,6 +9,7 @@ from PIL import Image
 import time
 import traceback
 import sys
+import re
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -24,6 +25,15 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers, utilities
+
+from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
+from WSUDOR_API.functions.fedDataSpy import makeSymLink
+
+
+# helper function for natural sorting
+def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(_nsre, s)] 
 
 
 class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -282,6 +292,79 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 
 		return True
+
+
+	# ingest image type
+	def genIIIFManifest(self, iiif_manifest_factory_instance, identifier, getParams):
+
+		# run singleObjectPackage
+		getParams['PID'] = [identifier]	# current routes use GET params, using that here
+
+		# run singleObjectPackage() from API
+		single_json = json.loads(singleObjectPackage(getParams))
+			
+		# create root mani obj
+		manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
+		manifest.viewingDirection = "left-to-right"
+
+		# build metadata
+		'''
+		Order of preferred fields is the order they will show on the viewer
+		NOTE: solr items are stored here as strings so they won't evaluate
+		'''
+		preferred_fields = [
+			("Title", "single_json['objectSolrDoc']['mods_title_ms'][0]"),
+			("Description", "single_json['objectSolrDoc']['mods_abstract_ms'][0]"),
+			("Year", "single_json['objectSolrDoc']['mods_key_date_year'][0]"),
+			("Item URL", "\"<a href='{url}'>{url}</a>\".format(url=single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
+			("Original", "single_json['objectSolrDoc']['mods_otherFormat_note_ms'][0]")
+		]
+		for field_set in preferred_fields:
+			try:
+				manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
+			except:
+				print "Could Not Set Metadata Field, Skipping",field_set[0]
+	
+		# start anonymous sequence
+		seq = manifest.sequence(label="default sequence")
+
+		# get component parts
+		jp2_obj_PID = identifier.split(":")[1]+":JP2"
+		print "Fetching",jp2_obj_PID
+		jp2_handle = fedora_handle.get_object(jp2_obj_PID)
+
+		image_list = [ds for ds in jp2_handle.ds_list if ds.startswith('JP2')]
+		image_list.sort(key=natural_sort_key)
+		print image_list
+
+		# iterate through component parts
+		for image in image_list:
+			
+			print "adding",image
+
+			# create symlink (CONSIDER USING HTTP RESOLVE IN LORIS)
+			symlink = makeSymLink(jp2_obj_PID,image)['symlink']
+			symlink = symlink.split('/')[-1]
+
+			# Create a canvas with uri slug of page-1, and label of Page 1
+			cvs = seq.canvas(ident=symlink, label=image)
+
+			# Create an annotation on the Canvas
+			anno = cvs.annotation()
+
+			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
+			img = anno.image(symlink, iiif=True)
+
+			# OR if you have a IIIF service:
+			img.set_hw_from_iiif()
+
+			cvs.height = img.height
+			cvs.width = img.width
+
+
+		return manifest.toString()
+
+		return json.dumps({'test':'report'})
 
 
 

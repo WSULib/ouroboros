@@ -61,7 +61,7 @@ def WSUDOR_Object(payload, object_type="WSUDOR"):
 				print "Object does not exist, cannot instantiate as WSUDOR type object."
 				return False
 			
-			# GET object content_model
+			# GET WSUDOR_X object content_model
 			'''
 			This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off 
 			to use, "Image".  Then, we append that to "WSUDOR_" to get ContentTypes such as "WSUDOR_Image", or "WSUDOR_Collection", etc.
@@ -89,15 +89,6 @@ def WSUDOR_Object(payload, object_type="WSUDOR"):
 					objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
 					content_type = objmeta['content_type']
 
-
-		# # CM object
-		# if object_type == "WSUDOR":
-		# 	if type(payload) != eulfedora.models.DigitalObject:
-		# 		payload = fedora_handle.get_object(payload)
-
-		# 	content_type = "CM"
-
-		
 		print "Our content type is:",content_type
 
 	except Exception,e:
@@ -452,7 +443,6 @@ class WSUDOR_GenObject(object):
 		os.chdir(working_dir)
 		os.system("tar -cvf {named_dir}.tar {named_dir}".format(working_dir=working_dir, named_dir=named_dir))
 		os.system("rm -r {working_dir}/{named_dir}".format(working_dir=working_dir, named_dir=named_dir))
-
 
 		# move to web accessible location, with username as folder
 		if job_package != False:

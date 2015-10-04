@@ -137,7 +137,8 @@ osso+o.                  `+//ooysoo
     -ossssss+oo+sossoosossssso-    
       ./osssssysyysssssssso/.      
          `-:++sosyssyyo+:.   
-	'''
-	print "<--Ouroboros says hissss-->"
 
+  <-- Ouroboros says hissss -->
+	'''
+	
 	reactor.run()

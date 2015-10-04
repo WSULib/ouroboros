@@ -342,18 +342,20 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			
 			print "adding",image
 
-			# create symlink (CONSIDER USING HTTP RESOLVE IN LORIS)
-			symlink = makeSymLink(jp2_obj_PID,image)['symlink']
-			symlink = symlink.split('/')[-1]
+			'''
+			Improvement - use custom HTTP resolver with Loris, passing PID and Datastream id
+			'''
+			# generate obj|ds identifier as defined in loris TemplateHTTP extension
+			fedora_http_ident = "fedora:%s|%s" % (jp2_obj_PID,image)
 
 			# Create a canvas with uri slug of page-1, and label of Page 1
-			cvs = seq.canvas(ident=symlink, label=image)
+			cvs = seq.canvas(ident=fedora_http_ident, label=image)
 
 			# Create an annotation on the Canvas
 			anno = cvs.annotation()
 
 			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
-			img = anno.image(symlink, iiif=True)
+			img = anno.image(fedora_http_ident, iiif=True)
 
 			# OR if you have a IIIF service:
 			img.set_hw_from_iiif()

@@ -28,7 +28,6 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
 
 from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
-from WSUDOR_API.functions.fedDataSpy import makeSymLink
 
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -342,20 +341,20 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# iterate through component parts
 		for image in single_json['parts_imageDict']['sorted']:
 			
-			print image
-
-			# create symlink (CONSIDER USING HTTP RESOLVE IN LORIS)
-			symlink = makeSymLink(identifier,image['jp2'])['symlink']
-			symlink = symlink.split('/')[-1]
+			'''
+			Improvement - use custom HTTP resolver with Loris, passing PID and Datastream id
+			'''
+			# generate obj|ds identifier as defined in loris TemplateHTTP extension
+			fedora_http_ident = "fedora:%s|%s" % (identifier,image['jp2'])
 
 			# Create a canvas with uri slug of page-1, and label of Page 1
-			cvs = seq.canvas(ident=symlink, label=image['ds_id'])
+			cvs = seq.canvas(ident=fedora_http_ident, label=image['ds_id'])
 
 			# Create an annotation on the Canvas
 			anno = cvs.annotation()
 
 			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
-			img = anno.image(symlink, iiif=True)
+			img = anno.image(fedora_http_ident, iiif=True)
 
 			# OR if you have a IIIF service:
 			img.set_hw_from_iiif()

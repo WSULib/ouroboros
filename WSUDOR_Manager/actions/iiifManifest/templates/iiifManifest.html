@@ -1,0 +1,9 @@
+{% include 'header.html' %}
+
+<h2><img width="50px" src="{{ url_for('static', filename='img/iiif.png') }}"/> IIIF Manifest Management</h2>
+
+<ul>
+	<li><a href="/tasks/iiifManifest/viewManifests/0">View Manifests in Redis</li>
+	<li><a href="/fireTask/iiifManifestGenerate_worker">Generate Manifests</a></li>
+</ul>
+

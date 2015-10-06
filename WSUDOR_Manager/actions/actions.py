@@ -19,6 +19,10 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
+#iiifManifest Management
+from iiifManifest import iiifManifest, iiifManifestGenerate_worker
+app.register_blueprint(iiifManifest, url_prefix=tasks_URL_prefix)
+
 #solrIndexer
 from solrIndexer import solrIndexer_blue
 app.register_blueprint(solrIndexer_blue, url_prefix=tasks_URL_prefix)

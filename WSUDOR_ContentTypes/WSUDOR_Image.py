@@ -26,8 +26,10 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
-
 from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
+
+# import manifest factory instance
+from inc.manifest_factory import iiif_manifest_factory_instance
 
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -288,8 +290,14 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				rep_handle.save()
 
 
+			# generate iiif_manifest and save to Redis
+			iiif_manifest_json = genIIIFManifest()
+
+
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
+
+
 
 			# finish generic ingest
 			return self.finishIngest()
@@ -305,10 +313,15 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	def genIIIFManifest(self, iiif_manifest_factory_instance, identifier, getParams):
+	def genIIIFManifest(self):
 
 		# run singleObjectPackage
-		getParams['PID'] = [identifier]	# current routes use GET params, using that here
+		'''
+		A bit of a hack here: creating getParams{} with pid as list[] as expected by singleObjectPackage(),
+		simulates normal WSUDOR_API use of singleObjectPackage()
+		'''
+		getParams = {}
+		getParams['PID'] = [self.pid]
 
 		# run singleObjectPackage() from API
 		single_json = json.loads(singleObjectPackage(getParams))
@@ -345,7 +358,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			Improvement - use custom HTTP resolver with Loris, passing PID and Datastream id
 			'''
 			# generate obj|ds identifier as defined in loris TemplateHTTP extension
-			fedora_http_ident = "fedora:%s|%s" % (identifier,image['jp2'])
+			fedora_http_ident = "fedora:%s|%s" % (self.pid,image['jp2'])
 
 			# Create a canvas with uri slug of page-1, and label of Page 1
 			cvs = seq.canvas(ident=fedora_http_ident, label=image['ds_id'])
@@ -363,7 +376,10 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			cvs.width = img.width
 
 
-		return manifest.toString()
+		# insert into Redis and return JSON string
+		print "Inserting manifest for",self.pid,"into Redis..."
+		redisHandles.r_iiif.set(self.pid,manifest.toString())
+		return manifest.toString()	
 
 
 

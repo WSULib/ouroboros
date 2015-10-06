@@ -11,30 +11,8 @@ from flask import render_template, request, session, redirect, make_response, Re
 from WSUDOR_API import cache
 from WSUDOR_API import WSUDOR_API_app
 import WSUDOR_ContentTypes
+from WSUDOR_Manager import redisHandles
 from functions.packagedFunctions import singleObjectPackage
-from functions.fedDataSpy import makeSymLink
-
-# manifest-factory
-from manifest_factory import factory as iiif_manifest_factory
-
-
-
-# SETUP
-#########################################################################################################
-iiif_manifest_factory_instance = iiif_manifest_factory.ManifestFactory()
-# Where the resources live on the web
-iiif_manifest_factory_instance.set_base_metadata_uri("http:/digital.library.wayne.edu/iiif_manifest")
-# Where the resources live on disk
-iiif_manifest_factory_instance.set_base_metadata_dir("/tmp/iiif_manifest")
-
-# Default Image API information
-iiif_manifest_factory_instance.set_base_image_uri("http://digital.library.wayne.edu/loris")
-iiif_manifest_factory_instance.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
-
-# 'warn' will print warnings, default level
-# 'error' will turn off warnings
-# 'error_on_warning' will make warnings into errors
-iiif_manifest_factory_instance.set_debug("warn")
 
 
 # small function to skip caching, reads from localConfig.py
@@ -53,36 +31,43 @@ def iiif_manifest(identifier):
 
 	getParams = {each:request.values.getlist(each) for each in request.values}
 
-	# try:
-	# fire genManifest
-	response = make_response( genManifest(identifier,getParams) )
-	response.headers['Access-Control-Allow-Origin'] = '*'
-	response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
-	response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
-	response.headers['Access-Control-Max-Age'] = 2520
-	response.headers["Content-Type"] = "application/json"		
-	response.headers['X-Powered-By'] = 'ShoppingHorse'
-	response.headers['Connection'] = 'Close'
-	return response
+	try:
+		# fire retrieveManifest
+		response = make_response( retrieveManifest(identifier,getParams) )
+		response.headers['Access-Control-Allow-Origin'] = '*'
+		response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
+		response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
+		response.headers['Access-Control-Max-Age'] = 2520
+		response.headers["Content-Type"] = "application/json"		
+		response.headers['X-Powered-By'] = 'ShoppingHorse'
+		response.headers['Connection'] = 'Close'
+		return response
 
-	# except Exception,e:
-	# 	print "WSUDOR_API iiif_manifest call unsuccessful.  Error:",str(e)
-	# 	return '{{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
+	except Exception,e:
+		print "WSUDOR_API iiif_manifest call unsuccessful.  Error:",str(e)
+		return '{{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
 		
 
 @cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
-def genManifest(identifier,getParams):
+def retrieveManifest(identifier,getParams):
 
 	'''
 	genIIIFManifest() is a function built-in to each content-type.
-	This function is run here, letting the content model generate the proper manifest JSON string to return
+	In an effort to reduce how many times these manifests are generated, this function now tries
+	to retreive from Redis first.  If not there, runs object method to generate, then tries again.
 	'''
-
-	# open object_handle
-	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(identifier)
-
-	# fire content-type defined manifest generation
-	return obj_handle.genIIIFManifest(iiif_manifest_factory_instance, identifier, getParams)
+	
+	# check Redis for manifest
+	r_response = redisHandles.r_iiif.get(identifier)
+	if r_response != None:
+		print "manifest located and retrieved from Redis"
+		return r_response
+	else:
+		print "generating manifest, storing in redis, returning"
+		# open object_handle
+		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(identifier)
+		# fire content-type defined manifest generation
+		return obj_handle.genIIIFManifest()
 	
 
 

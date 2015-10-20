@@ -34,6 +34,8 @@ solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates
 @solrIndexer_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
 def updateSolr(update_type):			
 
+
+	# real or emulated solr events
 	if update_type == "fullIndex":				
 		index_handle = solrIndexer.delay('fullIndex','')
 
@@ -47,6 +49,7 @@ def updateSolr(update_type):
 		for PID in PIDs:
 			index_handle = solrIndexer.delay('modifyObject', PID)	
 
+	# purge and reindex staging solr core from fedora (SLOW)
 	if update_type == "purgeAndFullIndex":
 		print "Purging solr core and reindexing all objects"
 		# delete all from /fedobjs core
@@ -54,6 +57,10 @@ def updateSolr(update_type):
 			solr_manage_handle.delete_by_query('*:*',commit=True)
 		# run full index	
 		index_handle = solrIndexer.delay('fullIndex','')
+
+	# purge production core, replicate from staging (FAST)
+	if update_type == "replicateStagingToProduction":
+		index_handle = solrIndexer.delay('replicateStagingToProduction','')
 
 
 	# return logic
@@ -64,10 +71,9 @@ def updateSolr(update_type):
 			"solrIndexer":{
 				"update_type":update_type,
 				"timestamp":datetime.datetime.now().isoformat(),
-				"job_celery_ID":index_handle.id
+				"job_ID":index_handle.id
 			}
 		}
-
 		# return JSON
 		print return_dict
 		json_string = json.dumps(return_dict)
@@ -393,6 +399,20 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 		print "Removing the following from Solr Index",PID		
 		worker.removeFOXMLinSolr(PID)
 		return True
+
+
+	# Replicate staging to production
+	if fedEvent == "replicateStagingToProduction":
+		print "replicating staging core to production"
+		r = requests.get('http://localhost/solr4/search/replication?command=fetchindex&wt=json&commit=true')
+		response = json.loads(r.content)
+		if response['status'] == "OK":
+			print "Success"
+			return True
+		else:
+			print "Failure"
+			return False
+
 
 
 if __name__ == '__main__':

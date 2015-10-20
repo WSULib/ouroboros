@@ -55,14 +55,14 @@ def viewManifests(PIDnum):
 		return utilities.applicationError("PIDnum is out of range or invalid.  We are is displeased.")
 	PIDlet['pURL'] = "/tasks/iiifManifest/viewManifests/"+str(int(PIDnum)-1)
 	PIDlet['nURL'] = "/tasks/iiifManifest/viewManifests/"+str(int(PIDnum)+1)
-
-	print "Working on",PIDlet['cPID']
 	
 	# check Redis for manifest
 	r_response = redisHandles.r_iiif.get(PIDlet['cPID'])
 	if r_response != None:
+		print "Redis hit for manifest."
 		json_return = r_response
 	else:
+		print "Redis miss for manifest."
 		json_return = json.dumps({"status":"manifest for %s not found in redis" % PIDlet['cPID']})
 	
 
@@ -76,7 +76,7 @@ def iiifManifestGenerate_worker(job_package):
 
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(job_package['PID'])
 	manifest_json = obj_handle.genIIIFManifest()
-	if json.loads(manifest_json):
+	if json.loads(manifest_json):		
 		return "http://digital.library.wayne.edu/"+localConfig.IIIF_MANIFEST_PREFIX+"/"+job_package['PID']
 	else:
 		return False

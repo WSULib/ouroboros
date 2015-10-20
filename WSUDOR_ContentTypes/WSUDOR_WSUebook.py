@@ -310,7 +310,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		single_json = json.loads(singleObjectPackage(getParams))
 			
 		# create root mani obj
-		manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
+		try:
+			manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
+		except:
+			manifest = iiif_manifest_factory_instance.manifest( label="Unknown Title" )
 		manifest.viewingDirection = "left-to-right"
 
 		# build metadata

@@ -54,6 +54,11 @@ def index():
 	t_results = con.store_result()
 	overview['total_count'] = t_results.num_rows()
 
+	# total items harvested by REPOX under DPLAOAI set
+	con.query("SELECT rcItem.identifier AS pid FROM rcItem INNER JOIN rcRecord ON rcItem.itemKey = rcRecord.itemKey INNER JOIN rcMembership ON rcMembership.recordKey = rcRecord.recordKey INNER JOIN rcSet ON rcSet.setKey = rcMembership.setKey INNER JOIN rcFormat ON rcFormat.formatKey = rcRecord.formatKey WHERE rcFormat.mdPrefix = 'mods' AND rcSet.setSpec = 'set:wayne:collectionDPLAOAI'")
+	repox_results = con.store_result()
+	overview['repox_count'] = repox_results.num_rows()
+
 	# metadata prefixes
 	con.query('SELECT mdPrefix, namespaceURI, schemaLocation FROM rcFormat')
 	results = con.use_result()
@@ -80,6 +85,15 @@ def index():
 		if each[0] == TOMCAT_PROAI_PATH:
 			overview['webapp_status'] = each[1]
 
+
+	# total items
+	con.query('SELECT * FROM rcQueue')
+	q_results = con.store_result()
+	overview['queue_count'] = q_results.num_rows()
+	if overview['queue_count'] > 0:
+		print "PROAI has queue, still syncing..."
+		
+
 	# DEBUG
 	# print overview
 	
@@ -104,82 +118,84 @@ def serverWide():
 @utilities.objects_needed
 def objectRelated():
 
-	from WSUDOR_Manager import forms
+	# from WSUDOR_Manager import forms
 
-	# get PIDs	
-	PIDs = getSelPIDs()
+	# '''
+	# Query to see what will show up in REPOX:
+	# SELECT rcItem.identifier AS pid FROM rcItem INNER JOIN rcRecord ON rcItem.itemKey = rcRecord.itemKey INNER JOIN rcMembership ON rcMembership.recordKey = rcRecord.recordKey INNER JOIN rcSet ON rcSet.setKey = rcMembership.setKey INNER JOIN rcFormat ON rcFormat.formatKey = rcRecord.formatKey WHERE rcFormat.mdPrefix = 'mods' AND rcSet.setSpec = 'set:wayne:collectionDPLAOAI';
+	# '''
 
-	# shared_relationships (in this instance, the PID of collection objects these assert membership to)	
-	shared_relationships = []
+	# # get PIDs	
+	# PIDs = getSelPIDs()
 
-	# function for shared query between whole and chunked queries
-	def risearchQuery(list_of_PIDs):
-		# construct where statement for query
-		where_statement = ""
-		for PID in list_of_PIDs:
-			if PID != None:				
-				where_statement += "<fedora:{PID}> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet> $object . $object <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $object <http://www.openarchives.org/OAI/2.0/setName> $setName .".format(PID=PID)
-		query_statement = "select $object $setSpec $setName from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
-		base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
-		payload = {
-			"lang" : "sparql",
-			"query" : query_statement,
-			"flush" : "false",
-			"type" : "tuples",
-			"format" : "JSON"
-		}
-		r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
-		risearch = json.loads(r.text)
-		return risearch	
+	# # shared_relationships (in this instance, the PID of collection objects these assert membership to)	
+	# shared_relationships = []
 
-	# if more than 100 PIDs, chunk into sub-queries
-	if len(PIDs) > 100:
-		def grouper(iterable, chunksize, fillvalue=None):
-			from itertools import izip_longest
-			args = [iter(iterable)] * chunksize
-			return izip_longest(*args, fillvalue=fillvalue)
+	# # function for shared query between whole and chunked queries
+	# def risearchQuery(list_of_PIDs):
+	# 	# construct where statement for query
+	# 	where_statement = ""
+	# 	for PID in list_of_PIDs:
+	# 		if PID != None:				
+	# 			where_statement += "<fedora:{PID}> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet> $object . $object <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $object <http://www.openarchives.org/OAI/2.0/setName> $setName .".format(PID=PID)
+	# 	query_statement = "select $object $setSpec $setName from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
+	# 	base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+	# 	payload = {
+	# 		"lang" : "sparql",
+	# 		"query" : query_statement,
+	# 		"flush" : "false",
+	# 		"type" : "tuples",
+	# 		"format" : "JSON"
+	# 	}
+	# 	r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
+	# 	risearch = json.loads(r.text)
+	# 	return risearch	
 
-		chunks =  grouper(PIDs,100)
+	# # if more than 100 PIDs, chunk into sub-queries
+	# if len(PIDs) > 100:
+	# 	def grouper(iterable, chunksize, fillvalue=None):
+	# 		from itertools import izip_longest
+	# 		args = [iter(iterable)] * chunksize
+	# 		return izip_longest(*args, fillvalue=fillvalue)
 
-		for chunk in chunks:
+	# 	chunks =  grouper(PIDs,100)
 
-			# perform query
-			risearch = risearchQuery(chunk)
+	# 	for chunk in chunks:
 
-			chunk_list = []			
-			for each in risearch['results']:
-				tup = (each['object'].split("/")[1],each['setSpec'], each['setName'])
-				chunk_list.append(tup)
-			try:
-				curr_set = set.intersection(curr_set,set(chunk_list))
-			except:
-				curr_set = set(chunk_list)
+	# 		# perform query
+	# 		risearch = risearchQuery(chunk)
 
-		print curr_set
-		shared_relationships = curr_set		
+	# 		chunk_list = []			
+	# 		for each in risearch['results']:
+	# 			tup = (each['object'].split("/")[1],each['setSpec'], each['setName'])
+	# 			chunk_list.append(tup)
+	# 		try:
+	# 			curr_set = set.intersection(curr_set,set(chunk_list))
+	# 		except:
+	# 			curr_set = set(chunk_list)
 
-	else:		
-		# perform query
-		risearch = risearchQuery(PIDs)
-		shared_relationships = [ (each['object'].split("/")[1],each['setSpec'], each['setName']) for each in risearch['results'] ]
+	# 	print curr_set
+	# 	shared_relationships = curr_set		
 
-	print shared_relationships
+	# else:		
+	# 	# perform query
+	# 	risearch = risearchQuery(PIDs)
+	# 	shared_relationships = [ (each['object'].split("/")[1],each['setSpec'], each['setName']) for each in risearch['results'] ]
 
-	# finally, find all currently available / defined sets	
-	form = forms.OAI_sets()
-	active_sets = utilities.returnOAISets('dropdown')
-	total_sets = len(active_sets)
+	# print shared_relationships
 
+	# # finally, find all currently available / defined sets	
+	# form = forms.OAI_sets()
+	# active_sets = utilities.returnOAISets('dropdown')
+	# total_sets = len(active_sets)
 
-	return render_template("manageOAI_objectRelated.html",shared_relationships=shared_relationships,form=form,active_sets=active_sets,total_sets=total_sets)
+	# return render_template("manageOAI_objectRelated.html",shared_relationships=shared_relationships,form=form,active_sets=active_sets,total_sets=total_sets)
+
+	return render_template("manageOAI_objectRelated.html")
 
 # generate OAI identifiers for objects
 def manageOAI_genItemID_worker(job_package):
-	'''
-	NOTE: This is really a one-way trip.  For multiple reaons:
-		- Though this RELS-EXT relationship can be removed, it is extra work to extradite the from PROAI.
-		- It is possible they have been harvested by virtue of being indexed in PROAI, lost control at that point.
-	'''
+	
 	# get PID
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)	
@@ -203,10 +219,6 @@ def manageOAI_toggleSet(PID):
 	dc_title_gen = obj_ohandle.risearch.get_objects(obj_ohandle.uriref,"dc:title")
 	dc_title = dc_title_gen.next()
 
-	'''
-	Can objects point to an OAI object that is non-existent as they setSpec Name?
-	'''
-
 	# toggle collection OAI relatedd RELS-EXT relationships	
 	if harvest_status == "False":
 		print "Object was not harvestable, enabling..."
@@ -229,9 +241,9 @@ def manageOAI_toggleSet(PID):
 
 
 	# toggle relationships for child objects (runs as celery task)	
-	collection_objects = obj_ohandle.risearch.get_subjects("fedora-rels-ext:isMemberOfCollection",obj_ohandle.uriref)	
-	for object_uri in collection_objects:
-		manageOAI_toggleSet_worker.delay(harvest_status,object_uri,PID)
+	# collection_objects = obj_ohandle.risearch.get_subjects("fedora-rels-ext:isMemberOfCollection",obj_ohandle.uriref)	
+	# for object_uri in collection_objects:
+	# 	manageOAI_toggleSet_worker.delay(harvest_status,object_uri,PID)
 
 	return redirect("/tasks/manageOAI/serverWide")	
 
@@ -245,8 +257,9 @@ class postTask(Task):
 		# release PID from PIDlock
 		redisHandles.r_PIDlock.delete(PID)
 
+
 # celery function, runs through normal channels
-@celery.task(base=postTask,bind=True,max_retries=100,name="manageOAI_toggleSet_worker")
+@celery.task(base=postTask, bind=True, max_retries=100, name="manageOAI_toggleSet_worker")
 def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 	PID = object_uri.split("/")[1]
 
@@ -279,7 +292,6 @@ def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 	return toggle_function(predicate_string, object_string)
 
 
-
 @manageOAI.route('/manageOAI/purgePROAI', methods=['POST', 'GET'])
 def purgePROAI():
 
@@ -308,7 +320,7 @@ def purgePROAI():
 
 	# purge disc cache
 	print "Delete cache"
-	os.system('rm -r {PROAI_CACHE_LOCATION}/*'.format(PROAI_CACHE_LOCATION=PROAI_CACHE_LOCATION))
+	os.system('rm -r {PROAI_CACHE_LOCATION}/*'.format(PROAI_CACHE_LOCATION=PROAI_CACHE_LOCATION))	
 
 	# truncate MySQL tables
 	con = _mysql.connect('localhost','WSUDOR_Manager','WSUDOR_Manager','proai')
@@ -324,6 +336,26 @@ def purgePROAI():
 	return redirect("/tasks/manageOAI")
 
 
+# expose objects to DPLA OAI-PMH set
+def exposeToDPLA_worker(job_package):
+
+	# get PID
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)	
+
+	# add relationship
+	return obj_ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", "info:fedora/wayne:collectionDPLAOAI")# expose 
+
+
+# remove objects to DPLA OAI-PMH set
+def removeFromDPLA_worker(job_package):
+
+	# get PID
+	PID = job_package['PID']		
+	obj_ohandle = fedora_handle.get_object(PID)	
+
+	# add relationship
+	return obj_ohandle.purge_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", "info:fedora/wayne:collectionDPLAOAI")
 	
 
 

@@ -2,66 +2,23 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<h3>Generate OAI identifiers</h3>
-		<p>Clicking the button below will create RELS-EXT relationships for all currently selected Objects, that define the <strong>unique OAI identifier</strong> for that object.</p>
-		<p><span style="color:red;"><strong>WARNING: This is a relatively one-way only event.</strong>  Creating an OAI identifier and RELS-EXT relationship will cause the OAI server to detect, and index, the object.  Objects are not readily removable from the OAI database after that happens; even if they were, it's possible harvesters could have picked up their metadata already.</span></p>
-		<form action="/fireTask/manageOAI_genItemID_worker" method="POST">
-			<button type="submit" class="btn btn-success">Engage!</button>
+		<h3>DPLA OAI-PMH set</h3>
+		<p>Using the buttons below, you can include or exclude your selected objects from the DPLAOAI set.  Whatever is included in that set will be sent to REPOX.</p>		
+		<form action="/fireTask/exposeToDPLA_worker" method="POST">
+			<button type="submit" class="btn btn-success">Expose to REPOX</button>
+		</form>
+		<form action="/fireTask/removeFromDPLA_worker" method="POST">
+			<button type="submit" class="btn btn-warning">Remove from REPOX</button>
 		</form>
 	</div>
 </div>
 
-<div class="row">
-	<div class="col-md-12">
-		<h3>Manage Sets</h3>
-
-		{% if shared_relationships %}
-		<div class="col-md-12">
-			<h4>Active Collections for Currently Selected Objects:</h4>
-			<table class="table table-striped">
-				<tr>
-					<th>Collection Name</th>
-					<th>Fedora PID</th>
-					<th>OAI setSpec (identifier)</th>
-					<th>Actions</th>
-				</tr>
-				{% for object, setSpec, setName in shared_relationships %}
-				<tr>
-					<td>{{setName}}</td>					
-					<td>{{object}}</td>
-					<td>{{setSpec}}</td>
-					<td><a class="btn btn-danger btn-xs" onclick="removeRel('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet','{{object}}'); return false;">Remove</a></td>
-				</tr>
-				{% endfor %}
-			</table>
-		</div>
-		{% else %}
-		<p>Objects do not currently belong to any OAI sets.</p>
-		{% endif %}
-
-		<!-- If want this capability, will need to generate this list on the fly of active collections? -->
-		<div class="col-md-12">
-			<h4>Manually Add Objects to Active Sets:</h4>
-			{% if total_sets > 0 %}
-				<form action="/fireTask/manageOAI_addSet_worker" method="POST" role="form">
-					<div class="col-md-3">
-						<div class="form-group">					
-							<select class="form-control" id="obj" name="obj">							
-									{% for PID,name in active_sets %}
-										<option value="{{PID}}">{{name}}</option>
-									{% endfor %}
-							</select>
-						</div>
-					</div>
-					<button class="btn btn-success" type="submit">Add!</button>
-				</form>
-			{% else %}
-				<p>No active sets found, try activating some collections <a href="/tasks/manageOAI/serverWide">here</a>.</p>
-			{% endif %}
-		</div>		
-		
-	</div>
-</div>
+<style type="text/css">
+	.gray_out {
+		background-color:rgba(120,120,120,.3);		
+		padding:20px;
+	}
+</style>
 
 <script type="text/javascript">		
 

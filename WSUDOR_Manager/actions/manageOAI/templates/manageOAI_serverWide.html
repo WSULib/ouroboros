@@ -21,7 +21,7 @@
 				<th>Collection Name</th>
 				<th>Fedora PID</th>	
 				<th>OAI setSpec</th>							
-				<th>Is Harvestable?</th>				
+				<th>Is Visible</th>				
 				<th>Actions</th>
 			</tr>
 			{% for dc_title,PID,isOAIHarvestable in collection_tups %}
@@ -30,11 +30,11 @@
 				<td>{{PID}}</td>	
 				<td>set:{{PID}}</td>			
 				{% if isOAIHarvestable == 'True' %}				
-					<td><span style="color:green;">{{isOAIHarvestable}} / (<a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListRecords&metadataPrefix=oai_dc&set=set:{{PID}}">explore</a>)</span></td>
+					<td><span style="color:green;">{{isOAIHarvestable}} / (<a target="_blank" href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListRecords&metadataPrefix=mods&set=set:{{PID}}">explore</a>)</span></td>
 				{% else %}
 					<td><span style="color:red;">{{isOAIHarvestable}}</span></td>
 				{% endif %}				
-				<td><a class="btn btn-warning btn-xs" href="/tasks/manageOAI/toggleSet/{{PID}}">Toggle Harvest</a></td>				
+				<td><a class="btn btn-warning btn-xs" href="/tasks/manageOAI/toggleSet/{{PID}}">Toggle Set Visibility</a></td>				
 			</tr>
 			{% endfor %}
 		</table>

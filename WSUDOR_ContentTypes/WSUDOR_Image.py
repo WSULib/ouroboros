@@ -297,11 +297,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
 
-
-
 			# finish generic ingest
-			return self.finishIngest()
-
+			return self.finishIngest(gen_manifest=True)
 
 
 		# exception handling
@@ -355,13 +352,11 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		seq = manifest.sequence(label="default sequence")
 
 		# iterate through component parts
-		for image in single_json['parts_imageDict']['sorted']:
+		for image in single_json['parts_imageDict']['sorted']:			
 			
-			'''
-			Improvement - use custom HTTP resolver with Loris, passing PID and Datastream id
-			'''
 			# generate obj|ds identifier as defined in loris TemplateHTTP extension
 			fedora_http_ident = "fedora:%s|%s" % (self.pid,image['jp2'])
+			# fedora_http_ident = "%s|%s" % (self.pid,image['jp2']) #loris_dev
 
 			# Create a canvas with uri slug of page-1, and label of Page 1
 			cvs = seq.canvas(ident=fedora_http_ident, label=image['ds_id'])
@@ -372,7 +367,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
 			img = anno.image(fedora_http_ident, iiif=True)
 
-			# OR if you have a IIIF service:
+			# OR if you have an IIIF service:
 			img.set_hw_from_iiif()
 
 			cvs.height = img.height

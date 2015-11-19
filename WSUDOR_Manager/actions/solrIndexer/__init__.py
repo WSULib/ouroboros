@@ -214,21 +214,24 @@ class SolrIndexerWorker(object):
 			print "Could not find or index datastream RELS-EXT"
 
 		# RELS-INT
-		try:
-			for each in obj_handle.RELS_INT_Solr_flat['fields']['field']:
-				try:
-					if type(each['@name']) == unicode:				
-						fname = each['@name']
-						fvalue = each['#text'].rstrip()
-						if hasattr(obj_handle.SolrDoc.doc, fname) == False:
-							# create empty list
-							setattr(obj_handle.SolrDoc.doc, fname, [])
-						# append to list
-						getattr(obj_handle.SolrDoc.doc, fname).append(fvalue)
-				except:
-					print "Could not add",each
-		except:
-			print "Could not find or index datastream RELS-INT"
+		'''
+		Removing RELS-INT from Solr, as the internal linkings are lost and useless
+		'''
+		# try:
+		# 	for each in obj_handle.RELS_INT_Solr_flat['fields']['field']:
+		# 		try:
+		# 			if type(each['@name']) == unicode:				
+		# 				fname = each['@name']
+		# 				fvalue = each['#text'].rstrip()
+		# 				if hasattr(obj_handle.SolrDoc.doc, fname) == False:
+		# 					# create empty list
+		# 					setattr(obj_handle.SolrDoc.doc, fname, [])
+		# 				# append to list
+		# 				getattr(obj_handle.SolrDoc.doc, fname).append(fvalue)
+		# 		except:
+		# 			print "Could not add",each
+		# except:
+		# 	print "Could not find or index datastream RELS-INT"
 
 
 		# Add object and datastream sizes

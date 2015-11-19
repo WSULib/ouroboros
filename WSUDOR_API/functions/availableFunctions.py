@@ -12,7 +12,7 @@ import ldap
 import mimetypes
 
 # Fedora and Risearch imports
-from fedDataSpy import checkSymlink, makeSymLink
+from fedDataSpy import makeSymLink
 
 # Solr imports
 import sunburnt
@@ -435,10 +435,11 @@ def isMemberOfCollection(getParams):
 	jsonString = r.text.replace('info:fedora/','')
 	return jsonString
 
-# get isMemberOf children for single PID
+
+# get isMemberOfCollection children for single PID (also return isRepresentedBy attribute)
 def hasMemberOfCollection(getParams):	
 	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
-	risearch_query = "select $memberTitle $object from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/{PID}> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle order by $memberTitle".format(PID=getParams['PID'][0])
+	risearch_query = "select $memberTitle $object $isRepBy from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/{PID}> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle and $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/{PID}> and $object <wsudor:isRepresentedBy> $isRepBy order by $memberTitle".format(PID=getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',

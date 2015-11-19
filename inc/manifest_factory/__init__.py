@@ -10,6 +10,7 @@ iiif_manifest_factory_instance.set_base_metadata_dir("/tmp/iiif_manifest")
 
 # Default Image API information
 iiif_manifest_factory_instance.set_base_image_uri("http://digital.library.wayne.edu/loris")
+# iiif_manifest_factory_instance.set_base_image_uri("http://digital.library.wayne.edu/loris_dev") #loris_dev
 iiif_manifest_factory_instance.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
 
 # 'warn' will print warnings, default level

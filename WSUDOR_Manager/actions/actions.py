@@ -56,7 +56,7 @@ from editDSRegex import editDSRegex, editDSRegex_regex_worker
 app.register_blueprint(editDSRegex, url_prefix=tasks_URL_prefix)
 
 #manageOAI
-from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_toggleSet_worker
+from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_toggleSet_worker, exposeToDPLA_worker, removeFromDPLA_worker
 app.register_blueprint(manageOAI, url_prefix=tasks_URL_prefix)
 
 #editRELS

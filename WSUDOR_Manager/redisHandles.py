@@ -8,7 +8,6 @@ r_job_handle = redis.StrictRedis(host='localhost', port=6379, db=2)
 r_selectedPIDs_handle = redis.StrictRedis(host='localhost', port=6379, db=3)
 r_PIDlock = redis.StrictRedis(host='localhost', port=6379, db=4)
 r_catchall = redis.StrictRedis(host='localhost', port=6379, db=5)
-r_catchall = redis.StrictRedis(host='localhost', port=6379, db=5)
 
 # redis handle for iiif manifests
 r_iiif = redis.StrictRedis(host='localhost', port=6379, db=8)

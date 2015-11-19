@@ -10,6 +10,8 @@ import time
 import traceback
 import sys
 import re
+from bs4 import BeautifulSoup
+import requests
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -41,12 +43,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
 	label = "WSUeBook"
-
 	description = "The WSUDOR_WSUebook content type models most print (but some born digital) resources we have created digital components for each page.  This includes a page image, ALTO XML with information about the location of words on the page, a thumbnail, a PDF (with embedded text), and HTML that semi-closely matches the original formatting (suitable for flowing text).  These objects are best viewed with our eTextReader."
-
 	Fedora_ContentType = "CM:WSUebook"
 
-	def __init__(self,object_type=False,content_type=False,payload=False):
+	def __init__(self, object_type=False, content_type=False, payload=False):
 		
 		# run __init__ from parent class
 		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload)
@@ -63,7 +63,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"external_relationships":[]
 		}
 
-
+		# empty destinations for concatenated content
+		self.html_concat = ''
 
 
 	# perform ingestTest
@@ -83,12 +84,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))				
 
-
-		# consider checking for "equality" in page derivative counts
-		# from main.py: if (len(page_images) - 1) == len(thumb_images) == len(HTML_docs) == len(altoXML_docs) == len(pdf_docs) == len(jp2_images):
-
-		
-		
 		# finally, return verdict
 		return results_dict
 
@@ -103,7 +98,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 		# attempt to ingest bag / object
-		try:		
+		try:			
 			
 			self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
 			self.ohandle.save()
@@ -123,7 +118,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write objMeta as datastream
 			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
 			objMeta_handle.label = "Ingest Bag Object Metadata"
-			# objMeta_handle.content = json.dumps(self.objMeta)
 			file_path = self.Bag.path + "/data/objMeta.json"
 			objMeta_handle.content = open(file_path)
 			objMeta_handle.save()
@@ -175,49 +169,49 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				MODS_handle.save()
 
 
+			# create derivatives and write datastreams by using processing functions defined below
+			
+			# concat variables
+			html_concat =''
 
-			#----------------- / WSU_Ebook specific -----------------#
-
-			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
-
-
-				'''
-				for each datastream:
-					- parse number from filename (x)
-
-					- determine mimetype
-					
-					- if image (maybe look at mimetype?):
-						- make THUMB_x
-						- make ACCESS_x (1700x1700)
-					
-					- create fullbook PDF and HTML files
-
-					- index book in bookreader core
-				'''
-
-
-			#----------------- GENERIC INGEST PROCEDURES, CAN BE FOLDED INTO WSUDOR_Object -----------------#
+				# # ---------- DEBUG REMOVE ---------- 
+				# if int(ds['order']) < 3:
+				# # ---------- DEBUG REMOVE ---------- 
+				if ds['ds_id'].startswith('IMAGE'):
+					self.processImage(ds)
+				if ds['ds_id'].startswith('HTML'):
+					self.processHTML(ds)
+				if ds['ds_id'].startswith('ALTOXML'):
+					self.processALTOXML(ds)
 
 			# write generic thumbnail and preview
-			for gen_type in ['THUMBNAIL','PREVIEW']:
-				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="R")
-				rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type)
-				rep_handle.label = gen_type
-				rep_handle.save()
+			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/jpeg", control_group="R")
+			rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_THUMBNAIL/content".format(pid=self.ohandle.pid, ds_id=self.objMeta['isRepresentedBy'])
+			rep_handle.label = "THUMBNAIL"
+			rep_handle.save()
 
-			#----------------- Finish up -----------------#
+			# generate full HTML, text, and PDF
+			# HTML (based on concatenated HTML from self.html_concat)
+			html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
+			html_full_handle.label = "Full HTML for item"
+			html_full_handle.content = self.html_concat.encode('utf-8')
+			html_full_handle.save()
+
+			# PDF - create PDF on disk and upload
+			# use pdftk to write temp PDF file			
+			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
+			os.system("pdftk {obj_dir}/data/datastreams/*.pdf cat output {temp_filename}".format(obj_dir=self.Bag.path, temp_filename=temp_filename))			
+			pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group="M")
+			pdf_full_handle.label = "Fulltext PDF for item"
+			pdf_full_handle.content = open(temp_filename)
+			pdf_full_handle.save()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
 
-
-
 			# finish generic ingest
-			return self.finishIngest()
-
-
+			return self.finishIngest(gen_manifest=True)
 
 		# exception handling
 		except Exception,e:
@@ -226,55 +220,111 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			return False
 
 
+	# --- Define processors for components (image, html, pdf, ALTO xml) ---------------------------------------#
+	def processImage(self, ds):
+
+		print "Processing derivative"
+		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+		print "Looking for:",file_path
+
+		# original
+		orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}".format(ds_id=ds['ds_id']), ds['label'], mimetype=ds['mimetype'], control_group='M')
+		orig_handle.label = ds['label']
+		orig_handle.content = open(file_path)
+		orig_handle.save()				
+		
+		# make thumb			
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+		im = Image.open(file_path)
+		width, height = im.size
+		max_width = 200	
+		max_height = 200
+		# run through filter
+		im = imMode(im)
+		im.thumbnail((max_width, max_height), Image.ANTIALIAS)
+		im.save(temp_filename,'JPEG')
+		thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
+		thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
+		thumb_handle.content = open(temp_filename)
+		thumb_handle.save()
+		os.system('rm {temp_filename}'.format(temp_filename=temp_filename))		
+
+		# make jp2
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jp2"
+		os.system("convert {input} {output}[256x256]".format(input=file_path,output=temp_filename))
+		jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
+		jp2_handle.label = "{label}_JP2".format(label=ds['label'])
+		try:
+			jp2_handle.content = open(temp_filename)
+		except:
+			# sometimes jp2 creation results in two files, look for first one in this instance
+			temp_filename = temp_filename.split(".")[0]
+			temp_filename = temp_filename + "-0.jp2"
+			jp2_handle.content = open(temp_filename)
+		jp2_handle.save()
+		os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
 
 
-	# complex size determination, overrides WSUDOR_Generic
-	@helpers.LazyProperty
-	def objSizeDict(self):
+		# -------------------------------------- RELS-INT ---------------------------------------#
 
-		print "Determining size of WSUDOR_WSUebook object"
+		# add to RELS-INT
+		fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/{pid}'.format(pid=self.ohandle.pid))
+		fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_THUMBNAIL'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+		fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_JP2'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
 
-		size_dict = {}
-		tot_size = 0
+		# if order present, get order and write relationship. 
+		if 'order' in ds:
+			fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isOrder', ds['order'], isLiteral=True)
 
-		# loop through datastreams, append size to return dictionary
-		for ds in self.ohandle.ds_list:
-			ds_handle = self.ohandle.getDatastreamObject(ds)
-			ds_size = ds_handle.size
-			tot_size += ds_size
-			size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
 
-		# get constituents and determine total size		
-		riquery = fedora_handle.risearch.get_subjects(predicate="info:fedora/fedora-system:def/relations-external#isMemberOf", object=self.ohandle.uri)
-		members = list(riquery)		
+	def processHTML(self, ds):
+		print "Processing HTML"
+		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+		print "Looking for:",file_path
+		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
+		generic_handle.label = ds['label']
+		generic_handle.content = open(file_path)
+		generic_handle.save()
 
-		for PID in members:
-
-			print "Working on",PID
+		# add HTML to self.html_concat
+		fhand = open(file_path)
+		html_parsed = BeautifulSoup(fhand)
+		print "HTML document parsed..."
+		#sets div with page_ID
+		self.html_concat = self.html_concat + '<div id="page_ID_{order}" class="html_page">'.format(order=ds['order'])
+		#Set in try / except block, as some HTML documents contain no elements within <body> tag
+		try:
+			for block in html_parsed.body:				
+				self.html_concat = self.html_concat + unicode(block)				
+		except:
+			print "<body> tag is empty, skipping. Adding page_ID anyway."
 			
-			loop_ohandle = fedora_handle.get_object(PID)
+		#closes page_ID / div
+		self.html_concat = self.html_concat + "</div>"
+		fhand.close()
 
-			loop_size_dict = {}
-			loop_tot_size = 0
 
-			# loop through datastreams, append size to return dictionary
-			for ds in loop_ohandle.ds_list:
-				ds_handle = loop_ohandle.getDatastreamObject(ds)
-				ds_size = ds_handle.size
-				loop_tot_size += ds_size
-				
-				# holding off for now - would be thousdands of lines long
-				# loop_size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+		# index in Solr bookreader core
+		data = {
+			"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
+			"literal.ItemID" : self.objMeta['identifier'],
+			"literal.page_num" : ds['order'],
+			"fmap.content" : "OCR_text",
+			"commit" : "true"
+		}
+		files = {'file': open(file_path, 'rb')}
+		r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)		
 
-			size_dict["isMemberOf_"+PID] = ( loop_tot_size, utilities.sizeof_fmt(loop_tot_size) )
-			tot_size += loop_tot_size
 
-		size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
-		print size_dict
-
-		return size_dict
-
+	def processALTOXML(self, ds):
+		print "Processing ALTO XML"
+		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+		print "Looking for:",file_path
+		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
+		generic_handle.label = ds['label']
+		generic_handle.content = open(file_path)
+		generic_handle.save()
 
 
 	# ingest 
@@ -337,12 +387,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# start anonymous sequence
 		seq = manifest.sequence(label="default sequence")
 
-		# get component parts
-		jp2_obj_PID = self.pid.split(":")[1]+":JP2"
-		print "Fetching",jp2_obj_PID
-		jp2_handle = fedora_handle.get_object(jp2_obj_PID)
-
-		image_list = [ds for ds in jp2_handle.ds_list if ds.startswith('JP2')]
+		# get component parts		
+		image_list = [ds for ds in self.ohandle.ds_list if ds.endswith('JP2')]
 		image_list.sort(key=natural_sort_key)
 		print image_list
 
@@ -350,12 +396,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for image in image_list:
 			
 			print "adding",image
-
-			'''
-			Improvement - use custom HTTP resolver with Loris, passing PID and Datastream id
-			'''
+			
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
-			fedora_http_ident = "fedora:%s|%s" % (jp2_obj_PID,image)
+			fedora_http_ident = "fedora:%s|%s" % (self.pid,image)
+			# fedora_http_ident = "%s|%s" % (self.pid,image) #loris_dev
+
 
 			# Create a canvas with uri slug of page-1, and label of Page 1
 			cvs = seq.canvas(ident=fedora_http_ident, label=image)
@@ -380,6 +425,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 
+# helpers
+'''
+This might be where we can fix the gray TIFFs
+'''
+def imMode(im):
+	# check for 16-bit tiffs
+	print "Image mode:",im.mode				
+	if im.mode in ['I;16','I;16B']:
+		print "I;16 tiff detected, converting..."
+		im.mode = 'I'
+		im = im.point(lambda i:i*(1./256)).convert('L')
+	# else if not RGB, convert
+	elif im.mode != "RGB" :
+		print "Converting to RGB"
+		im = im.convert("RGB")
+
+	return im
 
 
 

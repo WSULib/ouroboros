@@ -11,3 +11,6 @@ solr_handle = Solr('http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}'.format(S
 # Core used for management, indexing, deletion
 solr_manage_handle = Solr('http://silo.lib.wayne.edu/solr4/{SOLR_MANAGE_CORE}'.format(SOLR_MANAGE_CORE=localConfig.SOLR_MANAGE_CORE, make_request=session))
 
+# Core used for bookreader fulltext
+solr_bookreader_handle = Solr('http://silo.lib.wayne.edu/solr4/{SOLR_BOOKREADER_CORE}'.format(SOLR_BOOKREADER_CORE=localConfig.SOLR_BOOKREADER_CORE, make_request=session))
+

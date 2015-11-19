@@ -37,26 +37,33 @@ def augmentCore(PID):
 
 def ebookText(PID):		
 			
-	# derive fullbook PID
-	PID_suffix = PID.split(":")[1] 
-	fullbook_PID = PID_suffix+":fullbook"
-	fullbook_ohandle = repo.get_object(fullbook_PID)
+	# derive fullbook PID	
+	fullbook_ohandle = repo.get_object(PID)
 
 	# get ds content
 	ds_handle = fullbook_ohandle.getDatastreamObject("HTML_FULL")
-	ds_content = ds_handle.content		
+	ds_content = ds_handle.content
+	
+	# assume v1 book, attempt ds_content again
+	if ds_content == None:		
+
+		# derive fullbook PID	
+		fullbook_ohandle = repo.get_object(PID.split(":")[1]+":fullbook")
+		ds_handle = fullbook_ohandle.getDatastreamObject("HTML_FULL")
+		ds_content = ds_handle.content
 
 	# use Solr's Tika Extract to strip down to text
-	baseurl = "http://silo.lib.wayne.edu/solr4/fedobjs/update/extract?&extractOnly=true"
+	baseurl = "http://localhost/solr4/fedobjs/update/extract?&extractOnly=true"
 	files = {'file': ds_content}		
-	r = requests.post(baseurl, files=files)		
-	ds_stripped_content = r.text
+	r = requests.post(baseurl, files=files)
+	ds_stripped_content = r.text	
+		
 
 	# atomically update in solr
-	baseurl = "http://silo.lib.wayne.edu/solr4/fedobjs/update?commit=true"
+	baseurl = "http://localhost/solr4/fedobjs/update?commit=true"
 	headers = {'Content-Type': 'application/json'}
 	data = [{
-		"id":"wayne:{PID_suffix}".format(PID_suffix=PID_suffix),
+		"id":PID,
 		"int_fullText":{"set":ds_stripped_content},			
 	}]		 
 	data_json = json.dumps(data)

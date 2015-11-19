@@ -7,6 +7,7 @@ from localConfig import *
 from WSUDOR_Manager import models
 from flask import render_template, session
 import json
+import pickle
 from functools import wraps
 import mimetypes
 from localConfig import *
@@ -98,6 +99,7 @@ def sizeof_fmt(num, suffix='B'):
 			return "%3.1f%s%s" % (num, unit, suffix)
 		num /= 1024.0
 	return "%.1f%s%s" % (num, 'Yi', suffix)
+
 
 
 # DECORATORS

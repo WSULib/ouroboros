@@ -8,6 +8,7 @@ from PIL import Image
 import time
 import traceback
 import sys
+import time
 
 # celery
 from cl.cl import celery
@@ -24,6 +25,12 @@ from WSUDOR_Manager import redisHandles
 
 # import WSUDOR_ContentTypes
 import WSUDOR_ContentTypes
+
+# import manifest factory instance
+from inc.manifest_factory import iiif_manifest_factory_instance
+
+# import API functions
+import WSUDOR_API
 
 
 class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -252,6 +259,80 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Collection Ingest Error:",e
 			return False
 
+
+	# ingest image type
+	def genIIIFManifest(self):
+
+		stime = time.time()
+
+		# create root mani obj
+		try:
+			manifest = iiif_manifest_factory_instance.manifest( label=self.SolrDoc.asDictionary()['mods_title_ms'][0] )
+		except:
+			manifest = iiif_manifest_factory_instance.manifest( label="Unknown Title" )
+		manifest.viewingDirection = "left-to-right"
+
+		# build metadata
+		'''
+		Order of preferred fields is the order they will show on the viewer
+		NOTE: solr items are stored here as strings so they won't evaluate
+		'''
+		preferred_fields = [
+			("Title", "self.SolrDoc.asDictionary()['mods_title_ms'][0]"),
+			("Description", "self.SolrDoc.asDictionary()['mods_abstract_ms'][0]"),
+			("Year", "self.SolrDoc.asDictionary()['mods_key_date_year'][0]"),
+			("Item URL", "\"<a href='{url}'>{url}</a>\".format(url=self.SolrDoc.asDictionary()['mods_location_url_ms'][0])"),
+			("Original", "self.SolrDoc.asDictionary()['mods_otherFormat_note_ms'][0]")
+		]
+		for field_set in preferred_fields:
+			try:
+				manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
+			except:
+				print "Could Not Set Metadata Field, Skipping",field_set[0]
+	
+		# start anonymous sequence
+		seq = manifest.sequence(label="collection thumbs")
+
+		# get component parts		
+		'''
+		For collection object, this will be all children objects.
+		Interesting hack here: use API functions without traversing twisted HTTP cycle
+		'''
+		obj_list = json.loads( WSUDOR_API.functions.availableFunctions.hasMemberOfCollection({'PID':[self.pid]}) )		
+
+		# iterate through component parts
+		for obj in obj_list['results']:
+			
+			print "adding",obj['memberTitle']
+
+			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
+			fedora_http_ident = "fedora:%s|%s" % (obj['object'], obj['isRepBy']+"_JP2")
+			# fedora_http_ident = "%s|%s" % (obj['object'], obj['isRepBy']+"_JP2") #loris_dev
+
+			# Create a canvas with uri slug 
+			cvs = seq.canvas(ident=fedora_http_ident, label=obj['memberTitle'])	
+
+			# Create an annotation on the Canvas
+			anno = cvs.annotation()		
+
+			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
+			img = anno.image(fedora_http_ident, iiif=True)
+
+			# OR if you have a IIIF service:
+			img.set_hw_from_iiif()
+			cvs.height = img.height
+			cvs.width = img.width
+
+		# insert into Redis and return JSON string
+		print "Inserting manifest for",self.pid,"into Redis..."
+
+		# report time
+		etime = time.time()
+		ttime = etime - stime
+		print "total time",ttime
+
+		# redisHandles.r_iiif.set(self.pid,manifest.toString())
+		return manifest.toString()
 		
 
 		

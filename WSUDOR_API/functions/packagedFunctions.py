@@ -12,9 +12,6 @@ import ldap
 import mimetypes
 import inspect
 
-# Fedora and Risearch imports
-from fedDataSpy import checkSymlink
-
 # Solr imports
 import sunburnt
 

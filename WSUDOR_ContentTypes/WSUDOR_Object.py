@@ -14,6 +14,7 @@ import xmltodict
 from lxml import etree
 import requests
 import time
+import ast
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -310,25 +311,50 @@ class WSUDOR_GenObject(object):
 	@helpers.LazyProperty
 	def objSizeDict(self):
 
-		size_dict = {}
-		tot_size = 0
+		'''
+		Begin storing in Redis.
+		If not stored, generate and store.
+		If stored, return.
+		'''
 
-		# loop through datastreams, append size to return dictionary
-		for ds in self.ohandle.ds_list:
-			ds_handle = self.ohandle.getDatastreamObject(ds)
-			ds_size = ds_handle.size
-			tot_size += ds_size
-			size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+		# check Redis for object size dictionary
+		r_response = redisHandles.r_catchall.get(self.pid)
+		if r_response != None:
+			print "object size dictionary located and retrieved from Redis"
+			return ast.literal_eval(r_response)
 
-		size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
-		return size_dict
+		else:
+			print "generating object size dictionary, storing in redis, returning"
+
+			size_dict = {}
+			tot_size = 0
+
+			# loop through datastreams, append size to return dictionary
+			for ds in self.ohandle.ds_list:
+				ds_handle = self.ohandle.getDatastreamObject(ds)
+				ds_size = ds_handle.size
+				tot_size += ds_size
+				size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+			size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+
+			# store in Redis
+			redisHandles.r_catchall.set(self.pid, size_dict)
+
+			# return 
+			return size_dict			
+			
+
+
+
+		
 
 
 
 	# WSUDOR_Object Methods
 	############################################################################################################
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
-	def finishIngest(self):
+	def finishIngest(self, gen_manifest=False):
 
 		# as object finishes ingest, it can be granted eulfedora methods, its 'ohandle' attribute
 		if self.ohandle != None:
@@ -352,8 +378,23 @@ class WSUDOR_GenObject(object):
 		# Write isWSUDORObject RELS-EXT relationship
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
 
+		# generate OAI identifier
+		print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:{PID}".format(PID=self.pid))
+
+		# affiliate with collection set
+		try:
+			collections = self.previewSolrDict()['rels_isMemberOfCollection']
+			for collection in collections:			
+				print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
+		except:
+			print "could not affiliate with collection"
+
 		# Index in Solr
 		self.indexToSolr()
+
+		# if gen_manifest set, generate IIIF Manifest
+		if gen_manifest == True:
+			self.genIIIFManifest()
 
 		# finally, return
 		return True
@@ -493,7 +534,7 @@ class WSUDOR_GenObject(object):
 
 	# Solr Indexing
 	def indexToSolr(self, printOnly=False):
-		return actions.solrIndexer.solrIndexer('modifyObject',self.pid, printOnly)
+		return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly)
 
 
 	def previewSolrDict(self):

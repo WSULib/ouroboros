@@ -32,6 +32,9 @@ from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 # import manifest factory instance
 from inc.manifest_factory import iiif_manifest_factory_instance
 
+# derivatives
+from inc.derivatives import JP2DerivativeMaker
+
 
 # helper function for natural sorting
 def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
@@ -422,7 +425,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print "Inserting manifest for",self.pid,"into Redis..."
 		redisHandles.r_iiif.set(self.pid,manifest.toString())
 		return manifest.toString()
-
 
 
 # helpers

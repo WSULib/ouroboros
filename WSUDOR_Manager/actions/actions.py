@@ -103,6 +103,10 @@ app.register_blueprint(createManifest, url_prefix=tasks_URL_prefix)
 from createBag import createBag
 app.register_blueprint(createBag, url_prefix=tasks_URL_prefix)
 
+#genericMethod
+from genericMethod import genericMethod_worker
+
+
 # task firing
 ###########################################################################
 

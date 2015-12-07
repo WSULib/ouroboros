@@ -31,6 +31,9 @@ from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 # import manifest factory instance
 from inc.manifest_factory import iiif_manifest_factory_instance
 
+# derivatives
+from inc.derivatives import JP2DerivativeMaker
+
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
@@ -378,7 +381,6 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print "Inserting manifest for",self.pid,"into Redis..."
 		redisHandles.r_iiif.set(self.pid,manifest.toString())
 		return manifest.toString()	
-
 
 
 # helpers

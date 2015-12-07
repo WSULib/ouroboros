@@ -1,0 +1,22 @@
+<!-- runObjMethod -->
+{% include 'header.html' %}
+
+<h2>Run Generic WSUDOR Object Method</h2>
+
+<p>This utility allows you to run a given method for an WSUDOR_Object, over all selected PIDs.</p>
+
+<form class="form-horizontal bv-form" id="form" role="form" method="POST" action="/fireTask/genericMethod_worker" enctype="multipart/form-data">
+	
+	<div class="col-md-5">
+		<div class="form-group">
+			 
+			<label class="control-label" for="method_name">Object Method</label> 
+			<input class="form-control input-sm" id="method_name" name="method_name" type="text" placeholder="e.g. 'regenJP2' or 'indexToSolr' (no paranthesis)" value="" data-bv-field="method_name"><i class="form-control-feedback" data-bv-icon-for="method_name" style="display: none;"></i></input>
+		
+		</div>
+		<input type="submit" class="btn btn-primary" value="Engage!" />
+	</div>	
+
+</form>
+
+{% include 'header.html' %}

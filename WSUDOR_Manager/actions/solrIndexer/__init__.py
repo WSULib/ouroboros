@@ -54,7 +54,7 @@ def updateSolr(update_type):
 		print "Purging solr core and reindexing all objects"
 		# delete all from /fedobjs core
 		if 'fedobjs' in solr_manage_handle.base_url:
-			solr_manage_handle.delete_by_query('*:*',commit=True)
+			solr_manage_handle.delete_by_query('*:*',commit=false)
 		# run full index	
 		index_handle = solrIndexer.delay('fullIndex','')
 
@@ -213,27 +213,6 @@ class SolrIndexerWorker(object):
 		except:
 			print "Could not find or index datastream RELS-EXT"
 
-		# RELS-INT
-		'''
-		Removing RELS-INT from Solr, as the internal linkings are lost and useless
-		'''
-		# try:
-		# 	for each in obj_handle.RELS_INT_Solr_flat['fields']['field']:
-		# 		try:
-		# 			if type(each['@name']) == unicode:				
-		# 				fname = each['@name']
-		# 				fvalue = each['#text'].rstrip()
-		# 				if hasattr(obj_handle.SolrDoc.doc, fname) == False:
-		# 					# create empty list
-		# 					setattr(obj_handle.SolrDoc.doc, fname, [])
-		# 				# append to list
-		# 				getattr(obj_handle.SolrDoc.doc, fname).append(fvalue)
-		# 		except:
-		# 			print "Could not add",each
-		# except:
-		# 	print "Could not find or index datastream RELS-INT"
-
-
 		# Add object and datastream sizes
 		try:
 			setattr(obj_handle.SolrDoc.doc, "obj_size_i", obj_handle.objSizeDict['total_size'][0] )
@@ -301,11 +280,12 @@ class SolrIndexerWorker(object):
 @celery.task()
 def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
+	print "solrIndexer running"
+
 	# simple function to clean PID from /risearch
 	def cleanPID(PID):
 		return PID.split("/")[1].rstrip()
 
-	
 	#Set output filenames
 	now = datetime.datetime.now().isoformat()
 	outputs = {}
@@ -317,6 +297,23 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 	worker = SolrIndexerWorker(printOnly=printOnly)
 
 	# determine action based on fedEvent
+	# Index single item per fedEvent
+	if fedEvent == "modifyDatastreamByValue" or fedEvent == "ingest" or fedEvent == "modifyObject":
+
+		print "Updating / Indexing",PID
+		# index PIDs in Solr
+		result = worker.indexFOXMLinSolr(PID,outputs)
+
+		# printOnly, do not continue with updates
+		if worker.printOnly == True:
+			return result
+			# return True
+		
+		# augment documents - from augmentCore.py
+		augmentCore(PID)		
+		return True
+
+
 	# timestamp based
 	if fedEvent == "timestampIndex":
 
@@ -380,23 +377,6 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 		return True
 		
 
-	# Index single item per fedEvent
-	if fedEvent == "modifyDatastreamByValue" or fedEvent == "ingest" or fedEvent == "modifyObject":
-
-		print "Updating / Indexing",PID
-		# index PIDs in Solr
-		result = worker.indexFOXMLinSolr(PID,outputs)
-
-		# printOnly, do not continue with updates
-		if worker.printOnly == True:
-			return result
-			# return True
-		
-		# augment documents - from augmentCore.py
-		augmentCore(PID)		
-		return True
-
-
 	# Remove Object from Solr Index on Purge
 	if fedEvent == "purgeObject":
 		print "Removing the following from Solr Index",PID		
@@ -407,7 +387,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 	# Replicate staging to production
 	if fedEvent == "replicateStagingToProduction":
 		print "replicating staging core to production"
-		r = requests.get('http://localhost/solr4/search/replication?command=fetchindex&wt=json&commit=true')
+		r = requests.get('http://localhost/solr4/search/replication?command=fetchindex&wt=json&commit=false')
 		response = json.loads(r.content)
 		if response['status'] == "OK":
 			print "Success"
@@ -416,6 +396,9 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 			print "Failure"
 			return False
 
+
+	# finally, commit all changes
+	solr_manage_handle.commit()
 
 
 if __name__ == '__main__':

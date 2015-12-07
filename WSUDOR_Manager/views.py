@@ -1016,6 +1016,19 @@ def collectionsOverview():
 	return render_template("collectionsOverview.html", object_package=object_package)
 
 
+
+# Run Generic Method from WSUDOR Object
+@app.route("/genericMethod", methods=['POST', 'GET'])
+@login_required
+def genericMethod():	
+
+
+	return render_template("genericMethod.html")
+
+
+
+
+
 # WSUDOR_ContentTypes (aka "wct")
 ####################################################################################
 
@@ -1052,6 +1065,8 @@ def wcts(wct):
 
 # 	# straight pipe, thinking maybe download first?
 # 	# return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)	
+
+
 
 
 

@@ -31,6 +31,9 @@ from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 
+# derivatives
+from inc.derivatives import JP2DerivativeMaker
+
 
 
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
@@ -315,6 +318,8 @@ class WSUDOR_GenObject(object):
 		Begin storing in Redis.
 		If not stored, generate and store.
 		If stored, return.
+
+		Improvement: need to provide method for updating
 		'''
 
 		# check Redis for object size dictionary
@@ -424,6 +429,10 @@ class WSUDOR_GenObject(object):
 
 		# create temp dir structure
 		working_dir = "/tmp/Ouroboros/export_bags"
+		# create if doesn't exist
+		if not os.path.exists("/tmp/Ouroboros/export_bags"):
+			os.mkdir("/tmp/Ouroboros/export_bags")
+
 		temp_dir = working_dir + "/" + str(uuid.uuid4())
 		time.sleep(.25)
 		os.system("mkdir {temp_dir}".format(temp_dir=temp_dir))
@@ -546,6 +555,73 @@ class WSUDOR_GenObject(object):
 		except:
 			print "Could not run indexSolr() transform."
 			return False
+
+
+
+	# regnerate derivative JP2s 
+	def regenJP2(self):
+		'''
+		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
+		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
+		
+		A lot are failing because the TIFFS are compressed, are PNG files.  We need a secondary attempt
+		that converts to uncompressed TIFF first.
+
+		'''
+
+		# iterate through datastreams and look for JP2s	
+		jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]	
+
+		count = 0
+		for ds in jp2_ds_list:
+			
+			print "converting %s, %s / %s" % (ds,str(count),str(len(jp2_ds_list)))
+			count += 1
+
+			# init JP2DerivativeMaker
+			j = JP2DerivativeMaker(inObj=self)
+
+			# jp2 handle
+			jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
+
+			# get original ds_handle 
+			orig = ds.split("_JP2")[0]
+			try:
+				orig_ds_handle = self.ohandle.getDatastreamObject(orig)
+			except:
+				print "could not find original for",orig					
+
+			# write temp original and set as inPath
+			j.inPath = j.writeTempOrig(orig_ds_handle)
+
+			# gen temp new jp2
+			print "making JP2 with",j.inPath,"to",j.outPath
+			makeJP2result = j.makeJP2()
+
+			# if fail, try again by uncompressing original temp file
+			if makeJP2result == False:
+				print "trying again with uncompressed original"
+				j.uncompressOriginal()
+				makeJP2result = j.makeJP2()
+
+			# last resort, pause, try again
+			if makeJP2result == False:
+				time.sleep(3)
+				makeJP2result = j.makeJP2()
+
+			# write new JP2 datastream
+			if makeJP2result:
+				with open(j.outPath) as fhand:
+					jp2_ds_handle.content = fhand.read()
+				print "Result for",ds,jp2_ds_handle.save()
+				# cleanup
+				j.cleanupTempFiles()					
+
+			else:
+				# cleanup
+				# j.cleanupTempFiles()
+				raise Exception("Could not regen JP2")	
+
 
 
 	################################################################

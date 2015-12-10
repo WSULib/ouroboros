@@ -10,8 +10,20 @@ Digital Collections Infrastructure
 ## Installation
 
 ### Dependencies
-* python modules 
- * `sudo pip install requirements.txt`
 
+* OS dependencies
+ * `apt-get install libxml2-dev libxslt1-dev python-dev`
+* python modules 
+ * `pip install requirements.txt`
 * Redis
- * `sudo apt-get install redis-server`
+ * `apt-get install redis-server`
+* Add supervisor task to supervisor (sample below)
+ * <pre><code>[program:Ouroboros]
+command=python runserver.py
+directory=/opt/ouroboros
+# command=/etc/init.d/ouroboros start
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/ouroboros.err.log
+stdout_logfile=/var/log/ouroboros.out.log
+startsecs=20</code></pre>

@@ -15,7 +15,6 @@ eulfedora==0.22.2
 fuzzywuzzy==0.2
 ipython==0.12.1
 lockfile==0.10.2
-lxml==2.3.2
 mysolr==0.8.2
 ply==3.4
 pydub==0.9.5

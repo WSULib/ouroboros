@@ -14,9 +14,6 @@ import mimetypes
 # Fedora and Risearch imports
 from fedDataSpy import makeSymLink
 
-# Solr imports
-import sunburnt
-
 # utilities
 from utils import *
 
@@ -1255,36 +1252,39 @@ def addFavorite(getParams):
 	return jsonString
 
 
-def removeFavorite(getParams):
-# function to take jsonAddString, remove from Solr, and return confirmation code
-######################################################################################################################	
-	returnDict = {}
+'''
+Need to convert sunburnt to mysolr here
+'''
+# def removeFavorite(getParams):
+# # function to take jsonAddString, remove from Solr, and return confirmation code
+# ######################################################################################################################	
+# 	returnDict = {}
 
-	# authenticate user	
-	username = getParams['username'][0]
-	providedHash = getParams['userhash'][0]
+# 	# authenticate user	
+# 	username = getParams['username'][0]
+# 	providedHash = getParams['userhash'][0]
 
-	si = sunburnt.SolrInterface("http://silo.lib.wayne.edu:8080/solr4/users/")	
-	response = si.query(user_username=username).execute()
-	recordedHash = response[0]['user_hash'][0]
-	# print "Provided:",providedHash
-	# print "Recorded:",recordedHash
-	if providedHash == recordedHash:
-		# print "Credentials look good, proceeding."
-		# delete doc
-		PID = getParams['PID'][0]
-		si.delete(username+"_"+PID)
-		si.commit()
+# 	si = sunburnt.SolrInterface("http://silo.lib.wayne.edu:8080/solr4/users/")	
+# 	response = si.query(user_username=username).execute()
+# 	recordedHash = response[0]['user_hash'][0]
+# 	# print "Provided:",providedHash
+# 	# print "Recorded:",recordedHash
+# 	if providedHash == recordedHash:
+# 		# print "Credentials look good, proceeding."
+# 		# delete doc
+# 		PID = getParams['PID'][0]
+# 		si.delete(username+"_"+PID)
+# 		si.commit()
 
-		# return response
-		returnDict['username'] = username
-		returnDict['favorite_removed'] = PID
-		return json.dumps(returnDict)
+# 		# return response
+# 		returnDict['username'] = username
+# 		returnDict['favorite_removed'] = PID
+# 		return json.dumps(returnDict)
 
-	else:
-		# print "Credentials don't match."
-		returnDict['status'] = "Credentials don't match."
-		return json.dumps(returnDict)
+# 	else:
+# 		# print "Credentials don't match."
+# 		returnDict['status'] = "Credentials don't match."
+# 		return json.dumps(returnDict)
 
 def authUser(getParams):
 	try:

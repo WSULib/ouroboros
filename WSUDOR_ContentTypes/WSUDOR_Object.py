@@ -127,8 +127,9 @@ class WSUDOR_GenObject(object):
 
 	# init
 	############################################################################################################
-	def __init__(self,object_type=False,content_type=False,payload=False):		
+	def __init__(self, object_type=False, content_type=False, payload=False):
 
+		self.index_on_ingest = True,
 		self.struct_requirements = {
 			"WSUDOR_GenObject":{
 				"datastreams":[
@@ -136,12 +137,7 @@ class WSUDOR_GenObject(object):
 						"id":"THUMBNAIL",
 						"purpose":"Thumbnail of image",
 						"mimetype":"image/jpeg"
-					},
-					{
-						"id":"PREVIEW",
-						"purpose":"Medium sized preview image",
-						"mimetype":"image/jpeg"
-					},			
+					},								
 					{
 						"id":"MODS",
 						"purpose":"Descriptive MODS",
@@ -165,7 +161,7 @@ class WSUDOR_GenObject(object):
 			}		
 		}	
 
-		# two roads - WSUDOR or BagIt archive for the object returned
+		# WSUDOR or BagIt archive for the object returned
 		try:			
 
 			# Future WSUDOR object, BagIt object
@@ -394,8 +390,11 @@ class WSUDOR_GenObject(object):
 		except:
 			print "could not affiliate with collection"
 
-		# Index in Solr
-		self.indexToSolr()
+		# Index in Solr (can override from command by setting self.index_on_ingest to False)
+		if self.index_on_ingest != False:
+			self.indexToSolr()
+		else:
+			print "Skipping Solr Index"
 
 		# if gen_manifest set, generate IIIF Manifest
 		if gen_manifest == True:

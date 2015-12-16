@@ -171,13 +171,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
-
 			# create derivatives and write datastreams by using processing functions defined below
-			
 			# concat variables
 			html_concat =''
-
-			for ds in self.objMeta['datastreams']:
+			for count, ds in enumerate(self.objMeta['datastreams']):
+				print "Working on page %i / %i" % (count,len(self.objMeta['datastreams']))
 				# # ---------- DEBUG REMOVE ---------- 
 				# if int(ds['order']) < 3:
 				# # ---------- DEBUG REMOVE ---------- 
@@ -202,12 +200,13 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			html_full_handle.save()
 
 			# PDF - create PDF on disk and upload
-			# use pdftk to write temp PDF file			
+			# use pdftk to write temp PDF file		
+			print "writing full-text PDF"	
 			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
-			os.system("pdftk {obj_dir}/data/datastreams/*.pdf cat output {temp_filename}".format(obj_dir=self.Bag.path, temp_filename=temp_filename))			
-			pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group="M")
+			os.system("pdftk {obj_dir}/data/datastreams/*.pdf cat output {temp_filename} verbose".format(obj_dir=self.Bag.path, temp_filename=temp_filename))		
+			pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
 			pdf_full_handle.label = "Fulltext PDF for item"
-			pdf_full_handle.content = open(temp_filename)
+			pdf_full_handle.content = open(temp_filename).read()
 			pdf_full_handle.save()
 
 			# save and commit object before finishIngest()
@@ -250,23 +249,38 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
 		thumb_handle.content = open(temp_filename)
 		thumb_handle.save()
-		os.system('rm {temp_filename}'.format(temp_filename=temp_filename))		
-
-		# make jp2
-		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jp2"
-		os.system("convert {input} {output}[256x256]".format(input=file_path,output=temp_filename))
-		jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
-		jp2_handle.label = "{label}_JP2".format(label=ds['label'])
-		try:
-			jp2_handle.content = open(temp_filename)
-		except:
-			# sometimes jp2 creation results in two files, look for first one in this instance
-			temp_filename = temp_filename.split(".")[0]
-			temp_filename = temp_filename + "-0.jp2"
-			jp2_handle.content = open(temp_filename)
-		jp2_handle.save()
 		os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
 
+		# make JP2 with derivative class
+		jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
+		jp2_handle.label = "{label}_JP2".format(label=ds['label'])	
+		j = JP2DerivativeMaker(inObj=self)
+		j.inPath = file_path 
+		print "making JP2 with",j.inPath,"to",j.outPath
+		makeJP2result = j.makeJP2()
+		# if fail, try again by uncompressing original temp file
+		if makeJP2result == False:
+			print "trying again with uncompressed original"
+			j.uncompressOriginal()
+			makeJP2result = j.makeJP2()
+
+		# last resort, pause, try again
+		if makeJP2result == False:
+			time.sleep(3)
+			makeJP2result = j.makeJP2()
+
+		# write new JP2 datastream
+		if makeJP2result:
+			with open(j.outPath) as fhand:
+				jp2_handle.content = fhand.read()
+			print "Result for",ds,jp2_handle.save()
+			# cleanup
+			j.cleanupTempFiles()					
+
+		else:
+			# cleanup
+			j.cleanupTempFiles()
+			raise Exception("Could not regen JP2")
 
 
 		# -------------------------------------- RELS-INT ---------------------------------------#

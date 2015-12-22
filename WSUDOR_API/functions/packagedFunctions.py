@@ -12,9 +12,6 @@ import ldap
 import mimetypes
 import inspect
 
-# Solr imports
-import sunburnt
-
 # utilities
 from utils import *
 

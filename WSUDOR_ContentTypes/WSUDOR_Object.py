@@ -347,6 +347,16 @@ class WSUDOR_GenObject(object):
 			
 
 
+	def update_objSizeDict(self):
+
+		# clear from Redis
+		print "clearing previous entry in Redis"
+		redisHandles.r_catchall.delete(self.pid)
+
+		print "regenerating and returning"
+		return self.objSizeDict
+
+
 
 		
 

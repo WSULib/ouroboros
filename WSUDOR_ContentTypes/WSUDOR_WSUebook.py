@@ -197,17 +197,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
 			html_full_handle.label = "Full HTML for item"
 			html_full_handle.content = self.html_concat.encode('utf-8')
-			html_full_handle.save()
+			html_full_handle.save()			
 
 			# PDF - create PDF on disk and upload
-			# use pdftk to write temp PDF file		
-			print "writing full-text PDF"	
-			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
-			os.system("pdftk {obj_dir}/data/datastreams/*.pdf cat output {temp_filename} verbose".format(obj_dir=self.Bag.path, temp_filename=temp_filename))		
-			pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
-			pdf_full_handle.label = "Fulltext PDF for item"
-			pdf_full_handle.content = open(temp_filename).read()
-			pdf_full_handle.save()
+			self.processPDF()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
@@ -223,6 +216,24 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# --- Define processors for components (image, html, pdf, ALTO xml) ---------------------------------------#
+	
+	def processPDF(self, process_type='ingest', pdf_dir=None):
+		
+		# expecting pdf_dir if process_type != 'ingest'
+		if process_type == 'ingest':
+			obj_dir = self.Bag.path+"/data/datastreams"
+		else:
+			obj_dir = pdf_dir			
+
+		print "writing full-text PDF"	
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
+		os.system("pdftk {obj_dir}/*.pdf cat output {temp_filename} verbose".format(obj_dir=obj_dir, temp_filename=temp_filename))		
+		pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
+		pdf_full_handle.label = "Fulltext PDF for item"
+		pdf_full_handle.content = open(temp_filename).read()
+		return pdf_full_handle.save()
+
+
 	def processImage(self, ds):
 
 		print "Processing derivative"

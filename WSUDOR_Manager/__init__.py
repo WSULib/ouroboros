@@ -5,10 +5,11 @@ from flask import Flask, render_template, g
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
+import localConfig
 
 # create app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://WSUDOR_Manager:WSUDOR_Manager@localhost/WSUDOR_Manager'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localConfig.MYSQL_USERNAME, localConfig.MYSQL_PASSWORD, localConfig.MYSQL_DATABASE ) 
 # app.config['LOG_REQUESTS'] = True
 # app.debug = True
 

@@ -245,7 +245,7 @@
 	<div class="col-md-12">
 		<h3><a href="/tasks/manageOAIOAI">OAI</a></h3>
 		<ul>{% if object_package.OAI_package['ID'] %}			
-			<li><strong>OAI Record:</strong> <a target="_blank" href="http://silo.lib.wayne.edu/oaiprovider/?verb=GetRecord&identifier={{object_package.OAI_package['ID']}}&metadataPrefix=mods">link</a></li>
+			<li><strong>OAI Record:</strong> <a target="_blank" href="http://{{localConfig.APP_HOST}}/oaiprovider/?verb=GetRecord&identifier={{object_package.OAI_package['ID']}}&metadataPrefix=mods">link</a></li>
 			{% endif %}
 			
 			<li><strong>Members of OAI Sets</strong>:

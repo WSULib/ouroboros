@@ -135,7 +135,7 @@ class SolrIndexerWorker(object):
 			'stream':'on',
 			'query': risearch_query
 			})
-		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@silo.lib.wayne.edu/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
 
 		modified_objects = urllib.urlopen(risearch_host,risearch_params)
 		modified_objects.next() # bump past headers
@@ -254,7 +254,7 @@ class SolrIndexerWorker(object):
 		
 		# # replicate to "search core"
 		# print "*** Replicating Changes ***"
-		# baseurl = 'http://silo.lib.wayne.edu/solr4/search/replication?command=fetchindex' 
+		# baseurl = 'http://localhost/solr4/search/replication?command=fetchindex' 
 		# data = {'commit':'true'}
 		# r = requests.post(baseurl,data=data)
 		# print r.text	

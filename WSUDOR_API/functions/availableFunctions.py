@@ -50,7 +50,7 @@ def solrGetFedDoc(getParams):
 ######################################################################################################################
 	PID=getParams['PID'][0]
 	PID = PID.replace(":", "\:")
-	baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+	baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 	solrParams = {
 		'q' : 'id:{PID}'.format(PID=PID),
 		'wt' : 'json',
@@ -65,9 +65,9 @@ def solrSearch(getParams):
 ######################################################################################################################	
 	# establish baseURL
 	if 'solrCore' in getParams:				
-		baseURL = "http://silo.lib.wayne.edu/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
+		baseURL = "http://localhost/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
 	else:
-		baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+		baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 
 	# hard-code some server side parameters	
 	# sorts date result 
@@ -132,9 +132,9 @@ def solrCoreGeneric(getParams):
 
 	# establish baseURL
 	if 'solrCore' in getParams:				
-		baseURL = "http://silo.lib.wayne.edu/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
+		baseURL = "http://localhost/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
 	else:
-		baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+		baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 
 	# q
 	if 'q' in getParams:	
@@ -178,7 +178,7 @@ def solrCoreGeneric(getParams):
 def solrFacetSearch(getParams):
 ######################################################################################################################
 	# establish baseURL
-	baseURL = "http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+	baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 
 	# set solrParams
 	solrParams = ast.literal_eval(getParams['solrParams'][0])
@@ -250,7 +250,7 @@ def getUserFavorites(getParams):
 ######################################################################################################################
 
 	# establish baseURL
-	baseURL = "http://silo.lib.wayne.edu/solr4/users/select?"
+	baseURL = "http://localhost/solr4/users/select?"
 
 	# set solrParams
 	solrParams = ast.literal_eval(getParams['solrParams'][0])	
@@ -297,9 +297,9 @@ def solrTranslationHash(args):
 	# list of queries to translate results
 	queriesToTrans = [
 		# all Collection objects
-		"http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?q=rels_hasContentModel%3Ainfo%5C%3Afedora%2FCM%5C%3ACollection&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE),
+		"http://localhost/solr4/{SOLR_SEARCH_CORE}/select?q=rels_hasContentModel%3Ainfo%5C%3Afedora%2FCM%5C%3ACollection&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE),
 		# all Content Models Types
-		"http://silo.lib.wayne.edu/solr4/{SOLR_SEARCH_CORE}/select?q=id%3ACM*&rows=100&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+		"http://localhost/solr4/{SOLR_SEARCH_CORE}/select?q=id%3ACM*&rows=100&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
 	]
 
 	# run query and add to hash
@@ -326,8 +326,8 @@ def pubStore(getParams):
 
 	# print solrString
 
-	baseURL = "http://silo.lib.wayne.edu/solr4/pubstore/{urlsuff}".format(urlsuff=urlsuff)
-	# baseURL = "http://silo.lib.wayne.edu/solr4/pubstore/update/json?commit=true"
+	baseURL = "http://localhost/solr4/pubstore/{urlsuff}".format(urlsuff=urlsuff)
+	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
 	# print "Going to this URL:",baseURL
 
 	# json post
@@ -357,7 +357,7 @@ def pubStore(getParams):
 
 # return Fedora MODS datastream
 def getObjectXML(getParams):	
-	baseURL = "http://silo.lib.wayne.edu/fedora/objects/{PID}/objectXML".format(PID=getParams['PID'][0])
+	baseURL = "http://localhost/fedora/objects/{PID}/objectXML".format(PID=getParams['PID'][0])
 	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
 	xmlString = r.text
 
@@ -377,7 +377,7 @@ def getObjectXML(getParams):
 # gets children for single PID
 def isMemberOf(getParams):
 
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = "select $subject from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOf> $subject".format(PID=getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
@@ -395,7 +395,7 @@ def isMemberOf(getParams):
 
 # get isMemberOf children for single PID
 def hasMemberOf(getParams):	
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = "select $memberTitle $object from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/{PID}> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle order by $memberTitle".format(PID=getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
@@ -414,7 +414,7 @@ def hasMemberOf(getParams):
 # get parents for PID
 def isMemberOfCollection(getParams):
 
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	# risearch_query = "select $subject from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $subject".format(PID=args.PID)
 	risearch_query = "select $collectionTitle $subject from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $subject and $subject <http://purl.org/dc/elements/1.1/title> $collectionTitle".format(PID=getParams['PID'][0])
 
@@ -435,7 +435,7 @@ def isMemberOfCollection(getParams):
 
 # get isMemberOfCollection children for single PID (also return isRepresentedBy attribute)
 def hasMemberOfCollection(getParams):	
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = "select $memberTitle $object $isRepBy from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/{PID}> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle and $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/{PID}> and $object <wsudor:isRepresentedBy> $isRepBy order by $memberTitle".format(PID=getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
@@ -454,7 +454,7 @@ def hasMemberOfCollection(getParams):
 
 #returns all siblings, from all parent Collections
 def getSiblings(getParams):
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = "select $collection $sibling from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $collection and $sibling <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $collection".format(PID=getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
@@ -492,7 +492,7 @@ def getSiblings(getParams):
 
 # return Fedora MODS datastream
 def fedoraMODS(getParams):
-	baseURL = "http://silo.lib.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=getParams['PID'][0])
+	baseURL = "http://localhost/fedora/objects/{PID}/datastreams/MODS/content".format(PID=getParams['PID'][0])
 	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
 	xmlString = r.text
 	#convert XML to JSON with "xmltodict"
@@ -503,7 +503,7 @@ def fedoraMODS(getParams):
 
 # return walk of serial volumes / issues in tidy package
 def serialWalk(getParams):
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = "SELECT ?volume ?volumeTitle ?issue $issueTitle WHERE {{ ?volume  <fedora-rels-ext:isMemberOfCollection> <info:fedora/{PID}> .  $volume <http://purl.org/dc/elements/1.1/title> ?volumeTitle . ?volume  <fedora-rels-ext:hasContentModel> <info:fedora/CM:Volume> . ?issue <fedora-rels-ext:isMemberOf>  ?volume . ?issue <fedora-rels-ext:hasContentModel> <info:fedora/CM:Issue> . $issue <http://purl.org/dc/elements/1.1/title> $issueTitle .  }} ORDER BY ASC(?issue)".format(PID=getParams['PID'][0])
 	risearch_params = {
 		'type': 'tuples',
@@ -536,7 +536,7 @@ def fedDataSpy(getParams):
 
 # get isPartOf children for single PID
 def hasPartOf(getParams):	
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/{PID}>".format(PID=getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
@@ -599,7 +599,7 @@ def getObjectSize(getParams):
 def hierarchicalTree(getParams):
 
 	# parent
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = '''
 	select $parent $parentTitle from <#ri> where
 	    <info:fedora/{PID}> 
@@ -626,7 +626,7 @@ def hierarchicalTree(getParams):
 	parent_dict = json.loads(parent_jsonString)
 
 	# parent siblings
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = '''
 	select $parentSibling $parentSiblingTitle from <#ri> where 
 	    <info:fedora/{PID}> 
@@ -666,7 +666,7 @@ def hierarchicalTree(getParams):
 	parent_sibling_dict = json.loads(parent_sibling_jsonString)
 
 	# siblings
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = '''
 	select $sibling $siblingTitle from <#ri> where 
 	    <info:fedora/{PID}> 
@@ -703,7 +703,7 @@ def hierarchicalTree(getParams):
 			del sibling_dict['results'][idx]
 
 	# children
-	baseURL = "http://silo.lib.wayne.edu/fedora/risearch"
+	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = '''
 	select $child $childTitle from <#ri> where 
 	    $child
@@ -1052,7 +1052,7 @@ def userSearch(getParams):
 ######################################################################################################################
 
 	# establish baseURL
-	baseURL = "http://silo.lib.wayne.edu/solr4/users/select?"
+	baseURL = "http://localhost/solr4/users/select?"
 
 	solrParams = {}
 	solrParams['q'] = 'id:'+getParams['username'][0]
@@ -1102,7 +1102,7 @@ def WSUDORuserAuth(getParams):
 	# get hash for username from solr (don't need password), compare
 
 	# establish baseURL
-	baseURL = "http://silo.lib.wayne.edu/solr4/users/select?"
+	baseURL = "http://localhost/solr4/users/select?"
 
 	solrParams = {}
 	solrParams['q'] = 'id:'+getParams['username'][0]
@@ -1149,7 +1149,7 @@ def cookieAuth(getParams):
 	# get hash for username from solr (don't need password), compare
 
 	# establish baseURL
-	baseURL = "http://silo.lib.wayne.edu/solr4/users/select?"
+	baseURL = "http://localhost/solr4/users/select?"
 	# print "Params for cookieAuth"
 	# print getParams
 
@@ -1219,7 +1219,7 @@ def createUserAccount(getParams):
 	solrString = "["+solrString+"]"
 	# print solrString
 
-	baseURL = "http://silo.lib.wayne.edu/solr4/users/update/json?commit=true"
+	baseURL = "http://localhost/solr4/users/update/json?commit=true"
 	headersDict = {
 		"Content-type":"application/json"
 	}
@@ -1242,7 +1242,7 @@ def addFavorite(getParams):
 	solrString = getParams['raw'][0]
 	# print solrString	
 
-	baseURL = "http://silo.lib.wayne.edu/solr4/users/update/json?commit=true"
+	baseURL = "http://localhost/solr4/users/update/json?commit=true"
 	headersDict = {
 		"Content-type":"application/json"
 	}
@@ -1264,7 +1264,7 @@ Need to convert sunburnt to mysolr here
 # 	username = getParams['username'][0]
 # 	providedHash = getParams['userhash'][0]
 
-# 	si = sunburnt.SolrInterface("http://silo.lib.wayne.edu:8080/solr4/users/")	
+# 	si = sunburnt.SolrInterface("http://localhost:8080/solr4/users/")	
 # 	response = si.query(user_username=username).execute()
 # 	recordedHash = response[0]['user_hash'][0]
 # 	# print "Provided:",providedHash
@@ -1298,7 +1298,7 @@ def authUser(getParams):
 		# get clientHash# 
 		try:
 			userDict = {}
-			baseURL = "http://silo.lib.wayne.edu/solr4/users/select?"
+			baseURL = "http://localhost/solr4/users/select?"
 			
 			solrParams = {}
 			solrParams['q'] = 'id:'+username

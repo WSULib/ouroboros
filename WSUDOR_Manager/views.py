@@ -632,7 +632,7 @@ def objPreview(PIDnum):
 	print object_package['OAI_package']
 
 	# RENDER
-	return render_template("objPreview.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet,object_package=object_package)	
+	return render_template("objPreview.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet,object_package=object_package,localConfig=localConfig)	
 
 
 # PID check for user

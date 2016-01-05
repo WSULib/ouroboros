@@ -16,4 +16,8 @@ try:
 	solr_bookreader_handle = Solr('http://localhost/solr4/{SOLR_BOOKREADER_CORE}'.format(SOLR_BOOKREADER_CORE=localConfig.SOLR_BOOKREADER_CORE, make_request=session))
 except:
 	print "Could not setup solr handles"
+	solr_handle = False
+	solr_manage_handle = False
+	solr_bookreader_handle = False
+
 

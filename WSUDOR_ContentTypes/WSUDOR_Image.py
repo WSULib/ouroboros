@@ -310,7 +310,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 			# generate iiif_manifest and save to Redis
-			iiif_manifest_json = genIIIFManifest()
+			iiif_manifest_json = self.genIIIFManifest()
 
 
 			# save and commit object before finishIngest()

@@ -54,7 +54,7 @@ def updateSolr(update_type):
 		print "Purging solr core and reindexing all objects"
 		# delete all from /fedobjs core
 		if 'fedobjs' in solr_manage_handle.base_url:
-			solr_manage_handle.delete_by_query('*:*',commit=false)
+			solr_manage_handle.delete_by_query('*:*',commit=False)
 		# run full index	
 		index_handle = solrIndexer.delay('fullIndex','')
 

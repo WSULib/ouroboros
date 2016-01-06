@@ -309,10 +309,6 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				rep_handle.save()
 
 
-			# generate iiif_manifest and save to Redis
-			iiif_manifest_json = self.genIIIFManifest()
-
-
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
 

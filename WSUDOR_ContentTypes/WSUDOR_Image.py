@@ -249,10 +249,21 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					j.inPath = file_path 
 					print "making JP2 with",j.inPath,"to",j.outPath
 					makeJP2result = j.makeJP2()
+
 					# if fail, try again by uncompressing original temp file
 					if makeJP2result == False:
 						print "trying again with uncompressed original"
 						j.uncompressOriginal()
+						makeJP2result = j.makeJP2()
+
+					# if that fails, attempt to make tiff from original
+					if makeJP2result == False:
+						print "attempting to create tiff form origianl file format"
+						j.createTiffFromOriginal()
+						if os.path.exists(j.inPath+".tif"):
+							print "rewriting inPath file"
+							# change input path for new .tif extension
+							j.inPath = j.inPath+".tif"
 						makeJP2result = j.makeJP2()
 
 					# last resort, pause, try again

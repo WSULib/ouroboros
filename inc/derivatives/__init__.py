@@ -166,6 +166,7 @@ class JP2DerivativeMaker(object):
 			print "Could not get bits per sample: " + self.outPath			
 			return False
 
+		print "Issuing Kakadu command",cmd
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()		
 		
@@ -197,28 +198,6 @@ class JP2DerivativeMaker(object):
 		fhand.write(ds_handle.content)
 		fhand.close()
 
-		# # check if tempfile uncompressed tiff, if not, compress
-		# # identify -verbose 2c17cdda-6bc8-4071-9c6e-75eddce6bdad.tif | grep -i compression
-		# cmd = "identify -verbose %s | grep -i 'compression'" % temp_filename
-		# print cmd
-		# proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-		# return_code = proc.wait()
-
-		# # Read from pipes
-		# response = None
-		# for line in proc.stdout:
-		# 	if response == None:
-		# 		response = line.strip()
-		# for line in proc.stderr:
-		# 	print line.rstrip()
-
-		# # check if compression present in tiff, if so, create uncompressed version of temp tiff
-		# if "None" not in response:
-		# 	print "Converting temp tiff to uncompressed"
-		# 	cmd = "convert -verbose %s +compress %s" % (temp_filename,temp_filename)
-		# 	proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-		# 	return_code = proc.wait()
-
 		return temp_filename
 
 
@@ -231,6 +210,13 @@ class JP2DerivativeMaker(object):
 		except:
 			print "could not remove / find",self.inPath
 
+		# cleanup if deriv tiffs made
+		try:
+			os.remove(self.inPath+".tif")
+			print "removed",self.inPath+".tif"
+		except:
+			print "could not remove / find",self.inPath+".tif"
+
 		# remove temp outPath
 		try:
 			os.remove(self.outPath)
@@ -241,7 +227,16 @@ class JP2DerivativeMaker(object):
 
 	def uncompressOriginal(self):
 		print "Converting temp tiff to uncompressed"
-		cmd = "convert -verbose %s +compress %s" % (self.inPath,self.inPath)
+		cmd = "convert -verbose %s +compress %s" % (self.inPath, self.inPath)
+		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+		return_code = proc.wait()
+		return True
+
+
+	def createTiffFromOriginal(self):
+		print "creating tiff from original image file"
+		cmd = "convert -verbose %s +compress %s.tif" % (self.inPath, self.inPath)
+		print cmd
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()
 		return True

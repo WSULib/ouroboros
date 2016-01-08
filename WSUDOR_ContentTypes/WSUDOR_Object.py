@@ -25,6 +25,9 @@ from cl.cl import celery
 # eulfedora
 import eulfedora
 
+# localConfig
+import localConfig
+
 # WSUDOR
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
@@ -536,7 +539,7 @@ class WSUDOR_GenObject(object):
 		if returnTargetDir == True:
 			return "{target_dir}/{named_dir}.tar".format(target_dir=target_dir,named_dir=named_dir)
 		else:
-			return "http://digital.library.wayne.edu/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username)
+			return "http://{APP_HOST}/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username,APP_HOST=localConfig.APP_HOST)
 
 
 	# reingest bag

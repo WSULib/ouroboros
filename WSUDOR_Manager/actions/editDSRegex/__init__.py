@@ -52,7 +52,7 @@ def index():
 	# Raw Datastream via Fedora API
 	###############################################################	
 	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PIDlet['cPID'])
-	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+	raw_xml = requests.get(raw_xml_URL).text
 	###############################################################
 	
 	# return render_template("editDSRegex_index.html",PID=PIDs[PIDnum],PIDnum=PIDnum,len_PIDs=len(PIDs),form=form,raw_xml=raw_xml)

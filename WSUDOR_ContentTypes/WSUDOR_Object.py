@@ -456,25 +456,42 @@ class WSUDOR_GenObject(object):
 		tar_handle = tarfile.open(fileobj=bagitIO)
 		tar_handle.extractall(path=temp_dir)		
 		
+		# # export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
+		# def writeDS(write_tuple):
+		# 	print "WORKING ON {ds_id}".format(ds_id=write_tuple[0])
+
+		# 	ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
+		# 	fhand = open(write_tuple[1],'w')
+
+		# 	# XML ds model
+		# 	if isinstance(ds_handle,eulfedora.models.XmlDatastreamObject):
+		# 		print "FIRING XML WRITER"
+		# 		fhand.write(ds_handle.content.serialize())
+		# 		fhand.close() 
+
+		# 	# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
+		# 	else:
+		# 		print "FIRING GENERIC WRITER"
+		# 		fhand.write(ds_handle.content)
+		# 		fhand.close()
+
 		# export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
 		def writeDS(write_tuple):
 			print "WORKING ON {ds_id}".format(ds_id=write_tuple[0])
 
 			ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
-			fhand = open(write_tuple[1],'w')
 
 			# XML ds model
 			if isinstance(ds_handle,eulfedora.models.XmlDatastreamObject):
 				print "FIRING XML WRITER"
-				fhand.write(ds_handle.content.serialize())
-				fhand.close() 
+				with open(write_tuple[1],'w') as fhand:
+					fhand.write(ds_handle.content.serialize())
 
 			# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
 			else:
 				print "FIRING GENERIC WRITER"
-				fhand.write(ds_handle.content)
-				fhand.close()
-
+				with open(write_tuple[1],'wb') as fhand:
+					fhand.write(ds_handle.content)
 
 		# write original datastreams
 		for ds in self.objMeta['datastreams']:

@@ -33,6 +33,8 @@ import eulfedora
 # local
 from tomcat_manager import *
 
+import localConfig
+
 manageOAI = Blueprint('manageOAI', __name__, template_folder='templates', static_folder="static")
 
 '''
@@ -97,7 +99,7 @@ def index():
 	# DEBUG
 	# print overview
 	
-	return render_template("manageOAI_index.html", overview=overview)
+	return render_template("manageOAI_index.html", overview=overview, APP_HOST=localConfig.APP_HOST)
 
 @manageOAI.route('/manageOAI/serverWide', methods=['POST', 'GET'])
 def serverWide():	
@@ -111,7 +113,7 @@ def serverWide():
 	
 	collection_tups = [ (rel["dc_title"],rel["subject"].split("/")[1],rel["isOAIHarvestable"]) for rel in all_collections]	
 
-	return render_template("manageOAI_serverWide.html",collection_tups=collection_tups)
+	return render_template("manageOAI_serverWide.html",collection_tups=collection_tups,APP_HOST=localConfig.APP_HOST)
 
 
 @manageOAI.route('/manageOAI/objectRelated', methods=['POST', 'GET'])

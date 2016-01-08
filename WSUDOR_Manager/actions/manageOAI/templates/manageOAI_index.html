@@ -5,7 +5,7 @@
 			<h1>Manage OAI Server</h1>
 			<p>This module helps manage the OAI server for the Wayne State Digital Object Repository.  We currently use PROAI that comes bundled with Fedora 3.6.x, which is a Tomcat Application.  Objects are detected and indexed by PROAI, which are then made available to REPOX for DPLA purposes.</p>
 
-			<p>OAI-PMH documentation on Digital Collections wiki: <a href="http://digital.library.wayne.edu/mediawiki/index.php/OAI">http://digital.library.wayne.edu/wiki/index.php/OAI</a><p>
+			<p>OAI-PMH documentation on Digital Collections wiki: <a href="http://{{APP_HOST}}/mediawiki/index.php/OAI">http://{{APP_HOST}}/wiki/index.php/OAI</a><p>
 
 			<p>REPOX installation: <a href="http://metadata.library.wayne.edu/repox">http://metadata.library.wayne.edu/repox</a><p>
 		</div>
@@ -47,7 +47,7 @@
 				</tr>
 				<tr>
 					<td>Total MODS records under DPLAOAI set</td>
-					<td><span style="color:green;">{{overview.repox_count}}</span> (<a target="_blank" href="http://digital.library.wayne.edu/oaiprovider/?verb=ListRecords&metadataPrefix=mods&set=set:wayne:collectionDPLAOAI">link</a>)</td>
+					<td><span style="color:green;">{{overview.repox_count}}</span> (<a target="_blank" href="http://{{APP_HOST}}/oaiprovider/?verb=ListRecords&metadataPrefix=mods&set=set:wayne:collectionDPLAOAI">link</a>)</td>
 				</tr>
 			</table>
 		</div>
@@ -80,7 +80,7 @@
 	<table id="sets" style="display:none;" class="table">				
 		{% for setSpec in overview.sets %}
 		<tr>
-			<td><a href="http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListRecords&metadataPrefix=oai_dc&set={{setSpec}}">{{setSpec}}</a></td>
+			<td><a href="http://{{APP_HOST}}:8080/oaiprovider/?verb=ListRecords&metadataPrefix=oai_dc&set={{setSpec}}">{{setSpec}}</a></td>
 		</tr>
 		{% endfor %}
 	</table>

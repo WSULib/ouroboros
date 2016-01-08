@@ -863,10 +863,10 @@ def PIDSolr():
 		output_dict['data'] = data
 		json_output = json.dumps(data)
 
-		return render_template("PIDSolr.html",username=username, form=form, q_results=q_results, json_output=json_output, coll_docs=coll_docs)		
+		return render_template("PIDSolr.html",username=username, form=form, q_results=q_results, json_output=json_output, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)		
 
 	# pass the current PIDs to page as list	
-	return render_template("PIDSolr.html",username=username, form=form, coll_docs=coll_docs)
+	return render_template("PIDSolr.html",username=username, form=form, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
 
 
 # PID check for user

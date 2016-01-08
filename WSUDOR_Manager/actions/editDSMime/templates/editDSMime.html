@@ -28,7 +28,7 @@
 					<td>{{ds}}</td>
 					<td>{{ds_list[ds].label}}</td>
 					<td>{{ds_list[ds].mimeType}}</td>					
-					<td><a target="_blank" href="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
+					<td><a target="_blank" href="http://{{APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
 				</tr>
 			{% endfor %}
 		</table>

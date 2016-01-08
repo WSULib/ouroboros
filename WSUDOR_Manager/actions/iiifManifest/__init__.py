@@ -67,7 +67,7 @@ def viewManifests(PIDnum):
 	
 
 
-	return render_template("iiifManifest_view.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet, json_return=json.dumps( json.loads(json_return), indent=2), iiif_manifest_prefix=localConfig.IIIF_MANIFEST_PREFIX )
+	return render_template("iiifManifest_view.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet, json_return=json.dumps( json.loads(json_return), indent=2), iiif_manifest_prefix=localConfig.IIIF_MANIFEST_PREFIX,APP_HOST=localConfig.APP_HOST )
 
 
 
@@ -77,7 +77,7 @@ def iiifManifestGenerate_worker(job_package):
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(job_package['PID'])
 	manifest_json = obj_handle.genIIIFManifest()
 	if json.loads(manifest_json):		
-		return "http://digital.library.wayne.edu/"+localConfig.IIIF_MANIFEST_PREFIX+"/"+job_package['PID']
+		return "http://{APP_HOST}/".format(APP_HOST=localConfig.APP_HOST)+localConfig.IIIF_MANIFEST_PREFIX+"/"+job_package['PID']
 	else:
 		return False
 

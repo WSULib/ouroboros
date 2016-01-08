@@ -27,6 +27,8 @@ import WSUDOR_Manager.actions as actions
 # augmentCore 
 from augmentCore import augmentCore
 
+import localConfig
+
 # define blueprint
 solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates')
 
@@ -82,7 +84,7 @@ def updateSolr(update_type):
 		return resp		
 	
 	else:
-		return render_template("updateSolr.html",update_type=update_type)
+		return render_template("updateSolr.html",update_type=update_type,APP_HOST=localConfig.APP_HOST)
 
 
 

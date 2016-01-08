@@ -25,6 +25,9 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
 
+# localconfig
+import localConfig
+
 # audio conversions and libraries
 from pydub import AudioSegment
 
@@ -238,9 +241,9 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write PLAYLIST datastream with playlist_list
 			print "Generating PLAYLIST datastream"
 			for ds in playlist_list:
-				ds['thumbnail'] = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_THUMBNAIL/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
-				ds['preview'] = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_PREVIEW/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
-				ds['mp3'] = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_MP3/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'])
+				ds['thumbnail'] = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_THUMBNAIL/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'], APP_HOST=localConfig.APP_HOST)
+				ds['preview'] = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_PREVIEW/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'], APP_HOST=localConfig.APP_HOST)
+				ds['mp3'] = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_MP3/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'], APP_HOST=localConfig.APP_HOST)
 
 			playlist_handle = eulfedora.models.DatastreamObject(self.ohandle,"PLAYLIST", "PLAYLIST", mimetype="application/json", control_group="M")
 			playlist_handle.content = json.dumps( sorted(playlist_list, key=lambda k: k['order']) )
@@ -251,7 +254,7 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write generic thumbnail and preview for object
 			for gen_type in ['THUMBNAIL','PREVIEW']:
 				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="R")
-				rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type)
+				rep_handle.ds_location = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type,APP_HOST=localConfig.APP_HOST)
 				rep_handle.label = gen_type
 				rep_handle.save()
 	

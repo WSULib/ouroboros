@@ -31,7 +31,7 @@
 			{% endfor %}			
 			<tr>
 				<td><strong>thumbnail:</strong></td>
-				<td><a target="_blank" href="http://digital.library.wayne.edu/digitalcollections/item?id={{PIDlet.cPID}}"><img class="img-rounded" src="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a></td>
+				<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/digitalcollections/item?id={{PIDlet.cPID}}"><img class="img-rounded" src="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a></td>
 			</tr>
 		</table>
 
@@ -193,7 +193,7 @@
 					<td>{{object_package.datastream_package[ds].label}}</td>
 					<td>{{object_package.datastream_package[ds].mimeType}}</td>
 					<td>{{object_package.size_dict[ds].1}}</td>					
-					<td><a target="_blank" href="http://digital.library.wayne.edu/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
+					<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
 				</tr>
 			{% endfor %}
 		</table>

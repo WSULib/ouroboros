@@ -18,6 +18,8 @@ import eulfedora
 
 import WSUDOR_Manager
 
+import localConfig
+
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
@@ -230,7 +232,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write generic thumbnail and preview
 			for gen_type in ['THUMBNAIL','PREVIEW']:
 				thumb_rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="R")
-				thumb_rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type)
+				thumb_rep_handle.ds_location = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type,APP_HOST=localConfig.APP_HOST)
 				thumb_rep_handle.label = gen_type
 				thumb_rep_handle.save()
 

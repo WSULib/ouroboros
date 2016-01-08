@@ -51,7 +51,7 @@ def index():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PIDlet['cPID'])
+	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PIDlet['cPID'],APP_HOST=localConfig.APP_HOST)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
@@ -96,7 +96,7 @@ def editDSXMLAdv_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID)
+	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID,APP_HOST=localConfig.APP_HOST)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")	
 	###############################################################
 	

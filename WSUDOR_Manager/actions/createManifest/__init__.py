@@ -8,6 +8,8 @@ import re
 import requests
 from WSUDOR_Manager.models import ObjMeta
 
+import localConfig
+
 createManifest = Blueprint('createManifest', __name__, template_folder='templates', static_folder="static")
 
 
@@ -85,5 +87,5 @@ def mimeTypeSearch():
 		return render_template("mimeTypeSearch.html")
 	if request.method == 'POST':
 		type = request.form['type']
-		response = requests.get("http://digital.library.wayne.edu/WSUAPI?functions%5B%5D=mimetypeDictionary&direction=extension2mime&inputFilter="+type)
+		response = requests.get("http://{APP_HOST}/WSUAPI?functions%5B%5D=mimetypeDictionary&direction=extension2mime&inputFilter=".format(APP_HOST=localConfig.APP_HOST)+type)
 		return jsonify(**response.json())

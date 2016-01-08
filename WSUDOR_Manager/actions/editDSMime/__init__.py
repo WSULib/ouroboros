@@ -13,6 +13,8 @@ from flask import Blueprint, render_template, redirect, abort
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import jobs, models, db, utilities, redisHandles
 
+import localConfig
+
 editDSMime = Blueprint('editDSMime', __name__, template_folder='templates', static_folder="static")
 
 
@@ -32,7 +34,7 @@ def index(PIDnum):
 	obj_ohandle = fedora_handle.get_object(PID)
 	ds_list = obj_ohandle.ds_list
 
-	return render_template("editDSMime.html", PIDlet=PIDlet, PIDnum=PIDnum, ds_list=ds_list)
+	return render_template("editDSMime.html", PIDlet=PIDlet, PIDnum=PIDnum, ds_list=ds_list, APP_HOST=localConfig.APP_HOST)
 
 
 

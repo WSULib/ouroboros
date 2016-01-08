@@ -24,6 +24,8 @@ from rdflib.compare import to_isomorphic, graph_diff
 # fuzzy matching lib
 from fuzzywuzzy import fuzz
 
+import localConfig
+
 editRELS = Blueprint('editRELS', __name__, template_folder='templates', static_folder="static")
 
 
@@ -82,7 +84,7 @@ def editRELS_advanced():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PIDlet['cPID'])
+	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PIDlet['cPID'],APP_HOST=localConfig.APP_HOST)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
@@ -259,7 +261,7 @@ def editRELS_edit_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
+	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID,APP_HOST=localConfig.APP_HOST)
 	pre_mod_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 
@@ -319,7 +321,7 @@ def editRELS_regex_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://digital.library.wayne.edu/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID)
+	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID,APP_HOST=localConfig.APP_HOST)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	

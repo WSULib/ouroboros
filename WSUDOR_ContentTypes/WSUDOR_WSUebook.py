@@ -29,6 +29,9 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers, utilities
 from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 
+# localconfig
+import localConfig
+
 # import manifest factory instance
 from inc.manifest_factory import iiif_manifest_factory_instance
 
@@ -188,7 +191,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write generic thumbnail and preview
 			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/jpeg", control_group="R")
-			rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_THUMBNAIL/content".format(pid=self.ohandle.pid, ds_id=self.objMeta['isRepresentedBy'])
+			rep_handle.ds_location = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_THUMBNAIL/content".format(pid=self.ohandle.pid, ds_id=self.objMeta['isRepresentedBy'],APP_HOST=localConfig.APP_HOST)
 			rep_handle.label = "THUMBNAIL"
 			rep_handle.save()
 

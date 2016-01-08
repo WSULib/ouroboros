@@ -34,6 +34,8 @@ from inc.manifest_factory import iiif_manifest_factory_instance
 # derivatives
 from inc.derivatives import JP2DerivativeMaker
 
+import localConfig
+
 
 class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
@@ -304,7 +306,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write generic thumbnail and preview
 			for gen_type in ['THUMBNAIL','PREVIEW']:
 				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="R")
-				rep_handle.ds_location = "http://digital.library.wayne.edu/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type)
+				rep_handle.ds_location = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type,APP_HOST=localConfig.APP_HOST)
 				rep_handle.label = gen_type
 				rep_handle.save()
 

@@ -55,9 +55,8 @@
 <script type="text/javascript" src="{{ url_for('static',filename='PIDSolr.js')}}"></script>
 {% if json_output %}
 <script type="text/javascript">
-    $(document).ready(function(){        
-        var json_output = {{json_output|safe}};        
-        paintTable(json_output);
+    $(document).ready(function(){                
+        paintTable({{json_output|safe}}, "{{APP_HOST}}");
     });    
 </script>
 {% endif %}

@@ -209,12 +209,12 @@ class SingleObjectMethods(object):
 
 				#MP3 symlink
 				mp3_symlink = makeSymLink( self.PID, (each['ds_id']+"_MP3") )
-				mp3_symlink_URL = "http://digital.library.wayne.edu/symLinks/"+mp3_symlink['symlink'].split("/")[-1]
+				mp3_symlink_URL = "http://{APP_HOST}/symLinks/".format(APP_HOST=localConfig.APP_HOST)+mp3_symlink['symlink'].split("/")[-1]
 				each['streaming_mp3'] = mp3_symlink_URL
 
 				#original DS symlink
 				original_symlink = makeSymLink( self.PID, each['ds_id'] )
-				original_symlink_URL = "http://digital.library.wayne.edu/symLinks/"+original_symlink['symlink'].split("/")[-1]
+				original_symlink_URL = "http://{APP_HOST}/symLinks/".format(APP_HOST=localConfig.APP_HOST)+original_symlink['symlink'].split("/")[-1]
 				each['streaming_original'] = original_symlink_URL
 
 			return ("playlist",playlist_handle)

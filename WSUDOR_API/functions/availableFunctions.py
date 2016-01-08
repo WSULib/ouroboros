@@ -867,7 +867,7 @@ def singleObjectPageRender(getParams):
 	'''
 	# solr search	
 	PID = getParams['PID']
-	URL = "http://digital.library.wayne.edu/digitalcollections/item?id={PID}".format(PID=PID)
+	URL = "http://{APP_HOST}/digitalcollections/item?id={PID}".format(PID=PID,APP_HOST=localConfig.APP_HOST)
 
 	try:				
 		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
@@ -973,7 +973,7 @@ def searchPageRender(getParams):
 	FAILURE: status code == 404 or 503
 	'''
 	# solr search
-	URL = "http://digital.library.wayne.edu/digitalcollections/search.php?q={search_term}".format(search_term=getParams['search_term'])
+	URL = "http://{APP_HOST}/digitalcollections/search.php?q={search_term}".format(search_term=getParams['search_term'],APP_HOST=localConfig.APP_HOST)
 
 	try:				
 		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
@@ -1010,7 +1010,7 @@ def collectionPageRender(getParams):
 	FAILURE: status code == 404 or 503
 	'''
 	# solr search
-	URL = "http://digital.library.wayne.edu/digitalcollections/allcollections.php"
+	URL = "http://{APP_HOST}/digitalcollections/allcollections.php".format(APP_HOST=localConfig.APP_HOST)
 
 	try:				
 		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)

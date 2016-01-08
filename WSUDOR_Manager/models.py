@@ -242,7 +242,7 @@ class SolrSearchDoc(object):
 			"q":'id:{escaped_id}'.format(escaped_id=self.escaped_id),
 			"rows":1
 		}
-		response = solr_manage_handle.search(**query_params)
+		response = solr_handle.search(**query_params)
 		if len(response.documents) > 0:
 			self.doc = self.SolrFields(**response.documents[0])
 			#store version, remove from doc

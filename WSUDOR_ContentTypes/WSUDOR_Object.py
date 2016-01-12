@@ -197,8 +197,9 @@ class WSUDOR_GenObject(object):
 					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy"					
 				]
 			}		
-		}	
-
+		}
+		self.orig_payload = orig_payload
+		
 		# WSUDOR or BagIt archive for the object returned
 		try:			
 

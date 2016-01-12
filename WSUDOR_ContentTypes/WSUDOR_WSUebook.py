@@ -52,10 +52,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	description = "The WSUDOR_WSUebook content type models most print (but some born digital) resources we have created digital components for each page.  This includes a page image, ALTO XML with information about the location of words on the page, a thumbnail, a PDF (with embedded text), and HTML that semi-closely matches the original formatting (suitable for flowing text).  These objects are best viewed with our eTextReader."
 	Fedora_ContentType = "CM:WSUebook"
 
-	def __init__(self, object_type=False, content_type=False, payload=False):
+	def __init__(self, object_type=False, content_type=False, payload=False,orig_payload=False):
 		
 		# run __init__ from parent class
-		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload)
+		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
 		
 		# Add WSUDOR_Image struct_requirements to WSUDOR_Object instance struct_requirements
 		self.struct_requirements['WSUDOR_WSUebook'] = {

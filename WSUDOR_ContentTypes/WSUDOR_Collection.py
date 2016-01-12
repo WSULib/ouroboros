@@ -44,10 +44,10 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	Fedora_ContentType = "CM:Collection"
 
-	def __init__(self,object_type=False,content_type=False,payload=False):
+	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 		
 		# run __init__ from parent class
-		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload)
+		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
 		
 		# Add WSUDOR_Image struct_requirements to WSUDOR_Object instance struct_requirements
 		self.struct_requirements['WSUDOR_Collection'] = {

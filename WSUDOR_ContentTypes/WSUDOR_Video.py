@@ -40,10 +40,10 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	Fedora_ContentType = "CM:Video"
 
-	def __init__(self,object_type=False,content_type=False,payload=False):
+	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 		
 		# run __init__ from parent class
-		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload)
+		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
 		
 		# Add WSUDOR_Video struct_requirements to WSUDOR_Object instance struct_requirements
 		self.struct_requirements['WSUDOR_Video'] = {

@@ -15,6 +15,8 @@ from lxml import etree
 import requests
 import time
 import ast
+import zipfile
+import shutil
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -40,7 +42,7 @@ from inc.derivatives import JP2DerivativeMaker
 
 
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
-def WSUDOR_Object(payload, object_type="WSUDOR"):
+def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 
 	'''	
 	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
@@ -48,14 +50,49 @@ def WSUDOR_Object(payload, object_type="WSUDOR"):
 
 	try:
 		# Future WSUDOR object, BagIt object
-		if object_type == "bag":		
+		if object_type == "bag":
+			
+			# prepare new working dir & recall original
+			working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
+			print "object_type is bag, creating working dir at", working_dir
+			orig_payload = payload
+
+			'''
+			# determine if directory or archive file
+			# if dir, copy to, if archive, decompress and copy
+			# set 'working_dir' to new location in /tmp/Ouroboros
+			'''
+			if os.path.isdir(payload):
+				print "directory detected, copying"
+				shutil.copytree(payload,working_dir)
+							
+			# tar file or gz
+			elif payload.endswith(('.tar','.gz')):
+				print "tar / gz detected, decompressing"
+				tar_handle = tarfile.open(payload,'r')
+				tar_handle.extractall(path=working_dir)
+				payload = working_dir
+
+			elif payload.endswith('zip'):
+				print "zip file detected, unzipping"
+				with zipfile.ZipFile(payload, 'r') as z:
+					z.extractall(working_dir)
+
+			# if the working dir has a sub-dir, assume that's the object directory proper
+			if len(os.listdir(working_dir)) == 1 and os.path.isdir("/".join((working_dir, os.listdir(working_dir)[0]))):
+				print "we got a sub-dir"
+				payload = "/".join((working_dir,os.listdir(working_dir)[0]))
+			else:				
+				payload = working_dir
+			print "payload is:",payload
+
 			# read objMeta.json
 			path = payload + '/data/objMeta.json'
 			fhand = open(path,'r')
 			objMeta = json.loads(fhand.read())
 			# only need content_type
-			content_type = objMeta['content_type']		
-			
+			content_type = objMeta['content_type']
+
 		
 		# Active, WSUDOR object
 		if object_type == "WSUDOR":
@@ -105,12 +142,10 @@ def WSUDOR_Object(payload, object_type="WSUDOR"):
 	
 	# need check if valid subclass of WSUDOR_GenObject	
 	try:
-		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload)	
+		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload, orig_payload = orig_payload)	
 	except:
 		print "Could not find appropriate ContentType, returning False."		
 		return False
-
-
 
 
 
@@ -130,7 +165,7 @@ class WSUDOR_GenObject(object):
 
 	# init
 	############################################################################################################
-	def __init__(self, object_type=False, content_type=False, payload=False):
+	def __init__(self, object_type=False, content_type=False, payload=False, orig_payload=False):
 
 		self.index_on_ingest = True,
 		self.struct_requirements = {

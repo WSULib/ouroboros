@@ -681,7 +681,8 @@ class WSUDOR_GenObject(object):
 			'PREVIEW',
 			'RELS-EXT',
 			'RELS-INT',
-			'THUMBNAIL'
+			'THUMBNAIL',
+			'HTML_FULL'
 		]
 		known_suffixes = [
 			'_JP2',

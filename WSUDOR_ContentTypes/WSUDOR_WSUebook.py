@@ -197,13 +197,15 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# generate full HTML, text, and PDF
 			# HTML (based on concatenated HTML from self.html_concat)
-			html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
-			html_full_handle.label = "Full HTML for item"
-			html_full_handle.content = self.html_concat.encode('utf-8')
-			html_full_handle.save()			
+			if "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]: 
+				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
+				html_full_handle.label = "Full HTML for item"
+				html_full_handle.content = self.html_concat.encode('utf-8')
+				html_full_handle.save()			
 
 			# PDF - create PDF on disk and upload
-			self.processPDF()
+			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]: 
+				self.processPDF()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
@@ -318,34 +320,35 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		generic_handle.content = open(file_path)
 		generic_handle.save()
 
-		# add HTML to self.html_concat
-		fhand = open(file_path)
-		html_parsed = BeautifulSoup(fhand)
-		print "HTML document parsed..."
-		#sets div with page_ID
-		self.html_concat = self.html_concat + '<div id="page_ID_{order}" class="html_page">'.format(order=ds['order'])
-		#Set in try / except block, as some HTML documents contain no elements within <body> tag
-		try:
-			for block in html_parsed.body:				
-				self.html_concat = self.html_concat + unicode(block)				
-		except:
-			print "<body> tag is empty, skipping. Adding page_ID anyway."
-			
-		#closes page_ID / div
-		self.html_concat = self.html_concat + "</div>"
-		fhand.close()
+		if ds['ds_id'] != "HTML_FULL":
+			# add HTML to self.html_concat
+			fhand = open(file_path)
+			html_parsed = BeautifulSoup(fhand)
+			print "HTML document parsed..."
+			#sets div with page_ID
+			self.html_concat = self.html_concat + '<div id="page_ID_{order}" class="html_page">'.format(order=ds['order'])
+			#Set in try / except block, as some HTML documents contain no elements within <body> tag
+			try:
+				for block in html_parsed.body:				
+					self.html_concat = self.html_concat + unicode(block)				
+			except:
+				print "<body> tag is empty, skipping. Adding page_ID anyway."
+				
+			#closes page_ID / div
+			self.html_concat = self.html_concat + "</div>"
+			fhand.close()
 
 
-		# index in Solr bookreader core
-		data = {
-			"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
-			"literal.ItemID" : self.objMeta['identifier'],
-			"literal.page_num" : ds['order'],
-			"fmap.content" : "OCR_text",
-			"commit" : "true"
-		}
-		files = {'file': open(file_path, 'rb')}
-		r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)		
+			# index in Solr bookreader core
+			data = {
+				"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
+				"literal.ItemID" : self.objMeta['identifier'],
+				"literal.page_num" : ds['order'],
+				"fmap.content" : "OCR_text",
+				"commit" : "true"
+			}
+			files = {'file': open(file_path, 'rb')}
+			r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)		
 
 
 	def processALTOXML(self, ds):
@@ -377,7 +380,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	def genIIIFManifest(self, on_ingest=False):
+	def genIIIFManifest(self, on_demand=False):
 
 		# run singleObjectPackage
 		'''

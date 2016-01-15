@@ -377,7 +377,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	def genIIIFManifest(self):
+	def genIIIFManifest(self, on_ingest=False):
 
 		# run singleObjectPackage
 		'''
@@ -388,7 +388,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		getParams['PID'] = [self.pid]
 
 		# run singleObjectPackage() from API
-		single_json = json.loads(singleObjectPackage(getParams))
+		if on_demand == True:
+			getParams['on_demand'] = True
+			single_json = json.loads(singleObjectPackage(getParams))
+		else:
+			single_json = json.loads(singleObjectPackage(getParams))
 			
 		# create root mani obj
 		try:

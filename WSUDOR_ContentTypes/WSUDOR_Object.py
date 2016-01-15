@@ -222,20 +222,7 @@ class WSUDOR_GenObject(object):
 				self.ohandle = None
 
 				# BagIt methods
-				self.Bag = bagit.Bag(payload)
-
-				# validate object, log to "error_dict" attribute if invalid
-				try:
-					self.Bag.validate()
-				except Exception,e:
-					print traceback.format_exc()
-					print e.message
-					error_dict = {
-						"traceback":traceback.format_exc(),
-						"error_message":e.message,
-						"error_details":e.details
-					}
-					self.instantiateError = error_dict
+				self.Bag = bagit.Bag(payload)			
 				
 
 			# Active, WSUDOR object
@@ -385,7 +372,6 @@ class WSUDOR_GenObject(object):
 			return size_dict			
 			
 
-
 	def update_objSizeDict(self):
 
 		# clear from Redis
@@ -394,9 +380,6 @@ class WSUDOR_GenObject(object):
 
 		print "regenerating and returning"
 		return self.objSizeDict
-
-
-
 		
 
 
@@ -447,7 +430,7 @@ class WSUDOR_GenObject(object):
 
 		# if gen_manifest set, generate IIIF Manifest
 		if gen_manifest == True:
-			self.genIIIFManifest()
+			self.genIIIFManifest(on_demand=True)
 
 		# finally, return
 		return True

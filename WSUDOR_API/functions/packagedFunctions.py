@@ -47,8 +47,10 @@ class SingleObjectMethods(object):
 			self.return_dict['isActive'] = {"object_status":"Active"}
 
 			# retrieve Solr doc
-			# self.return_dict['objectSolrDoc'] = self.obj_handle.SolrDoc.asDictionary()
-			self.return_dict['objectSolrDoc'] = self.obj_handle.SolrSearchDoc.asDictionary()
+			if 'on_demand' in getParams and getParams['on_demand'] == True:
+				self.return_dict['objectSolrDoc'] = self.obj_handle.previewSolrDict()
+			else:
+				self.return_dict['objectSolrDoc'] = self.obj_handle.SolrSearchDoc.asDictionary()
 
 		else:
 			self.active = False

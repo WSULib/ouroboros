@@ -52,6 +52,14 @@ class SingleObjectMethods(object):
 			else:
 				self.return_dict['objectSolrDoc'] = self.obj_handle.SolrSearchDoc.asDictionary()
 
+			# try fallback of on-demand if returned dict has only 'id' key
+			try:
+				if len(self.return_dict['objectSolrDoc'].keys()) == 1 and 'id' in self.return_dict['objectSolrDoc'].keys():
+					print "guessing that object is not indexed, generating preview on-demand..."
+					self.return_dict['objectSolrDoc'] = self.obj_handle.previewSolrDict()
+			except:
+				print "could not generate solr preview of object"
+
 		else:
 			self.active = False
 			self.return_dict['isActive'] = {"object_status":"Absent"}

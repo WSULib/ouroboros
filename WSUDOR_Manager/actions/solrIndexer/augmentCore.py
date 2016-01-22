@@ -49,29 +49,27 @@ def augmentCore(PID):
 		print "Does not have 'wayne' prefix, skipping augmentCore()..."		
 
 def ebookText(PID):		
-			
-	# derive fullbook PID	
-	fullbook_ohandle = fedora_handle.get_object(PID)
+
+	# open handle
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PID)	
 
 	# get ds content
-	ds_handle = fullbook_ohandle.getDatastreamObject("HTML_FULL")
+	ds_handle = obj_handle.ohandle.getDatastreamObject("HTML_FULL")
 	ds_content = ds_handle.content
 	
 	# assume v1 book, attempt ds_content again
 	if ds_content == None:		
 
 		# derive fullbook PID	
-		fullbook_ohandle = fedora_handle.get_object(PID.split(":")[1]+":fullbook")
-		ds_handle = fullbook_ohandle.getDatastreamObject("HTML_FULL")
+		obj_handle.ohandle = fedora_handle.get_object(PID.split(":")[1]+":fullbook")
+		ds_handle = obj_handle.ohandle.getDatastreamObject("HTML_FULL")
 		ds_content = ds_handle.content
-
 
 	# use Solr's Tika Extract to strip down to text
 	baseurl = "http://localhost/solr4/fedobjs/update/extract?&extractOnly=true"
 	files = {'file': ds_content}		
 	r = requests.post(baseurl, files=files)
 	ds_stripped_content = r.text	
-		
 
 	# atomically update in solr
 	baseurl = "http://localhost/solr4/fedobjs/update?commit=false"
@@ -82,6 +80,10 @@ def ebookText(PID):
 	}]		 
 	data_json = json.dumps(data)
 	r = requests.post(baseurl, data=data_json, headers=headers)
+
+	# finally, index each page to /bookreader core
+	print "running page index"
+	obj_handle.indexPageText()
 	
 
 def hierarchicalDocuments(PID):

@@ -32,7 +32,8 @@ def augmentCore(PID):
 		for obj in obj_objects:
 			
 			# ebooks
-			if str(obj) == "info:fedora/CM:WSUebook":			
+			if str(obj) == "info:fedora/CM:WSUebook":	
+				print "Firing ebook augment"		
 				ebookText(PID)
 
 			# hierarchicalfiles
@@ -63,6 +64,7 @@ def ebookText(PID):
 		fullbook_ohandle = fedora_handle.get_object(PID.split(":")[1]+":fullbook")
 		ds_handle = fullbook_ohandle.getDatastreamObject("HTML_FULL")
 		ds_content = ds_handle.content
+
 
 	# use Solr's Tika Extract to strip down to text
 	baseurl = "http://localhost/solr4/fedobjs/update/extract?&extractOnly=true"

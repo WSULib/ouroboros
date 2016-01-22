@@ -24,7 +24,7 @@ import eulfedora
 
 # WSUDOR
 import WSUDOR_ContentTypes
-from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers, utilities
 from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
@@ -460,6 +460,33 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print "Inserting manifest for",self.pid,"into Redis..."
 		redisHandles.r_iiif.set(self.pid,manifest.toString())
 		return manifest.toString()
+
+
+
+	def indexPageText(self):
+		'''
+		When copying objects between repositories, indexing of pages is skipped.
+		This function can be run to repeat that process.
+		'''
+
+		for count, ds in enumerate(self.objMeta['datastreams']):
+				print "Working on page %i / %i" % (count,len(self.objMeta['datastreams']))								
+				if ds['ds_id'].startswith('HTML') and not ds['ds_id'].endswith('FULL'):
+
+					# index in Solr bookreader core
+					data = {
+						"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
+						"literal.ItemID" : self.objMeta['identifier'],
+						"literal.page_num" : ds['order'],
+						"fmap.content" : "OCR_text",
+						"commit" : "false"
+					}
+					ds_handle = self.ohandle.getDatastreamObject(ds['ds_id'])
+					files = {'file': ds_handle.content}
+					r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
+
+		# commit
+		print solr_bookreader_handle.commit()
 
 
 # helpers

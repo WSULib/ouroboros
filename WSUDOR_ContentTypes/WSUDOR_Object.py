@@ -432,6 +432,9 @@ class WSUDOR_GenObject(object):
 		if gen_manifest == True:
 			self.genIIIFManifest(on_demand=True)
 
+		# index object size
+		self.update_objSizeDict()
+
 		# finally, return
 		return True
 

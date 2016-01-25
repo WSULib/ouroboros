@@ -178,7 +178,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# concat variables
 			html_concat =''
 			for count, ds in enumerate(self.objMeta['datastreams']):
-				print "Working on page %i / %i" % (count,len(self.objMeta['datastreams']))
+				print "Working on document %i / %i" % (count,len(self.objMeta['datastreams']))
 				# # ---------- DEBUG REMOVE ---------- 
 				# if int(ds['order']) < 3:
 				# # ---------- DEBUG REMOVE ---------- 

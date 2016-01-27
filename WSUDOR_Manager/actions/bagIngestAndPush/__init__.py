@@ -21,12 +21,16 @@ import json
 import os
 import tarfile
 import uuid
+import requests
 
 # eulfedora
 import eulfedora
 
 # import bagit
 import bagit
+
+# localConfig
+import localConfig
 
 # create blueprint
 bagIngestAndPush = Blueprint('bagIngestAndPush', __name__, template_folder='templates', static_folder="static")
@@ -35,8 +39,6 @@ bagIngestAndPush = Blueprint('bagIngestAndPush', __name__, template_folder='temp
 # main view
 @bagIngestAndPush.route('/bagIngestAndPush', methods=['POST', 'GET'])
 def index():
-
-	# form = forms.bagIngestAndPushForm()	
 
 	return render_template("bagIngestAndPushIndex.html")
 
@@ -243,6 +245,9 @@ def payloadExtractor(payload_location,ingest_type):
 		
 def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 
+	# DEBUG
+	print dir(localConfig)
+
 	# load bag_handle and ingest	
 	print "Working on:",bag_dir
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=bag_dir)
@@ -275,8 +280,10 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 	# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
 	if refresh_remote:
 		print "refreshing remote object in remote repository"
-		r = requests.get('{REMOTE_REPO}/tasks/objectRefresh/wayne:DSJv1i47DSJ19961006')
-		print r
+		refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], bag_handle.pid)
+		print refresh_remote_url
+		r = requests.get( refresh_remote_url )
+		print r.content
 	else:
 		print "skipping remote refresh"	
 

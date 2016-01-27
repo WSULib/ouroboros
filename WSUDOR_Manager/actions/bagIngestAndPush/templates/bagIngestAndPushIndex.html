@@ -1,0 +1,43 @@
+{% include 'header.html' %}
+<h1>WSUDOR Object Ingest and Push</h1>
+
+<p>This utility is designed to perform ingest bags, push them to a remote fedora stack, then delete the local copy.  If multiple bags are pointed to, it will iterate over those bags, ingesting, pushing, and deleting each sequentially.  This avoids bloating the working stack with ingested objects.</p>
+
+<p>This utitlity is desinged to be used <strong>after</strong> QA has been done on the objects to be ingested, as they will not persist on this working server.</p>
+
+<div class="row">
+	<div class="col-md-5">
+		<form class="form" id="form" role="form" method="POST" action="/tasks/bagIngestAndPush/ingest" enctype="multipart/form-data">
+			<div class="form-group">
+				<label>Ingest Type (<span style="color:red;">required</span>):</label>
+				<div class="radio">
+					<label>
+					<input type="radio" name="ingest_type" value="single">
+						Single Object
+					</label>
+				</div>
+				<div class="radio">
+					<label>
+					<input type="radio" name="ingest_type" value="multiple">
+						Multiple Objects
+					</label>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Full path of BagIt directory or archive file:</label>
+				<input class="form-control" type="text" name="payload_location" placeholder="type or paste">
+			</div>
+			<div class="form-group">
+				<label class="control-label">Name of destination repository as configured:</label>
+				<input class="form-control" type="text" name="dest_repo" placeholder="e.g. 'fedora-stack-prod' or 'wsudor'">
+			</div>
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Ingest">
+			</div>
+		</form>
+	</div>
+</div>
+
+
+
+{% include 'footer.html' %}

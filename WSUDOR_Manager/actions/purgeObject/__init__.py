@@ -73,5 +73,19 @@ def purgeObject_worker(job_package):
 	result = fedora_handle.purge_object(PID)
 	return "{PID} purge result: {result}".format(PID=PID,result=result)
 
+	# remove from Solr
+	solr_manage_handle.delete_by_key(PID)
+
+
+
+
+
+
+
+
+
+
+	
+
 
 

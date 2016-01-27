@@ -31,9 +31,13 @@ app.register_blueprint(solrIndexer_blue, url_prefix=tasks_URL_prefix)
 from exportObject import exportObject, exportObject_worker
 app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
 
-#exportObject to objectBag
+#ingestBag
 from bagIngest import bagIngest, bagIngest_worker 
 app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
+
+#bagIngestAndPush
+from bagIngestAndPush import bagIngestAndPush, bagIngestAndPush_worker 
+app.register_blueprint(bagIngestAndPush, url_prefix=tasks_URL_prefix)
 
 #createObjectIndex
 from createObjectIndex import createObjectIndex
@@ -101,6 +105,10 @@ app.register_blueprint(createBag, url_prefix=tasks_URL_prefix)
 
 #genericMethod
 from genericMethod import genericMethod_worker
+
+#createManifest
+from objectRefresh import objectRefresh
+app.register_blueprint(objectRefresh, url_prefix=tasks_URL_prefix)
 
 
 # task firing

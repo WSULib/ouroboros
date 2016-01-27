@@ -63,8 +63,10 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 			# set 'working_dir' to new location in /tmp/Ouroboros
 			'''
 			if os.path.isdir(payload):
-				print "directory detected, copying"
-				shutil.copytree(payload,working_dir)
+				print "directory detected, symlinking"				
+				# shutil.copytree(payload,working_dir)
+				os.symlink(payload, working_dir)
+
 							
 			# tar file or gz
 			elif payload.endswith(('.tar','.gz')):
@@ -222,7 +224,8 @@ class WSUDOR_GenObject(object):
 				self.ohandle = None
 
 				# BagIt methods
-				self.Bag = bagit.Bag(payload)			
+				self.Bag = bagit.Bag(payload)	
+				self.temp_payload = self.Bag.path		
 				
 
 			# Active, WSUDOR object
@@ -434,6 +437,15 @@ class WSUDOR_GenObject(object):
 
 		# index object size
 		self.update_objSizeDict()
+
+		# delete temp_payload, might be dir or symlink
+		try:
+			print "removing temp_payload directory"
+			shutil.rmtree(self.temp_payload)
+		except OSError, e:
+			# might be symlink
+			print "removing temp_payload symlink"
+			os.unlink(self.temp_payload)
 
 		# finally, return
 		return True
@@ -728,6 +740,37 @@ class WSUDOR_GenObject(object):
 		objMeta_handle = self.ohandle.getDatastreamObject('OBJMETA')
 		objMeta_handle.content = json.dumps(self.objMeta)		
 		objMeta_handle.save()
+
+
+	# refresh object
+	def objectRefresh(self):
+
+		'''
+		Function to update / refresh object properties requisite for front-end.
+		Runs multiple object methods under one banner.
+
+		Includes following methods:
+		- generate IIIF manifest --> self.genIIIFManifest()
+		- update object size in Solr --> self.update_objSizeDict()
+		- index in Solr --> self.indexToSolr()
+		'''
+
+		try:
+			# index in Solr
+			self.indexToSolr()
+
+			# generate IIIF manifest
+			self.genIIIFManifest()
+
+			# update object size in Solr
+			self.update_objSizeDict()
+
+			return True
+			
+		except:
+			return False
+
+		
 
 
 	################################################################

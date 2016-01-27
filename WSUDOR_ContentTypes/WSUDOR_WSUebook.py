@@ -236,6 +236,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
 		pdf_full_handle.label = "Fulltext PDF for item"
 		pdf_full_handle.content = open(temp_filename).read()
+
+		# remove pdf
+		os.remove(temp_filename)
+
 		return pdf_full_handle.save()
 
 

@@ -44,6 +44,7 @@ def index():
 # singleBag worker
 @bagIngestAndPush.route('/bagIngestAndPush/ingest', methods=['POST', 'GET'])
 def bagIngestAndPush_router():	
+
 	# get new job num
 	job_num = jobs.jobStart()
 
@@ -121,11 +122,15 @@ def singleBag_ingest_worker(job_package):
 	# extract payload_location
 	payload_location = job_package['form_data']['payload_location']
 	ingest_type = job_package['form_data']['ingest_type']
+	if 'refresh_remote' in job_package['form_data']:
+		refresh_remote = True
+	else:
+		refresh_remote = False
 
 	# create working directory in workspace
 	bag_dir = payloadExtractor(payload_location,ingest_type)
 
-	return ingestBagAndPush(bag_dir,job_package['form_data']['dest_repo'])
+	return ingestBagAndPush(bag_dir,job_package['form_data']['dest_repo'],refresh_remote)
 
 
 
@@ -138,6 +143,10 @@ def multipleBag_ingest_worker(job_package):
 	# extract payload_location
 	payload_location = job_package['form_data']['payload_location']
 	ingest_type = job_package['form_data']['ingest_type']
+	if 'refresh_remote' in job_package['form_data']:
+		refresh_remote = True
+	else:
+		refresh_remote = False
 
 	# create working directory in workspace
 	bag_dir = payloadExtractor(payload_location,ingest_type)
@@ -176,7 +185,7 @@ def multipleBag_ingest_worker(job_package):
 	count = 1
 	for bag in bag_dirs:
 		print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
-		ingestBagAndPush(bag,job_package['form_data']['dest_repo'])
+		ingestBagAndPush(bag,job_package['form_data']['dest_repo'],refresh_remote)
 		count += 1
 
 	print "Batch ingest complete."
@@ -232,7 +241,7 @@ def payloadExtractor(payload_location,ingest_type):
 
 
 		
-def ingestBagAndPush(bag_dir,dest_repo):
+def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 
 	# load bag_handle and ingest	
 	print "Working on:",bag_dir
@@ -262,6 +271,14 @@ def ingestBagAndPush(bag_dir,dest_repo):
 
 	# remove from Solr	
 	solr_manage_handle.delete_by_key(bag_handle.pid)
+
+	# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
+	if refresh_remote:
+		print "refreshing remote object in remote repository"
+		r = requests.get('{REMOTE_REPO}/tasks/objectRefresh/wayne:DSJv1i47DSJ19961006')
+		print r
+	else:
+		print "skipping remote refresh"	
 
 	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label.encode('utf-8'),bag_pid=bag_handle.pid):True})
 

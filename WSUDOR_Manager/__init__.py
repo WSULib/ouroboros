@@ -1,4 +1,5 @@
 # root file, app instantiator
+import os
 
 # modules / packages import
 from flask import Flask, render_template, g
@@ -31,6 +32,12 @@ from WSUDOR_ContentTypes import *
 # get handlers
 import views
 
+# generate required folders if not present
+try:
+	os.mkdir('/tmp/Ouroboros')
+	os.mkdir('/tmp/Ouroboros/ingest_workspace')
+except:
+	print "Dir structure already in place, skipping."
 
 
 

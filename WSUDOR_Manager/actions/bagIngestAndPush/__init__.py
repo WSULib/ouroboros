@@ -261,8 +261,8 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 		print "Bag is not valid for the following reasons, aborting.", valid_results
 		return False
 
-	# ingest bag
-	ingest_bag = bag_handle.ingestBag()
+	# ingest bag & skip indexing
+	ingest_bag = bag_handle.ingestBag(indexObject=False)
 
 	# push to remote repo
 	print "sending object..."

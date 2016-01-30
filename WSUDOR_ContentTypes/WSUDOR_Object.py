@@ -390,7 +390,7 @@ class WSUDOR_GenObject(object):
 	# WSUDOR_Object Methods
 	############################################################################################################
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
-	def finishIngest(self, gen_manifest=False, contentTypeMethods=[]):
+	def finishIngest(self, indexObject=True, gen_manifest=False, contentTypeMethods=[]):
 
 		# as object finishes ingest, it can be granted eulfedora methods, its 'ohandle' attribute
 		if self.ohandle != None:
@@ -414,33 +414,41 @@ class WSUDOR_GenObject(object):
 		# Write isWSUDORObject RELS-EXT relationship
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
 
-		# generate OAI identifier
-		print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:{PID}".format(PID=self.pid))
+		# the following methods are not needed when objects are "passing through"
+		if indexObject:
+			# generate OAI identifier
+			print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:{PID}".format(PID=self.pid))
 
-		# affiliate with collection set
-		try:
-			collections = self.previewSolrDict()['rels_isMemberOfCollection']
-			for collection in collections:			
-				print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
-		except:
-			print "could not affiliate with collection"
+			# affiliate with collection set
+			try:
+				collections = self.previewSolrDict()['rels_isMemberOfCollection']
+				for collection in collections:			
+					print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
+			except:
+				print "could not affiliate with collection"
 
-		# Index in Solr (can override from command by setting self.index_on_ingest to False)
-		if self.index_on_ingest != False:
-			self.indexToSolr()
-		else:
-			print "Skipping Solr Index"
+			# Index in Solr (can override from command by setting self.index_on_ingest to False)
+			if self.index_on_ingest != False:
+				self.indexToSolr()
+			else:
+				print "Skipping Solr Index"
 
-		# if gen_manifest set, generate IIIF Manifest
-		try:
-			if gen_manifest == True:
-				self.genIIIFManifest(on_demand=True)
-		except:
-			print "faild on generating IIIF manifest"
+			# if gen_manifest set, generate IIIF Manifest
+			try:
+				if gen_manifest == True:
+					self.genIIIFManifest(on_demand=True)
+			except:
+				print "faild on generating IIIF manifest"
 
-		# index object size
-		self.update_objSizeDict()
+			# index object size
+			self.update_objSizeDict()
 
+			# run all ContentType specific methods that were passed here
+			print "RUNNING ContentType methods..."
+			for func in contentTypeMethods:
+				func()
+
+		# CLEANUP
 		# delete temp_payload, might be dir or symlink
 		try:
 			print "removing temp_payload directory"
@@ -449,11 +457,6 @@ class WSUDOR_GenObject(object):
 			# might be symlink
 			print "removing temp_payload symlink"
 			os.unlink(self.temp_payload)
-
-		# run all ContentType specific methods that were passed here
-		print "RUNNING ContentType methods..."
-		for func in contentTypeMethods:
-			func()
 
 		# finally, return
 		return True

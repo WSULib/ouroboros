@@ -95,7 +95,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest 
-	def ingestBag(self):
+	def ingestBag(self,indexObject=True):
 
 		#----------------- GENERIC INGEST PROCEDURES, CAN BE FOLDED INTO WSUDOR_Object -----------------#
 		
@@ -212,7 +212,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# finish generic ingest
 			# may pass methods here that will run in finishIngest() 
-			return self.finishIngest(gen_manifest=True, contentTypeMethods=[self.indexPageText])
+			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[self.indexPageText])
 
 		# exception handling
 		except Exception,e:

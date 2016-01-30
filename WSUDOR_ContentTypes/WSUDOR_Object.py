@@ -390,7 +390,7 @@ class WSUDOR_GenObject(object):
 	# WSUDOR_Object Methods
 	############################################################################################################
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
-	def finishIngest(self, gen_manifest=False):
+	def finishIngest(self, gen_manifest=False, contentTypeMethods=[]):
 
 		# as object finishes ingest, it can be granted eulfedora methods, its 'ohandle' attribute
 		if self.ohandle != None:
@@ -432,8 +432,11 @@ class WSUDOR_GenObject(object):
 			print "Skipping Solr Index"
 
 		# if gen_manifest set, generate IIIF Manifest
-		if gen_manifest == True:
-			self.genIIIFManifest(on_demand=True)
+		try:
+			if gen_manifest == True:
+				self.genIIIFManifest(on_demand=True)
+		except:
+			print "faild on generating IIIF manifest"
 
 		# index object size
 		self.update_objSizeDict()
@@ -446,6 +449,11 @@ class WSUDOR_GenObject(object):
 			# might be symlink
 			print "removing temp_payload symlink"
 			os.unlink(self.temp_payload)
+
+		# run all ContentType specific methods that were passed here
+		print "RUNNING ContentType methods..."
+		for func in contentTypeMethods:
+			func()
 
 		# finally, return
 		return True

@@ -329,7 +329,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			final_save = self.ohandle.save()
 
 			# finish generic ingest
-			return self.finishIngest(gen_manifest=True)
+			# may pass methods here that will run in finishIngest() 
+			return self.finishIngest(gen_manifest=True, contentTypeMethods=[])
 
 
 		# exception handling

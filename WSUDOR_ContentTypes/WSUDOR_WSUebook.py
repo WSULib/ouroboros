@@ -211,7 +211,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			final_save = self.ohandle.save()
 
 			# finish generic ingest
-			return self.finishIngest(gen_manifest=True)
+			# may pass methods here that will run in finishIngest() 
+			return self.finishIngest(gen_manifest=True, contentTypeMethods=[self.indexPageText])
 
 		# exception handling
 		except Exception,e:
@@ -341,18 +342,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			#closes page_ID / div
 			self.html_concat = self.html_concat + "</div>"
 			fhand.close()
-
-
-			# index in Solr bookreader core
-			data = {
-				"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
-				"literal.ItemID" : self.objMeta['identifier'],
-				"literal.page_num" : ds['order'],
-				"fmap.content" : "OCR_text",
-				"commit" : "true"
-			}
-			files = {'file': open(file_path, 'rb')}
-			r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)		
+				
 
 
 	def processALTOXML(self, ds):

@@ -40,7 +40,7 @@ bagIngestAndPush = Blueprint('bagIngestAndPush', __name__, template_folder='temp
 @bagIngestAndPush.route('/bagIngestAndPush', methods=['POST', 'GET'])
 def index():
 
-	return render_template("bagIngestAndPushIndex.html")
+	return render_template("bagIngestAndPushIndex.html", REMOTE_REPOSITORIES=localConfig.REMOTE_REPOSITORIES)
 
 
 # singleBag worker
@@ -266,7 +266,7 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 
 	# push to remote repo
 	print "sending object..."
-	push_cmd = 'python /opt/eulfedora/scripts/repo-cp --config /vagrant/downloads/ouroboros/workdev_to_prod_connector.cfg fedora-stack-workdev %s %s' % (dest_repo, bag_handle.pid)
+	push_cmd = 'python /opt/eulfedora/scripts/repo-cp --config /vagrant/downloads/ouroboros/workdev_to_prod_connector.cfg %s %s %s' % (localConfig.REPOSITORY_NAME, dest_repo, bag_handle.pid)
 	print push_cmd
 	os.system(push_cmd)
 

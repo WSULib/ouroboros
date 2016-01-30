@@ -27,9 +27,14 @@
 				<label class="control-label">Full path of BagIt directory or archive file:</label>
 				<input class="form-control" type="text" name="payload_location" placeholder="type or paste">
 			</div>
+
 			<div class="form-group">
-				<label class="control-label">Name of destination repository as configured:</label>
-				<input class="form-control" type="text" name="dest_repo" placeholder="e.g. 'fedora-stack-prod' or 'wsudor'">
+				<label class="control-label" for="dest_repo">Destination Repository:</label> 
+				<select class="form-control input-sm" id="dest_repo" name="dest_repo">
+					{% for repo in REMOTE_REPOSITORIES %}
+						<option value="{{repo}}">{{repo}}</option>
+					{% endfor %}
+				</select> 
 			</div>
 
 			<div class="form-group">

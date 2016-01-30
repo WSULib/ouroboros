@@ -50,7 +50,7 @@ from redisHandles import *
 import localConfig
 
 # Solr
-from solrHandles import solr_manage_handle, solr_manage_handle
+from solrHandles import solr_handle
 
 # Fedora
 from fedoraHandles import fedora_handle
@@ -576,7 +576,7 @@ def objPreview(PIDnum):
 	
 	# General Metadata
 	solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
-	solr_results = solr_manage_handle.search(**solr_params)
+	solr_results = solr_handle.search(**solr_params)
 	solr_package = solr_results.documents[0]
 	object_package['solr_package'] = solr_package
 
@@ -696,7 +696,7 @@ def selObjsOverview():
 
 	# Solr based approach
 		# fast, not as rich
-	# results = solr_manage_handle.search(**{ "q":"*:*", "fq":["obj_size_i:*","id:*RENCEN*"], "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+	# results = solr_handle.search(**{ "q":"*:*", "fq":["obj_size_i:*","id:*RENCEN*"], "stats":"true", "stats.field":"obj_size_i", "rows":0 })
 
 
 
@@ -800,7 +800,7 @@ def PIDSolr():
 
 	# collection selection
 	coll_query = {'q':"rels_hasContentModel:*Collection", 'fl':["id","dc_title"], 'rows':1000}
-	coll_results = solr_manage_handle.search(**coll_query)
+	coll_results = solr_handle.search(**coll_query)
 	coll_docs = coll_results.documents
 
 	# check for title, give generic if not present
@@ -813,7 +813,7 @@ def PIDSolr():
 
 	# content model
 	cm_query = {'q':'*', 'facet' : 'true', 'facet.field' : 'rels_hasContentModel'}
-	cm_results = solr_manage_handle.search(**cm_query)	
+	cm_results = solr_handle.search(**cm_query)	
 	form.content_model.choices = [(each, each.split(":")[-1]) for each in cm_results.facets['facet_fields']['rels_hasContentModel']]
 	form.content_model.choices.insert(0,("","All Content Types"))
 
@@ -842,7 +842,7 @@ def PIDSolr():
 		# issue query
 		print query
 		stime = time.time() 
-		q_results = solr_manage_handle.search(**query)
+		q_results = solr_handle.search(**query)
 		etime = time.time()
 		ttime = (etime - stime) * 1000
 		print "Solr Query took:",ttime,"ms"		
@@ -1003,7 +1003,7 @@ def collectionsOverview():
 	object_package['coll_size_dict'] = {}
 	for collection in collections:
 		print "Working on",collection
-		results = solr_manage_handle.search(**{ "q":"rels_isMemberOfCollection:"+collection.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+		results = solr_handle.search(**{ "q":"rels_isMemberOfCollection:"+collection.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
 		print results.stats
 
 		if results != None and results.total_results > 0 and results.stats['obj_size_i'] != None:			

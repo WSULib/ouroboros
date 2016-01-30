@@ -1,5 +1,5 @@
 from WSUDOR_Manager import db, actions
-from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from datetime import datetime
 import sqlalchemy
@@ -193,7 +193,7 @@ class SolrDoc(object):
 			"q":'id:{escaped_id}'.format(escaped_id=self.escaped_id),
 			"rows":1
 		}
-		response = solr_manage_handle.search(**query_params)
+		response = solr_handle.search(**query_params)
 		if len(response.documents) > 0:
 			self.doc = self.SolrFields(**response.documents[0])
 			#store version, remove from doc
@@ -208,18 +208,18 @@ class SolrDoc(object):
 
 	# delete doc in Solr
 	def delete(self):
-		delete_response = solr_manage_handle.delete_by_key(self.id, commit=False)
+		delete_response = solr_handle.delete_by_key(self.id, commit=False)
 		return delete_response
 
 
 	# update doc to Solr
 	def update(self):
-		update_response = solr_manage_handle.update([self.doc.__dict__], commit=False)
+		update_response = solr_handle.update([self.doc.__dict__], commit=False)
 		return update_response
 
 
 	def commit(self):
-		return solr_manage_handle.commit()
+		return solr_handle.commit()
 
 
 	def asDictionary(self):

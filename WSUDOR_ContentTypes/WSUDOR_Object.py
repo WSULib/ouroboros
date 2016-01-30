@@ -32,7 +32,7 @@ import localConfig
 
 # WSUDOR
 import WSUDOR_ContentTypes
-from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 

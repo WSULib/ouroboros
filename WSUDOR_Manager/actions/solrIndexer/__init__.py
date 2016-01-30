@@ -18,7 +18,7 @@ from celery import Task
 
 # WSUDOR
 from localConfig import *
-from WSUDOR_Manager.solrHandles import solr_handle, solr_manage_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 import WSUDOR_ContentTypes
 from WSUDOR_Manager import models, jobs, helpers
@@ -55,8 +55,8 @@ def updateSolr(update_type):
 	if update_type == "purgeAndFullIndex":
 		print "Purging solr core and reindexing all objects"
 		# delete all from /fedobjs core
-		if 'fedobjs' in solr_manage_handle.base_url:
-			solr_manage_handle.delete_by_query('*:*',commit=False)
+		if 'fedobjs' in solr_handle.base_url:
+			solr_handle.delete_by_query('*:*',commit=False)
 		# run full index	
 		index_handle = solrIndexer.delay('fullIndex','')
 
@@ -241,7 +241,7 @@ class SolrIndexerWorker(object):
 
 	def commitSolrChanges(self):		
 		print "*** Committing Changes ***"
-		result = solr_manage_handle.commit()
+		result = solr_handle.commit()
 		print result
 		return result
 
@@ -400,7 +400,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
 
 	# finally, commit all changes
-	solr_manage_handle.commit()
+	solr_handle.commit()
 
 
 if __name__ == '__main__':

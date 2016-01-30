@@ -5,7 +5,7 @@ from cl.cl import celery
 
 # handles
 from WSUDOR_Manager.forms import RDF_edit
-from WSUDOR_Manager.solrHandles import solr_manage_handle, solr_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, jobs, models, db, forms
 import WSUDOR_Manager.actions as actions
@@ -275,7 +275,7 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 	fedora_handle.purge_object(bag_handle.pid)
 
 	# remove from Solr	
-	solr_manage_handle.delete_by_key(bag_handle.pid)
+	solr_handle.delete_by_key(bag_handle.pid)
 
 	# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
 	if refresh_remote:

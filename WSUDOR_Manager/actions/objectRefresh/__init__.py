@@ -5,7 +5,7 @@ from cl.cl import celery
 
 # handles
 from WSUDOR_Manager.forms import RDF_edit
-from WSUDOR_Manager.solrHandles import solr_manage_handle, solr_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, jobs, models, db, forms
 import WSUDOR_Manager.actions as actions

@@ -1,0 +1,36 @@
+{% include 'header.html' %}
+<h1>Send Objects to Remote Repository</h1>
+
+<p>This utility sends objects to a remote repository.  If that remote repository is configured to do so, it will purge objects if they exist when receiving.  You can also select to "refresh" (index in Solr, generate IIIF manifest, etc.) the object after it has been copied to the remote repo.</p>
+
+<div class="row">
+	<div class="col-md-5">
+		<form class="form" id="form" role="form" method="POST" action="/fireTask/sendObject_worker" enctype="multipart/form-data">
+
+			<div class="form-group">
+				<label class="control-label" for="dest_repo">Destination Repository:</label> 
+				<select class="form-control input-sm" id="dest_repo" name="dest_repo">
+					{% for repo in REMOTE_REPOSITORIES %}
+						<option value="{{repo}}">{{repo}}</option>
+					{% endfor %}
+				</select> 
+			</div>
+
+			<div class="form-group">
+				<div class="checkbox">
+					<label>
+						<input name="refresh_remote" type="checkbox"> Refresh / Index object in remote repository?
+					</label>
+				</div>
+			</div>
+
+			<div class="form-group">
+				<input type="submit" class="btn btn-primary" value="Ingest">
+			</div>
+		</form>
+	</div>
+</div>
+
+
+
+{% include 'footer.html' %}

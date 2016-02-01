@@ -106,9 +106,13 @@ app.register_blueprint(createBag, url_prefix=tasks_URL_prefix)
 #genericMethod
 from genericMethod import genericMethod_worker
 
-#createManifest
+#objectRefresh
 from objectRefresh import objectRefresh
 app.register_blueprint(objectRefresh, url_prefix=tasks_URL_prefix)
+
+#sendObject
+from sendObject import sendObject, sendObject_worker
+app.register_blueprint(sendObject, url_prefix=tasks_URL_prefix)
 
 
 # task firing

@@ -33,11 +33,11 @@ from WSUDOR_ContentTypes import *
 import views
 
 # generate required folders if not present
-try:
+if not os.path.exists('/tmp/Ouroboros'):
 	os.mkdir('/tmp/Ouroboros')
+if not os.path.exists('/tmp/Ouroboros/ingest_workspace'):
 	os.mkdir('/tmp/Ouroboros/ingest_workspace')
-except:
-	print "Dir structure already in place, skipping."
+
 
 
 

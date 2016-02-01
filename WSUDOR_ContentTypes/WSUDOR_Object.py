@@ -35,6 +35,7 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
+from inc import repocp
 
 # derivatives
 from inc.derivatives import JP2DerivativeMaker
@@ -781,7 +782,14 @@ class WSUDOR_GenObject(object):
 		except:
 			return False
 
-		
+
+	# method to send object to remote repository
+	def sendObject(self,	):
+
+		# import as library
+		print "sending object..."
+		result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE,source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[self.pid])
+
 
 
 	################################################################

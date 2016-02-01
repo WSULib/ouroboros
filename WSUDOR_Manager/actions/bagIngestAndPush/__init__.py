@@ -10,6 +10,7 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, jobs, models, db, forms
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
+from inc import repocp
 
 
 from flask import Blueprint, render_template, abort, request, redirect, session
@@ -265,10 +266,17 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 	ingest_bag = bag_handle.ingestBag(indexObject=False)
 
 	# push to remote repo
+
+	# external script
+	# print "sending object..."
+	# push_cmd = 'python /opt/eulfedora/scripts/repo-cp --config %s %s %s %s' % (localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, localConfig.REPOSITORY_NAME, dest_repo, bag_handle.pid)
+	# print push_cmd
+	# os.system(push_cmd)
+
+	# import as library
 	print "sending object..."
-	push_cmd = 'python /opt/eulfedora/scripts/repo-cp --config /vagrant/downloads/ouroboros/workdev_to_prod_connector.cfg %s %s %s' % (localConfig.REPOSITORY_NAME, dest_repo, bag_handle.pid)
-	print push_cmd
-	os.system(push_cmd)
+	result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE,source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[bag_handle.pid])
+
 
 	# delete local object
 	print "finally, removing object"

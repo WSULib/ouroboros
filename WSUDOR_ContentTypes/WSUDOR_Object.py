@@ -784,11 +784,21 @@ class WSUDOR_GenObject(object):
 
 
 	# method to send object to remote repository
-	def sendObject(self,	):
+	def sendObject(self, dest_repo, refresh_remote=False):
 
 		# import as library
 		print "sending object..."
 		result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE,source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[self.pid])
+
+		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
+		if refresh_remote:
+			print "refreshing remote object in remote repository"
+			refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
+			print refresh_remote_url
+			r = requests.get( refresh_remote_url )
+			print r.content
+		else:
+			print "skipping remote refresh"
 
 
 

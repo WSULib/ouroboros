@@ -4,9 +4,14 @@
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import utilities
 import WSUDOR_ContentTypes
-from inc import repocp
 import localConfig
 from flask import Blueprint, render_template, request
+
+try:
+	from inc import repocp
+except:
+	print "could not load repocp script"
+
 
 
 sendObject = Blueprint('sendObject', __name__, template_folder='templates', static_folder="static")

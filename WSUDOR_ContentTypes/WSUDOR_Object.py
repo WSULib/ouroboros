@@ -35,7 +35,11 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
-from inc import repocp
+
+try:
+	from inc import repocp
+except:
+	print "could not load repocp script"
 
 # derivatives
 from inc.derivatives import JP2DerivativeMaker

@@ -133,10 +133,16 @@ def singleBag_ingest_worker(job_package):
 	else:
 		refresh_remote = False
 
+	# look for host rewrite
+	if 'refresh_remote' in job_package['form_data']:
+		host_rewrite = job_package['form_data']['host_rewrite']
+	else:
+		host_rewrite = False
+
 	# create working directory in workspace
 	bag_dir = payloadExtractor(payload_location,ingest_type)
 
-	return ingestBagAndPush(bag_dir,job_package['form_data']['dest_repo'],refresh_remote)
+	return ingestBagAndPush(bag_dir, job_package['form_data']['dest_repo'], refresh_remote, host_rewrite)
 
 
 
@@ -153,6 +159,12 @@ def multipleBag_ingest_worker(job_package):
 		refresh_remote = True
 	else:
 		refresh_remote = False
+
+	# look for host rewrite
+	if 'refresh_remote' in job_package['form_data']:
+		host_rewrite = job_package['form_data']['host_rewrite']
+	else:
+		host_rewrite = False
 
 	# create working directory in workspace
 	bag_dir = payloadExtractor(payload_location,ingest_type)
@@ -191,7 +203,7 @@ def multipleBag_ingest_worker(job_package):
 	count = 1
 	for bag in bag_dirs:
 		print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
-		ingestBagAndPush(bag,job_package['form_data']['dest_repo'],refresh_remote)
+		ingestBagAndPush(bag, job_package['form_data']['dest_repo'], refresh_remote, host_rewrite)
 		count += 1
 
 	print "Batch ingest complete."
@@ -247,7 +259,7 @@ def payloadExtractor(payload_location,ingest_type):
 
 
 		
-def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
+def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True, host_rewrite=False):
 
 	# DEBUG
 	print dir(localConfig)
@@ -270,15 +282,9 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True):
 
 	# push to remote repo
 
-	# external script
-	# print "sending object..."
-	# push_cmd = 'python /opt/eulfedora/scripts/repo-cp --config %s %s %s %s' % (localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, localConfig.REPOSITORY_NAME, dest_repo, bag_handle.pid)
-	# print push_cmd
-	# os.system(push_cmd)
-
 	# import as library
 	print "sending object..."
-	result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE,source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[bag_handle.pid])
+	result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[bag_handle.pid], host_rewrite=host_rewrite, print_chunk=True)
 
 
 	# delete local object

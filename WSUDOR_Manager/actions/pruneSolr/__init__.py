@@ -83,9 +83,8 @@ def pruneSolr_worker(job_package):
 	count = 0
 	pruned = []
 	for doc in sr.documents:
-		print "%i / %i" % (count, int(sr.total_results))
 		doc_id = doc['id']
-		print "checking", doc_id
+		print "pruneSolr checking %s, %i / %i" % (doc_id, count, int(sr.total_results))
 
 		if not fedora_handle.get_object(doc_id).exists:
 			print "We did not find it, pruning from Solr"

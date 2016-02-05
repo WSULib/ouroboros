@@ -1,8 +1,9 @@
 {% include 'header.html' %}
 
 {% if update_type == 'select' %}
-	<p>Freshen Solr?</p>
 	<ul>
+		<li><a href="/tasks/pruneSolr">Prune Solr: Remove all documents in /fedobjs that are not found in Fedora</a></li>
+		<br>
 		<li><a href="/tasks/updateSolr/userObjects">Currently selected Objects</a></li>
 		<li><a href="/tasks/updateSolr/timestamp">Recently Modified:</a> Index Fedora Objects since <a href="http://{{APP_HOST}}/solr4/fedobjs/select?q=id%3ALastFedoraIndex&fl=last_modified&wt=json&indent=true">last full index</a></li>
 		<li><a href="/tasks/updateSolr/fullIndex">All:</a> Index ALL Fedora Objects</li>

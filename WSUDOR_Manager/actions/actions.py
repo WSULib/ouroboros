@@ -114,6 +114,10 @@ app.register_blueprint(objectRefresh, url_prefix=tasks_URL_prefix)
 from sendObject import sendObject, sendObject_worker
 app.register_blueprint(sendObject, url_prefix=tasks_URL_prefix)
 
+#pruneSolr
+from pruneSolr import pruneSolr, pruneSolr_worker
+app.register_blueprint(pruneSolr, url_prefix=tasks_URL_prefix)
+
 
 # task firing
 ###########################################################################

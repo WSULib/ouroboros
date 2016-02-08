@@ -14,9 +14,6 @@ import json
 
 pruneSolr = Blueprint('pruneSolr', __name__, template_folder='templates', static_folder="static")
 
-'''
-Improvement: use pagination in results, not hardcoded rows count
-'''
 
 @pruneSolr.route('/pruneSolr', methods=['POST', 'GET'])
 def index():

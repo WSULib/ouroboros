@@ -76,27 +76,40 @@ def pruneSolr_worker(job_package):
 	
 	print "pruning Solr of objects not found in Fedora"
 
-	# get all solr objects
-	sr = solr_handle.search(q='*:*',rows=10000)
-
-	# iterate through
+	# variables 
 	count = 0
 	pruned = []
-	for doc in sr.documents:
-		doc_id = doc['id']
-		print "pruneSolr checking %s, %i / %i" % (doc_id, count, int(sr.total_results))
+	start = 0
+	rows = 100
 
-		if not fedora_handle.get_object(doc_id).exists:
-			print "We did not find it, pruning from Solr"
-			pruned.append(doc_id)
-			solr_handle.delete_by_key(doc_id)
+	# get solr results obj
+	solr_total = solr_handle.search(q='*:*', fl='id').total_results
 
-		count+=1
+	# iterate through
+	while start < solr_total:
 
-	print "Pruned:",pruned
+		# perform search
+		solr_result = solr_handle.search(q='*:*', fl='id', rows=rows, start=start)
+
+		# iterate
+		for doc in solr_result.documents:
+			doc_id = doc['id']
+			print "pruneSolr checking %s, %i / %i" % (doc_id, count, solr_total)
+
+			if not fedora_handle.get_object(doc_id).exists:
+				print "Did not find object in Fedora, pruning from Solr..."
+				pruned.append(doc_id)
+				solr_handle.delete_by_key(doc_id)
+
+			# bump counter
+			count+=1
+
+		# bump start
+		start += rows		
 
 	# return JSON report
 	return json.dumps(pruned)
+
 
 
 

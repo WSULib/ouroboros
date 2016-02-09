@@ -281,11 +281,14 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True, host_rewrite=False
 	ingest_bag = bag_handle.ingestBag(indexObject=False)
 
 	# push to remote repo
-
-	# import as library
 	print "sending object..."
-	result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[bag_handle.pid], host_rewrite=host_rewrite, print_chunk=True)
 
+	# OLD import as library
+	# result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[bag_handle.pid], host_rewrite=host_rewrite, print_chunk=False)
+
+	# Use object method
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_handle.pid)
+	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, host_rewrite=host_rewrite)	
 
 	# delete local object
 	print "finally, removing object"
@@ -293,16 +296,6 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True, host_rewrite=False
 
 	# remove from Solr	
 	solr_handle.delete_by_key(bag_handle.pid)
-
-	# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
-	if refresh_remote:
-		print "refreshing remote object in remote repository"
-		refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], bag_handle.pid)
-		print refresh_remote_url
-		r = requests.get( refresh_remote_url )
-		print r.content
-	else:
-		print "skipping remote refresh"	
 
 	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label.encode('utf-8'),bag_pid=bag_handle.pid):True})
 

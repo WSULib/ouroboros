@@ -36,6 +36,12 @@ def sendObject_worker(job_package):
 		refresh_remote = False
 	dest_repo = job_package['form_data']['dest_repo']
 
+	# look for host rewrite
+	if 'refresh_remote' in job_package['form_data']:
+		host_rewrite = job_package['form_data']['host_rewrite']
+	else:
+		host_rewrite = False
+
 	# send object with object method
-	obj_handle.sendObject(dest_repo,refresh_remote)
+	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, host_rewrite=host_rewrite)
 	

@@ -6,7 +6,7 @@ from cl.cl import celery
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db
+from WSUDOR_Manager import redisHandles, jobs, models, db, actions
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules

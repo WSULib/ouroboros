@@ -788,11 +788,11 @@ class WSUDOR_GenObject(object):
 
 
 	# method to send object to remote repository
-	def sendObject(self, dest_repo, refresh_remote=False, host_rewrite=False, export_format='migrate', print_chunk=False):
+	def sendObject(self, dest_repo, refresh_remote=False, host_rewrite=False, scrub_checksum=False, export_format='migrate', print_chunk=False):
 
 		# import as library
 		print "sending object..."
-		result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[self.pid], export_format=export_format, host_rewrite=host_rewrite, print_chunk=print_chunk)
+		result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[self.pid], export_format=export_format, host_rewrite=host_rewrite, scrub_checksum=scrub_checksum, print_chunk=print_chunk)
 
 		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
 		if refresh_remote:

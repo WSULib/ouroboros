@@ -11,11 +11,6 @@ from WSUDOR_Manager import redisHandles, jobs, models, db, forms
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 
-try:
-	from inc import repocp
-except:
-	print "could not load repocp script"
-
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules

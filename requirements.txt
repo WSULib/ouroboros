@@ -26,7 +26,7 @@ pydub==0.9.5
 python-ldap==2.4.13
 rdflib==4.1.2
 redis==2.10.1
-requests==2.8.1
+requests
 responses==0.3.0
 simplejson==2.3.2
 stompest==2.1.2

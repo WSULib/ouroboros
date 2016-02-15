@@ -7,12 +7,6 @@ import WSUDOR_ContentTypes
 import localConfig
 from flask import Blueprint, render_template, request
 
-try:
-	from inc import repocp
-except:
-	print "could not load repocp script"
-
-
 
 sendObject = Blueprint('sendObject', __name__, template_folder='templates', static_folder="static")
 

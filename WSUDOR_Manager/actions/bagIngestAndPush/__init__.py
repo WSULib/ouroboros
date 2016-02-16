@@ -123,21 +123,29 @@ def singleBag_ingest_worker(job_package):
 	# extract payload_location
 	payload_location = job_package['form_data']['payload_location']
 	ingest_type = job_package['form_data']['ingest_type']
+
+	# set destination repo
+	dest_repo = job_package['form_data']['dest_repo']
+
+	# get export context
+	export_context = job_package['form_data']['export_context']
+
+	# overwrite
+	if 'overwrite' in job_package['form_data']:
+		overwrite = True
+	else:
+		overwrite = False
+
+	# refresh remote
 	if 'refresh_remote' in job_package['form_data']:
 		refresh_remote = True
 	else:
 		refresh_remote = False
 
-	# look for host rewrite
-	if 'refresh_remote' in job_package['form_data']:
-		host_rewrite = job_package['form_data']['host_rewrite']
-	else:
-		host_rewrite = False
-
 	# create working directory in workspace
 	bag_dir = payloadExtractor(payload_location,ingest_type)
 
-	return ingestBagAndPush(bag_dir, job_package['form_data']['dest_repo'], refresh_remote, host_rewrite)
+	return ingestBagAndPush(bag_dir, dest_repo, refresh_remote=refresh_remote, export_context=export_context, overwrite=overwrite)
 
 
 
@@ -150,16 +158,24 @@ def multipleBag_ingest_worker(job_package):
 	# extract payload_location
 	payload_location = job_package['form_data']['payload_location']
 	ingest_type = job_package['form_data']['ingest_type']
+
+	# set destination repo
+	dest_repo = job_package['form_data']['dest_repo']
+
+	# get export context
+	export_context = job_package['form_data']['export_context']
+
+	# overwrite
+	if 'overwrite' in job_package['form_data']:
+		overwrite = True
+	else:
+		overwrite = False
+
+	# refresh remote
 	if 'refresh_remote' in job_package['form_data']:
 		refresh_remote = True
 	else:
 		refresh_remote = False
-
-	# look for host rewrite
-	if 'refresh_remote' in job_package['form_data']:
-		host_rewrite = job_package['form_data']['host_rewrite']
-	else:
-		host_rewrite = False
 
 	# create working directory in workspace
 	bag_dir = payloadExtractor(payload_location,ingest_type)
@@ -198,7 +214,7 @@ def multipleBag_ingest_worker(job_package):
 	count = 1
 	for bag in bag_dirs:
 		print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
-		ingestBagAndPush(bag, job_package['form_data']['dest_repo'], refresh_remote, host_rewrite)
+		return ingestBagAndPush(bag_dir, dest_repo, refresh_remote=refresh_remote, export_context=export_context, overwrite=overwrite)
 		count += 1
 
 	print "Batch ingest complete."
@@ -254,7 +270,7 @@ def payloadExtractor(payload_location,ingest_type):
 
 
 		
-def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True, host_rewrite=False):
+def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True, overwrite=False, export_context='migrate'):
 
 	# DEBUG
 	print dir(localConfig)
@@ -278,12 +294,9 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True, host_rewrite=False
 	# push to remote repo
 	print "sending object..."
 
-	# OLD import as library
-	# result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[bag_handle.pid], host_rewrite=host_rewrite, print_chunk=False)
-
 	# Use object method
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_handle.pid)
-	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, host_rewrite=host_rewrite)	
+	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, export_context=export_context)	
 
 	# delete local object
 	print "finally, removing object"

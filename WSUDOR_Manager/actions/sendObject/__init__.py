@@ -24,18 +24,25 @@ def sendObject_worker(job_package):
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(job_package['PID'])	
 
 	# get params
+	# set destination repo
+	dest_repo = job_package['form_data']['dest_repo']
+
+	# get export context
+	export_context = job_package['form_data']['export_context']
+
+	# overwrite
+	if 'overwrite' in job_package['form_data']:
+		overwrite = True
+	else:
+		overwrite = False
+
+	# refresh remote
 	if 'refresh_remote' in job_package['form_data']:
 		refresh_remote = True
 	else:
 		refresh_remote = False
-	dest_repo = job_package['form_data']['dest_repo']
 
-	# look for host rewrite
-	if 'refresh_remote' in job_package['form_data']:
-		host_rewrite = job_package['form_data']['host_rewrite']
-	else:
-		host_rewrite = False
 
 	# send object with object method
-	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, host_rewrite=host_rewrite)
+	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, export_context=export_context)
 	

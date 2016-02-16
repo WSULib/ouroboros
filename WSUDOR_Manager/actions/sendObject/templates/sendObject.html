@@ -14,13 +14,23 @@
 						<option value="{{repo}}">{{repo}}</option>
 					{% endfor %}
 				</select> 
-			</div>
+			</div>	
 
-			<!-- Scrubbing Host -->			
 			<div class="form-group">
-				<label class="control-label">Change host when using 'migrate' context?  If so, enter original host and new host as single string with "|" delimiter:</label>
-				<input class="form-control" type="text" name="host_rewrite" placeholder="192.168.42.4:8080|141.217.54.97:4567">
-			</div>
+				<label class="control-label" for="export_context">Export Context:</label> 
+				<select class="form-control input-sm" id="export_context" name="export_context">
+					<option value="migrate">migrate</option>
+					<option value="archive">archive</option>
+				</select> 
+			</div>	
+
+			<div class="form-group">
+				<div class="checkbox">
+					<label>
+						<input name="overwrite" type="checkbox"> Purge and recreate in destination repository if already present?
+					</label>
+				</div>
+			</div>		
 
 			<div class="form-group">
 				<div class="checkbox">
@@ -31,7 +41,7 @@
 			</div>
 
 			<div class="form-group">
-				<input type="submit" class="btn btn-primary" value="Ingest">
+				<input type="submit" class="btn btn-primary" value="Send!">
 			</div>
 		</form>
 	</div>

@@ -26,6 +26,7 @@ from cl.cl import celery
 
 # eulfedora
 import eulfedora
+from eulfedora import syncutil
 
 # localConfig
 import localConfig
@@ -34,6 +35,7 @@ import localConfig
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager import fedoraHandles
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 
 # derivatives
@@ -783,11 +785,16 @@ class WSUDOR_GenObject(object):
 
 
 	# method to send object to remote repository
-	def sendObject(self, dest_repo, refresh_remote=False, host_rewrite=False, scrub_checksum=False, export_format='migrate', print_chunk=False):
+	def sendObject(self, dest_repo, export_context='migrate', overwrite=False, show_progress=True, refresh_remote=True):		
 
-		# import as library
+		# use syncutil
 		print "sending object..."
-		result = repocp.repo_copy(config=localConfig.REMOTE_REPOSITORIES_CONFIG_FILE, source=localConfig.REPOSITORY_NAME, dest=dest_repo, pids=[self.pid], export_format=export_format, host_rewrite=host_rewrite, scrub_checksum=scrub_checksum, print_chunk=print_chunk)
+		result = syncutil.sync_object(
+			self.ohandle,
+			fedoraHandles.remoteRepo(dest_repo),
+			export_context=export_context,
+			overwrite=overwrite,
+			show_progress=show_progress)
 
 		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
 		if refresh_remote:

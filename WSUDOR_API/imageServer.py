@@ -30,7 +30,7 @@ def imageServer():
 
 	# return redirect
 	print "redirecting imageServer request:",obj,ds
-	return redirect("http://%s/loris/fedora:%s|%s/full/full/0/default.jpg" % (localConfig.APP_HOST, obj, ds), code=301)
+	return redirect("http://%s/loris/fedora:%s|%s/full/full/0/default.jpg" % (localConfig.PUBLIC_HOST, obj, ds), code=301)
 
 	
 

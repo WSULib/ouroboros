@@ -213,9 +213,13 @@ def multipleBag_ingest_worker(job_package):
 	# iterate through BagIt dirs
 	count = 1
 	for bag in bag_dirs:
-		print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
-		return ingestBagAndPush(bag_dir, dest_repo, refresh_remote=refresh_remote, export_context=export_context, overwrite=overwrite)
-		count += 1
+		try:
+			print "Working on",bag
+			print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
+			print ingestBagAndPush(bag, dest_repo, refresh_remote=refresh_remote, export_context=export_context, overwrite=overwrite)
+			count += 1
+		except:
+			print "########## INGEST FAILURE ON",bag,"##############"
 
 	print "Batch ingest complete."
 	return True

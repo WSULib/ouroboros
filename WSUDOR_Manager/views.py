@@ -375,8 +375,6 @@ def userJobs():
 		else:
 			status_package['job_status'] = "running"	
 
-
-
 		# data return 
 		response_dict = {
 			"job_num":job_num,

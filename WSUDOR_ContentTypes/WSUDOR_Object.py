@@ -306,7 +306,7 @@ class WSUDOR_GenObject(object):
 		xslt_tree = etree.parse(XSLhand)
   		transform = etree.XSLT(xslt_tree)
   		# raw, unmodified RDF
-  		raw_xml_URL = "http://localhost/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=self.pid)
+  		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (self.pid)
   		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
   		XMLroot = etree.fromstring(raw_xml)
 		SolrXML = transform(XMLroot)
@@ -319,7 +319,7 @@ class WSUDOR_GenObject(object):
 		xslt_tree = etree.parse(XSLhand)
   		transform = etree.XSLT(xslt_tree)
   		# raw, unmodified RDF
-  		raw_xml_URL = "http://localhost/fedora/objects/{PID}/datastreams/RELS-INT/content".format(PID=self.pid)
+  		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-INT/content" % (self.pid)
   		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
   		XMLroot = etree.fromstring(raw_xml)
 		SolrXML = transform(XMLroot)
@@ -408,7 +408,7 @@ class WSUDOR_GenObject(object):
 		bag_meta_handle.label = "BagIt Metadata Tarball"
 		bag_meta_handle.content = open(temp_filename)
 		bag_meta_handle.save()
-		os.system('rm {temp_filename}'.format(temp_filename=temp_filename))		
+		os.system('rm %s' % (temp_filename))		
 
 		# derive Dublin Core from MODS, update DC datastream
 		self.DCfromMODS()
@@ -419,7 +419,7 @@ class WSUDOR_GenObject(object):
 		# the following methods are not needed when objects are "passing through"
 		if indexObject:
 			# generate OAI identifier
-			print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:{PID}".format(PID=self.pid))
+			print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid))
 
 			# affiliate with collection set
 			try:
@@ -492,11 +492,11 @@ class WSUDOR_GenObject(object):
 
 		temp_dir = working_dir + "/" + str(uuid.uuid4())
 		time.sleep(.25)
-		os.system("mkdir {temp_dir}".format(temp_dir=temp_dir))
+		os.system("mkdir %s" % (temp_dir))
 		time.sleep(.25)
-		os.system("mkdir {temp_dir}/data".format(temp_dir=temp_dir))
+		os.system("mkdir %s/data" % (temp_dir))
 		time.sleep(.25)
-		os.system("mkdir {temp_dir}/data/datastreams".format(temp_dir=temp_dir))
+		os.system("mkdir %s/data/datastreams" % (temp_dir))
 
 		# move bagit files to temp dir, and unpack
 		bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
@@ -532,48 +532,48 @@ class WSUDOR_GenObject(object):
 
 		# write original datastreams
 		for ds in self.objMeta['datastreams']:
-			writeDS((ds['ds_id'],"{temp_dir}/data/datastreams/{filename}".format(temp_dir=temp_dir, filename=ds['filename'])))
+			writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
 
 		# include RELS
 		if includeRELS == True:
 			for ds in ['RELS-EXT','RELS-INT']:
-				writeDS((ds['ds_id'],"{temp_dir}/data/datastreams/{filename}".format(temp_dir=temp_dir, filename=ds['filename'])))
+				writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
 
 		# write MODS and objMeta files
 		simple = [
-			("MODS","{temp_dir}/data/MODS.xml".format(temp_dir=temp_dir)),
-			("OBJMETA","{temp_dir}/data/objMeta.json".format(temp_dir=temp_dir))
+			("MODS","%s/data/MODS.xml" % (temp_dir)),
+			("OBJMETA","%s/data/objMeta.json" % (temp_dir))
 		]
 		for ds in simple:
 			writeDS(ds)
 
 		# tarball it up
 		named_dir = self.pid.replace(":","-")
-		os.system("mv {temp_dir} {working_dir}/{named_dir}".format(temp_dir=temp_dir, working_dir=working_dir, named_dir=named_dir))
+		os.system("mv %s %s/%s" % (temp_dir, working_dir, named_dir))
 		orig_dir = os.getcwd()
 		os.chdir(working_dir)
-		os.system("tar -cvf {named_dir}.tar {named_dir}".format(working_dir=working_dir, named_dir=named_dir))
-		os.system("rm -r {working_dir}/{named_dir}".format(working_dir=working_dir, named_dir=named_dir))
+		os.system("tar -cvf %s.tar %s" % (working_dir, named_dir))
+		os.system("rm -r %s/%s" % (working_dir, named_dir))
 
 		# move to web accessible location, with username as folder
 		if job_package != False:
 			username = job_package['username']
 		else:
 			username = "consoleUser"
-		target_dir = "/var/www/wsuls/Ouroboros/export/{username}".format(username=username)
+		target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
 		if os.path.exists(target_dir) == False:
-			os.system("mkdir {target_dir}".format(target_dir=target_dir))
-		os.system("mv {named_dir}.tar {target_dir}".format(named_dir=named_dir,target_dir=target_dir))
+			os.system("mkdir %s" % (target_dir))
+		os.system("mv %s.tar %s" % (named_dir,target_dir))
 
 		# jump back to origina working dir
 		os.chdir(orig_dir)
 
 		if returnTargetDir == True:
-			return "{target_dir}/{named_dir}.tar".format(target_dir=target_dir,named_dir=named_dir)
+			return "%s/%s.tar" % (target_dir,named_dir)
 		else:
-			return "http://{APP_HOST}/Ouroboros/export/{username}/{named_dir}.tar".format(named_dir=named_dir,username=username,APP_HOST=localConfig.APP_HOST)
+			return "http://%s/Ouroboros/export/%s/%s.tar" % (named_dir,username,localConfig.APP_HOST)
 
 
 	# reingest bag
@@ -819,7 +819,7 @@ class WSUDOR_GenObject(object):
 		XMLroot = etree.fromstring(MODS_handle.content.serialize())
 
 		# 2) transform downloaded MODS to DC with LOC stylesheet
-		print "XSLT Transforming: {PID}".format(PID=self.pid)
+		print "XSLT Transforming: %s" % (self.pid)
 		# Saxon transformation
 		XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 		xslt_tree = etree.parse(XSLhand)

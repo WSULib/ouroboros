@@ -76,6 +76,9 @@ def celeryTaskFactoryBagIngest(job_num,job_package):
 	job_num = job_package['job_num']	
 
 	# update job info
+	'''
+	sets estimate to one, not accurate
+	'''
 	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),1)
 
 	# ingest in Fedora

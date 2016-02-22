@@ -19,8 +19,8 @@ WSUDOR_API_app.secret_key = 'WSUDOR-WSUDOR_API'
 
 # MAIN
 #########################################################################################################
-@WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}/".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
-@WSUDOR_API_app.route("/{WSUDOR_API_PREFIX}".format(WSUDOR_API_PREFIX=localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/%s/" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/%s" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def index():		
 	
 	'''
@@ -43,7 +43,7 @@ def index():
 
 	except Exception,e:
 		print "WSUDOR_API call unsuccessful.  Error:",str(e)
-		return '{{"WSUDOR_APIstatus":"WSUDOR_API call unsuccessful.","WSUDOR_APIstatus message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
+		return '{{"WSUDOR_APIstatus":"WSUDOR_API call unsuccessful.","WSUDOR_APIstatus message":%s}}' % (json.dumps(str(e)))
 	
 
 

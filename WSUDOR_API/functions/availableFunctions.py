@@ -50,9 +50,9 @@ def solrGetFedDoc(getParams):
 ######################################################################################################################
 	PID=getParams['PID'][0]
 	PID = PID.replace(":", "\:")
-	baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+	baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
 	solrParams = {
-		'q' : 'id:{PID}'.format(PID=PID),
+		'q' : 'id:%s' % (PID),
 		'wt' : 'json',
 		'fl' : 'id mods* dc* rels* obj* facet* last_modified' # throttled to prevent unwanted fields from weighing down response		
 	}
@@ -65,9 +65,9 @@ def solrSearch(getParams):
 ######################################################################################################################	
 	# establish baseURL
 	if 'solrCore' in getParams:				
-		baseURL = "http://localhost/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
+		baseURL = "http://localhost/solr4/%s/select?" % (getParams['solrCore'][0])
 	else:
-		baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+		baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
 
 	# hard-code some server side parameters	
 	# sorts date result 
@@ -132,9 +132,9 @@ def solrCoreGeneric(getParams):
 
 	# establish baseURL
 	if 'solrCore' in getParams:				
-		baseURL = "http://localhost/solr4/{solrCore}/select?".format(solrCore=getParams['solrCore'][0])
+		baseURL = "http://localhost/solr4/%s/select?" % (getParams['solrCore'][0])
 	else:
-		baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+		baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
 
 	# q
 	if 'q' in getParams:	
@@ -178,7 +178,7 @@ def solrCoreGeneric(getParams):
 def solrFacetSearch(getParams):
 ######################################################################################################################
 	# establish baseURL
-	baseURL = "http://localhost/solr4/{SOLR_SEARCH_CORE}/select?".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+	baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
 
 	# set solrParams
 	solrParams = ast.literal_eval(getParams['solrParams'][0])
@@ -297,9 +297,9 @@ def solrTranslationHash(args):
 	# list of queries to translate results
 	queriesToTrans = [
 		# all Collection objects
-		"http://localhost/solr4/{SOLR_SEARCH_CORE}/select?q=rels_hasContentModel%3Ainfo%5C%3Afedora%2FCM%5C%3ACollection&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE),
+		"http://localhost/solr4/%s/select?q=rels_hasContentModel%%3Ainfo%%5C%%3Afedora%%2FCM%%5C%%3ACollection&fl=id+dc_title&wt=json&indent=true&rows=100" % (SOLR_SEARCH_CORE),
 		# all Content Models Types
-		"http://localhost/solr4/{SOLR_SEARCH_CORE}/select?q=id%3ACM*&rows=100&fl=id+dc_title&wt=json&indent=true&rows=100".format(SOLR_SEARCH_CORE=SOLR_SEARCH_CORE)
+		"http://localhost/solr4/%s/select?q=id%%3ACM*&rows=100&fl=id+dc_title&wt=json&indent=true&rows=100" % (SOLR_SEARCH_CORE)
 	]
 
 	# run query and add to hash
@@ -326,7 +326,7 @@ def pubStore(getParams):
 
 	# print solrString
 
-	baseURL = "http://localhost/solr4/pubstore/{urlsuff}".format(urlsuff=urlsuff)
+	baseURL = "http://localhost/solr4/pubstore/%s" % (urlsuff)
 	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
 	# print "Going to this URL:",baseURL
 
@@ -357,7 +357,7 @@ def pubStore(getParams):
 
 # return Fedora MODS datastream
 def getObjectXML(getParams):	
-	baseURL = "http://localhost/fedora/objects/{PID}/objectXML".format(PID=getParams['PID'][0])
+	baseURL = "http://localhost/fedora/objects/%s/objectXML" % (getParams['PID'][0])
 	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
 	xmlString = r.text
 
@@ -378,7 +378,7 @@ def getObjectXML(getParams):
 def isMemberOf(getParams):
 
 	baseURL = "http://localhost/fedora/risearch"
-	risearch_query = "select $subject from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOf> $subject".format(PID=getParams['PID'][0])
+	risearch_query = "select $subject from <#ri> where <info:fedora/%s> <info:fedora/fedora-system:def/relations-external#isMemberOf> $subject" (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -396,7 +396,7 @@ def isMemberOf(getParams):
 # get isMemberOf children for single PID
 def hasMemberOf(getParams):	
 	baseURL = "http://localhost/fedora/risearch"
-	risearch_query = "select $memberTitle $object from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/{PID}> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle order by $memberTitle".format(PID=getParams['PID'][0])
+	risearch_query = "select $memberTitle $object from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/%s> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle order by $memberTitle" % (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -414,9 +414,8 @@ def hasMemberOf(getParams):
 # get parents for PID
 def isMemberOfCollection(getParams):
 
-	baseURL = "http://localhost/fedora/risearch"
-	# risearch_query = "select $subject from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $subject".format(PID=args.PID)
-	risearch_query = "select $collectionTitle $subject from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $subject and $subject <http://purl.org/dc/elements/1.1/title> $collectionTitle".format(PID=getParams['PID'][0])
+	baseURL = "http://localhost/fedora/risearch"	
+	risearch_query = "select $collectionTitle $subject from <#ri> where <info:fedora/%s> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $subject and $subject <http://purl.org/dc/elements/1.1/title> $collectionTitle" % (getParams['PID'][0])
 
 	risearch_params = {
 	'type': 'tuples',
@@ -436,7 +435,7 @@ def isMemberOfCollection(getParams):
 # get isMemberOfCollection children for single PID (also return isRepresentedBy attribute)
 def hasMemberOfCollection(getParams):	
 	baseURL = "http://localhost/fedora/risearch"
-	risearch_query = "select $memberTitle $object $isRepBy from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/{PID}> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle and $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/{PID}> and $object <wsudor:isRepresentedBy> $isRepBy order by $memberTitle".format(PID=getParams['PID'][0])
+	risearch_query = "select $memberTitle $object $isRepBy from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/%s> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle and $object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/%s> and $object <wsudor:isRepresentedBy> $isRepBy order by $memberTitle" % (getParams['PID'][0],getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -455,7 +454,7 @@ def hasMemberOfCollection(getParams):
 #returns all siblings, from all parent Collections
 def getSiblings(getParams):
 	baseURL = "http://localhost/fedora/risearch"
-	risearch_query = "select $collection $sibling from <#ri> where <info:fedora/{PID}> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $collection and $sibling <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $collection".format(PID=getParams['PID'][0])
+	risearch_query = "select $collection $sibling from <#ri> where <info:fedora/%s> <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $collection and $sibling <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> $collection" % (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -492,7 +491,7 @@ def getSiblings(getParams):
 
 # return Fedora MODS datastream
 def fedoraMODS(getParams):
-	baseURL = "http://localhost/fedora/objects/{PID}/datastreams/MODS/content".format(PID=getParams['PID'][0])
+	baseURL = "http://localhost/fedora/objects/%s/datastreams/MODS/content" % (getParams['PID'][0])
 	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
 	xmlString = r.text
 	#convert XML to JSON with "xmltodict"
@@ -504,7 +503,7 @@ def fedoraMODS(getParams):
 # return walk of serial volumes / issues in tidy package
 def serialWalk(getParams):
 	baseURL = "http://localhost/fedora/risearch"
-	risearch_query = "SELECT ?volume ?volumeTitle ?issue $issueTitle WHERE {{ ?volume  <fedora-rels-ext:isMemberOfCollection> <info:fedora/{PID}> .  $volume <http://purl.org/dc/elements/1.1/title> ?volumeTitle . ?volume  <fedora-rels-ext:hasContentModel> <info:fedora/CM:Volume> . ?issue <fedora-rels-ext:isMemberOf>  ?volume . ?issue <fedora-rels-ext:hasContentModel> <info:fedora/CM:Issue> . $issue <http://purl.org/dc/elements/1.1/title> $issueTitle .  }} ORDER BY ASC(?issue)".format(PID=getParams['PID'][0])
+	risearch_query = "SELECT ?volume ?volumeTitle ?issue $issueTitle WHERE {{ ?volume  <fedora-rels-ext:isMemberOfCollection> <info:fedora/%s> .  $volume <http://purl.org/dc/elements/1.1/title> ?volumeTitle . ?volume  <fedora-rels-ext:hasContentModel> <info:fedora/CM:Volume> . ?issue <fedora-rels-ext:isMemberOf>  ?volume . ?issue <fedora-rels-ext:hasContentModel> <info:fedora/CM:Issue> . $issue <http://purl.org/dc/elements/1.1/title> $issueTitle .  }} ORDER BY ASC(?issue)" % (getParams['PID'][0])
 	risearch_params = {
 		'type': 'tuples',
 		'lang': 'sparql',
@@ -537,7 +536,7 @@ def fedDataSpy(getParams):
 # get isPartOf children for single PID
 def hasPartOf(getParams):	
 	baseURL = "http://localhost/fedora/risearch"
-	risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/{PID}>".format(PID=getParams['PID'][0])
+	risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s>" % (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -591,7 +590,7 @@ def getObjectSize(getParams):
 			return json.dumps( size_dict )
 
 	except Exception,e:
-		return json.dumps({"message":"Could not determine size of object. Error: {e}".format(e=str(e))})		
+		return json.dumps({"message":"Could not determine size of object. Error: %s" % (str(e)) })		
 
 
 
@@ -602,7 +601,7 @@ def hierarchicalTree(getParams):
 	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = '''
 	select $parent $parentTitle from <#ri> where
-	    <info:fedora/{PID}> 
+	    <info:fedora/%s> 
 	    <wsudor:hasParent> 
 	    $parent
 	and 
@@ -611,7 +610,7 @@ def hierarchicalTree(getParams):
 	    $parentTitle	
     order by $parentTitle
 
-	'''.format(PID=getParams['PID'][0])
+	''' % (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -629,7 +628,7 @@ def hierarchicalTree(getParams):
 	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = '''
 	select $parentSibling $parentSiblingTitle from <#ri> where 
-	    <info:fedora/{PID}> 
+	    <info:fedora/%s> 
 	    <wsudor:hasParent> 
 	    $parent
 	and 
@@ -650,7 +649,7 @@ def hierarchicalTree(getParams):
 	    $parentSiblingTitle
     order by $parentSiblingTitle
 
-	'''.format(PID=getParams['PID'][0])
+	''' % (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -669,7 +668,7 @@ def hierarchicalTree(getParams):
 	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = '''
 	select $sibling $siblingTitle from <#ri> where 
-	    <info:fedora/{PID}> 
+	    <info:fedora/%s> 
 	    <wsudor:hasParent> 
 	    $parent
 	and 
@@ -682,7 +681,7 @@ def hierarchicalTree(getParams):
 	    $siblingTitle
     order by $siblingTitle
 
-	'''.format(PID=getParams['PID'][0])
+	''' % (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -708,14 +707,14 @@ def hierarchicalTree(getParams):
 	select $child $childTitle from <#ri> where 
 	    $child
 	    <wsudor:hasParent> 
-	    <info:fedora/{PID}> 
+	    <info:fedora/%s> 
 	and
 	    $child
 	    <dc:title>
 	    $childTitle
     order by $childTitle
 
-	'''.format(PID=getParams['PID'][0])
+	''' % (getParams['PID'][0])
 	risearch_params = {
 	'type': 'tuples',
 	'lang': 'itql',
@@ -847,7 +846,7 @@ def getSingleObjectSolrMetadata(getParams):
 		else:
 			returnDict = {
 				"result":False,
-				'msg':"Response successful, but numFound wrong.  Should be 1, found {numFound}".format(numFound=str(numFound))
+				'msg':"Response successful, but numFound wrong.  Should be 1, found %s" % (str(numFound))
 			}
 		# return result # return JSON for API response
 	except Exception, e:
@@ -867,10 +866,10 @@ def singleObjectPageRender(getParams):
 	'''
 	# solr search	
 	PID = getParams['PID']
-	URL = "http://{APP_HOST}/digitalcollections/item?id={PID}".format(PID=PID,APP_HOST=localConfig.APP_HOST)
+	URL = "http://%s/digitalcollections/item?id=%s" % (localConfig.APP_HOST, PID)
 
 	try:				
-		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py %s" % (URL), shell=True)
 		http_status = int(http_status_string)
 
 		print "http status:", http_status
@@ -883,7 +882,7 @@ def singleObjectPageRender(getParams):
 		else:
 			returnDict = {
 				"result":False,
-				'msg':"Ghost.py rendering unsuccessful, HTTP status {http_status}.".format(http_status=str(http_status))
+				'msg':"Ghost.py rendering unsuccessful, HTTP status %s." % (str(http_status))
 			}		
 	
 	except Exception, e:
@@ -921,7 +920,7 @@ def solrSearchCollectionObjects(getParams):
 		else:
 			returnDict = {
 				"result":False,
-				'msg':"Response successful, but numFound wrong.  Should be > 0, found {numFound}".format(numFound=str(numFound))
+				'msg':"Response successful, but numFound wrong.  Should be > 0, found %s" % (str(numFound))
 			}
 		# return result # return JSON for API response
 	except Exception, e:
@@ -954,7 +953,7 @@ def solrSearchKnownTerm(getParams):
 		else:
 			returnDict = {
 				"result":False,
-				'msg':"Response successful, but numFound wrong.  Should be > 0, found {numFound}".format(numFound=str(numFound))
+				'msg':"Response successful, but numFound wrong.  Should be > 0, found %s" % (str(numFound))
 			}
 		# return result # return JSON for API response
 	except Exception, e:
@@ -973,10 +972,10 @@ def searchPageRender(getParams):
 	FAILURE: status code == 404 or 503
 	'''
 	# solr search
-	URL = "http://{APP_HOST}/digitalcollections/search.php?q={search_term}".format(search_term=getParams['search_term'],APP_HOST=localConfig.APP_HOST)
+	URL = "http://%s/digitalcollections/search.php?q=%s" % (localConfig.APP_HOST, getParams['search_term'])
 
 	try:				
-		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py %s" % (URL), shell=True)
 		http_status = int(http_status_string)
 
 		print "http status:", http_status
@@ -989,7 +988,7 @@ def searchPageRender(getParams):
 		else:
 			returnDict = {
 				"result":False,
-				'msg':"Ghost.py rendering unsuccessful, HTTP status {http_status}.".format(http_status=str(http_status))
+				'msg':"Ghost.py rendering unsuccessful, HTTP status %s." % (str(http_status))
 			}		
 	
 	except Exception, e:
@@ -1010,10 +1009,10 @@ def collectionPageRender(getParams):
 	FAILURE: status code == 404 or 503
 	'''
 	# solr search
-	URL = "http://{APP_HOST}/digitalcollections/allcollections.php".format(APP_HOST=localConfig.APP_HOST)
+	URL = "http://%s/digitalcollections/allcollections.php" % (localConfig.APP_HOST)
 
 	try:				
-		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py {URL}".format(URL=URL), shell=True)
+		http_status_string = subprocess.check_output("python WSUDOR_API/functions/ghostGetHttpStatus.py %s" % (URL), shell=True)
 		http_status = int(http_status_string)
 
 		print "http status:", http_status
@@ -1026,7 +1025,7 @@ def collectionPageRender(getParams):
 		else:
 			returnDict = {
 				"result":False,
-				'msg':"Ghost.py rendering unsuccessful, HTTP status {http_status}.".format(http_status=str(http_status))
+				'msg':"Ghost.py rendering unsuccessful, HTTP status %s." % (str(http_status))
 			}		
 	
 	except Exception, e:
@@ -1486,7 +1485,7 @@ def objectLoci(getParams):
 
 				# construct query string
 				query = {
-					"q" : "rels_isMemberOfCollection:*{collection_PID_suffix}".format(collection_PID_suffix=collection_PID_suffix),
+					"q" : "rels_isMemberOfCollection:*%s" % (collection_PID_suffix),
 					"rows" : ((windowSize * 2) + 1),
 					"start" : start,
 					"sort" : "id asc"
@@ -1561,7 +1560,7 @@ def objectLoci(getParams):
 			search_params['start'] = start
 
 			# perform query
-			r = requests.get("http://localhost/{API_url}?functions[]=solrSearch".format(API_url=getParams['API_url'][0]),params=search_params)
+			r = requests.get("http://localhost/%s?functions[]=solrSearch" % (getParams['API_url'][0]))
 			solr_response_dict = json.loads(r.content)
 			results_list = solr_response_dict['solrSearch']['response']['docs']
 			numFound = int(solr_response_dict['solrSearch']['response']['numFound'])
@@ -1686,7 +1685,7 @@ def mimetypeDictionary(getParams):
 		try:
 			return_string = mimetypes.types_map[inputFilter]
 		except:
-			return_string = "{inputFilter} not found".format(inputFilter=inputFilter)
+			return_string = "%s not found" % (inputFilter)
 		return json.dumps(return_string)
 
 

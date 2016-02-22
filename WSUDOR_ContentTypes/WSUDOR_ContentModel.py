@@ -77,7 +77,7 @@ class WSUDOR_ContentModel(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Using policy:",self.objMeta['policy']
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
-			policy_handle.ds_location = "http://localhost/fedora/objects/{policy}/datastreams/POLICY_XML/content".format(policy=policy_suffix)
+			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 			policy_handle.label = "POLICY"
 			policy_handle.save()
 

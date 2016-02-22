@@ -65,7 +65,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# check that content_type is a valid ContentType				
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
-			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
+			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
 
 		# finally, return verdict
 		return results_dict
@@ -93,7 +93,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Using policy:",self.objMeta['policy']
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
-			policy_handle.ds_location = "http://localhost/fedora/objects/{policy}/datastreams/POLICY_XML/content".format(policy=policy_suffix)
+			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 			policy_handle.label = "POLICY"
 			policy_handle.save()
 
@@ -141,14 +141,14 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
-    <mods:title>{label}</mods:title>
+    <mods:title>%s</mods:title>
   </mods:titleInfo>
-  <mods:identifier type="local">{identifier}</mods:identifier>
+  <mods:identifier type="local">%s</mods:identifier>
   <mods:extension>
-    <PID>{PID}</PID>
+    <PID>%s</PID>
   </mods:extension>
 </mods:mods>
-				'''.format(label=self.objMeta['label'], identifier=self.objMeta['id'].split(":")[1], PID=self.objMeta['id'])
+				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
 				print raw_MODS
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
@@ -171,7 +171,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				This FILE datastream serves as shorthand to what should be the only binary of the object
 				'''
 				rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="E")
-				rep_handle.ds_location = "http://localhost/fedora/objects/{pid}/datastreams/{ds_id}/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'],APP_HOST=localConfig.APP_HOST)
+				rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
 				rep_handle.label = "FILE"
 				rep_handle.save()				
 
@@ -179,17 +179,17 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				if ds['mimetype'] == "application/pdf":
 					print "Creating derivative thumbnail from PDF"					
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
-					os.system('convert -thumbnail 200x200 -background white {file_path}[0] {temp_filename}'.format(file_path=file_path,temp_filename=temp_filename))
-					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-					thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
+					os.system('convert -thumbnail 200x200 -background white %s[0] %s' % (file_path, temp_filename))
+					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group='M')
+					thumb_handle.label = "%s_THUMBNAIL" % (ds['label'])
 					thumb_handle.content = open(temp_filename)
 					thumb_handle.save()
-					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					os.system('rm %s' % (temp_filename))
 
 					# write generic thumbnail for what should be SINGLE file per object
 					for gen_type in ['THUMBNAIL']:
 						rep_handle = eulfedora.models.DatastreamObject(self.ohandle, gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-						rep_handle.ds_location = "http://localhost/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type,APP_HOST=localConfig.APP_HOST)
+						rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
 						rep_handle.label = gen_type
 						rep_handle.save()
 

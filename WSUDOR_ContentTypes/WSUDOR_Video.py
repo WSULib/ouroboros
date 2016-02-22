@@ -75,25 +75,13 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
 		ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
 		if self.objMeta['isRepresentedBy'] not in ds_ids:
-			report_failure(("isRepresentedBy_check","{isRep} is not in {ds_ids}".format(isRep=self.objMeta['isRepresentedBy'],ds_ids=ds_ids)))
+			report_failure(("isRepresentedBy_check","%s is not in %s" % (self.objMeta['isRepresentedBy'], ds_ids)))
 
 
 		# check that content_type is a valid ContentType				
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
-			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
+			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
 
-
-		# check that objMeta.id starts with "wayne:"
-		# if not self.pid.startswith("wayne:"):
-		# 	report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))
-
-
-		# check that objMeta.id is NOT already an object in WSUDOR
-		# UPDATE : on back burner, Eulfedora seems to create a placeholder object in Fedora somehow...
-		# ohandle = fedora_handle.get_object(self.pid)
-		# if ohandle.exists == True:
-		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))						
-		
 		
 		# finally, return verdict
 		return results_dict
@@ -121,7 +109,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Using policy:",self.objMeta['policy']
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
-			policy_handle.ds_location = "http://localhost/fedora/objects/{policy}/datastreams/POLICY_XML/content".format(policy=policy_suffix)
+			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 			policy_handle.label = "POLICY"
 			policy_handle.save()
 
@@ -192,11 +180,11 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					print "Converted file is empty, could not create derivative MP3."
 				else:
 					print "Derivative mp3 created."
-				mp3_ds_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_MP3".format(ds_id=ds['ds_id']), "{label}_MP3".format(label=ds['label']), mimetype="audio/mpeg", control_group='M')
+				mp3_ds_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_MP3" % (ds['ds_id']), "%s_MP3" % (ds['label']), mimetype="audio/mpeg", control_group='M')
 				mp3_ds_handle.label = ds['label']
 				mp3_ds_handle.content = open(temp_filename)
 				mp3_ds_handle.save()
-				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))		
+				os.system('rm %s' % (temp_filename))		
 
 
 				# create thumbnail and preview waveforms for datastreams
@@ -205,7 +193,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				https://github.com/bbcrd/audiowaveform
 				'''
 				temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".png"
-				os.system("audiowaveform -i {input_file} -o {temp_filename} -w 1280 --waveform-color 0c5449ff --background-color FFFFFFFF --no-axis-labels".format(input_file=file_path, temp_filename=temp_filename))
+				os.system("audiowaveform -i %s -o %s -w 1280 --waveform-color 0c5449ff --background-color FFFFFFFF --no-axis-labels" % (file_path, temp_filename))
 				
 				# preview (do first, downsizing from here)				
 				im = Image.open(temp_filename)	
@@ -213,9 +201,9 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				max_width = 1280	
 				max_height = 960		
 				im.save(temp_filename,"JPEG")
-				rep_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_PREVIEW".format(ds_id=ds['ds_id']), "{label}_PREVIEW".format(label=ds['label']), mimetype="image/jpeg", control_group="M")
+				rep_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_PREVIEW" % (ds['ds_id']), "%s_PREVIEW" % (ds['label']), mimetype="image/jpeg", control_group="M")
 				rep_handle.content = open(temp_filename)
-				rep_handle.label = "{label}_PREVIEW".format(label=ds['label'])
+				rep_handle.label = "%s_PREVIEW" % (ds['label'])
 				rep_handle.save()
 
 				# thumbnail				
@@ -225,13 +213,13 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				max_height = 200
 				im.thumbnail((max_width, max_height), Image.ANTIALIAS)		
 				im.save(temp_filename,"JPEG")
-				rep_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group="M")
+				rep_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group="M")
 				rep_handle.content = open(temp_filename)
-				rep_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
+				rep_handle.label = "%s_THUMBNAIL" % (ds['label'])
 				rep_handle.save()				
 				
 				# remove temp waveform
-				os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+				os.system('rm %s' % (temp_filename))
 
 				# append to playlist_list
 				playlist_list.append(ds)
@@ -240,10 +228,10 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write PLAYLIST datastream with playlist_list
 			print "Generating PLAYLIST datastream"
 			for ds in playlist_list:
-				ds['thumbnail'] = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_THUMBNAIL/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'],APP_HOST=localConfig.APP_HOST)
-				ds['preview'] = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_PREVIEW/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'],APP_HOST=localConfig.APP_HOST)
-				ds['mp3'] = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_MP3/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'],APP_HOST=localConfig.APP_HOST)
-				ds['steaming_mp3'] = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_MP3/content".format(pid=self.ohandle.pid,ds_id=ds['ds_id'],APP_HOST=localConfig.APP_HOST)
+				ds['thumbnail'] = "http://%s/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+				ds['preview'] = "http://%s/fedora/objects/%s/datastreams/%s_PREVIEW/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+				ds['mp3'] = "http://%s/fedora/objects/%s/datastreams/%s_MP3/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+				ds['steaming_mp3'] = "http://%s/fedora/objects/%s/datastreams/%s_MP3/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
 
 			playlist_handle = eulfedora.models.DatastreamObject(self.ohandle,"PLAYLIST", "PLAYLIST", mimetype="application/json", control_group="M")
 			playlist_handle.content = json.dumps( sorted(playlist_list, key=lambda k: k['order']) )
@@ -254,7 +242,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write generic thumbnail and preview for object
 			for gen_type in ['THUMBNAIL','PREVIEW']:
 				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-				rep_handle.ds_location = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type,APP_HOST=localConfig.APP_HOST)
+				rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
 				rep_handle.label = gen_type
 				rep_handle.save()
 	

@@ -33,17 +33,17 @@ from WSUDOR_API import WSUDOR_API_app
 # function to create/remove Ouroboros pidfile
 def pidfileCreate():	
 	print "Creating pidfile"
-	fhand=open("/var/run/{APP_NAME}.pid".format(APP_NAME=APP_NAME),"w")
+	fhand=open("/var/run/%s.pid" % (APP_NAME),"w")
 	fhand.write(str(os.getpid()))
 	fhand.close()
-	ouroboros_pidlock = lockfile.LockFile("/var/run/{APP_NAME}.pid".format(APP_NAME=APP_NAME))
+	ouroboros_pidlock = lockfile.LockFile("/var/run/%s.pid" % (APP_NAME))
 	ouroboros_pidlock.acquire()			
 	return ouroboros_pidlock
 	
 def pidfileRemove():
 	print "Removing pidfile"
 	ouroboros_pidlock.release()
-	os.system("rm /var/run/{APP_NAME}.pid".format(APP_NAME=APP_NAME))
+	os.system("rm /var/run/%s.pid" % (APP_NAME))
 
 
 
@@ -63,7 +63,7 @@ class fedoraConsumerWorker(object):
     QUEUE = "/topic/fedora.apim.update"
     def __init__(self, config=None):
         if config is None:
-            config = StompConfig('tcp://localhost:{FEDCONSUMER_PORT}'.format(FEDCONSUMER_PORT=FEDCONSUMER_PORT))
+            config = StompConfig('tcp://localhost:%s' % (FEDCONSUMER_PORT))
         self.config = config
 
     @defer.inlineCallbacks

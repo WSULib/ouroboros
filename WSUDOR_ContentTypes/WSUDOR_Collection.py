@@ -72,21 +72,11 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
 		ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
 		if self.objMeta['isRepresentedBy'] not in ds_ids:
-			report_failure(("isRepresentedBy_check","{isRep} is not in {ds_ids}".format(isRep=self.objMeta['isRepresentedBy'],ds_ids=ds_ids)))
+			report_failure(("isRepresentedBy_check","%s is not in %s" % (self.objMeta['isRepresentedBy'], ds_ids)))
 
 		# check that content_type is a valid ContentType				
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
-			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: {content_type}, not found in acceptable ContentTypes: {ContentTypes_list} ".format(content_type=self.content_type,ContentTypes_list=WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
-
-		# # check that objMeta.id starts with "wayne:"
-		# if not self.pid.startswith("wayne:"):
-		# 	report_failure(("PID prefix","The pid {pid}, does not start with the usual 'wayne:' prefix.".format(pid=self.pid)))
-
-		# # check that objMeta.id is NOT already an object in WSUDOR
-		# UPDATE : on back burner, Eulfedora seems to create a placeholder object in Fedora somehow...
-		# ohandle = fedora_handle.get_object(self.pid)
-		# if ohandle.exists == True:
-		# 	report_failure(("PID existence in WSUDOR","The pid {pid}, appears to exist in WSUDOR already.".format(pid=self.pid)))		
+			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
 				
 		# finally, return verdict
 		return results_dict
@@ -109,7 +99,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Using policy:",self.objMeta['policy']
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
-			policy_handle.ds_location = "http://localhost/fedora/objects/{policy}/datastreams/POLICY_XML/content".format(policy=policy_suffix)
+			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 			policy_handle.label = "POLICY"
 			policy_handle.save()
 
@@ -155,11 +145,11 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					if im.mode != "RGB":
 						im = im.convert("RGB")
 					im.save(temp_filename,'JPEG')
-					preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_ACCESS".format(ds_id=ds['ds_id']), "{label}_ACCESS".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-					preview_handle.label = "{label}_ACCESS".format(label=ds['label'])
+					preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_ACCESS" % (ds['ds_id']), "%s_ACCESS" % (ds['label']), mimetype="image/jpeg", control_group='M')
+					preview_handle.label = "%s_ACCESS" % (ds['label'])
 					preview_handle.content = open(temp_filename)
 					preview_handle.save()
-					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					os.system('rm %s' % (temp_filename))
 					
 					# make thumb			
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
@@ -171,11 +161,11 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					if im.mode != "RGB":
 						im = im.convert("RGB")
 					im.save(temp_filename,'JPEG')
-					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_THUMBNAIL".format(ds_id=ds['ds_id']), "{label}_THUMBNAIL".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-					thumb_handle.label = "{label}_THUMBNAIL".format(label=ds['label'])
+					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group='M')
+					thumb_handle.label = "%s_THUMBNAIL" % (ds['label'])
 					thumb_handle.content = open(temp_filename)
 					thumb_handle.save()
-					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					os.system('rm %s' % (temp_filename))
 
 					# make preview
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
@@ -187,17 +177,17 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					if im.mode != "RGB":
 						im = im.convert("RGB")
 					im.save(temp_filename,'JPEG')
-					preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_PREVIEW".format(ds_id=ds['ds_id']), "{label}_PREVIEW".format(label=ds['label']), mimetype="image/jpeg", control_group='M')
-					preview_handle.label = "{label}_PREVIEW".format(label=ds['label'])
+					preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_PREVIEW" % (ds['ds_id']), "%s_PREVIEW" % (ds['label']), mimetype="image/jpeg", control_group='M')
+					preview_handle.label = "%s_PREVIEW" % (ds['label'])
 					preview_handle.content = open(temp_filename)
 					preview_handle.save()
-					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					os.system('rm %s' % (temp_filename))
 
 					# make jp2
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jp2"
-					os.system("convert {input} {output}[256x256]".format(input=file_path,output=temp_filename))
-					jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "{ds_id}_JP2".format(ds_id=ds['ds_id']), "{label}_JP2".format(label=ds['label']), mimetype="image/jp2", control_group='M')
-					jp2_handle.label = "{label}_JP2".format(label=ds['label'])
+					os.system("convert %s %s[256x256]" % (file_path, temp_filename))
+					jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_JP2" % (ds['ds_id']), "%s_JP2" % (ds['label']), mimetype="image/jp2", control_group='M')
+					jp2_handle.label = "%s_JP2" % (ds['label'])
 					try:
 						jp2_handle.content = open(temp_filename)
 					except:
@@ -206,14 +196,14 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 						temp_filename = temp_filename + "-0.jp2"
 						jp2_handle.content = open(temp_filename)
 					jp2_handle.save()
-					os.system('rm {temp_filename}'.format(temp_filename=temp_filename))
+					os.system('rm %s' % (temp_filename))
 
 					# add to RELS-INT
-					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/{pid}'.format(pid=self.ohandle.pid))
-					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_THUMBNAIL'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
-					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_JP2'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
-					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_PREVIEW'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
-					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/{pid}/{ds_id}_ACCESS'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isAccessOf','info:fedora/{pid}/{ds_id}'.format(pid=self.ohandle.pid,ds_id=ds['ds_id']))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/%s' % (self.ohandle.pid))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_THUMBNAIL' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_JP2' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_PREVIEW' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
+					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_ACCESS' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isAccessOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
 
 
 				# else, skip processing and write straight 1:1 datastream
@@ -232,23 +222,13 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write generic thumbnail and preview
 			for gen_type in ['THUMBNAIL','PREVIEW']:
 				thumb_rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-				thumb_rep_handle.ds_location = "http://{APP_HOST}/fedora/objects/{pid}/datastreams/{ds_id}_{gen_type}/content".format(pid=self.ohandle.pid,ds_id=self.objMeta['isRepresentedBy'],gen_type=gen_type,APP_HOST=localConfig.APP_HOST)
+				thumb_rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
 				thumb_rep_handle.label = gen_type
 				thumb_rep_handle.save()
 
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
-			
-
-			# REMOVED 12/1/2014 - NOT INGESTING "BAGS OF BAGS" IN THE STRICT SENSE, WILL ACCEPT SIMPLE ARCHIVES INSTEAD ALONGSIDE COLLECTION BAGS
-			# for each bag in objects directory, ingest child
-			# child_objects = os.walk(self.Bag.path+"/data/objects").next()[1]
-			# for child_object in child_objects:
-			# 	child_bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(object_type="bag", payload=self.Bag.path+"/data/objects/"+child_object)
-			# 	ingest_result = child_bag_handle.ingestBag()	
-			# 	# add relationships relative to collection object			
-			# 	child_bag_handle.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isMemberOfCollection","info:fedora/{pid}".format(pid=self.objMeta['id']))
 
 
 			# finish generic ingest
@@ -283,7 +263,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			("Title", "self.SolrDoc.asDictionary()['mods_title_ms'][0]"),
 			("Description", "self.SolrDoc.asDictionary()['mods_abstract_ms'][0]"),
 			("Year", "self.SolrDoc.asDictionary()['mods_key_date_year'][0]"),
-			("Item URL", "\"<a href='{url}'>{url}</a>\".format(url=self.SolrDoc.asDictionary()['mods_location_url_ms'][0])"),
+			("Item URL", "\"<a href='%s'>%s</a>\" % (self.SolrDoc.asDictionary()['mods_location_url_ms'][0],self.SolrDoc.asDictionary()['mods_location_url_ms'][0])"),
 			("Original", "self.SolrDoc.asDictionary()['mods_otherFormat_note_ms'][0]")
 		]
 		for field_set in preferred_fields:

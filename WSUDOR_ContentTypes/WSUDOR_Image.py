@@ -125,8 +125,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write objMeta as datastream
 			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
-			objMeta_handle.label = "Ingest Bag Object Metadata"
-			# objMeta_handle.content = json.dumps(self.objMeta)
+			objMeta_handle.label = "Ingest Bag Object Metadata"			
 			file_path = self.Bag.path + "/data/objMeta.json"
 			objMeta_handle.content = open(file_path)
 			objMeta_handle.save()
@@ -375,7 +374,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			("Title", "single_json['objectSolrDoc']['mods_title_ms'][0]"),
 			("Description", "single_json['objectSolrDoc']['mods_abstract_ms'][0]"),
 			("Year", "single_json['objectSolrDoc']['mods_key_date_year'][0]"),
-			("Item URL", "\"<a href='{url}'>{url}</a>\".format(url=single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
+			("Item URL", "\"<a href='%s'>%s</a>\" % (single_json['objectSolrDoc']['mods_location_url_ms'][0],single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
 			("Original", "single_json['objectSolrDoc']['mods_otherFormat_note_ms'][0]")
 		]
 		for field_set in preferred_fields:

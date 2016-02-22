@@ -22,7 +22,7 @@ def skipCache():
 
 # IIIF_MANIFEST MAIN
 #########################################################################################################
-@WSUDOR_API_app.route("/{IIIF_MANIFEST_PREFIX}/<identifier>".format(IIIF_MANIFEST_PREFIX=localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/%s/<identifier>" % (localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
 def iiif_manifest(identifier):		
 
 	'''
@@ -45,7 +45,7 @@ def iiif_manifest(identifier):
 
 	except Exception,e:
 		print "WSUDOR_API iiif_manifest call unsuccessful.  Error:",str(e)
-		return '{{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
+		return '{{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":%s}}' % (json.dumps(str(e)))
 		
 
 @cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)

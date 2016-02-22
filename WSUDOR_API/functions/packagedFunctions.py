@@ -160,16 +160,16 @@ class SingleObjectMethods(object):
 				parts_imageDict[each['ds_id']] = {
 					'ds_id':each['ds_id'],
 					'pid':each['pid'],
-					'thumbnail' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "{object}".format(object=each['object'])).next().split("/")[-1],
-					'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "{object}".format(object=each['object'])).next().split("/")[-1],
-					'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "{object}".format(object=each['object'])).next().split("/")[-1],
+					'thumbnail' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "%s" % (each['object'])).next().split("/")[-1],
+					'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "%s" % (each['object'])).next().split("/")[-1],
+					'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "%s" % (each['object'])).next().split("/")[-1],
 					# RIGHT HERE, PUT THE QUERY THAT GRABS THE ORDER THAT WE NOW HAVE AS A RELS-INT #
 
 				}
 
 				# check for order and assign
 				try:
-					order = int(fedora_handle.risearch.get_objects("{object}".format(object=each['object']), "info:fedora/fedora-system:def/relations-internal#isOrder").next())
+					order = int(fedora_handle.risearch.get_objects("%s" % (each['object']), "info:fedora/fedora-system:def/relations-internal#isOrder").next())
 				except:
 					order = False
 				parts_imageDict[each['ds_id']]['order'] = order
@@ -219,12 +219,12 @@ class SingleObjectMethods(object):
 
 				#MP3 symlink
 				mp3_symlink = makeSymLink( self.PID, (each['ds_id']+"_MP3") )
-				mp3_symlink_URL = "http://{APP_HOST}/symLinks/".format(APP_HOST=localConfig.APP_HOST)+mp3_symlink['symlink'].split("/")[-1]
+				mp3_symlink_URL = "http://%s/symLinks/" % (localConfig.APP_HOST)+mp3_symlink['symlink'].split("/")[-1]
 				each['streaming_mp3'] = mp3_symlink_URL
 
 				#original DS symlink
 				original_symlink = makeSymLink( self.PID, each['ds_id'] )
-				original_symlink_URL = "http://{APP_HOST}/symLinks/".format(APP_HOST=localConfig.APP_HOST)+original_symlink['symlink'].split("/")[-1]
+				original_symlink_URL = "http://%s/symLinks/" % (localConfig.APP_HOST)+original_symlink['symlink'].split("/")[-1]
 				each['streaming_original'] = original_symlink_URL
 
 			return ("playlist",playlist_handle)

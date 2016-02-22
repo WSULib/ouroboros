@@ -46,7 +46,7 @@ def WSUDOR_API_main(getParams):
 					JSONdict[funcName.__name__] = funcName(getParams) #passes *all* GET params from mainRouter()
 				except Exception,e:
 					traceback.print_exc(file=sys.stdout)
-					JSONdict[funcName.__name__] = '{{"status":{exceptionErrorString}}}'.format(exceptionErrorString=json.dumps(str(e)))
+					JSONdict[funcName.__name__] = '{{"status":%s}}' % (json.dumps(str(e)))
 			else:
 				print "Function not found"
 

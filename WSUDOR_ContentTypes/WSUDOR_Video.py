@@ -59,7 +59,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# perform ingestTest
-	def validIngestBag(self):
+	def validIngestBag(self,indexObject=True):
 
 		def report_failure(failure_tuple):
 			if results_dict['verdict'] == True : results_dict['verdict'] = False

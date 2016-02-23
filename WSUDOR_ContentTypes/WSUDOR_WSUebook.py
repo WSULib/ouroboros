@@ -339,7 +339,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			html_parsed = BeautifulSoup(fhand)
 			print "HTML document parsed..."
 			#sets div with page_ID
-			self.html_concat = self.html_concat + '<div id="page_ID_%s" class="html_page">' % (fds['order'])
+			self.html_concat = self.html_concat + '<div id="page_ID_%s" class="html_page">' % (ds['order'])
 			#Set in try / except block, as some HTML documents contain no elements within <body> tag
 			try:
 				for block in html_parsed.body:				

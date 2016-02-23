@@ -61,7 +61,7 @@ class WSUDOR_ContentModel(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	def ingestBag(self):
+	def ingestBag(self,indexObject=True):
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")		
 

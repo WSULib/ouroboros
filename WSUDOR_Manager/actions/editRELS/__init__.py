@@ -84,7 +84,7 @@ def editRELS_advanced():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PIDlet['cPID'],APP_HOST=localConfig.APP_HOST)
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.APP_HOST, PIDlet['cPID'][0])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
@@ -116,12 +116,12 @@ def editRELS_shared():
 		where_statement = ""
 		for PID in list_of_PIDs:
 			if PID != None:				
-				where_statement += "<fedora:{PID}> $predicate $object . ".format(PID=PID)
-		query_statement = "select $predicate $object from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
+				where_statement += "<fedora:%s> $predicate $object . " % (PID)
+		query_statement = "select $predicate $object from <#ri> where {{ %s }}" % (where_statement)		
 
 		# print query_statement
 		
-		base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+		base_URL = "http://%s:%s@localhost/fedora/risearch" % (FEDORA_USER, FEDORA_PASSWORD)
 		payload = {
 			"lang" : "sparql",
 			"query" : query_statement,
@@ -222,7 +222,7 @@ def editRELS_purge_worker(job_package):
 	predicate_string = form_data['predicate'].encode('utf-8').strip()
 	object_string = form_data['object'].encode('utf-8').strip()
 
-	print "Removing the following predicate / subject: {predicate_string} / {object_string}".format(predicate_string=predicate_string,object_string=object_string)
+	print "Removing the following predicate / subject: %s /%s" % (predicate_string, object_string)
 		
 	return obj_ohandle.purge_relationship(predicate_string, object_string)
 
@@ -261,7 +261,7 @@ def editRELS_edit_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID,APP_HOST=localConfig.APP_HOST)
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content".format(localConfig.APP_HOST, PID)
 	pre_mod_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 
@@ -289,7 +289,7 @@ def editRELS_edit_worker(job_package):
 		XMLroot = etree.fromstring(encoded_xml, parser=parser)
 		desc_tag = XMLroot.xpath("//rdf:Description", namespaces=XMLroot.nsmap)
 		for desc_tag in XMLroot.xpath("//rdf:Description",namespaces=XMLroot.nsmap):
-			desc_tag.attrib['{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about'] = "info:fedora/{PID}".format(PID=PID)
+			desc_tag.attrib['{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about'] = "info:fedora/%s" % (PID)
 		new_raw = etree.tostring(XMLroot)
 		
 		# similar to addDS functionality
@@ -321,7 +321,7 @@ def editRELS_regex_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/RELS-EXT/content".format(PID=PID,APP_HOST=localConfig.APP_HOST)
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.APP_HOST, PID)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	

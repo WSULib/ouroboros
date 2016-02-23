@@ -68,7 +68,7 @@ def createObjectIndex_worker(collection_PID_suffix):
 
 	# build query
 	query = {
-		"q" : "*{collection_PID_suffix}".format(collection_PID_suffix=collection_PID_suffix),
+		"q" : "*%s" % (collection_PID_suffix),
 		"rows" : 100,
 		"start" : 0,
 		"sort" : "id asc"
@@ -76,7 +76,7 @@ def createObjectIndex_worker(collection_PID_suffix):
 
 	# get collection length
 	total_results = solr_handle.search(**query).total_results
-	print "Iterating through {total_results} objects...".format(total_results=total_results)
+	print "Iterating through %s objects..." % (total_results)
 	total_iterations = total_results / query['rows']
 	if total_results % query['rows'] > 0:
 		total_iterations += 1
@@ -97,7 +97,7 @@ def createObjectIndex_worker(collection_PID_suffix):
 		for doc in results.documents:
 			
 			PID = doc['id']
-			print "{PID} gets index: {cursor}".format(PID=PID,cursor=cursor)
+			print "%s gets index: %s" % (PID, cursor)
 						
 			# retrieve COLLINDEX JSON, edit current collection index, resubmit			
 			obj_ohandle = fedora_handle.get_object(PID)
@@ -125,7 +125,7 @@ def createObjectIndex_worker(collection_PID_suffix):
 
 			# save constructed object
 			result = DS_handle.save()
-			print "Result for {PID}: {result}".format(PID=PID,result=result)
+			print "Result for %s: %s" % (PID, result)
 
 			# bump counter
 			cursor += 1

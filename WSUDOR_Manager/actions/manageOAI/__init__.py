@@ -203,7 +203,7 @@ def manageOAI_genItemID_worker(job_package):
 	obj_ohandle = fedora_handle.get_object(PID)	
 
 	# generate OAI identifier
-	OAI_identifier = "oai:digital.library.wayne.edu:{PID}".format(PID=PID)	
+	OAI_identifier = "oai:digital.library.wayne.edu:%s" % (PID)	
 	
 	print obj_ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", OAI_identifier)
 	
@@ -233,7 +233,7 @@ def manageOAI_toggleSet(PID):
 		
 	# setSpec relationship	
 	predicate_string = "http://www.openarchives.org/OAI/2.0/setSpec"
-	object_string = "set:{PID}".format(PID=PID)
+	object_string = "set:%s" % (PID)
 	print toggle_function(predicate_string, object_string)
 
 	# setName relationship	
@@ -282,15 +282,15 @@ def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 
 	# toggle collection OAI relatedd RELS-EXT relationships	
 	if harvest_status == "False":
-		print "{PID} was not part of set, enabling...".format(PID=PID)		
+		print "%s was not part of set, enabling..." % (PID)		
 		toggle_function = obj_handle.add_relationship
 	if harvest_status == "True":
-		print "{PID} was harvestable, deactivating...".format(PID=PID)		
+		print "%s was harvestable, deactivating..." % (PID)		
 		toggle_function = obj_handle.purge_relationship
 		
 	# isMemberOfOAISet relationship		
 	predicate_string = isMemberOfOAISet_predicate
-	object_string = "info:fedora/{collectionPID}".format(collectionPID=collectionPID)	
+	object_string = "info:fedora/%s" % (collectionPID)
 	return toggle_function(predicate_string, object_string)
 
 
@@ -322,13 +322,13 @@ def purgePROAI():
 
 	# purge disc cache
 	print "Delete cache"
-	os.system('rm -r {PROAI_CACHE_LOCATION}/*'.format(PROAI_CACHE_LOCATION=PROAI_CACHE_LOCATION))	
+	os.system('rm -r %s/*' % (PROAI_CACHE_LOCATION))	
 
 	# truncate MySQL tables
 	con = _mysql.connect('localhost','WSUDOR_Manager','WSUDOR_Manager','proai')
 	for table in PROAI_TABLES:
 		print "Deleting rows from",table
-		con.query('DELETE FROM {table}'.format(table=table))
+		con.query('DELETE FROM %s' % (table))
 	con.close()
 
 	# restart PROAI

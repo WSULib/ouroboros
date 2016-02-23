@@ -20,7 +20,7 @@ class user_pids(db.Model):
 		self.group_name = group_name
 
 	def __repr__(self):    	
-		return '<PID {PID}, username {username}>'.format(PID=self.PID,username=self.username)
+		return '<PID %s, username %s>' % (self.PID, self.username)
 
 
 class user_jobs(db.Model):
@@ -39,8 +39,8 @@ class user_jobs(db.Model):
 		self.status = status
 		self.job_name = job_name
 
-	def __repr__(self):    	
-		return '<Job# {job_num}, username: {username}, celery_task_id: {celery_task_id}, status: {status}>'.format(job_num=self.job_num,username=self.username, celery_task_id=self.celery_task_id, status=self.status)
+	def __repr__(self):
+		return '<Job# %s, username: %s, celery_task_id: %s, status: %s>' % (self.job_num, self.username, self.celery_task_id, self.status)
 
 
 ROLE_USER = 0
@@ -89,7 +89,7 @@ class job_rollback(db.Model):
 		
 
 	def __repr__(self):    	
-		return '<Job# {job_num}, username: {username}>'.format(job_num=self.job_num,username=self.username)
+		return '<Job# %s, username: %s>' % (self.job_num, self.username)
 
 
 class xsl_transformations(db.Model):
@@ -105,7 +105,7 @@ class xsl_transformations(db.Model):
 		
 
 	def __repr__(self):    	
-		return '<Name: {name}, Description: {description}>'.format(name=self.name,description=self.description)
+		return '<Name: %s, Description: %s>' % (self.name, self.description)
 
 
 class ingest_MODS(db.Model):
@@ -122,7 +122,7 @@ class ingest_MODS(db.Model):
 		
 
 	def __repr__(self):    	
-		return '<Name: {name}>, ID: {id}>'.format(name=self.name, id=self.id)
+		return '<Name: %s>, ID: %s>' % (self.name, self.id)
 
 
 #objMeta class Object
@@ -190,7 +190,7 @@ class SolrDoc(object):
 
 		# get stateful, current Solr doc
 		query_params = {
-			"q":'id:{escaped_id}'.format(escaped_id=self.escaped_id),
+			"q":'id:%s' % (self.escaped_id),
 			"rows":1
 		}
 		response = solr_handle.search(**query_params)
@@ -239,7 +239,7 @@ class SolrSearchDoc(object):
 
 		# get stateful, current Solr doc
 		query_params = {
-			"q":'id:{escaped_id}'.format(escaped_id=self.escaped_id),
+			"q":'id:%s' % (self.escaped_id),
 			"rows":1
 		}
 		response = solr_handle.search(**query_params)

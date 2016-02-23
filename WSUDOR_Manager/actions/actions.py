@@ -138,7 +138,7 @@ class postTask(Task):
 		redisHandles.r_PIDlock.delete(PID)		
 
 		# update job with task completion
-		redisHandles.r_job_handle.set("{task_id}".format(task_id=task_id), "{status},{PID}".format(status=status,PID=PID))		
+		redisHandles.r_job_handle.set("%s" % (task_id), "%s,%s" % (status, PID))
 	
 		# increments completed tasks
 		if status == "SUCCESS":
@@ -178,7 +178,7 @@ def celeryTaskFactory(**kwargs):
 		task_id = result.id
 
 		# Set handle in 
-		redisHandles.r_job_handle.set("{task_id}".format(task_id=task_id), "FIRED,{PID}".format(PID=PID))
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (PID))
 			
 		# update incrementer for total assigned
 		jobs.jobUpdateAssignedCount(job_num)

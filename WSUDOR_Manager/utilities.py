@@ -50,26 +50,11 @@ def escapeSolrArg(term):
 	return "".join([nextStr for nextStr in escapedSeq(term)])
 
 
-def genUserPin(username):
-	# create user pin
-	date_obj = datetime.datetime.now()
-	hashString = username + str(date_obj.month) + str(date_obj.day) + "WSUDOR"
-	user_pin = hashlib.sha256(hashString).hexdigest()
-	return user_pin	
-
-
-def checkPinCreds(pin_package,check_type):
-	if check_type == "purge":
-		# check PINs are correct for username, and that usernames are not equal
-		if pin_package['ap1'] == genUserPin(pin_package['an1']) and pin_package['ap2'] == genUserPin(pin_package['an2']) and pin_package['an1'] != pin_package['an2']:
-			return True
-		else:
-			return False
 
 def returnOAISets(context):
 	# returns list of tuples, in format (collection PID, OAI set name, OAI set ID)
 	query_statement = "select $subject $setSpec $setName from <#ri> where { $subject <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $subject <http://www.openarchives.org/OAI/2.0/setName> $setName . }"
-	base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+	base_URL = "http://%s:%s@localhost/fedora/risearch" % (FEDORA_USER,FEDORA_PASSWORD)
 	payload = {
 		"lang" : "sparql",
 		"query" : query_statement,

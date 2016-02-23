@@ -126,7 +126,7 @@ class SolrIndexerWorker(object):
 		# Returns streaming socket iterator with PIDs
 		'''
 		
-		risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/fedora-system:FedoraObject-3.0> and $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '{lastFedoraIndexDate}'^^<xml-schema:dateTime> in <#xsd>".format(lastFedoraIndexDate=lastFedoraIndexDate)
+		risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/fedora-system:FedoraObject-3.0> and $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '%s'^^<xml-schema:dateTime> in <#xsd>" % (lastFedoraIndexDate)
 
 		risearch_params = urllib.urlencode({
 			'type': 'tuples', 
@@ -137,7 +137,7 @@ class SolrIndexerWorker(object):
 			'stream':'on',
 			'query': risearch_query
 			})
-		risearch_host = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch?".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+		risearch_host = "http://%s:%s@localhost/fedora/risearch?" % (FEDORA_USER, FEDORA_PASSWORD)
 
 		modified_objects = urllib.urlopen(risearch_host,risearch_params)
 		modified_objects.next() # bump past headers

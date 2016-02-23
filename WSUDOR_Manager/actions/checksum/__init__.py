@@ -33,7 +33,7 @@ def checksum_worker(job_package):
 		target_state = form_data['target_state']
 
 		# set state	
-		print "Setting state to: {target_state}".format(target_state=target_state)
+		print "Setting state to: %s" % (target_state)
 		
 		# get PID handle, set state, save()
 		PID = job_package['PID']		

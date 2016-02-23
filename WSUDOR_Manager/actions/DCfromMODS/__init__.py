@@ -42,7 +42,7 @@ def DCfromMODS_single(PID):
 	XMLroot = etree.fromstring(MODS_handle.content.serialize())
 
 	# 2) transform downloaded MODS to DC with LOC stylesheet
-	print "XSLT Transforming: {PID}".format(PID=PID)
+	print "XSLT Transforming: %s" % (PID)
 	# Saxon transformation
 	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 	xslt_tree = etree.parse(XSLhand)
@@ -68,7 +68,7 @@ def DCfromMODS_worker(job_package):
 	XMLroot = etree.fromstring(MODS_handle.content.serialize())
 
 	# 2) transform downloaded MODS to DC with LOC stylesheet
-	print "XSLT Transforming: {PID}".format(PID=PID)
+	print "XSLT Transforming: %s" % (PID)
 	# Saxon transformation
 	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 	xslt_tree = etree.parse(XSLhand)

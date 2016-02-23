@@ -3,16 +3,6 @@
 
 <p style="color:red;">Note: Remember, this action is permanent and cannot be undone!</p>
 
-<p>Two user pin authentication: {% if confirm_status == True %}<span style="color:green;">Confirmed</span></p>
 <form action="/fireTask/purgeObject_worker" method="POST">
-	<input type="hidden" name="an1" value="{{pin_package.an1}}"/>
-	<input type="hidden" name="ap1" value="{{pin_package.ap1}}"/>
-	<input type="hidden" name="an2" value="{{pin_package.an2}}"/>
-	<input type="hidden" name="ap2" value="{{pin_package.ap2}}"/>
 	<input type="submit" value="Make it so!"/>
 </form>
-
-{% else %}
-
-<span style="color:red;">Not Confirmed.</span> <a href="#" onclick="window.history.back(); return false;">Try again</a>{% endif %}</p>
-

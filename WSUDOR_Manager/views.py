@@ -293,7 +293,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 	
 	# begin job and set estimated tasks
 	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
-	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())	
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_num),userSelectedPIDs.count())	
 
 	# augment job_package
 	job_package['job_num'] = job_num
@@ -336,15 +336,15 @@ def userJobs():
 		status_package["job_num"] = job_num #this is pulled from SQL table
 		
 		# get estimated tasks
-		job_est_count = redisHandles.r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num))		
+		job_est_count = redisHandles.r_job_handle.get("job_%s_est_count" % (job_num))		
 		
 		# get assigned tasks
-		job_assign_count = redisHandles.r_job_handle.get("job_{job_num}_assign_count".format(job_num=job_num))
+		job_assign_count = redisHandles.r_job_handle.get("job_%s_assign_count" % (job_num))
 		if job_assign_count == None:
 			job_assign_count = 0
 		
 		# get completed tasks
-		job_complete_count = redisHandles.r_job_handle.get("job_{job_num}_complete_count".format(job_num=job_num))
+		job_complete_count = redisHandles.r_job_handle.get("job_%s_complete_count" % (job_num))
 		if job_complete_count == None:			
 			job_complete_count = 0
 
@@ -433,7 +433,7 @@ def userAllJobs():
 def jobDetails(job_num):
 	
 	# get number of estimate tasks
-	job_task_num = int(redisHandles.r_job_handle.get("job_{job_num}_est_count".format(job_num=job_num)))
+	job_task_num = int(redisHandles.r_job_handle.get("job_%s_est_count" % (job_num)))
 
 	# get parent object
 	job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
@@ -484,7 +484,7 @@ def taskDetails(task_id,job_num):
 def jobRemove(job_num):	
 		
 	if request.method == "POST" and request.form['commit'] == "true":
-		print "Removing job {job_num}".format(job_num=job_num)
+		print "Removing job %s" % (job_num)
 		result = jobs.jobRemove_worker(job_num)
 		print result
 
@@ -544,7 +544,7 @@ def flushCeleryTasks():
 	broker_clear = redisHandles.r_broker.flushdb()
 	
 	if broker_clear == True:
-		msg = "{broker_size} tasks cleared from Celery broker.".format(broker_size=str(broker_size))
+		msg = "%s tasks cleared from Celery broker." % (str(broker_size))
 	else:
 		msg = "Errors were had."
 		
@@ -717,7 +717,7 @@ def PIDmanageAction(action):
 	# if post AND group toggle
 	if request.method == 'POST' and action == 'group_toggle':		
 		group_name = request.form['group_name']
-		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '{username}' AND group_name = '{group_name}';".format(username=username,group_name=group_name))
+		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '%s' AND group_name = '%s';" % (username, group_name))
 
 	# select all
 	if action == "s_all":
@@ -732,7 +732,7 @@ def PIDmanageAction(action):
 	# select toggle	
 	if action == "s_toggle":		
 		print "All PIDs toggling..."
-		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '{username}';".format(username=username))
+		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '%s';" % (username))
 	
 	# delete selections
 	if action == "s_del":
@@ -893,38 +893,6 @@ def updatePIDsfromSolr(update_type):
 
 	return "Update Complete."
 
-
-# PID check for user
-@app.route("/userPin", methods=['POST', 'GET'])
-@login_required
-def userPin():	
-	# get username from session
-	username = session['username']	
-
-	# get date object
-	date_obj = datetime.now()
-
-	# perform search	
-	if request.method == 'POST':
-
-		print "generating pin"		
-
-		form_data = request.form
-		print form_data
-
-		# check credentials
-		user_handle = db.session.query(models.User).filter(models.User.username == form_data['username'],models.User.password == form_data['password']).first()
-
-		if user_handle != None:
-			print user_handle
-
-			# create user pin
-			user_pin = utilities.genUserPin(form_data['username'])
-
-			return render_template("userPin.html",username=username,date=date_obj, user_pin=user_pin)
-		
-	# render page
-	return render_template("userPin.html",username=username,date=date_obj)
 	
 # WSUDOR MANAGEMENT
 ####################################################################################
@@ -938,7 +906,7 @@ def imgServerCacheClear():
 	if results == 0:
 		msg = "imageServer Cache successfully cleared."
 	else:
-		msg = "An error was had: {results}".format(results=results)
+		msg = "An error was had: %s" % (results)
 		
 	return render_template("simpleMessage.html",msg=msg, heading="imageServer Cache Management")
 
@@ -952,7 +920,7 @@ def clearSymLinks():
 	if results == 0:
 		msg = "symLInks successfully cleared."
 	else:
-		msg = "An error was had: {results}".format(results=results)
+		msg = "An error was had: %s" % (results)
 		
 	return render_template("simpleMessage.html",msg=msg, heading="symLinks Management")
 
@@ -964,15 +932,15 @@ def clearExportBagItArchives():
 
 	# get username from session
 	username = session['username']	
-	target_dir = "/var/www/wsuls/Ouroboros/export/{username}".format(username=username)
+	target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
 
 	# run os command and return results
-	results = os.system("rm -r {target_dir}/*".format(target_dir=target_dir))	
+	results = os.system("rm -r %s/*" % (target_dir))	
 	
 	if results == 0:
 		msg = "User exported, BagIt archives successfully cleared."
 	else:
-		msg = "An error was had: {results}".format(results=results)
+		msg = "An error was had: %s" % (results)
 		
 	return render_template("exportBagClear.html",msg=msg)
 

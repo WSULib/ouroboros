@@ -78,7 +78,7 @@ def celeryTaskFactorybagIngestAndPush(job_num,job_package):
 	job_num = job_package['job_num']	
 
 	# update job info
-	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),1)
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_num),1)
 
 	# ingest in Fedora
 	step = 1
@@ -201,7 +201,7 @@ def multipleBag_ingest_worker(job_package):
 			# extract to temp dir
 			tar_handle = tarfile.open(archive_filename)
 			tar_handle.extractall(path=bag_dirs_tuple[0])
-			os.system("rm {archive_filename}".format(archive_filename=archive_filename))
+			os.system("rm %s" % (archive_filename))
 
 		# finally, rewalk
 		bag_dirs_tuple = os.walk(bag_dir).next()
@@ -215,7 +215,7 @@ def multipleBag_ingest_worker(job_package):
 	for bag in bag_dirs:
 		try:
 			print "Working on",bag
-			print "Ingesting {count} / {total}".format(count=count,total=len(bag_dirs))
+			print "Ingesting %s / %s" % (count, len(bag_dirs))
 			print ingestBagAndPush(bag, dest_repo, refresh_remote=refresh_remote, export_context=export_context, overwrite=overwrite)
 			count += 1
 		except:
@@ -238,24 +238,24 @@ def payloadExtractor(payload_location,ingest_type):
 		archive_filename = os.path.basename(payload_location)
 
 		# move file
-		os.system("cp {payload_location} /tmp/Ouroboros/ingest_workspace/".format(payload_location=payload_location))
+		os.system("cp %s /tmp/Ouroboros/ingest_workspace/" % (payload_location))
 
 		# extract to temp dir
 		temp_dir = str(uuid.uuid4())
-		tar_handle = tarfile.open("/tmp/Ouroboros/ingest_workspace/{archive_filename}".format(archive_filename=archive_filename))
-		tar_handle.extractall(path="/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir))
+		tar_handle = tarfile.open("/tmp/Ouroboros/ingest_workspace/%s" % (archive_filename))
+		tar_handle.extractall(path="/tmp/Ouroboros/ingest_workspace/%s" % (temp_dir))
 
 		# remove archive after copy
-		os.system("rm /tmp/Ouroboros/ingest_workspace/{archive_filename}".format(archive_filename=archive_filename))
+		os.system("rm /tmp/Ouroboros/ingest_workspace/%s" % (archive_filename))
 
 		# extracted bag_dir for single, return directory of single BagIt directory
 		if ingest_type == "single":
-			bag_dir = os.walk("/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir)).next()[1][0]
-			bag_dir = "/tmp/Ouroboros/ingest_workspace/{temp_dir}/".format(temp_dir=temp_dir) + bag_dir
+			bag_dir = os.walk("/tmp/Ouroboros/ingest_workspace/%s" % (temp_dir)).next()[1][0]
+			bag_dir = "/tmp/Ouroboros/ingest_workspace/%s/" % (temp_dir) + bag_dir
 
 		# extracted bag_dir for multiple, return temp directory full of BagIt archives
 		if ingest_type == "multiple":
-			bag_dir = "/tmp/Ouroboros/ingest_workspace/{temp_dir}".format(temp_dir=temp_dir)
+			bag_dir = "/tmp/Ouroboros/ingest_workspace/%s" % (temp_dir)
 
 		return bag_dir
 
@@ -309,6 +309,6 @@ def ingestBagAndPush(bag_dir, dest_repo, refresh_remote=True, overwrite=False, e
 	# remove from Solr	
 	solr_handle.delete_by_key(bag_handle.pid)
 
-	return json.dumps({"Ingest Results for {bag_label}, PID: {bag_pid}".format(bag_label=bag_handle.label.encode('utf-8'),bag_pid=bag_handle.pid):True})
+	return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):True})
 
 

@@ -191,7 +191,7 @@ def celeryTaskFactoryUnique(job_num,job_package):
 	FOXMLs_serialized = genFOXML("retrieve", form_data['MODS_id'], form_data['xsl_trans_id'])
 
 	# update job info
-	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),len(FOXMLs_serialized))
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_num),len(FOXMLs_serialized))
 
 	# ingest in Fedora
 	step = 1

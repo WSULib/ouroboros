@@ -40,7 +40,7 @@ def MODSexport_export():
 
 	# collect MODS records for selected objects	
 	PIDs = jobs.getSelPIDs()
-	with open('/tmp/Ouroboros/{username}_MODS_concat.xml'.format(username=username), 'w') as outfile:
+	with open('/tmp/Ouroboros/%s_MODS_concat.xml' % (username), 'w') as outfile:
 
 		# write header
 		outfile.write('<?xml version="1.0" encoding="UTF-8"?><mods:modsCollection xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mods="http://www.loc.gov/mods/v3" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">\n')
@@ -93,7 +93,7 @@ def MODSexport_export():
 	outfile.close()
 
 	# open file from tmp and return as download
-	fhand = open('/tmp/Ouroboros/{username}_MODS_concat.xml'.format(username=username), 'r')
+	fhand = open('/tmp/Ouroboros/%s_MODS_concat.xml' % (username), 'r')
 	response = make_response(fhand.read())
 	response.headers["Content-Disposition"] = "attachment; filename=MODS_export.xml"
 	return response
@@ -164,7 +164,7 @@ def celeryTaskFactoryImportMODS(job_num,job_package):
 	MODS_list = XMLroot.findall('{http://www.loc.gov/mods/v3}mods')	
 
 	# update job info
-	redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),len(MODS_list))
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_num), len(MODS_list))
 
 	# ingest in Fedora
 	step = 1
@@ -216,13 +216,13 @@ def importMODS_worker(job_package):
 
 	PID = job_package['PID']
 	MODS = job_package['MODS']	
-	print "Updating MODS for {PID}".format(PID=PID)
+	print "Updating MODS for %s" % (PID)
 
 	# open temp MODS file, read, delete
 	fhand = open(MODS,'r')
 	MODS_string = fhand.read()
 	fhand.close()
-	os.system("rm {MODS}".format(MODS=MODS))
+	os.system("rm %s" % (MODS))
 
 	obj_handle = fedora_handle.get_object(PID)
 	ds_handle = obj_handle.getDatastreamObject("MODS")

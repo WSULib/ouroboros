@@ -27,7 +27,7 @@ def augmentCore(PID):
 		# get content type
 		obj_ohandle = fedora_handle.get_object(PID)			
 		obj_risearch = obj_ohandle.risearch
-		obj_spo = obj_risearch.spo_search("info:fedora/{PID}".format(PID=PID), "info:fedora/fedora-system:def/relations-external#hasContentModel")
+		obj_spo = obj_risearch.spo_search("info:fedora/%s" % (PID), "info:fedora/fedora-system:def/relations-external#hasContentModel")
 		obj_objects = obj_spo.objects()
 		for obj in obj_objects:
 			

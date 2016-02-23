@@ -5,7 +5,7 @@ from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import models, jobs, db, utilities
-from localConfig import *
+import localConfig
 from flask import Blueprint, render_template, abort, request
 
 #python modules
@@ -51,7 +51,7 @@ def index():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PIDlet['cPID'],APP_HOST=localConfig.APP_HOST)
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/MODS/content" % (localConfig.APP_HOST, PIDlet['cPID'][0])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
@@ -96,7 +96,7 @@ def editDSRegex_regex_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://{APP_HOST}/fedora/objects/{PID}/datastreams/MODS/content".format(PID=PID,APP_HOST=localConfig.APP_HOST)
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/MODS/content".format(localConfig.APP_HOST, PID)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")	
 	###############################################################
 	

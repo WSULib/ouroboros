@@ -8,10 +8,10 @@ session = requests.Session()
 # Core used for search and retrieval (e.g. powers front-end API)
 try:
 	# single, primary search core
-	solr_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_SEARCH_CORE, session))
+	solr_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_SEARCH_CORE), make_request=session)
 
 	# Core used for bookreader fulltext
-	solr_bookreader_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_BOOKREADER_CORE, session))
+	solr_bookreader_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_BOOKREADER_CORE), make_request=session)
 except:
 	print "Could not setup solr handles"
 	solr_handle = False

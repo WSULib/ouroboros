@@ -440,7 +440,7 @@ class WSUDOR_GenObject(object):
 				if gen_manifest == True:
 					self.genIIIFManifest(on_demand=True)
 			except:
-				print "faild on generating IIIF manifest"
+				print "failed on generating IIIF manifest"
 
 			# index object size
 			self.update_objSizeDict()

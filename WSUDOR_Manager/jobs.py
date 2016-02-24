@@ -17,6 +17,8 @@ def jobStart():
 	'''Consider SQL, might be more enduring'''
 	# increment and get job num
 	job_num = r_job_handle.incr("job_num")	
+	# add timestamp for start time
+	r_job_handle.set("job_%s_stime" % (job_num),int(time.time()))
 	return job_num
 
 

@@ -168,14 +168,7 @@ class JP2DerivativeMaker(object):
 
 		print "Issuing Kakadu command",cmd
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-		return_code = proc.wait()		
-		
-		# # Read from pipes
-		# for line in proc.stdout:
-		# 	print(line.rstrip())
-			
-		# for line in proc.stderr:
-		# 	print(line.rstrip() + " (" + self.outPath + ")") 
+		return_code = proc.wait()
 			
 		if os.path.exists(self.outPath) and os.path.getsize(self.outPath) != 0:			
 			print("Created: " + self.outPath)

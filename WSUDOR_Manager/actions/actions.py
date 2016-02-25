@@ -12,7 +12,6 @@ from flask import session
 import time
 import sys
 
-
 # action blueprints
 ###########################################################################
 
@@ -32,12 +31,8 @@ from exportObject import exportObject, exportObject_worker
 app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
 
 #ingestBag
-from bagIngest import bagIngest, bagIngest_worker 
+from bagIngest import bagIngest, bagIngest_factory, bagIngest_worker 
 app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
-
-#bagIngestAndPush
-from bagIngestAndPush import bagIngestAndPush, bagIngestAndPush_worker 
-app.register_blueprint(bagIngestAndPush, url_prefix=tasks_URL_prefix)
 
 #createObjectIndex
 from createObjectIndex import createObjectIndex
@@ -79,10 +74,6 @@ app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 from purgeDS import purgeDS, purgeDS_worker
 app.register_blueprint(purgeDS, url_prefix=tasks_URL_prefix)
 
-#batchIngest
-from batchIngest import batchIngest, ingestFOXML_worker
-app.register_blueprint(batchIngest, url_prefix=tasks_URL_prefix)
-
 #objectState
 from objectState import objectState, objectState_worker
 app.register_blueprint(objectState, url_prefix=tasks_URL_prefix)
@@ -119,40 +110,48 @@ from pruneSolr import pruneSolr, pruneSolr_worker
 app.register_blueprint(pruneSolr, url_prefix=tasks_URL_prefix)
 
 
-# task firing
-###########################################################################
-
 # Fires *after* task is complete
 class postTask(Task):
 	abstract = True
-	def after_return(self, *args, **kwargs):		
+	def after_return(self, *args, **kwargs):
+
+		print args
 
 		# extract task data		
 		status = args[0]
 		task_id = args[2]
-		task_details = args[3]		
-		job_num = task_details[0]['job_num']
-		PID = task_details[0]['PID']
+		job_package = args[3][0]
+		job_num = job_package['job_num']
 
-		# release PID from PIDlock
-		redisHandles.r_PIDlock.delete(PID)		
+		# obj_loop jobs
+		##################################################################
+		if job_package['job_type'] == 'obj_loop':
+			print "Cleaning up for obj_loop task"
+			PID = job_package['PID']
+			# release PID from PIDlock
+			redisHandles.r_PIDlock.delete(PID)
+			# update job with task completion
+			redisHandles.r_job_handle.set(task_id, "%s,%s" % (status,PID))		
 
-		# update job with task completion
-		redisHandles.r_job_handle.set("%s" % (task_id), "%s,%s" % (status, PID))
-	
+		# custom_loop jobs
+		##################################################################
+		if job_package['job_type'] == 'custom_loop':
+			print "Cleaning up for custom_loop task"
+			redisHandles.r_job_handle.set(task_id, status)
+
 		# increments completed tasks
 		if status == "SUCCESS":
-			jobs.jobUpdateCompletedCount(job_num)		
+			jobs.jobUpdateCompletedCount(job_num)	
 
 
-@celery.task(name="celeryTaskFactory")
-def celeryTaskFactory(**kwargs):
+
+# obj_loop TASK FACTORY
+##################################################################
+@celery.task(name="obj_loop_taskFactory")
+def obj_loop_taskFactory(**kwargs):
 	
 	# create job_package
 	job_package = kwargs['job_package']	
-
-	# get username
-	username = job_package['username']
 
 	# get job_num
 	job_num = kwargs['job_num']
@@ -160,7 +159,7 @@ def celeryTaskFactory(**kwargs):
 	# get and iterate through user selectedPIDs			
 	PIDlist = kwargs['PIDlist']	
 
-	# task function for taskWrapper		
+	# task function for obj_loop_taskWrapper		
 	job_package['task_name'] = kwargs['task_name']
 	
 	#set step counter
@@ -173,8 +172,8 @@ def celeryTaskFactory(**kwargs):
 		job_package['step'] = step	
 		job_package['PID'] = PID
 
-		# fire off async task via taskWrapper		
-		result = taskWrapper.delay(job_package)		
+		# fire off async task via obj_loop_taskWrapper		
+		result = obj_loop_taskWrapper.delay(job_package)		
 		task_id = result.id
 
 		# Set handle in 
@@ -189,10 +188,8 @@ def celeryTaskFactory(**kwargs):
 	print "Finished assigning tasks"
 
 
-#TASKS
-##################################################################
-@celery.task(base=postTask,bind=True,max_retries=3,name="taskWrapper")
-def taskWrapper(self,job_package,*args, **kwargs):
+@celery.task(base=postTask,bind=True,max_retries=3,name="obj_loop_taskWrapper")
+def obj_loop_taskWrapper(self,job_package,*args, **kwargs):
 	
 	# check PIDlock
 	lock_status = redisHandles.r_PIDlock.exists(job_package['PID'])
@@ -209,6 +206,23 @@ def taskWrapper(self,job_package,*args, **kwargs):
 		For the most part, this fires functions that were imported directly from blueprints
 		'''
 		return globals()[job_package['task_name']](job_package)
+
+
+
+# custom_loop TASK FACTORY
+##################################################################
+@celery.task(base=postTask,bind=True,max_retries=3,name="custom_loop_taskWrapper")
+def custom_loop_taskWrapper(self,job_package,*args, **kwargs):
+	
+	# execute function				
+	'''
+	For the most part, this fires functions that were imported directly from blueprints.
+	'''
+	return globals()[job_package['custom_task_name']](job_package)
+
+
+
+
 		 
 		
 

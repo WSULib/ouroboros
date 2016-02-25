@@ -332,10 +332,9 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 		# exception handling
-		except Exception,e:
-			print traceback.format_exc()
-			print "Image Ingest Error:",e
-			return False
+		except:
+			raise Exception(traceback.format_exc())
+			
 
 
 

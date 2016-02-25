@@ -224,9 +224,9 @@ def logout():
 #########################################################################################################
 
 # confirmation page for objects, serializes relevant request objects as "job_package"
-@app.route("/fireTask/<task_name>", methods=['POST', 'GET'])
+@app.route("/fireTask/<job_type>/<task_name>", methods=['POST', 'GET'])
 @utilities.objects_needed
-def fireTask(task_name):
+def fireTask(job_type,task_name):
 
 	username = session['username']
 
@@ -234,7 +234,7 @@ def fireTask(task_name):
 	job_package = {		
 		"username":username,
 		"form_data":request.values,
-		"job_type":"PID_iterate"			
+		"job_type":job_type			
 	}
 
 	# pass along binary uploaded data if included in job task
@@ -245,10 +245,15 @@ def fireTask(task_name):
 	print "Assigning to Redis-Cached key:",task_inputs_key
 	redisHandles.r_job_handle.set(task_inputs_key,pickle.dumps(job_package))
 
-	# get PIDs to confirm
-	PIDs = jobs.getSelPIDs()		
+	if job_type == "obj_loop":
+		print "Firing job for obj_loop type"
+		# get PIDs to confirm
+		PIDs = jobs.getSelPIDs()
+		return render_template("objConfirm.html",task_name=task_name,task_inputs_key=task_inputs_key,PIDs=PIDs,username=username,localConfig=localConfig)
 
-	return render_template("objConfirm.html",task_name=task_name,task_inputs_key=task_inputs_key,PIDs=PIDs,username=username,localConfig=localConfig)
+	if job_type == "custom_loop":
+		print "Firing job for custom_loop type"
+		return redirect("/fireTaskWorker/%s/%s" % (task_name,task_inputs_key))
 
 
 # confirmation page for objects, serializes relevant request objects as "job_package"
@@ -272,46 +277,71 @@ def fireTaskWorker(task_name,task_inputs_key):
 
 	# check if task in available tasks, else abort
 	try:
+		'''
+		In the case of custom_loop's, using this task_handle to fire instead of taskFactory
+		'''
 		task_handle = getattr(actions, task_name)
 	except:		 
 		return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/userPage'>user page</a>.")		
 	
 	# get username from session (will pull from user auth session later)
-	username = session['username']	
+	username = session['username']
 
-	# get user-selectedd objects	
-	stime = time.time()
-	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
-	PIDlist = [PID.PID for PID in userSelectedPIDs]	
-	etime = time.time()
-	ttime = (etime - stime) * 1000
-	print "Took this long to create list from SQL query",ttime,"ms"	
-
-	# instantiate job number
+	# instantiate job number and add to job_package
 	''' pulling from incrementing redis counter, considering MySQL '''
 	job_num = jobs.jobStart()		
-	
-	# begin job and set estimated tasks
-	print "Antipcating",userSelectedPIDs.count(),"tasks...."	
-	redisHandles.r_job_handle.set("job_%s_est_count" % (job_num),userSelectedPIDs.count())	
-
-	# augment job_package
 	job_package['job_num'] = job_num
 
-	# send to celeryTaskFactory in actions.py
-	'''
-	iterates through PIDs and creates secondary async tasks for each
-	passing username, task_name, and job_package containing all the update handles	
-	'celery_task_id' below contains celery task key, that contains all eventual children objects
-	'''
-	celery_task_id = actions.celeryTaskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)	
+
+	# Object Loop
+	#####################################################################################################################
+	if job_package['job_type'] == "obj_loop":
+
+		# get user-selectedd objects	
+		stime = time.time()
+		userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
+		PIDlist = [PID.PID for PID in userSelectedPIDs]	
+		etime = time.time()
+		ttime = (etime - stime) * 1000
+		print "Took this long to create list from SQL query",ttime,"ms"	
+
+		# begin job and set estimated tasks
+		print "Antipcating",userSelectedPIDs.count(),"tasks...."	
+		redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
+
+		# send to celeryTaskFactory in actions.py
+		'''
+		iterates through PIDs and creates secondary async tasks for each
+		passing username, task_name, and job_package containing all the update handles	
+		'celery_task_id' below contains celery task key, that contains all eventual children objects
+		'''
+		celery_task_id = actions.obj_loop_taskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)	
+
+
+	# Custom Loop
+	#####################################################################################################################
+	if job_package['job_type'] == "custom_loop":
+
+		'''
+		Fire particular task. This task handle is pulled from actions above,
+		and it should act like a taskFactory of sorts for the custom loop.	
+		'''
+		celery_task_id = task_handle.delay(job_package=job_package)
+
+
+
+	# Generic Cleanup
+	#####################################################################################################################
 
 	# send job to user_jobs SQL table
 	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", task_name))	
 	db.session.commit() 
 
 	print "Started job #",job_num,"Celery task #",celery_task_id	
-	return redirect("/userJobs")
+	try:
+		return redirect("/userJobs")
+	except:
+		return "API call or not logged in."
 
 
 #status of currently running, spooling, or pending jobs for user
@@ -369,11 +399,41 @@ def userJobs():
 			status_package['job_status'] = "complete"	
 			# udpate job status in SQL db here
 			job.status = "complete"
+			# update redis end time (etime)
+			r_job_handle.set("job_%s_etime" % (job_num),int(time.time()))
 			print "Job Complete!  Updated in SQL."
 
 		# else, must be running
 		else:
 			status_package['job_status'] = "running"	
+
+		# determine time elapsed / remaining
+		def formatTime(seconds):
+			m, s = divmod(seconds, 60)
+			h, m = divmod(m, 60)
+			return "%d:%02d:%02d" % (h, m, s)
+
+		def returnTimeRemaining(total_seconds=False):
+			if total_seconds == False:
+				return int( (int(elapsed_seconds) / int(job_complete_count)) * int(job_est_count) ) - int(elapsed_seconds)
+
+		# elapsed
+		elapsed_seconds = int(time.time()) - int(redisHandles.r_job_handle.get("job_%s_stime" % (job_num)))
+		time_elapsed = formatTime(elapsed_seconds)
+		
+		# remaining
+		if int(job_est_count) == 1:
+			time_remaining = "Unknown"
+		elif job_complete_count == 0:
+			time_remaining = "Estimating"
+		elif 'job_%s_complete_count' % (job_num) not in session or 'job_%s_time_remaining' % (job_num) not in session or int(job_complete_count) > int(session['job_%s_complete_count' % (job_num)]):
+			session['job_%s_complete_count' % (job_num)] = int(job_complete_count)
+			seconds_remaining = returnTimeRemaining()
+			session['job_%s_time_remaining' % (job_num)] = seconds_remaining
+			time_remaining = formatTime(seconds_remaining)
+			print "updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining)
+		else:			
+			time_remaining = formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
 
 		# data return 
 		response_dict = {
@@ -383,7 +443,9 @@ def userJobs():
 			"assigned_tasks":job_assign_count,
 			"completed_tasks":job_complete_count,
 			"estimated_tasks":job_est_count,
-			"comp_percent":comp_percent
+			"comp_percent":comp_percent,
+			"time_elapsed":time_elapsed,
+			"time_remaining":time_remaining
 		}
 
 		# return_package[status_package["job_num"]] = response_dict		
@@ -464,9 +526,12 @@ def taskDetails(task_id,job_num):
 	if task_id != "NULL":	
 		# async, celery status
 		task_async = jobs.getTaskDetails(task_id)
-		# fm2 recorded values
-		task_returns = redisHandles.r_job_handle.get(task_id).split(",")		
-		PID = task_returns[1]	
+		
+		try:
+			task_returns = redisHandles.r_job_handle.get(task_id).split(",")		
+			PID = task_returns[1]
+		except:
+			PID = "N/A"
 
 	else:
 		print "We're dealing with a local job, not Celerized"
@@ -575,6 +640,8 @@ def objPreview(PIDnum):
 	# General Metadata
 	solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
 	solr_results = solr_handle.search(**solr_params)
+	if solr_results.total_results == 0:
+		return "Selected objects don't appear to exist."
 	solr_package = solr_results.documents[0]
 	object_package['solr_package'] = solr_package
 

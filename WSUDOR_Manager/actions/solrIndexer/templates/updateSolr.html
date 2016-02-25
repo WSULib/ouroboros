@@ -2,13 +2,11 @@
 
 {% if update_type == 'select' %}
 	<ul>
-		<li><a href="/tasks/pruneSolr">Prune Solr: Remove all documents in /fedobjs that are not found in Fedora</a></li>
-		<br>
 		<li><a href="/tasks/updateSolr/userObjects">Currently selected Objects</a></li>
 		<li><a href="/tasks/updateSolr/timestamp">Recently Modified:</a> Index Fedora Objects since <a href="http://{{APP_HOST}}/solr4/fedobjs/select?q=id%3ALastFedoraIndex&fl=last_modified&wt=json&indent=true">last full index</a></li>
 		<li><a href="/tasks/updateSolr/fullIndex">All:</a> Index ALL Fedora Objects</li>
-		<li><a href="/tasks/updateSolr/purgeAndFullIndex">Purge & Index:</a> Purges staging (/fedobjs) core, reindexes all objects <span style="color:orange;">(SLOW)</span></li>
-		<li><a href="/tasks/updateSolr/replicateStagingToProduction">Rebuild Live Index:</a> Purge live core (/search), replicate from staging (/fedobjs) <span style="color:green;">(FAST)</span></li>
+		<li><a href="/tasks/updateSolr/purgeAndFullIndex">Purge & Index:</a> Purges all solr records, reindexes all objects from Fedora<span style="color:orange;">(SLOW)</span></li>		
+		<li><a href="/fireTask/custom_loop/pruneSolr_factory">Prune Solr</a>: Remove all documents in /fedobjs that are not found in Fedora</li>
 	</ul>
 {% endif %}
 

@@ -93,12 +93,18 @@ def sizeof_fmt(num, suffix='B'):
 def objects_needed(f):
 	@wraps(f)
 	def decorated_function(*args, **kwargs):
+
+		print "DECORATOR KWARGS",kwargs
+		print "DECORATOR ARGS",args
+
 		try:
 			username = session['username']
 		except:
 			return render_template("noObjs.html")
+
 		userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
-		if userSelectedPIDs.count() == 0:			
+
+		if userSelectedPIDs.count() == 0 and kwargs['job_type'] == 'obj_loop':			
 			return render_template("noObjs.html")		
 		return f(*args, **kwargs)		
 	return decorated_function

@@ -15,74 +15,25 @@ import json
 pruneSolr = Blueprint('pruneSolr', __name__, template_folder='templates', static_folder="static")
 
 
-@pruneSolr.route('/pruneSolr', methods=['POST', 'GET'])
-def index():
 
-	# get new job num
-	job_num = jobs.jobStart()
+@celery.task(name="pruneSolr_factory")
+def pruneSolr_factory(job_package):
 
-	# get username
-	username = session['username']			
-
-	# prepare job_package for boutique celery wrapper
-	job_package = {
-		'job_num':job_num,
-		'task_name':"pruneSolr_worker"
-	}	
-
-	# job celery_task_id
-	celery_task_id = celeryTaskFactoryBagIngest.delay(job_num,job_package)		 
-
-	# send job to user_jobs SQL table
-	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", "pruneSolr"))	
-	db.session.commit()		
-
-	print "Started job #",job_num,"Celery task #",celery_task_id
-	return redirect("/userJobs")
-
-
-@celery.task(name="celeryTaskFactoryBagIngest")
-def celeryTaskFactoryBagIngest(job_num,job_package):
-	
-	# reconstitute
-	job_num = job_package['job_num']	
-
-	# update job info
-	redisHandles.r_job_handle.set("job_%s_est_count" % (job_num), 1)
-
-	# ingest in Fedora
-	step = 1
-
-	job_package['PID'] = "N/A"
-	job_package['step'] = step		
-
-	# fire ingester
-	result = actions.actions.taskWrapper.delay(job_package)	
-
-	task_id = result.id		
-	print task_id
-		
-	# update incrementer for total assigned
-	jobs.jobUpdateAssignedCount(job_num)
-
-	# bump step
-	step += 1
-
-
-def pruneSolr_worker(job_package):		
-	
-	print "pruning Solr of objects not found in Fedora"
-
-	# variables 
-	count = 0
-	pruned = []
-	start = 0
-	rows = 100
+	# set new task_name, for the worker below
+	job_package['custom_task_name'] = 'pruneSolr_worker'
 
 	# get solr results obj
 	solr_total = solr_handle.search(q='*:*', fl='id').total_results
 
-	# iterate through
+	# set estimated tasks
+	print "Antipcating",solr_total,"tasks...."	
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), solr_total)
+
+	# iterate through solr objects
+	# variables 
+	start = 0
+	rows = 100
+	step = 1
 	while start < solr_total:
 
 		# perform search
@@ -91,24 +42,39 @@ def pruneSolr_worker(job_package):
 		# iterate
 		for doc in solr_result.documents:
 			doc_id = doc['id']
-			print "pruneSolr checking %s, %i / %i" % (doc_id, count, solr_total)
+			print "pruneSolr checking %s" % (doc_id)
 
-			if not fedora_handle.get_object(doc_id).exists:
-				print "Did not find object in Fedora, pruning from Solr..."
-				pruned.append(doc_id)
-				solr_handle.delete_by_key(doc_id)
+			job_package['doc_id'] = doc_id
+			
+			# fire task via custom_loop_taskWrapper			
+			result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+			task_id = result.id
 
-			# bump counter
-			count+=1
+			# Set handle in Redis
+			redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (doc_id))
+				
+			# update incrementer for total assigned
+			jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+			# bump step
+			step += 1
 
 		# bump start
-		start += rows		
-
-	# return JSON report
-	return json.dumps(pruned)
+		start += rows
+	
 
 
+@celery.task(name="pruneSolr_worker")
+def pruneSolr_worker(job_package):
 
+	doc_id = job_package['doc_id']
+	
+	if not fedora_handle.get_object(doc_id).exists:
+		print "Did not find object in Fedora, pruning from Solr..."
+		solr_handle.delete_by_key(doc_id)
+		return "PRUNED"
+	else:
+		return "IGNORED"
 
 
 

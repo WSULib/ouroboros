@@ -554,7 +554,7 @@ class WSUDOR_GenObject(object):
 		os.system("mv %s %s/%s" % (temp_dir, working_dir, named_dir))
 		orig_dir = os.getcwd()
 		os.chdir(working_dir)
-		os.system("tar -cvf %s.tar %s" % (working_dir, named_dir))
+		os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
 		os.system("rm -r %s/%s" % (working_dir, named_dir))
 
 		# move to web accessible location, with username as folder
@@ -573,7 +573,7 @@ class WSUDOR_GenObject(object):
 		if returnTargetDir == True:
 			return "%s/%s.tar" % (target_dir,named_dir)
 		else:
-			return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, named_dir, username)
+			return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, username, named_dir)
 
 
 	# reingest bag

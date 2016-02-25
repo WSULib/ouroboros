@@ -104,7 +104,7 @@ def objects_needed(f):
 
 		userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
 
-		if userSelectedPIDs.count() == 0 and kwargs['job_type'] == 'obj_loop':			
+		if userSelectedPIDs.count() == 0 and 'job_type' in kwargs and kwargs['job_type'] == 'obj_loop':			
 			return render_template("noObjs.html")		
 		return f(*args, **kwargs)		
 	return decorated_function

@@ -408,28 +408,32 @@ def userJobs():
 			status_package['job_status'] = "running"	
 
 		# determine time elapsed / remaining
-		# elapsed
-		elapsed_seconds = int(time.time()) - int(redisHandles.r_job_handle.get("job_%s_stime" % (job_num)))
-		m, s = divmod(elapsed_seconds, 60)
-		h, m = divmod(m, 60)
-		time_elapsed = "%d:%02d:%02d" % (h, m, s)
-
-		# remaining
-		def returnTimeRemaining():
-			total_seconds = int( (int(elapsed_seconds) / int(job_complete_count)) * int(job_est_count) ) - int(elapsed_seconds)
-			m, s = divmod(total_seconds, 60)
+		def formatTime(seconds):
+			m, s = divmod(seconds, 60)
 			h, m = divmod(m, 60)
 			return "%d:%02d:%02d" % (h, m, s)
 
-		# if 'job_%s_complete_count' % (job_num) not in session or 'job_%s_time_remaining' % (job_num) not in session or int(job_complete_count) > int(session['job_%s_complete_count' % (job_num)]):
-		# 	session['job_%s_complete_count' % (job_num)] = int(job_complete_count)
-		# 	time_remaining = returnTimeRemaining()
-		# 	session['job_%s_time_remaining' % (job_num)] = time_remaining
-		# 	print "updating comp count and time remaining : %s %s" % (job_complete_count,time_remaining)
-		# else:			
-		# 	time_remaining = session['job_%s_time_remaining' % (job_num)]
+		def returnTimeRemaining(total_seconds=False):
+			if total_seconds == False:
+				return int( (int(elapsed_seconds) / int(job_complete_count)) * int(job_est_count) ) - int(elapsed_seconds)
 
-		time_remaining = returnTimeRemaining()
+		# elapsed
+		elapsed_seconds = int(time.time()) - int(redisHandles.r_job_handle.get("job_%s_stime" % (job_num)))
+		time_elapsed = formatTime(elapsed_seconds)
+		
+		# remaining
+		if int(job_est_count) == 1:
+			time_remaining = "Unknown"
+		elif job_complete_count == 0:
+			time_remaining = "Estimating"
+		elif 'job_%s_complete_count' % (job_num) not in session or 'job_%s_time_remaining' % (job_num) not in session or int(job_complete_count) > int(session['job_%s_complete_count' % (job_num)]):
+			session['job_%s_complete_count' % (job_num)] = int(job_complete_count)
+			seconds_remaining = returnTimeRemaining()
+			session['job_%s_time_remaining' % (job_num)] = seconds_remaining
+			time_remaining = formatTime(seconds_remaining)
+			print "updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining)
+		else:			
+			time_remaining = formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
 
 		# data return 
 		response_dict = {

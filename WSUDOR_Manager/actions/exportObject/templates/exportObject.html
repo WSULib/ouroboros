@@ -2,7 +2,7 @@
 <h2>Export Objects</h2>
 <p>This utility exports objects as BagIt archives, identical in structure to the BagIt's used to ingest them.  Objects will be validated on export, and barring failure, tarred up and copied to a web accessible directory.</p>
 
-<form class="form" action="/fireTask/exportObject_worker" method="POST">
+<form class="form" action="/fireTask/obj_loop/exportObject_worker" method="POST">
 	<!-- <div class="form-group">
 		<label>If collection objects selected, include all child objects with collection object?</label>
 		<div class="radio">

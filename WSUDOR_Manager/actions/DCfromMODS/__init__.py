@@ -26,7 +26,7 @@ With the function doing bulk and single, break the actual work in a function use
 @DCfromMODS.route('/DCfromMODS')
 @utilities.objects_needed
 def index():	
-	return redirect("/fireTask/DCfromMODS_worker")
+	return redirect("/fireTask/obj_loop/DCfromMODS_worker")
 
 @DCfromMODS.route('/DCfromMODS/single/<PID>')
 def single(PID):

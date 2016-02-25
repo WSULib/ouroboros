@@ -84,7 +84,7 @@ def editRELS_advanced():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.APP_HOST, PIDlet['cPID'][0])
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.APP_HOST, PIDlet['cPID'])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	

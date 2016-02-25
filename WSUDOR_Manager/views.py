@@ -415,11 +415,17 @@ def userJobs():
 
 		def returnTimeRemaining(total_seconds=False):
 			if total_seconds == False:
-				return int( (int(elapsed_seconds) / int(job_complete_count)) * int(job_est_count) ) - int(elapsed_seconds)
+				rtime = int( (int(elapsed_seconds) / int(job_complete_count)) * int(job_est_count) ) - int(elapsed_seconds)
+				if rtime < 0:
+					rtime = 0
+				return rtime
 
 		# elapsed
-		elapsed_seconds = int(time.time()) - int(redisHandles.r_job_handle.get("job_%s_stime" % (job_num)))
-		time_elapsed = formatTime(elapsed_seconds)
+		try:
+			elapsed_seconds = int( time.time() - int(redisHandles.r_job_handle.get("job_%s_stime" % (job_num))) )
+			time_elapsed = formatTime(elapsed_seconds)
+		except:
+			time_elapsed = "Unknown"
 		
 		# remaining
 		if int(job_est_count) == 1:
@@ -434,6 +440,7 @@ def userJobs():
 			print "updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining)
 		else:			
 			time_remaining = formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
+
 
 		# data return 
 		response_dict = {

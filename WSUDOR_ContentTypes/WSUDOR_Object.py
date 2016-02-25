@@ -567,13 +567,13 @@ class WSUDOR_GenObject(object):
 			os.system("mkdir %s" % (target_dir))
 		os.system("mv %s.tar %s" % (named_dir,target_dir))
 
-		# jump back to origina working dir
+		# jump back to original working dir
 		os.chdir(orig_dir)
 
 		if returnTargetDir == True:
 			return "%s/%s.tar" % (target_dir,named_dir)
 		else:
-			return "http://%s/Ouroboros/export/%s/%s.tar" % (named_dir,username,localConfig.APP_HOST)
+			return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, named_dir, username)
 
 
 	# reingest bag

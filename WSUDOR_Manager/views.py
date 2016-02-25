@@ -415,10 +415,12 @@ def userJobs():
 
 		def returnTimeRemaining(total_seconds=False):
 			if total_seconds == False:
-				rtime = int( (int(elapsed_seconds) / int(job_complete_count)) * int(job_est_count) ) - int(elapsed_seconds)
+				rtime = int( (float(elapsed_seconds) / float(job_complete_count)) * float(job_est_count) ) - float(elapsed_seconds)
 				if rtime < 0:
-					rtime = 0
-				return rtime
+					return 0
+				else:
+					return rtime
+				
 
 		# elapsed
 		try:
@@ -437,7 +439,7 @@ def userJobs():
 			seconds_remaining = returnTimeRemaining()
 			session['job_%s_time_remaining' % (job_num)] = seconds_remaining
 			time_remaining = formatTime(seconds_remaining)
-			print "updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining)
+			# print "updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining)
 		else:			
 			time_remaining = formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
 

@@ -9,9 +9,6 @@ import time
 import traceback
 import sys
 
-# celery
-from cl.cl import celery
-
 # eulfedora
 import eulfedora
 
@@ -27,6 +24,10 @@ import WSUDOR_ContentTypes
 
 
 class WSUDOR_Volume(WSUDOR_ContentTypes.WSUDOR_GenObject):
+
+	'''
+	WSUDOR_Volume has no thumbnail.
+	'''
 
 	# static values for class
 	label = "Volume"
@@ -60,7 +61,7 @@ class WSUDOR_Volume(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return results_dict
 
 
-	# ingest image type
+	# ingest
 	def ingestBag(self,indexObject=True):
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")		
@@ -97,12 +98,33 @@ class WSUDOR_Volume(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
-			# write MODS datastream
-			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
-			objMeta_handle.label = "MODS descriptive metadata"
-			file_path = self.Bag.path + "/data/MODS.xml"
-			objMeta_handle.content = open(file_path)
-			objMeta_handle.save()			
+			# write MODS datastream if MODS.xml exists
+			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+				file_path = self.Bag.path + "/data/MODS.xml"
+				MODS_handle.content = open(file_path)
+				MODS_handle.save()
+
+			else:
+				# write generic MODS datastream
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+
+				raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+  <mods:titleInfo>
+	<mods:title>%s</mods:title>
+  </mods:titleInfo>
+  <mods:identifier type="local">%s</mods:identifier>
+  <mods:extension>
+	<PID>%s</PID>
+  </mods:extension>
+</mods:mods>
+				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
+				print raw_MODS
+				MODS_handle.content = raw_MODS		
+				MODS_handle.save()		
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()

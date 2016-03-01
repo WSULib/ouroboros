@@ -430,7 +430,7 @@ def userJobs():
 			time_elapsed = "Unknown"
 		
 		# remaining
-		if int(job_est_count) == 1:
+		if job_est_count != None and int(job_est_count) == 1:
 			time_remaining = "Unknown"
 		elif job_complete_count == 0:
 			time_remaining = "Estimating"

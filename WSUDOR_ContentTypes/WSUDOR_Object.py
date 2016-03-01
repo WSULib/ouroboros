@@ -391,6 +391,84 @@ class WSUDOR_GenObject(object):
 
 	# WSUDOR_Object Methods
 	############################################################################################################
+	# generic, simple ingest
+	def ingestBag(self, indexObject=True):
+		if self.object_type != "bag":
+			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")		
+
+		# ingest Volume object
+		try:
+			self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
+			self.ohandle.save()
+
+			# set base properties of object
+			self.ohandle.label = self.objMeta['label']
+
+			# write POLICY datastream (NOTE: 'E' management type required, not 'R')
+			print "Using policy:",self.objMeta['policy']
+			policy_suffix = self.objMeta['policy']
+			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
+			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
+			policy_handle.label = "POLICY"
+			policy_handle.save()
+
+			# write objMeta as datastream
+			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+			objMeta_handle.label = "Ingest Bag Object Metadata"
+			objMeta_handle.content = json.dumps(self.objMeta)
+			objMeta_handle.save()
+
+			# write explicit RELS-EXT relationships			
+			for relationship in self.objMeta['object_relationships']:
+				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
+					
+			# writes derived RELS-EXT			
+			content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]
+			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
+
+			# write MODS datastream if MODS.xml exists
+			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+				file_path = self.Bag.path + "/data/MODS.xml"
+				MODS_handle.content = open(file_path)
+				MODS_handle.save()
+
+			else:
+				# write generic MODS datastream
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+
+				raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+  <mods:titleInfo>
+	<mods:title>%s</mods:title>
+  </mods:titleInfo>
+  <mods:identifier type="local">%s</mods:identifier>
+  <mods:extension>
+	<PID>%s</PID>
+  </mods:extension>
+</mods:mods>
+				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
+				print raw_MODS
+				MODS_handle.content = raw_MODS		
+				MODS_handle.save()		
+
+			# save and commit object before finishIngest()
+			final_save = self.ohandle.save()
+			
+			# finish generic ingest
+			return self.finishIngest()
+
+
+		# exception handling
+		except Exception,e:
+			print traceback.format_exc()
+			print "Volume Ingest Error:",e
+			return False
+
+
 	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
 	def finishIngest(self, indexObject=True, gen_manifest=False, contentTypeMethods=[]):
 
@@ -479,6 +557,14 @@ class WSUDOR_GenObject(object):
 		│   └── objMeta.json
 		├── manifest-md5.txt
 		└── tagmanifest-md5.txt		
+
+		WORK TO BE DONE:
+		There needs to be two pathways for export:
+			1) Object was ingested as bag.
+				- recreate bag structure, rehydrate BAGIT metadata
+			2) Object was created virtuall
+				- generate bag structure?  export bits and pieces, then run bagit on dir?
+
 		'''
 		
 		# get PID

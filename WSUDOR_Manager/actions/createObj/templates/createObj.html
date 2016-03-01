@@ -1,0 +1,78 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<h2>Create Generic Object</h2>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/tasks/createObj/create" enctype="multipart/form-data">
+			<div class="col-md-6">
+
+				<!-- PID -->
+				<div class="form-group">
+					<label class="control-label">PID (including namespace prefix, e.g. 'wayne'):</label>
+					<input class="form-control" type="text" name="pid" placeholder="e.g. wayne:SuperObject">
+				</div>
+
+				<!-- Label -->
+				<div class="form-group">
+					<label class="control-label">Label:</label>
+					<input class="form-control" type="text" name="label" placeholder="e.g. Super Object">
+				</div>
+
+				<!-- Content Model -->
+				<div class="form-group">
+					<label class="control-label" for="dest_repo">Content Type:</label> 
+					<select class="form-control input-sm" id="dest_repo" name="CM">
+						{% for CM in CMs %}
+							<option value="{{CM}}">WSUDOR_{{CM}}</option>
+						{% endfor %}
+					</select> 
+				</div>
+
+				<!-- Policy -->
+				<div class="form-group">
+					<label class="control-label" for="dest_repo">Destination Repository:</label> 
+					<select class="form-control input-sm" id="dest_repo" name="policy">
+						{% for policy in policies %}
+							<option value="wayne:{{policy}}">{{policy}}</option>
+						{% endfor %}
+					</select> 
+				</div>
+
+				<div class="form-group">
+					<div class="checkbox">
+						<label>
+							<input name="bagify" type="checkbox"> Bagify bag after creation?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<div class="checkbox">
+						<label>
+							<input onclick="$('.purge').fadeToggle();" name="ingest" type="checkbox"> Ingest and delete bag after creation?
+						</label>
+					</div>
+				</div>
+
+				<div style="display:none;" class="form-group purge">
+					<div class="checkbox">
+						<label>
+							<input name="purge" type="checkbox"> Purge if already exists?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<input type="submit" class="btn btn-primary" value="Submit">
+				</div>
+
+			</div>
+
+		</form>
+	</div>
+</div>
+
+{% include 'footer.html' %}

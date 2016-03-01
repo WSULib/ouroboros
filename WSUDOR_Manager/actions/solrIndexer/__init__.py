@@ -60,11 +60,7 @@ def updateSolr(update_type):
 		# run full index	
 		index_handle = solrIndexer.delay('fullIndex','')
 
-	# purge production core, replicate from staging (FAST)
-	if update_type == "replicateStagingToProduction":
-		index_handle = solrIndexer.delay('replicateStagingToProduction','')
-
-
+	
 	# return logic
 	if "APIcall" in request.values and request.values['APIcall'] == "True":
 

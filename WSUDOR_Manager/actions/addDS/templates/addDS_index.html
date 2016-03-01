@@ -4,34 +4,34 @@
 
 <form class="form-horizontal" id="form" role="form" method="POST" action="/fireTask/obj_loop/addDS_worker" enctype="multipart/form-data">
 	<div class="col-md-3">
-	<div class="form-group">
-		{{ form.csrf_token }} 
-		{{ form.dsID.label(class="control-label") }} {{ form.dsID(class="form-control input-sm") }}
-	</div>
-	<div class="form-group">
-		{{ form.altIDs.label(class="control-label") }} {{ form.altIDs(class="form-control input-sm") }}
-	</div>
-	<div class="form-group">
-		{{ form.dsLabel.label(class="control-label") }} {{ form.dsLabel(class="form-control input-sm") }}
-	</div>
-	<div class="form-group">
-		{{ form.MIMEType.label(class="control-label") }} {{ form.MIMEType(class="form-control input-sm") }}
-	</div>
-	<div class="form-group">
-		{{ form.controlGroup.label(class="control-label") }} {{ form.controlGroup(class="form-control input-sm") }} 
-	</div>
-	<div class="form-group">
-		{{ form.dataType.label(class="control-label") }} {{ form.dataType(class="form-control dataType input-sm") }} 
-	</div>
-	<div class="form-group dataTypes" id="dsLocation" style="display:none;">
-		{{ form.dsLocation.label(class="control-label") }} {{ form.dsLocation(class="form-control input-sm") }}
-	</div>
-	<div class="form-group dataTypes" id="content" style="display:none;">
-		{{ form.content.label(class="control-label") }} {{ form.content(class="form-control input-sm", **{'placeholder':'XML goes here'}) }}
-	</div>
-	<div class="form-group dataTypes" id="upload" style="display:none;">
-		{{ form.upload.label(class="control-label") }} {{ form.upload }}
-	</div>	
-	<input type="submit" class="btn btn-primary" value="Go">
+		<div class="form-group">
+			{{ form.csrf_token }} 
+			{{ form.dsID.label(class="control-label") }} {{ form.dsID(class="form-control input-sm") }}
+		</div>
+		<div class="form-group">
+			{{ form.altIDs.label(class="control-label") }} {{ form.altIDs(class="form-control input-sm") }}
+		</div>
+		<div class="form-group">
+			{{ form.dsLabel.label(class="control-label") }} {{ form.dsLabel(class="form-control input-sm") }}
+		</div>
+		<div class="form-group">
+			{{ form.MIMEType.label(class="control-label") }} {{ form.MIMEType(class="form-control input-sm") }}
+		</div>
+		<div class="form-group">
+			{{ form.controlGroup.label(class="control-label") }} {{ form.controlGroup(class="form-control input-sm") }} 
+		</div>
+		<div class="form-group">
+			{{ form.dataType.label(class="control-label") }} {{ form.dataType(class="form-control dataType input-sm") }} 
+		</div>
+		<div class="form-group dataTypes" id="dsLocation" style="display:none;">
+			{{ form.dsLocation.label(class="control-label") }} {{ form.dsLocation(class="form-control input-sm") }}
+		</div>
+		<div class="form-group dataTypes" id="content" style="display:none;">
+			{{ form.content.label(class="control-label") }} {{ form.content(class="form-control input-sm", **{'placeholder':'XML goes here'}) }}
+		</div>
+		<div class="form-group dataTypes" id="upload" style="display:none;">
+			{{ form.upload.label(class="control-label") }} {{ form.upload }}
+		</div>	
+		<input type="submit" class="btn btn-primary" value="Go">
 	</div>
 </form>

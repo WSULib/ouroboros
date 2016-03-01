@@ -109,6 +109,10 @@ app.register_blueprint(sendObject, url_prefix=tasks_URL_prefix)
 from pruneSolr import pruneSolr, pruneSolr_factory, pruneSolr_worker
 app.register_blueprint(pruneSolr, url_prefix=tasks_URL_prefix)
 
+#createObj
+from createObj import createObj
+app.register_blueprint(createObj, url_prefix=tasks_URL_prefix)
+
 
 # Fires *after* task is complete
 class postTask(Task):

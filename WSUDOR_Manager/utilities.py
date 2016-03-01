@@ -92,10 +92,7 @@ def sizeof_fmt(num, suffix='B'):
 # decorated function will redirect if no objects currently selected 
 def objects_needed(f):
 	@wraps(f)
-	def decorated_function(*args, **kwargs):
-
-		print "DECORATOR KWARGS",kwargs
-		print "DECORATOR ARGS",args
+	def decorated_function(*args, **kwargs):		
 
 		try:
 			username = session['username']

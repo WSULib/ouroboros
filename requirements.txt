@@ -20,10 +20,10 @@ fuzzywuzzy==0.2
 ipython
 lockfile==0.10.2
 mysolr==0.8.2
-ply==3.4
+ply
 pydub==0.9.5
 python-ldap==2.4.13
-rdflib==4.1.2
+rdflib
 redis==2.10.1
 requests==2.8.1
 responses==0.3.0

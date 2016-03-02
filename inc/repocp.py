@@ -1,1 +1,0 @@
-/opt/eulfedora/scripts/repo-cp

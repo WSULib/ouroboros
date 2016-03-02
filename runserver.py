@@ -33,17 +33,17 @@ from WSUDOR_API import WSUDOR_API_app
 # function to create/remove Ouroboros pidfile
 def pidfileCreate():	
 	print "Creating pidfile"
-	fhand=open("/var/run/%s.pid" % (APP_NAME),"w")
-	fhand.write(str(os.getpid()))
-	fhand.close()
-	ouroboros_pidlock = lockfile.LockFile("/var/run/%s.pid" % (APP_NAME))
+	
+	with open("/var/run/ouroboros/%s.pid" % (APP_NAME),"w") as fhand:
+		fhand.write(str(os.getpid()))
+	ouroboros_pidlock = lockfile.LockFile("/var/run/ouroboros/%s.pid" % (APP_NAME))
 	ouroboros_pidlock.acquire()			
 	return ouroboros_pidlock
 	
 def pidfileRemove():
 	print "Removing pidfile"
 	ouroboros_pidlock.release()
-	os.system("rm /var/run/%s.pid" % (APP_NAME))
+	os.system("rm /var/run/ouroboros/%s.pid" % (APP_NAME))
 
 
 

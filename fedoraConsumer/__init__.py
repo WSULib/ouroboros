@@ -12,6 +12,7 @@ def fedoraConsumer(self,**kwargs):
 	# create dictionary from XML string
 	try:
 		msgDict = xmltodict.parse(msg)
+		
 		# pull info
 		fedEvent = msgDict['entry']['title']['#text']			
 

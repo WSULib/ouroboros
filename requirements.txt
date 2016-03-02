@@ -17,7 +17,7 @@ celery==3.1.11
 coverage==3.7.1
 decorator==3.3.2
 fuzzywuzzy==0.2
-ipython==0.12.1
+ipython
 lockfile==0.10.2
 mysolr==0.8.2
 ply==3.4

@@ -65,16 +65,22 @@ def pruneSolr_factory(job_package):
 
 
 @celery.task(name="pruneSolr_worker")
-def pruneSolr_worker(job_package):
+def pruneSolr_worker(job_package, PID=False):
 
-	doc_id = job_package['doc_id']
-	
-	if not fedora_handle.get_object(doc_id).exists:
-		print "Did not find object in Fedora, pruning from Solr..."
-		solr_handle.delete_by_key(doc_id)
+	if PID:
+		# prune specific PID
+		solr_handle.delete_by_key(PID)
 		return "PRUNED"
+
 	else:
-		return "IGNORED"
+		doc_id = job_package['doc_id']
+		
+		if not fedora_handle.get_object(doc_id).exists:
+			print "Did not find object in Fedora, pruning from Solr..."
+			solr_handle.delete_by_key(doc_id)
+			return "PRUNED"
+		else:
+			return "IGNORED"
 
 
 

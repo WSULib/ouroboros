@@ -692,6 +692,10 @@ class WSUDOR_GenObject(object):
 
 	# Solr Indexing
 	def indexToSolr(self, printOnly=False):
+
+		# derive Dublin Core
+		self.DCfromMODS()
+
 		return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly)
 
 

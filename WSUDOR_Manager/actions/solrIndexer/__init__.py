@@ -9,7 +9,7 @@ from string import Template
 import time
 import datetime
 from lxml import etree
-from flask import Blueprint, render_template, make_response, abort, request
+from flask import Blueprint, render_template, make_response, abort, request, redirect
 import json
 
 # celery
@@ -34,16 +34,25 @@ solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates
 
 
 @solrIndexer_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
-def updateSolr(update_type):			
-
+def updateSolr(update_type):	
 
 	# real or emulated solr events
-	if update_type == "fullIndex":				
-		index_handle = solrIndexer.delay('fullIndex','')
+	if update_type == "fullIndex":
+
+		if 'choice' not in request.form:
+			return render_template('confirm.html',update_type=update_type)
+		else:
+			# fire only with confirmation
+			if "choice" in request.form and request.form['choice'] == "confirm" and request.form['confirm_string'].lower() == 'confirm':		
+				index_handle = solrIndexer.delay('fullIndex', None)
+			else:
+				print 'skipping fullIndex'
+				return redirect('/tasks/updateSolr/select')
+
 
 	if update_type == "timestamp":
 		print "Updating by timestamp"	
-		index_handle = solrIndexer.delay('timestampIndex','')
+		index_handle = solrIndexer.delay('timestampIndex', None)
 
 	if update_type == "userObjects":
 		print "Updating by userObjects"	
@@ -51,14 +60,27 @@ def updateSolr(update_type):
 		for PID in PIDs:
 			index_handle = solrIndexer.delay('modifyObject', PID)	
 
-	# purge and reindex staging solr core from fedora (SLOW)
+	# purge and reindex fedobjs (SLOW)
 	if update_type == "purgeAndFullIndex":
-		print "Purging solr core and reindexing all objects"
-		# delete all from /fedobjs core
-		if 'fedobjs' in solr_handle.base_url:
-			solr_handle.delete_by_query('*:*',commit=False)
-		# run full index	
-		index_handle = solrIndexer.delay('fullIndex','')
+
+		if 'choice' not in request.form:
+			return render_template('confirm.html',update_type=update_type)
+
+		else:
+
+			# fire only with confirmation
+			if "choice" in request.form and request.form['choice'] == "confirm" and request.form['confirm_string'].lower() == 'confirm':
+
+				print "Purging solr core and reindexing all objects"
+				# delete all from /fedobjs core
+				if 'fedobjs' in solr_handle.base_url:
+					solr_handle.delete_by_query('*:*',commit=False)
+				# run full index	
+				index_handle = solrIndexer.delay('fullIndex', None)
+
+			else:
+				print 'skipping purge and index'
+				return redirect('/tasks/updateSolr/select')
 
 	
 	# return logic
@@ -242,22 +264,6 @@ class SolrIndexerWorker(object):
 		return result
 
 	
-	def replicateToSearch(self):
-
-		'''
-		Currently skipping this - moving to manual replication from /fedobjs --> /search core
-		'''
-
-		pass
-		
-		# # replicate to "search core"
-		# print "*** Replicating Changes ***"
-		# baseurl = 'http://localhost/solr4/search/replication?command=fetchindex' 
-		# data = {'commit':'true'}
-		# r = requests.post(baseurl,data=data)
-		# print r.text	
-
-	
 	def updateLastFedoraIndexDate(self):		
 
 		doc_handle = models.SolrDoc("LastFedoraIndex")
@@ -271,8 +277,6 @@ class SolrIndexerWorker(object):
 		doc_handle = models.SolrDoc(PID)
 		result = doc_handle.delete()		
 		return result.raw_content
-
-
 
 
 @celery.task()
@@ -309,6 +313,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 		
 		# augment documents - from augmentCore.py
 		augmentCore(PID)		
+
 		return True
 
 
@@ -336,9 +341,6 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
 		# update timestamp in Solr		
 		worker.updateLastFedoraIndexDate()
-		# manually commit and replicate changes
-		worker.commitSolrChanges()
-		worker.replicateToSearch()
 
 		print "Total seconds elapsed",worker.totalTime	
 		return True	
@@ -367,10 +369,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
 		# update timestamp in Solr		
 		worker.updateLastFedoraIndexDate()
-		# manually commit and replicate changes
-		worker.commitSolrChanges()
-		worker.replicateToSearch()
-
+		
 		print "Total seconds elapsed",worker.totalTime	
 		return True
 		
@@ -382,20 +381,8 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 		return True
 
 
-	# Replicate staging to production
-	if fedEvent == "replicateStagingToProduction":
-		print "replicating staging core to production"
-		r = requests.get('http://localhost/solr4/search/replication?command=fetchindex&wt=json&commit=false')
-		response = json.loads(r.content)
-		if response['status'] == "OK":
-			print "Success"
-			return True
-		else:
-			print "Failure"
-			return False
-
-
 	# finally, commit all changes
+	print "committing changes"
 	solr_handle.commit()
 
 

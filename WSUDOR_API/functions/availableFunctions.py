@@ -246,6 +246,27 @@ def solrFacetSearch(getParams):
 	return jsonString
 
 
+def getCollectionMeta(getParams):
+######################################################################################################################
+	'''
+	Note: using WSUDOR object methods.
+	'''
+
+	# object handle
+	PID=getParams['PID'][0]
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PID)
+
+	# get collection pids
+	collection_pids = obj_handle.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+
+	# get collection solr docs
+	search_string = "id:("+" OR ".join([ collection_pid.split("/")[1].replace(":","\:") for collection_pid in obj_handle.SolrDoc.asDictionary()['rels_isMemberOfCollection']])+")"
+	solr_results = solr_handle.search(**{"q":search_string})
+
+	return json.dumps(solr_results.documents)
+	
+
+
 def getUserFavorites(getParams):
 ######################################################################################################################
 

@@ -118,8 +118,13 @@ class SingleObjectMethods(object):
 	def hierarchicalTree_comp(self,getParams):
 		print hierarchicalTree(getParams)
 		# returns collections the object is a part of
-		# saves to 'hasParent'
+		# saves to 'hierarchicalTree'
 		return ("hierarchicalTree",json.loads(hierarchicalTree(getParams)))
+
+	def getCollectionMeta_comp(self,getParams):
+		# print getCollectionMeta(getParams)
+		# returns Solr documents for parent collection(s)
+		return ("getCollectionMeta",json.loads(getCollectionMeta(getParams)))
 
 
 	####################################################################################

@@ -257,14 +257,17 @@ def getCollectionMeta(getParams):
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PID)
 
 	# get collection pids
-	collection_pids = obj_handle.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+	try:
+		collection_pids = obj_handle.SolrDoc.asDictionary()['rels_isMemberOfCollection']
 
-	# get collection solr docs
-	search_string = "id:("+" OR ".join([ collection_pid.split("/")[1].replace(":","\:") for collection_pid in obj_handle.SolrDoc.asDictionary()['rels_isMemberOfCollection']])+")"
-	solr_results = solr_handle.search(**{"q":search_string})
+		# get collection solr docs
+		search_string = "id:("+" OR ".join([ collection_pid.split("/")[1].replace(":","\:") for collection_pid in obj_handle.SolrDoc.asDictionary()['rels_isMemberOfCollection']])+")"
+		solr_results = solr_handle.search(**{"q":search_string})
 
-	return json.dumps(solr_results.documents)
-	
+		return json.dumps(solr_results.documents)
+
+	except:
+		return json.dumps({"result":"no parent collection objects found"})
 
 
 def getUserFavorites(getParams):

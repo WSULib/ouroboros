@@ -27,6 +27,7 @@ from WSUDOR_Manager import app
 # import WSUDOR_API app
 from WSUDOR_API import WSUDOR_API_app
 
+print os.system('whoami')
 
 
 # Ouroboros pidfile ##############################################################

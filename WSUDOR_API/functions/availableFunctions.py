@@ -11,9 +11,6 @@ import subprocess
 import ldap
 import mimetypes
 
-# Fedora and Risearch imports
-from fedDataSpy import makeSymLink
-
 # utilities
 from utils import *
 

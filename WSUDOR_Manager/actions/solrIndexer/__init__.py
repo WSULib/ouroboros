@@ -173,6 +173,9 @@ class SolrIndexerWorker(object):
 		if obj_handle == False:
 			return False
 
+		# re-derive Dublin Core metadata
+		obj_handle.DCfromMODS()
+
 		# purge previous Solr doc content
 		obj_handle.SolrDoc.doc = helpers.BlankObject()
 		obj_handle.SolrDoc.doc.id = obj_handle.pid

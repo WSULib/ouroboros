@@ -28,7 +28,8 @@ def index():
 	For feeding WSUDOR_API_main in Flask app form, we perform here.
 	'''	
 
-	getParams = {each:request.values.getlist(each) for each in request.values}	
+	getParams = {each:request.values.getlist(each) for each in request.values}
+	print getParams
 
 	try:
 		response = make_response(WSUDOR_API_main(getParams))

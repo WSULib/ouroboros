@@ -18,3 +18,8 @@ except:
 	solr_bookreader_handle = False
 
 
+def onDemand(core):
+	try:
+		return Solr('http://localhost/solr4/%s' % (core), make_request=session)
+	except:
+		return False

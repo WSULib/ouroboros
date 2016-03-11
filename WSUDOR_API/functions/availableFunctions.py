@@ -23,6 +23,7 @@ from localConfig import *
 # modules from WSUDOR_Manager
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities
 
@@ -38,7 +39,6 @@ Function Format:
 '''
 
 
-
 #######################################################################################################################
 # --------------------------------------------------------------------------------------------------------------------#
 # SOLR RELATED                                                                                                        #
@@ -48,202 +48,131 @@ Function Format:
 def solrGetFedDoc(getParams):
 #get title and everything from a SOLR request
 ######################################################################################################################
+
+	'''
+	Retrieve Single Document
+	'''
+
+	# query dictionary (qd)
 	PID=getParams['PID'][0]
 	PID = PID.replace(":", "\:")
-	baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
-	solrParams = {
+	qd = {
 		'q' : 'id:%s' % (PID),
-		'wt' : 'json',
-		'fl' : 'id mods* dc* rels* obj* facet* last_modified' # throttled to prevent unwanted fields from weighing down response		
+		'fl' : ['id', 'mods*', 'dc*', 'rels*', 'obj*', 'facet*', 'last_modified']
 	}
-	r = requests.get(baseURL , params=solrParams)			
-	jsonString = r.text
-	return jsonString
 
+	# Send Query
+	sr = solr_handle.search(**qd)
+	return json.dumps(sr.raw_content)
+
+	
 
 def solrSearch(getParams):
 ######################################################################################################################	
-	# establish baseURL
-	if 'solrCore' in getParams:				
-		baseURL = "http://localhost/solr4/%s/select?" % (getParams['solrCore'][0])
-	else:
-		baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
+	
+	'''
+	Build dictionary for query to mysolr
+	'''
 
-	# hard-code some server side parameters	
+	# query dictionary (qd)
+	qd = {}
+
+	# HARD-CODE
 	# sorts date result 
-	getParams['f.dc_date.facet.sort'] = ["index"]
+	qd['f.dc_date.facet.sort'] = ["index"]
 	# no limit on facets
-	getParams['facet.limit'] = ["-1"]
+	qd['facet.limit'] = ["-1"]
 	# implies "AND" operator for all blank spaces when q.op not explicitly set
 	if 'q.op' not in getParams:
-		getParams['q.op'] = ["AND"]	
+		qd['q.op'] = ["AND"]
 
-	# q
-	if 'q' in getParams:	
-		# escape colons in query string if "noescape" not set	
-		if 'raw' in getParams and getParams['raw'] == "escapeterms":
-			qfront = getParams['q'][0].split(":",1)[0]			
-			qtail = getParams['q'][0].split(":",1)[1].replace(":","\:")			
-			getParams['q'][0] = qfront+":"+qtail
+	# QUERY	
+	if 'q' in getParams:
+		qd['q'] = getParams['q'][0]
+	else:		
+		qd['q'] = [""]
 
-		elif 'raw' not in getParams or getParams['raw'][0] != "noescape":																		
-			getParams['q'][0] = escapeSolrArg(getParams['q'][0])			
+
+	# FACETS	
+	if 'facets[]' in getParams:
+		qd['facet.field'] = [ facet for facet in getParams['facets[]'] ]
+
+
+	# FILTER QUERIES	
+	if 'fq[]' in getParams:
+		qd['fq'] = [ facet for facet in getParams['fq[]'] ]
 	else:
-		print "*No search terms provided*"
-		getParams['q'][0] = ""
-	# add to URL
-	baseURL	+= "q="+getParams['q'][0]+"&"
+		# create empty list for other fq's
+		qd['fq'] = []
 
-	## BACKDOOR FOR VIEWING ALL ITEMS, NOT JUST isDiscoverableTrue	
+	# BACKDOOR FOR VIEWING ALL ITEMS	
 	if 'fullview' in getParams and getParams['fullview'][0] == "true":
 		pass
-	else:
-		baseURL	+= "fq=rels_isDiscoverable:True&"
+	else:		
+		qd['fq'].append('rels_isDiscoverable:True')
 
-	# facets
-	if 'facets[]' in getParams:
-		for facet in getParams['facets[]']:
-			baseURL += ("facet.field="+facet+"&")	
 
-	# filter queries
-	if "fq[]" in getParams:
-		for fq in getParams['fq[]']:
-			baseURL += ("fq="+fq+"&")	
+	# FILTER QUERIES (FL)
+	qd['fl'] = [ "id", "mods*", "dc*", "rels*", "obj*", "last_modified" ]
 
-	# tack on fl
-	baseURL += "&fl=id mods* dc* rels* obj* last_modified&"	
 
-	processed = ["raw","fullview","facets[]","fq[]","q"]
-
-	# add all other parameters	
+	# OTHER PARAMS
+	skip_processing = ["raw","fullview","facets[]","fq[]","q"]	
 	for k in getParams:
-		if k not in processed:
-			baseURL += (k+"="+str(getParams[k][0])+"&")		
+		if k not in skip_processing:
+			qd[k] = getParams[k][0]
 
-	# make Solr Request
-	r = requests.get(baseURL)			
-	jsonString = r.text	
-	return jsonString
+	# Send and return query
+	sr = solr_handle.search(**qd)
+	return json.dumps(sr.raw_content)
 
 
 def solrCoreGeneric(getParams):
 ######################################################################################################################	
-	# print getParams
+	
+	'''
+	EXPERIMENTAL
+	Build dictionary for query to mysolr
+	'''
 
-	# establish baseURL
-	if 'solrCore' in getParams:				
-		baseURL = "http://localhost/solr4/%s/select?" % (getParams['solrCore'][0])
-	else:
-		baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
+	# query dictionary (qd)
+	qd = {}
 
-	# q
-	if 'q' in getParams:	
-		# escape colons in query string if "noescape" not set	
-		if 'raw' in getParams and getParams['raw'] == "escapeterms":
-			qfront = getParams['q'][0].split(":",1)[0]			
-			qtail = getParams['q'][0].split(":",1)[1].replace(":","\:")			
-			getParams['q'][0] = qfront+":"+qtail
-		elif 'raw' not in getParams or getParams['raw'][0] != "noescape":																		
-			getParams['q'][0] = escapeSolrArg(getParams['q'][0])			
-	else:
-		print "*No search terms provided*"
-		getParams['q'][0] = ""
+	# HARD-CODE
+	# sorts date result 
+	qd['f.dc_date.facet.sort'] = ["index"]
+	# no limit on facets
+	qd['facet.limit'] = ["-1"]
+	# implies "AND" operator for all blank spaces when q.op not explicitly set
+	if 'q.op' not in getParams:
+		qd['q.op'] = ["AND"]
 
-	# add to URL
-	baseURL	+= "q="+getParams['q'][0]+"&"	
+	# QUERY	
+	if 'q' in getParams:
+		qd['q'] = getParams['q'][0]
+	else:		
+		qd['q'] = [""]
 
-	# facets
+	# FACETS	
 	if 'facets[]' in getParams:
-		for facet in getParams['facets[]']:
-			baseURL += ("facet.field="+facet+"&")	
+		qd['facet.field'] = [ facet for facet in getParams['facets[]'] ]
 
-	# filter queries
-	if "fq[]" in getParams:
-		for fq in getParams['fq[]']:
-			baseURL += ("fq="+fq+"&")
+	# FILTER QUERIES	
+	if 'fq[]' in getParams:
+		qd['fq'] = [ facet for facet in getParams['fq[]'] ]
+	else:
+		# create empty list for other fq's
+		qd['fq'] = []
 
-	processed = ["raw","fullview","facets[]","fq[]","q"]
-
-	# add all other parameters	
+	# OTHER PARAMS
+	skip_processing = ["facets[]","fq[]","q"]
 	for k in getParams:
-		if k not in processed:
-			baseURL += (k+"="+str(getParams[k][0])+"&")		
+		qd[k] = getParams[k][0]
 
-	# make Solr Request
-	r = requests.get(baseURL)			
-	jsonString = r.text	
-	return jsonString
+	# Send and return query	
+	sr = solrHandles.onDemand(getParams['solrCore'][0]).search(**qd)
+	return json.dumps(sr.raw_content)
 
-
-def solrFacetSearch(getParams):
-######################################################################################################################
-	# establish baseURL
-	baseURL = "http://localhost/solr4/%s/select?" % (SOLR_SEARCH_CORE)
-
-	# set solrParams
-	solrParams = ast.literal_eval(getParams['solrParams'][0])
-	solrParams["wt"] = "python"	
-	print "Solr Search Params:", solrParams
-
-	# Solr Terms Parsing
-	# BAD LOGIC.  REDO.
-	if 'q' in solrParams:	
-		# escape colons in query string if "noescape" not set	
-		if 'raw' in solrParams and solrParams['raw'] == "escapeterms":
-			qfront = solrParams['q'].split(":",1)[0]
-			qtail = solrParams['q'].split(":",1)[1].replace(":","\:")
-			solrParams['q'] = qfront+":"+qtail
-
-		elif 'raw' not in solrParams or solrParams['raw'] != "noqescape":		
-			solrParams['q'] = escapeSolrArg(solrParams['q'])
-	else:
-		print "*No search terms provided*"
-		solrParams['q'] = ""
-
-	## Show only items with rels_isSearchable = True	
-	if 'fullView' in solrParams and solrParams['fullView'] == "on":
-		pass
-	else:
-		baseURL	+= "fq=rels_isDiscoverable:True&"
-
-	# facets
-	if 'facets[]' in solrParams:
-		for facet in solrParams['facets[]']:
-			baseURL += ("facet.field="+facet+"&")	
-
-	# filter queries
-	if "fq[]" in solrParams:
-		for fq in solrParams['fq[]']:
-			baseURL += ("fq="+fq+"&")	
-
-	processed = ["raw","fullview","facets[]","fq[]"]
-
-	# add all other parameters	
-	for k in solrParams:
-		if k not in processed:
-			baseURL += (k+"="+str(solrParams[k])+"&")	
-
-	## DEBUG
-	print "\n\n***SOLR PARAMS***",solrParams
-	print "\n\n***BASE URL***",baseURL,"\n\n"
-
-	# make Solr Request
-	r = requests.get(baseURL)	
-
-	# create cleaned up dictionary
-	print r.text
-	tempDict = ast.literal_eval(r.text)
-	facetFieldsList = tempDict["facet_counts"]["facet_fields"]["rels_isMemberOfCollection"]
-	prettyDict = {}
-	i = 0
-	while i < len(facetFieldsList):
-		prettyDict[facetFieldsList[i]] = facetFieldsList[(i+1)]
-		i+=2
-	print prettyDict
-
-	jsonString = json.dumps(prettyDict)
-
-	return jsonString
 
 
 def getCollectionMeta(getParams):

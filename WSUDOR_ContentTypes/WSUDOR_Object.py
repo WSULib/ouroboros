@@ -875,7 +875,11 @@ class WSUDOR_GenObject(object):
 
 
 	# method to send object to remote repository
-	def sendObject(self, dest_repo, export_context='migrate', overwrite=False, show_progress=False, refresh_remote=True):		
+	def sendObject(self, dest_repo, export_context='migrate', overwrite=False, show_progress=False, refresh_remote=True):
+
+		'''
+		dest_repo = string key from localConfig for remote repositories credentials
+		'''
 
 		# use syncutil
 		print "sending object..."

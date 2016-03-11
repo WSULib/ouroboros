@@ -2,23 +2,23 @@
 <h2>MODS Export/Import</h2>
 
 <div class="row">
-	<form class="form-horizontal" id="form" role="form" method="POST" action="/tasks/MODSexport/import_fire" enctype="multipart/form-data">
-		<div class="col-md-3">	
+	<div class="col-md-6">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/fireTask/custom_loop/MODSimport_factory" enctype="multipart/form-data">
+			<div class="col-md-12">
+				<!-- Pasting content -->
+				<div class="form-group dataTypes" id="content" >
+					{{ form.content.label(class="control-label") }} {{ form.content(class="form-control input-sm", **{'placeholder':'XML goes here'}) }}
+				</div>
+				<h4>Or</h4>
+				<!-- Uploading content -->
+				<div class="form-group dataTypes" id="upload" >
+					{{ form.upload.label(class="control-label") }} {{ form.upload }}
+				</div>	
 
-			<!-- Pasting content -->
-			<div class="form-group dataTypes" id="content" >
-				{{ form.content.label(class="control-label") }} {{ form.content(class="form-control input-sm", **{'placeholder':'XML goes here'}) }}
+				<input type="submit" class="btn btn-success" value="Go">
 			</div>
-			<h4>Or</h4>
-			<!-- Uploading content -->
-			<div class="form-group dataTypes" id="upload" >
-				{{ form.upload.label(class="control-label") }} {{ form.upload }}
-			</div>	
-
-			<input type="submit" class="btn btn-primary" value="Go">
-		</div>
-
-	</form>
+		</form>
+	</div>
 </div>
 
 {% include 'footer.html' %}

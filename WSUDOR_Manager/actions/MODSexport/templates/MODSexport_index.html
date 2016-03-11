@@ -1,16 +1,24 @@
 {% include 'header.html' %}
-<h2>MODS Export/Import</h2>
-<p>This utility allows you to export multiple MODS records into a &lt;mods:modsCollection&gt; file, or import a collection of MODS records that have been edited outside of Ouroboros (spreadsheet, XML editor, text editors).</p>
-<p><strong>NOTE:</strong> A WSUDOR convention is to include the PID of an object in the &lt;mods:extension&gt;&lt;PID&gt; element. If this is <em>not</em> already present, it will be created on export from this utility.  Thus, it is recommended to use the same file you export, for importing.</p>
-<h4>Choose "export" or "import" below:</h4> 
+<div class="row">
+	<div class="col-md-12">
+		<h2>MODS Export/Import</h2>
+		<p>This utility allows you to export multiple MODS records into a &lt;mods:modsCollection&gt; file, or import a collection of MODS records that have been edited outside of Ouroboros (spreadsheet, XML editor, text editors).</p>
+		<p><strong>NOTE:</strong> A WSUDOR convention is to include the PID of an object in the &lt;mods:extension&gt;&lt;PID&gt; element. If this is <em>not</em> already present, it will be created on export from this utility.  Thus, it is recommended to use the same file you export, for importing.</p>
+		<h4>Choose "export" or "import" below:</h4> 
+	</div>
+</div>
 
-<ul>
-	<li>
-		<img id="loading_circle" style="display:none;" src="{{ url_for('static', filename='img/circle.gif') }}"/>
-		<a id="export_button" class="btn btn-default btn-sm" href="./MODSexport/export" onclick="$('#export_button').hide(); $('#loading_circle').show(); ">Export</a><p>For large selections of objects, may take some time.  Download will start automatically.</p>
-	</li><br>
-	<li><a class="btn btn-default btn-sm" href="./MODSexport/import_form">Import</a></li>
-</ul>
+<div class="row">
+	<div class="col-md-12">
+		<ul>
+			<li>
+				<img id="loading_circle" style="display:none;" src="{{ url_for('static', filename='img/circle.gif') }}"/>
+				<a id="export_button" class="btn btn-default btn-sm" href="./MODSexport/export" onclick="$('#export_button').hide(); $('#loading_circle').show(); ">Export</a><p>For large selections of objects, may take some time.  Download will start automatically.</p>
+			</li><br>
+			<li><a class="btn btn-default btn-sm" href="./MODSexport/import_form">Import</a></li>
+		</ul>
+	</div>
+</div>
 
 {% include 'footer.html' %}
 

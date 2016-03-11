@@ -281,6 +281,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 		In the case of custom_loop's, using this task_handle to fire instead of taskFactory
 		'''
 		task_handle = getattr(actions, task_name)
+		print "We've got task handle:",task_handle
 	except:		 
 		return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/userPage'>user page</a>.")		
 	
@@ -291,6 +292,8 @@ def fireTaskWorker(task_name,task_inputs_key):
 	''' pulling from incrementing redis counter, considering MySQL '''
 	job_num = jobs.jobStart()		
 	job_package['job_num'] = job_num
+
+	print "Job Type is:",job_package['job_type']
 
 
 	# Object Loop

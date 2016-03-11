@@ -39,7 +39,7 @@ from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)
 
 #MODSexport
-from MODSexport import MODSexport, importMODS_worker
+from MODSexport import MODSexport, MODSimport_factory, MODSimport_worker
 app.register_blueprint(MODSexport, url_prefix=tasks_URL_prefix)
 
 #editDSXMLAdv
@@ -118,8 +118,6 @@ app.register_blueprint(createObj, url_prefix=tasks_URL_prefix)
 class postTask(Task):
 	abstract = True
 	def after_return(self, *args, **kwargs):
-
-		print args
 
 		# extract task data		
 		status = args[0]

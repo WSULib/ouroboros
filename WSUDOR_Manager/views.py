@@ -1,4 +1,3 @@
-
 # python modules
 import time
 import json
@@ -19,7 +18,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 # WSUDOR_Manager
-from WSUDOR_Manager import app
+from WSUDOR_Manager import WSUDOR_MANAGER_app
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
 from WSUDOR_Manager.actions import actions
@@ -59,13 +58,6 @@ from fedoraHandles import fedora_handle
 ####################################
 app.secret_key = 'WSUDOR'
 ####################################
-
-
-
-
-# META
-#########################################################################################################
-
 
 
 

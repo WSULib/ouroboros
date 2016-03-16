@@ -22,7 +22,7 @@ import lockfile
 from localConfig import *
 
 # import WSUDOR_Manager app
-from WSUDOR_Manager import app
+from WSUDOR_Manager import app as WSUDOR_Manager_app
 
 # import WSUDOR_API app
 from WSUDOR_API import WSUDOR_API_app
@@ -88,8 +88,8 @@ class fedoraConsumerWorker(object):
 logging.basicConfig(level=logging.DEBUG)
 
 # WSUDOR_Manager
-resource = WSGIResource(reactor, reactor.getThreadPool(), app)
-site = Site(resource)
+WSUDOR_Manager_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUDOR_Manager_app)
+WSUDOR_Manager_site = Site(WSUDOR_Manager_resource)
 
 # WSUDOR_API_app
 WSUDOR_API_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUDOR_API_app)
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 	# WSUDOR Manager
 	if WSUDOR_MANAGER_FIRE == True:
 		print "Starting WSUDOR_Manager..."
-		reactor.listenTCP( WSUDOR_MANAGER_PORT, site)
+		reactor.listenTCP( WSUDOR_MANAGER_PORT, WSUDOR_Manager_site)
 
 	# WSUDOR_API
 	if WSUDOR_API_FIRE == True:

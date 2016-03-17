@@ -6,12 +6,12 @@
 		<h2>Confirm?</h2>
 		<p>Are you sure you want to: <strong>{{update_type}}</strong>?</p>		
 
-		<form method="POST" action="/tasks/updateSolr/{{update_type}}">
+		<form method="POST" action="/ouroboros/tasks/updateSolr/{{update_type}}">
 			<input type="hidden" name="choice" value="deny"/>
 			<input class="btn btn-primary" type="submit" value="No">
 		</form>
 
-		<form method="POST" action="/tasks/updateSolr/{{update_type}}">
+		<form method="POST" action="/ouroboros/tasks/updateSolr/{{update_type}}">
 			{% if update_type == 'purgeAndFullIndex' %}
 				<p><span style="color:red">Purging Solr will effectively bring down the Digital Collections front-end until all objects are redindexed (this can take hours).  Make sure before continuing.</span></p>
 			{% endif %}

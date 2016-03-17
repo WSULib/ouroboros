@@ -3,7 +3,7 @@
 {% if result %}
 	<p>{{result}}</p>
 {% else %}
-<form action="/jobRemove/{{job_num}}" method="POST">
+<form action="/ouroboros/jobRemove/{{job_num}}" method="POST">
 	<input type="hidden" name="commit" value="true"/>
 	<input type="submit" value="delete job?"/>
 </form>

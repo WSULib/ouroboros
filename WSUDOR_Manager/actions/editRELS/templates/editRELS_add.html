@@ -13,7 +13,7 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<form action="/fireTask/obj_loop/editRELS_add_worker" method="POST" role="form">
+		<form action="/ouroboros/fireTask/obj_loop/editRELS_add_worker" method="POST" role="form">
 			<div class="col-md-3">
 				<div class="form-group">
 					{{ form.predicate.label }} {{ form.predicate (class="form-control") }}	
@@ -31,7 +31,7 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<form id="PredLiteral" style="display:none;" action="/fireTask/obj_loop/editRELS_add_worker" method="POST" >
+		<form id="PredLiteral" style="display:none;" action="/ouroboros/fireTask/obj_loop/editRELS_add_worker" method="POST" >
 			<p>Enter predicate "literal", direct string entry for advanced RELS-EXT modeling.  For example "http://www.openarchives.org/OAI/2.0/setSpec" will translate to "&lt;setSpec xmlns="http://www.openarchives.org/OAI/2.0/"&gt;&lt;/setSpec&gt;"  It is encouraged to use the drop-down above for normalization of RDF relationships in the repository, but there are scenarios where unique or special RDF relationships (predicates) are needed.</p>
 			<div class="col-md-3">
 				<div class="form-group">

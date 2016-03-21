@@ -36,8 +36,6 @@ bagIngest = Blueprint('bagIngest', __name__, template_folder='templates', static
 @bagIngest.route('/bagIngest', methods=['POST', 'GET'])
 def index():
 
-	# form = forms.bagIngestForm()	
-
 	return render_template("bagIngestIndex.html", REMOTE_REPOSITORIES=localConfig.REMOTE_REPOSITORIES)
 
 

@@ -1,0 +1,38 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<div class="col-md-12">
+
+		<h1>WSUDOR Ingest Workspace</h1>
+
+		<p>Experimental: workspace to loads MODS, create bags with python Class drop-ins, and ingest objects.</p>
+
+		<p><a class="btn btn-success btn-xs" href="">Create new Ingest Job</a></p>
+
+		<p>Or, select a previously started ingest job from the table below:</p>
+		
+		<div class="col-md-5">
+			<table class="table striped">
+				<tr>
+					<td><strong>Job Name</strong></td>
+					<!-- <td><strong>ID</strong></td> -->
+					<td><strong>Created</strong></td>
+					<td><strong>Total MODS Records</strong></td>
+				</tr>
+				{% for ij in ijs %}
+					<tr>
+						<td><a href="/tasks/ingestWorkspace/job/{{ij.id}}">{{ij.name}}</a></td>
+						<!-- <td>{{ij.id}}</td> -->
+						<td>{{ij.created}}</td>
+						<td>NULL</td>
+					<tr>
+				{% endfor %}
+			</table>
+		</div>
+
+	</div>
+</div>
+
+
+
+{% include 'footer.html' %}

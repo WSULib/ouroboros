@@ -61,20 +61,6 @@ function paintTable(username,DT_target){
 		});
 	} );
  
-    // $('#button').click( function () {
-    //     alert( table.rows('.selected').data().length +' row(s) selected' );
-    // } );
-
-	// don't need, but might be worth saving
-	// var cpage = table_handle.page();
-	// console.log(cpage);
-	// table_handle.draw();
-	// $("a.paginate_button.current").click();					
-
-	// LEAVE FOR REFERENCE, searchCols WORKING ABOVE PER BUG FIX IN DATATABLES
-	// filter only the user
-	// https://datatables.net/forums/discussion/comment/61834#Comment_61834
-	// table_handle.columns(2).search(username).draw();	
 }
 
 function PIDmanageAction(action){

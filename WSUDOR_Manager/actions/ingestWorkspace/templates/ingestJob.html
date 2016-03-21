@@ -1,0 +1,106 @@
+{% include 'header.html' %}
+
+
+<div class="row">
+
+	<!-- metadata -->
+	<div class="col-md-12">
+
+		<h1>WSUDOR Ingest Workspace : Job </h1>
+		
+		<h4>Job Information:</h4>
+		<p>
+			<ul>
+				<li>Name: {{j.name}}</li>
+				<li>Job ID: {{j.id}}</li>
+				<li>Created: {{j.created}}</li>
+			</ul>
+		</p>
+
+	</div>
+
+	<!-- job objects -->
+	<div class="col-md-8">
+
+		<!-- insert table here -->
+		<table id="object_table" class="display" cellspacing="0" width="100%">
+            <thead>
+                <tr>            
+                    <th>id</th>
+                    <th>object_title</th>                    
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>            
+                    <th>id</th>
+                    <th>object_title</th>                    
+                </tr>
+            </tfoot>
+        </table>
+
+	</div>
+
+
+</div>
+
+<!-- JS -->
+<script type="text/javascript">
+
+	/*
+	use datatables, with custom response from flask route 
+	*/
+
+	function paintTable(){
+
+		// paint table
+		table_handle = $('#object_table').DataTable( {		
+		    "serverSide": true,			    	    
+			"ajax": "http://192.168.42.4/cgi-bin/php_ingest_job.php",		
+			"columns": [
+				{ 	"searchable": true, 
+					"name":"id" 
+				},
+				{ 	"searchable": true, 
+					"name":"object_title" 
+				}		    	    
+			  ],
+			searchCols: [
+		        null,
+		        null
+		    ]	
+
+		});
+	}
+
+	$(document).ready(function(){
+    	paintTable();
+    });
+
+</script>
+
+
+{% include 'footer.html' %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

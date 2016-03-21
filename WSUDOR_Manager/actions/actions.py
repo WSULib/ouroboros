@@ -34,6 +34,10 @@ app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
 from bagIngest import bagIngest, bagIngest_factory, bagIngest_worker 
 app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
 
+#ingestWorkspace
+from ingestWorkspace import ingestWorkspace
+app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
+
 #createObjectIndex
 from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)

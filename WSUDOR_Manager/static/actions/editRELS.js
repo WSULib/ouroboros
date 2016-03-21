@@ -9,7 +9,7 @@ function modifyRel(self){
 	var old_object = self.parent().siblings('td.object').children('input').attr('name');	
 
 	// create and submit form (results in redirect)
-	var url = "/fireTask/obj_loop/editRELS_modify_worker";
+	var url = "/ouroboros/fireTask/obj_loop/editRELS_modify_worker";
 
 	var form = $('<form action="' + url + '" method="POST">' +
 	'<input type="hidden" name="new_predicate" value="' + new_predicate + '" />' +

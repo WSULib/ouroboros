@@ -1,7 +1,7 @@
 // likely be removed if moving to prettier tempating
 function exportJobStatus(job_package){
 	
-	var return_string = "Job #"+job_package.job_num+", <strong>"+job_package.job_name+"</strong>: "+job_package.completed_tasks+" / "+job_package.estimated_tasks+" ("+job_package.comp_percent+") - "+job_package.job_status+" - (assigned: "+job_package.assigned_tasks+") - Elapsed / Est. Remaining: "+job_package.time_elapsed+" / "+job_package.time_remaining+" - <a href='/jobDetails/"+job_package.job_num+"'>Job Details</a>";
+	var return_string = "Job #"+job_package.job_num+", <strong>"+job_package.job_name+"</strong>: "+job_package.completed_tasks+" / "+job_package.estimated_tasks+" ("+job_package.comp_percent+") - "+job_package.job_status+" - (assigned: "+job_package.assigned_tasks+") - Elapsed / Est. Remaining: "+job_package.time_elapsed+" / "+job_package.time_remaining+" - <a href='/ouroboros/jobDetails/"+job_package.job_num+"'>Job Details</a>";
 	 
 	return return_string;
 }

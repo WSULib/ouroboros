@@ -34,7 +34,7 @@
 				{% else %}
 					<td><span style="color:red;">{{isOAIHarvestable}}</span></td>
 				{% endif %}				
-				<td><a class="btn btn-warning btn-xs" href="/tasks/manageOAI/toggleSet/{{PID}}">Toggle Set Visibility</a></td>				
+				<td><a class="btn btn-warning btn-xs" href="/ouroboros/tasks/manageOAI/toggleSet/{{PID}}">Toggle Set Visibility</a></td>				
 			</tr>
 			{% endfor %}
 		</table>
@@ -49,7 +49,7 @@
 
 		// remove setSpec, chain removing setName, then send to user jobs
 		$.ajax({
-			url: "/tasks/manageOAI/purgeSet",
+			url: "/ouroboros/tasks/manageOAI/purgeSet",
 			type: "POST",
 			data: {
 				"obj":obj,
@@ -57,7 +57,7 @@
 				"setName":setName
 			}
 		}).done(function(response) {
-			window.location.href="./serverWide";			
+			window.location.href="/ouroboros/tasks/manageOAI/serverWide";			
 		});
 	}
 </script>

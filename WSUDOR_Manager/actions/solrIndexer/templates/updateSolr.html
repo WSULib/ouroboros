@@ -15,27 +15,27 @@
 				</tr>
 
 				<tr>
-					<td><a class="btn btn-success btn-xs" href="/tasks/updateSolr/userObjects">Currently selected Objects</a></td>
+					<td><a class="btn btn-success btn-xs" href="/ouroboros/tasks/updateSolr/userObjects">Currently selected Objects</a></td>
 					<td>Indexes only objects <strong>currently selected</strong> from your user workspace.</td>
 				</tr>
 
 				<tr>
-					<td><a class="btn btn-success btn-xs" href="/tasks/updateSolr/timestamp">Recently Modified Objects</a></td>
+					<td><a class="btn btn-success btn-xs" href="/ouroboros/tasks/updateSolr/timestamp">Recently Modified Objects</a></td>
 					<td>Indexs all objects <strong>modified</strong> since last partial or full index.</td>
 				</tr>
 
 				<tr>
-					<td><a class="btn btn-success btn-xs" href="/tasks/updateSolr/fullIndex">All Objects</a></td>
+					<td><a class="btn btn-success btn-xs" href="/ouroboros/tasks/updateSolr/fullIndex">All Objects</a></td>
 					<td>Indexes <strong>all<strong> objects in Fedora, but does not purge old ones.</td>
 				</tr>
 
 				<tr>
-					<td><a class="btn btn-warning btn-xs" href="/fireTask/custom_loop/pruneSolr_factory">Prune Objects</a></td>
+					<td><a class="btn btn-warning btn-xs" href="/ouroboros/fireTask/custom_loop/pruneSolr_factory">Prune Objects</a></td>
 					<td>This method checks every object in Solr: if it does not still exist in Fedora, it "prunes" it.  Safe to run in production, but long running.</td>
 				</tr>
 
 				<tr>
-					<td><a class="btn btn-danger btn-xs" href="/tasks/updateSolr/purgeAndFullIndex">All Objects</a></td>
+					<td><a class="btn btn-danger btn-xs" href="/ouroboros/tasks/updateSolr/purgeAndFullIndex">All Objects</a></td>
 					<td><strong>Purges</strong> and <strong>reindexes</strong> all objects in Solr.  <span style="color:red;">Will remove all live Solr records - run only if necessary or system is down.</span></td>
 				</tr>
 
@@ -44,7 +44,7 @@
 		{% else %}
 
 			<p>Ran solrIndexer utility with option: <strong>{{update_type}}</strong></p>
-			<p><a href="/tasks/updateSolr/select">Return to Solr Management</a></p>
+			<p><a href="/ouroboros/tasks/updateSolr/select">Return to Solr Management</a></p>
 
 		{% endif %}
 

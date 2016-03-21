@@ -245,7 +245,7 @@ def fireTask(job_type,task_name):
 
 	if job_type == "custom_loop":
 		print "Firing job for custom_loop type"
-		return redirect("/fireTaskWorker/%s/%s" % (task_name,task_inputs_key))
+		return redirect("fireTaskWorker/%s/%s" % (task_name,task_inputs_key))
 
 
 # confirmation page for objects, serializes relevant request objects as "job_package"
@@ -253,7 +253,7 @@ def fireTask(job_type,task_name):
 def cancelTask(task_inputs_key):
 
 	print redisHandles.r_job_handle.delete(task_inputs_key)
-	return redirect("/userPage")
+	return redirect("userPage")
 
 
 # fireTaskWorker is the factory that begins tasks from WSUDOR_Manager.actions
@@ -334,7 +334,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 
 	print "Started job #",job_num,"Celery task #",celery_task_id	
 	try:
-		return redirect("/userJobs")
+		return redirect("userJobs")
 	except:
 		return "API call or not logged in."
 
@@ -569,7 +569,7 @@ def jobRetire(job_num):
 	result = jobs.jobRetire_worker(job_num)		
 	print result
 
-	return redirect("/userJobs")
+	return redirect("userJobs")
 
 
 # Remove job from SQL, remove tasks from Redis
@@ -598,7 +598,7 @@ def retireAllJobs():
 
 	print "All non-complete jobs, retired"
 
-	return redirect("/userJobs")
+	return redirect("userJobs")
 
 
 # Flush all User Jobs (clear Celery tasks from Redis DB)
@@ -815,7 +815,7 @@ def PIDmanageAction(action):
 	return "Update Complete."
 
 	# pass the current PIDs to page as list	
-	return redirect("/PIDmanage")
+	return redirect("PIDmanage")
 
 
 # small function toggle selection of PIDs

@@ -53,22 +53,22 @@ def job(job_id):
 	return render_template("ingestJob.html", j=j, localConfig=localConfig)
 
 
-# return json for job
-@ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
-def jobjson(job_id):
+# # return json for job
+# @ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
+# def jobjson(job_id):
 
-	# get handle
-	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+# 	# get handle
+# 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
 
-	# objects
-	objects = [ o.serialize() for o in j.objects.all() ]
+# 	# objects
+# 	objects = [ o.serialize() for o in j.objects.all() ]
 
-	# return objects in json form
-	return jsonify({
-		'records':objects,
-		'queryRecordCount': len(objects),
-  		'totalRecordCount': len(objects)
-	})	
+# 	# return objects in json form
+# 	return jsonify({
+# 		'records':objects,
+# 		'queryRecordCount': len(objects),
+#   		'totalRecordCount': len(objects)
+# 	})	
 
 
 

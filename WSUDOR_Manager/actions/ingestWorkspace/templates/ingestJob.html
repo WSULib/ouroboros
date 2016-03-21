@@ -6,14 +6,15 @@
 	<!-- metadata -->
 	<div class="col-md-12">
 
-		<h1>WSUDOR Ingest Workspace : Job </h1>
+		<h1>WSUDOR Ingest Workspace: Job </h1>
 		
 		<h4>Job Information:</h4>
 		<p>
 			<ul>
-				<li>Name: {{j.name}}</li>
-				<li>Job ID: {{j.id}}</li>
-				<li>Created: {{j.created}}</li>
+				<li><strong>Name:</strong> {{j.name}}</li>
+				<li><strong>Job ID:</strong> {{j.id}}</li>
+				<li><strong>Created:</strong> {{j.created}}</li>
+				<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
 			</ul>
 		</p>
 

@@ -28,15 +28,10 @@
             <thead>
                 <tr>            
                     <th>id</th>
-                    <th>object_title</th>                    
+                    <th>object_title</th>
+                    <th>job_id</th>
                 </tr>
-            </thead>
-            <tfoot>
-                <tr>            
-                    <th>id</th>
-                    <th>object_title</th>                    
-                </tr>
-            </tfoot>
+            </thead>            
         </table>
 
 	</div>
@@ -45,38 +40,14 @@
 </div>
 
 <!-- JS -->
-<script type="text/javascript">
-
-	/*
-	use datatables, with custom response from flask route 
-	*/
-
-	function paintTable(){
-
-		// paint table
-		table_handle = $('#object_table').DataTable( {		
-		    "serverSide": true,			    	    
-			"ajax": "http://192.168.42.4/cgi-bin/php_ingest_job.php",		
-			"columns": [
-				{ 	"searchable": true, 
-					"name":"id" 
-				},
-				{ 	"searchable": true, 
-					"name":"object_title" 
-				}		    	    
-			  ],
-			searchCols: [
-		        null,
-		        null
-		    ]	
-
-		});
-	}
-
+<script type="text/javascript" charset="utf-8">
 	$(document).ready(function(){
-    	paintTable();
-    });
-
+	  var table = $('#object_table').DataTable({
+	    "processing": true,
+	    "serverSide": true,
+	    "ajax": "http://192.168.42.4:5004/tasks/ingestWorkspace/job/{{j.id}}.json"
+	  });
+	});
 </script>
 
 

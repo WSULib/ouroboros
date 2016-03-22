@@ -7,7 +7,7 @@ from cl.cl import celery
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, forms
+from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 import localConfig
@@ -21,12 +21,16 @@ import json
 import os
 import tarfile
 import uuid
+from string import upper
 
 # eulfedora
 import eulfedora
 
 # import bagit
 import bagit
+
+# flask-SQLalchemy-datatables
+from datatables import ColumnDT, DataTables
 
 # create blueprint
 ingestWorkspace = Blueprint('ingestWorkspace', __name__, template_folder='templates', static_folder="static")
@@ -53,28 +57,24 @@ def job(job_id):
 	return render_template("ingestJob.html", j=j, localConfig=localConfig)
 
 
-# # return json for job
-# @ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
-# def jobjson(job_id):
+# return json for job
+@ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
+def jobjson(job_id):
+	
+	# defining columns
+	columns = []
+	columns.append(ColumnDT('id'))
+	columns.append(ColumnDT('object_title'))
+	columns.append(ColumnDT('job_id'))    
 
-# 	# get handle
-# 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+	# defining the initial query depending on your purpose
+	query = db.session.query(models.ingest_workspace_object).filter(models.ingest_workspace_object.job_id == job_id)
 
-# 	# objects
-# 	objects = [ o.serialize() for o in j.objects.all() ]
+	# instantiating a DataTable for the query and table needed
+	rowTable = DataTables(request.args, models.ingest_workspace_object, query, columns)
 
-# 	# return objects in json form
-# 	return jsonify({
-# 		'records':objects,
-# 		'queryRecordCount': len(objects),
-#   		'totalRecordCount': len(objects)
-# 	})	
-
-
-
-
-
-
+	# returns what is needed by DataTable
+	return jsonify(rowTable.output_result())
 
 
 

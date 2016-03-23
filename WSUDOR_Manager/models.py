@@ -141,7 +141,7 @@ class ingest_workspace_job(db.Model):
 	ingest_metadata = db.Column(db.Text(4294967295))
 
 	# column to hold python code (Classes) for creating bags
-	bag_creation_class = db.Column(db.Text(4294967295))
+	bag_creation_class = db.Column(db.String(4096))
 
 	def __init__(self, name):		
 		self.name = name	

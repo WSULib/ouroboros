@@ -56,11 +56,11 @@ def job(job_id):
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()	
 
 	# ping Github repo for bag creation classes
-	r = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents').json()
-	
+	ouroboros_assets = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets').json()
+	bag_classes = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents/bagit_classes').json()
 
 	# render
-	return render_template("ingestJob.html", j=j, localConfig=localConfig)
+	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets, bag_classes=bag_classes)
 
 
 # return json for job

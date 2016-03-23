@@ -1,6 +1,9 @@
 print "importing WSUDOR_Manager"
 from WSUDOR_Manager import *
 
+# python
+import os
+
 print "importing fedora handles"
 fedora_handle = fedoraHandles.fedora_handle
 from WSUDOR_Manager import fedoraHandles
@@ -16,9 +19,12 @@ print "importing eulfedora"
 import eulfedora
 
 print "creating MySQL shortcut - `m()` with root password"
-import os
-def m():
+def my():
 	return os.system('mysql -u root -p WSUDOR_Manager')
+
+print "creating bash shortcut - 'bash'"
+def bash():
+	return os.system('bash')
 
 
 # DEBUG
@@ -38,3 +44,5 @@ def tableWipe():
 
 	print "recreating..."
 	db.create_all()
+
+

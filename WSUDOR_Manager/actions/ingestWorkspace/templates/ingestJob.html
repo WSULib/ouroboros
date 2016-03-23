@@ -61,12 +61,21 @@
 			
 			<form class="form" id="form" role="form" method="POST" action="/fireTask/custom_loop/makeBags_factory" enctype="multipart/form-data">
 				<div class="form-group">
-					<label class="control-label" for="dest_repo">Destination Repository:</label> 
+					<label class="control-label" for="dest_repo">Bag Ingest Class:</label> 
 					<select class="form-control input-sm" id="dest_repo" name="dest_repo">
 						{% for bag_class in bag_classes %}
-							<option value="{{bag_class.download_url}}">{{bag_class.name}}</option>
+							{% if (bag_class.name != "README.md") %}
+								<option value="{{bag_class.download_url}}">{{bag_class.name}}</option>
+							{% endif %}
 						{% endfor %}
 					</select> 
+				</div>
+				<div class="form-group">
+					<label class="control-label">Full path of files location:</label>
+					<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection"></input>
+				</div>
+				<div class="form-group">
+					<input type="submit" class="btn btn-success" value="Make Bags">
 				</div>
 				<!-- <pre style="max-height:400px; overflow-y: scroll;"><code>{{j.bag_creation_class}}</code></pre> -->
 			</form>
@@ -89,7 +98,7 @@
 	    	{
     			"targets": -1,
         		"data": null,
-            	"defaultContent": "<button class='btn btn-sm btn-success consoleMeta'>Click</button>"
+            	"defaultContent": "<button class='btn btn-sm btn-warning consoleMeta'>Metadata</button>"
         	},
         	{ "visible": false, "targets": [3,4] }
     	]

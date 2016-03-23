@@ -136,16 +136,10 @@ def createJob_factory(job_package):
 		ingest_metadata = form_data['pasted_metadata'] 
 	
 	# initiate ingest job instance with name
-	j = models.ingest_workspace_job(form_data['collection_identifier'])
-
-	# add python bag code
-	j.bag_creation_class = form_data['pasted_bag_class']
+	j = models.ingest_workspace_job(form_data['collection_identifier'])	
 
 	# add metadata
-	j.ingest_metadata = ingest_metadata
-
-	# bag creation class
-	j.bag_creation_class = form_data['pasted_bag_class']
+	j.ingest_metadata = ingest_metadata	
 
 	# set final ingest job values, and commit, add job number to job_package
 	j._commit()
@@ -236,6 +230,7 @@ def createJob_worker(job_package):
 	if job_package['MODS_temp_filename']:
 		with open(job_package['MODS_temp_filename'], 'r') as fhand:
 			o.MODS = fhand.read()
+			os.remove(job_package['MODS_temp_filename'])
 	else:
 		o.MODS = None
 

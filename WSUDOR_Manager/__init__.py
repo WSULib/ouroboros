@@ -35,6 +35,8 @@ if not os.path.exists('/tmp/Ouroboros'):
 	os.mkdir('/tmp/Ouroboros')
 if not os.path.exists('/tmp/Ouroboros/ingest_workspace'):
 	os.mkdir('/tmp/Ouroboros/ingest_workspace')
+if not os.path.exists('/tmp/Ouroboros/ingest_jobs'):
+	os.mkdir('/tmp/Ouroboros/ingest_jobs')
 
 
 

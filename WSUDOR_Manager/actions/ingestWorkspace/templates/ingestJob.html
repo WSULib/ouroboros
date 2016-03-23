@@ -1,9 +1,10 @@
 {% include 'header.html' %}
 
 
-<div class="row">
 
-	<!-- metadata -->
+
+<!-- metadata -->
+<div class="row">
 	<div class="col-md-12">
 
 		<h1><a href="/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a>: Job </h1>
@@ -19,8 +20,12 @@
 		</p>
 
 	</div>
+</div>
 
-	<!-- job objects -->
+<div style="margin-top:30px;"></div>
+
+<!-- job objects -->
+<div class="row">
 	<div class="col-md-8">
 
 		<!-- insert table here -->
@@ -30,26 +35,70 @@
                     <th>id</th>
                     <th>object_title</th>
                     <th>DMDID</th>
+                    <th>struct_map</th> <!-- full values, not visible -->
+                    <th>MODS</th> <!-- full values, not visible -->
+                    <th>struct_map</th>
+                    <th>MODS</th>
                     <th>ingested</th>
                     <th>repository</th>
+                    <th>actions</th>
                 </tr>
-            </thead>            
+            </thead>  
+            <tbody></tbody>          
         </table>
 
 	</div>
-
-
 </div>
+
+<div style="margin-top:30px;"></div>
+
+<!-- ingest activities -->
+<div class="row">
+	<div class="col-md-8">
+		<!-- make bags -->
+		<div class="well">
+			<h4>Make Bags</h4>
+			<p>Python Class for Bag Creation:</p>
+			<pre style="max-height:400px; overflow-y: scroll;"><code>{{j.bag_creation_class}}</code></pre>
+			<form class="form" id="form" role="form" method="POST" action="/fireTask/custom_loop/makeBags_factory" enctype="multipart/form-data">
+				<input></input>
+			</form>
+		</div>
+
+	</div>
+</div>
+
+
 
 <!-- JS -->
 <script type="text/javascript" charset="utf-8">
 	$(document).ready(function(){
+
 	  var table = $('#object_table').DataTable({
 	    "processing": true,
 	    "serverSide": true,
-	    "ajax": "http://192.168.42.4:5004/tasks/ingestWorkspace/job/{{j.id}}.json"
+	    "ajax": "http://192.168.42.4:5004/tasks/ingestWorkspace/job/{{j.id}}.json",
+	    columnDefs: [ 
+	    	{
+    			"targets": -1,
+        		"data": null,
+            	"defaultContent": "<button class='btn btn-sm btn-success consoleMeta'>Click</button>"
+        	},
+        	{ "visible": false, "targets": [3,4] }
+    	]
 	  });
+
+	  $('#object_table tbody').on( 'click', 'button', function () {
+	        var data = table.row( $(this).parents('tr') ).data();
+	        console.log(JSON.parse(data[3]));
+	        console.log(data[4]);
+	    } );
+
 	});
+
+	
+
+
 </script>
 
 

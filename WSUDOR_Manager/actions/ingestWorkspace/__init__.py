@@ -23,6 +23,7 @@ import tarfile
 import uuid
 from string import upper
 import xmltodict
+import requests
 
 # eulfedora
 import eulfedora
@@ -54,21 +55,37 @@ def job(job_id):
 	# get handle
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()	
 
+	# ping Github repo for bag creation classes
+	r = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents').json()
+	
+
 	# render
 	return render_template("ingestJob.html", j=j, localConfig=localConfig)
 
 
 # return json for job
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
-def jobjson(job_id):
+def jobjson(job_id):	
+
+	def exists(input):
+		if input != None:
+			return True
+		else:
+			return False
+		
 	
 	# defining columns
 	columns = []
 	columns.append(ColumnDT('id'))
 	columns.append(ColumnDT('object_title'))
 	columns.append(ColumnDT('DMDID'))
+	columns.append(ColumnDT('struct_map'))
+	columns.append(ColumnDT('MODS')),
+	columns.append(ColumnDT('struct_map', filter=exists))
+	columns.append(ColumnDT('MODS', filter=exists))
 	columns.append(ColumnDT('ingested'))
 	columns.append(ColumnDT('repository'))
+
 
 	# defining the initial query depending on your purpose
 	query = db.session.query(models.ingest_workspace_object).filter(models.ingest_workspace_object.job_id == job_id)
@@ -78,6 +95,7 @@ def jobjson(job_id):
 
 	# returns what is needed by DataTable
 	return jsonify(rowTable.output_result())
+
 
 
 # job delete
@@ -168,14 +186,18 @@ def createJob_factory(job_package):
 		job_package['struct_map'] = json.dumps(sm_dict)
 
 		# grab descriptive mets:dmdSec
-		dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
-		# grab MODS record and write to temp file		
-		MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
-		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
-		fhand = open(temp_filename,'w')
-		fhand.write(etree.tostring(MODS_elem))
-		fhand.close()		
-		job_package['MODS_temp_filename'] = temp_filename
+		try:
+			dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
+			# grab MODS record and write to temp file		
+			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
+			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
+			fhand = open(temp_filename,'w')
+			fhand.write(etree.tostring(MODS_elem))
+			fhand.close()		
+			job_package['MODS_temp_filename'] = temp_filename
+		except:
+			print "could not bind to MODS"
+			job_package['MODS_temp_filename'] = False
 
 		# fire task via custom_loop_taskWrapper			
 		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
@@ -211,8 +233,11 @@ def createJob_worker(job_package):
 	o.struct_map = job_package['struct_map']
 
 	# MODS file
-	with open(job_package['MODS_temp_filename'], 'r') as fhand:
-		o.MODS = fhand.read()
+	if job_package['MODS_temp_filename']:
+		with open(job_package['MODS_temp_filename'], 'r') as fhand:
+			o.MODS = fhand.read()
+	else:
+		o.MODS = None
 
 	# add and commit(for now)
 	return o._commit()

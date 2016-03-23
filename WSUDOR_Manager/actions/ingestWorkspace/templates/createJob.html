@@ -1,0 +1,64 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<div class="col-md-12">
+
+		<h1><a href="/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a>: Create Job</h1>
+
+		<p>Using the form below, create a job associated with a METS file for ingest.</p>	
+
+	</div>
+
+	<div class="col-md-4">		
+
+		<form class="form" id="form" role="form" method="POST" action="/fireTask/custom_loop/createJob_factory" enctype="multipart/form-data">
+
+			<!-- collection name -->
+			<div class="form-group">
+				<label class="control-label">Collection Identifier (will be prepended with 'wayne:collection'):</label>
+				<input class="form-control" type="text" name="collection_identifier" placeholder="e.g. CFAI, DSJ, DennisCooper">
+			</div>
+
+			<!-- METS -->	
+			<div class="well">		
+				<h4>Ingest Metadata (METS)</h4>
+				<p>Either paste or upload a valid METS file below:</p>
+				<div class="form-group">
+					<textarea class="form-control input-sm" id="pasted_metadata" name="pasted_metadata" rows=10 placeholder="XML goes here"></textarea>
+				</div>
+
+				<div class="form-group" id="upload">
+					<input id="upload" name="upload" type="file"></input>
+				</div>
+			</div>
+
+			<!-- Python Class for Bag Creation -->
+			<div class="well">		
+				<h4>Python Class for Bag Creation</h4>
+				<p>One critical step is creating bags from the combination of metadat and binaries.  Below, paste, upload, or select a previously entered Python class for creating bags for this ingest:</p>
+				<div class="form-group">
+					<textarea class="form-control input-sm" id="pasted_bag_class" name="pasted_bag_class" rows=10 placeholder="XML goes here"></textarea>
+				</div>				
+				<div class="form-group">
+					<label class="control-label" for="dest_repo">(Preset Classes Forthcoming)</label> 
+					<select class="form-control input-sm" id="dest_repo" name="dest_repo">
+						{% for bag_class in bag_classes %}
+							<option value="{{bag_class}}">{{bag_class}}</option>
+						{% endfor %}
+					</select> 
+				</div>
+			</div>
+
+
+
+			<div class="form-group">
+				<input type="submit" class="btn btn-success" value="Create">
+			</div>
+		</form>
+
+	</div>
+</div>
+
+
+
+{% include 'footer.html' %}

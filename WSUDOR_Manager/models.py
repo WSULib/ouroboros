@@ -137,6 +137,9 @@ class ingest_workspace_job(db.Model):
 	name = db.Column(db.String(255))
 	created = db.Column(db.DateTime, default=datetime.now)
 
+	# column for raw ingest metadata
+	ingest_metadata = db.Column(db.Text(4294967295))
+
 	# column to hold python code (Classes) for creating bags
 	bag_creation_class = db.Column(db.Text(4294967295))
 
@@ -145,6 +148,10 @@ class ingest_workspace_job(db.Model):
 
 	def __repr__(self):    	
 		return '<Name: %s>, ID: %s>' % (self.name, self.id)
+
+	def _commit(self):
+		db.session.add(self)
+		db.session.commit()
 
 
 def dump_datetime(value):
@@ -169,16 +176,20 @@ class ingest_workspace_object(db.Model):
 
 	# derived metadata
 	object_title = db.Column(db.String(4096))
+	DMDID = db.Column(db.String(4096))
+	struct_map = db.Column(db.Text(4294967295))
 
 	# flags and status
 	ingested = db.Column(db.String(255))
 	repository = db.Column(db.String(255)) 
 
 	# init with 'job' as ingest_workspace_job instance
-	def __init__(self, job, object_title="Unknown", MODS=None):		
+	def __init__(self, job, object_title="Unknown", DMDID=None):		
 		self.job = job
 		self.object_title = object_title
-		self.MODS = MODS
+		self.DMDID = DMDID
+		self.ingested = False
+		self.repository = None		
 
 	def __repr__(self):    	
 		return '<ID: %s>' % (self.id)
@@ -191,9 +202,15 @@ class ingest_workspace_object(db.Model):
 			'MODS':self.MODS,
 			'objMeta':self.objMeta,
 			'object_title':self.object_title,
+			'DMDID':self.DMDID,
 			'ingested':self.ingested,
-			'repository':self.repository
+			'repository':self.repository,
+			'struct_map':self.struct_map
 		}
+
+	def _commit(self):
+		db.session.add(self)
+		db.session.commit()
 	
 
 ########################################################################

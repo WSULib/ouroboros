@@ -230,7 +230,11 @@ def fireTask(job_type,task_name):
 	}
 
 	# pass along binary uploaded data if included in job task
+	'''
+	Need to rework this to write this temp data to disdk.
+	'''
 	if 'upload' in request.files and request.files['upload'].filename != '':
+		print request.files['upload']
 		job_package['upload_data'] = request.files['upload'].read()
 
 	task_inputs_key = username+"_"+task_name+"_"+str(int(time.time()))

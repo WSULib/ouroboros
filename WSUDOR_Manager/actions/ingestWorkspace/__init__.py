@@ -319,9 +319,9 @@ def createBag_factory(job_package):
 	# get form data
 	form_data = job_package['form_data']	
 
-	# set scaffolding
-	# bag dir
-	bag_dir = '/tmp/Ouroboros/ingest_jobs/%s' % form_data['job_id']
+	# set bag dir
+	bag_dir = '/tmp/Ouroboros/ingest_jobs/ingest_job_%s' % (form_data['job_id'])
+	job_package['bag_dir'] = bag_dir
 	if not os.path.exists(bag_dir):
 		os.mkdir(bag_dir)
 
@@ -376,11 +376,11 @@ def createBag_worker(job_package):
 	print "Working on: %s" % o.object_title
 
 	# load bag class
-	print "loading bag class for %s" % form_data['bag_creation_class']
-	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])	
+	print "loading bag class for %s" % form_data['bag_creation_class']	
+	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
 
 	# instantiate bag_worker from class
-	bag_worker = GenericBagClass(
+	bag_worker = bag_class_handle.BagClass(
 			ObjMeta = models.ObjMeta,
 			bag_root_dir = job_package['bag_dir'],
 			files_location = form_data['files_location'],
@@ -388,7 +388,7 @@ def createBag_worker(job_package):
 			struct_map = o.struct_map,
 			object_title = o.object_title,
 			DMDID = o.DMDID,
-			collection_identifier = job_package['job_name']
+			collection_identifier = form_data['job_name']
 		)
 
 	bag_result = bag_worker.createBag()

@@ -375,39 +375,24 @@ def createBag_worker(job_package):
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
 	print "Working on: %s" % o.object_title
 
-	# try loading bag class
-	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
-	print bag_class_handle
+	# load bag class
+	print "loading bag class for %s" % form_data['bag_creation_class']
+	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])	
 
-	'''
-	Here:
-		- pull in bag creation class from somewhere
-		- pull in objMeta.py class 
-		- send inputs to class, expect output to directory
-		- double check existence
-		- update object row 
-			- bag path
-
-	Pseudocode:
-
-		CustomBagClass = ????
-
-		bag_worker = GenericBagClass(
+	# instantiate bag_worker from class
+	bag_worker = GenericBagClass(
 			ObjMeta = models.ObjMeta,
-			bag_dir = job_package['bag_dir'],
+			bag_root_dir = job_package['bag_dir'],
 			files_location = form_data['files_location'],
 			MODS = o.MODS,
 			struct_map = o.struct_map,
+			object_title = o.object_title,
 			DMDID = o.DMDID,
 			collection_identifier = job_package['job_name']
 		)
 
-		bag_result = bag_worker.createBag()
-	
-	'''
-
-	
-	return True
+	bag_result = bag_worker.createBag()
+	return bag_result	
 
 
 

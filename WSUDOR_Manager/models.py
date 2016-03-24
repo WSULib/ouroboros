@@ -163,6 +163,7 @@ def dump_datetime(value):
 
 class ingest_workspace_object(db.Model):
 	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
+	ingest_id = db.Column(db.Integer)
 	created = db.Column(db.DateTime, default=datetime.now)
 
 	# lazy link to job table above
@@ -173,6 +174,7 @@ class ingest_workspace_object(db.Model):
 	MODS = db.Column(db.Text(4294967295)) 
 	objMeta = db.Column(db.Text(4294967295)) 
 	bag_binary = db.Column(db.Text(4294967295)) 
+	bag_path = db.Column(db.String(4096))
 
 	# derived metadata
 	object_title = db.Column(db.String(4096))
@@ -181,7 +183,7 @@ class ingest_workspace_object(db.Model):
 
 	# flags and status
 	ingested = db.Column(db.String(255))
-	repository = db.Column(db.String(255)) 
+	repository = db.Column(db.String(255)) # eventually pull from localConfig.REPOSITORIES
 
 	# init with 'job' as ingest_workspace_job instance
 	def __init__(self, job, object_title="Unknown", DMDID=None):		

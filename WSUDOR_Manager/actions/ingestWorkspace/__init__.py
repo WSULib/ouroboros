@@ -24,6 +24,7 @@ import uuid
 from string import upper
 import xmltodict
 import requests
+import time
 
 # eulfedora
 import eulfedora
@@ -37,6 +38,10 @@ from datatables import ColumnDT, DataTables
 # create blueprint
 ingestWorkspace = Blueprint('ingestWorkspace', __name__, template_folder='templates', static_folder="static")
 
+
+#################################################################################
+# Routes
+#################################################################################
 
 # main view
 @ingestWorkspace.route('/ingestWorkspace', methods=['POST', 'GET'])
@@ -56,46 +61,15 @@ def job(job_id):
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()	
 
 	# ping Github repo for bag creation classes
-	ouroboros_assets = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets').json()
-	bag_classes = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents/bagit_classes').json()
+	rate_limit = requests.get('https://api.github.com/rate_limit').json()
+	if rate_limit['rate']['remaining'] > 0:
+		ouroboros_assets = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets').json()
+		bag_classes = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents/bagit_classes').json()
+	else:
+		ouroboros_assets, bag_classes = (False,)*2
 
 	# render
 	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets, bag_classes=bag_classes)
-
-
-# return json for job
-@ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
-def jobjson(job_id):	
-
-	def exists(input):
-		if input != None:
-			return True
-		else:
-			return False
-		
-	
-	# defining columns
-	columns = []
-	columns.append(ColumnDT('id'))
-	columns.append(ColumnDT('object_title'))
-	columns.append(ColumnDT('DMDID'))
-	columns.append(ColumnDT('struct_map'))
-	columns.append(ColumnDT('MODS')),
-	columns.append(ColumnDT('struct_map', filter=exists))
-	columns.append(ColumnDT('MODS', filter=exists))
-	columns.append(ColumnDT('ingested'))
-	columns.append(ColumnDT('repository'))
-
-
-	# defining the initial query depending on your purpose
-	query = db.session.query(models.ingest_workspace_object).filter(models.ingest_workspace_object.job_id == job_id)
-
-	# instantiating a DataTable for the query and table needed
-	rowTable = DataTables(request.args, models.ingest_workspace_object, query, columns)
-
-	# returns what is needed by DataTable
-	return jsonify(rowTable.output_result())
-
 
 
 # job delete
@@ -117,6 +91,55 @@ def createJob():
 	# render
 	return render_template("createJob.html")
 
+
+
+#################################################################################
+# Datatables Endpoint
+#################################################################################
+
+# return json for job
+@ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
+def jobjson(job_id):	
+
+	def exists(input):
+		if input != None:
+			return True
+		else:
+			return False
+
+	def boolean(input):
+		if input == 1:
+			return True
+		else:
+			return False
+	
+	# defining columns
+	columns = []	
+	columns.append(ColumnDT('ingest_id'))
+	columns.append(ColumnDT('object_title'))
+	columns.append(ColumnDT('DMDID'))
+	columns.append(ColumnDT('struct_map'))
+	columns.append(ColumnDT('MODS')),
+	columns.append(ColumnDT('struct_map', filter=exists))
+	columns.append(ColumnDT('MODS', filter=exists))
+	columns.append(ColumnDT('ingested', filter=boolean))
+	columns.append(ColumnDT('repository'))
+
+
+	# defining the initial query depending on your purpose
+	query = db.session.query(models.ingest_workspace_object).filter(models.ingest_workspace_object.job_id == job_id)
+
+	# instantiating a DataTable for the query and table needed
+	rowTable = DataTables(request.args, models.ingest_workspace_object, query, columns)
+
+	# returns what is needed by DataTable
+	return jsonify(rowTable.output_result())
+
+
+
+#################################################################################
+# Create Ingest Job
+#################################################################################
 
 @celery.task(name="createJob_factory")
 def createJob_factory(job_package):
@@ -144,6 +167,7 @@ def createJob_factory(job_package):
 	# set final ingest job values, and commit, add job number to job_package
 	j._commit()
 	job_package['job_id'] = j.id
+	job_package['job_name'] = j.name
 
 	# for each section of METS, break into chunks
 	XMLroot = etree.fromstring(ingest_metadata)
@@ -168,6 +192,9 @@ def createJob_factory(job_package):
 
 		print "Creating ingest_workspace_object row %s / %s" % (step, len(sm_parts))
 		job_package['step'] = step
+
+		# set internal id (used for selecting when making bags and ingesting)
+		job_package['ingest_id'] = step
 		
 		# get DMDID
 		job_package['DMDID'] = sm_part.attrib['DMDID']
@@ -222,6 +249,7 @@ def createJob_worker(job_package):
 	o = models.ingest_workspace_object(j, object_title=job_package['object_title'], DMDID=job_package['DMDID'])
 
 	# fill out object row with information from job_package
+	o.ingest_id = job_package['ingest_id']
 
 	# structMap
 	o.struct_map = job_package['struct_map']
@@ -238,10 +266,139 @@ def createJob_worker(job_package):
 	return o._commit()
 
 
+#################################################################################
+# Create Bag 
+#################################################################################
+
+def parseIntSet(nputstr=""):
+	selection = set()
+	invalid = set()
+	# tokens are comma seperated values
+	tokens = [x.strip() for x in nputstr.split(',')]
+	for i in tokens:
+		if len(i) > 0:
+			if i[:1] == "<":
+				i = "1-%s"%(i[1:])
+		try:
+			# typically tokens are plain old integers
+			selection.add(int(i))
+		except:
+			# if not, then it might be a range
+			try:
+				token = [int(k.strip()) for k in i.split('-')]
+				if len(token) > 1:
+					token.sort()
+					# we have items seperated by a dash
+					# try to build a valid range
+					first = token[0]
+					last = token[len(token)-1]
+					for x in range(first, last+1):
+						selection.add(x)
+			except:
+				# not an int and not a range...
+				invalid.add(i)
+	# Report invalid tokens before returning valid selection
+	if len(invalid) > 0:
+		print "Invalid set: " + str(invalid)
+	return selection
 
 
+@celery.task(name="createBag_factory")
+def createBag_factory(job_package):
+	
+	print "FIRING createBag_factory"
+	
+	# DEBUG
+	print job_package
+
+	# get form data
+	form_data = job_package['form_data']	
+
+	# set scaffolding
+	# bag dir
+	bag_dir = '/tmp/Ouroboros/ingest_jobs/%s' % form_data['job_id']
+	if not os.path.exists(bag_dir):
+		os.mkdir(bag_dir)
+
+	# set new task_name, for the worker below
+	job_package['custom_task_name'] = 'createBag_worker'
+
+	# parse object rows from range (use parseIntSet() above)
+	object_rows = parseIntSet(nputstr=form_data['object_id_range'])
+
+	# update job info (need length from above)
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
+	
+	# insert into MySQL as ingest_workspace_object rows
+	step = 1
+	time.sleep(2)
+	for row in object_rows:
+
+		print "Creating bag for ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
+		job_package['step'] = step
+
+		# set row
+		job_package['ingest_id'] = row
+		job_package['job_id'] = form_data['job_id']
+		
+		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		task_id = result.id
+
+		# Set handle in Redis
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (step))
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		# bump step
+		step += 1
+	
 
 
+@celery.task(name="createBag_worker")
+def createBag_worker(job_package):
+
+	print "FIRING createBag_worker"
+
+	# DEBUG
+	print job_package
+
+	# get form data
+	form_data = job_package['form_data']
+
+	# get object row
+	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
+	print "Working on: %s" % o.object_title
+
+	'''
+	Here:
+		- pull in bag creation class from somewhere
+		- pull in objMeta.py class 
+		- send inputs to class, expect output to directory
+		- double check existence
+		- update object row 
+			- bag path
+
+	Pseudocode:
+
+		CustomBagClass = ????
+		
+		bag_worker = CustomBagClass(
+			ObjMeta = models.ObjMeta,
+			bag_dir = job_package['bag_dir'],
+			files_location = form_data['files_location'],
+			MODS = o.MODS,
+			struct_map = o.struct_map,
+			DMDID = o.DMDID,
+			collection_identifier = job_package['job_name']
+		)
+
+		bag_result = bag_worker.createBag()
+	
+	'''
+
+	
+	return bag_result
 
 
 

@@ -127,6 +127,7 @@ def jobjson(job_id):
 	columns.append(ColumnDT('MODS')),
 	columns.append(ColumnDT('struct_map', filter=exists))
 	columns.append(ColumnDT('MODS', filter=exists))
+	columns.append(ColumnDT('bag_path'))
 	columns.append(ColumnDT('ingested', filter=boolean))
 	columns.append(ColumnDT('repository'))
 
@@ -371,6 +372,12 @@ def createBag_worker(job_package):
 	# get form data
 	form_data = job_package['form_data']
 
+	# determine if purging old bags
+	if 'purge_bags' in form_data and form_data['purge_bags'] == 'on':
+		purge_bags = True
+	else:
+		purge_bags = False
+
 	# get object row
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
 	print "Working on: %s" % o.object_title
@@ -379,8 +386,16 @@ def createBag_worker(job_package):
 	print "loading bag class for %s" % form_data['bag_creation_class']	
 	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
 
-	# instantiate bag_worker from class
-	bag_worker = bag_class_handle.BagClass(
+	# if not purging bags, and previous bag_path already found, skip
+	if purge_bags == False and o.bag_path != None:
+		print "skipping bag creation for %s / %s, already exists" % (o.object_title,o.DMDID)
+		bag_result = False
+
+	# else, create bags (either overwriting or creating new)
+	else:
+		# instantiate bag_worker from class
+		bag_worker = bag_class_handle.BagClass(
+			object_row = o,
 			ObjMeta = models.ObjMeta,
 			bag_root_dir = job_package['bag_dir'],
 			files_location = form_data['files_location'],
@@ -388,10 +403,12 @@ def createBag_worker(job_package):
 			struct_map = o.struct_map,
 			object_title = o.object_title,
 			DMDID = o.DMDID,
-			collection_identifier = form_data['job_name']
+			collection_identifier = form_data['job_name'],
+			purge_bags = purge_bags
 		)
 
-	bag_result = bag_worker.createBag()
+		bag_result = bag_worker.createBag()
+				
 	return bag_result	
 
 

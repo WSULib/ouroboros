@@ -10,6 +10,7 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
+import ouroboros_assets
 import localConfig
 
 from flask import Blueprint, render_template, abort, request, redirect, session, jsonify
@@ -61,15 +62,19 @@ def job(job_id):
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()	
 
 	# ping Github repo for bag creation classes
-	rate_limit = requests.get('https://api.github.com/rate_limit').json()
-	if rate_limit['rate']['remaining'] > 0:
-		ouroboros_assets = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets').json()
-		bag_classes = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents/bagit_classes').json()
-	else:
-		ouroboros_assets, bag_classes = (False,)*2
+	'''
+	Problematic for rate reasons, and what if GitHub is down?  We wouldn't be able to ingest / make bags.
+	Moving to git submodule, loading local classes
+	'''
+	# rate_limit = requests.get('https://api.github.com/rate_limit').json()
+	# if rate_limit['rate']['remaining'] > 0:
+	# 	ouroboros_assets = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets').json()
+	# 	bag_classes = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents/bagit_classes').json()
+	# else:
+	# 	ouroboros_assets, bag_classes = (False,)*2
 
 	# render
-	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets, bag_classes=bag_classes)
+	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets)
 
 
 # job delete
@@ -370,6 +375,10 @@ def createBag_worker(job_package):
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
 	print "Working on: %s" % o.object_title
 
+	# try loading bag class
+	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
+	print bag_class_handle
+
 	'''
 	Here:
 		- pull in bag creation class from somewhere
@@ -382,8 +391,8 @@ def createBag_worker(job_package):
 	Pseudocode:
 
 		CustomBagClass = ????
-		
-		bag_worker = CustomBagClass(
+
+		bag_worker = GenericBagClass(
 			ObjMeta = models.ObjMeta,
 			bag_dir = job_package['bag_dir'],
 			files_location = form_data['files_location'],
@@ -398,7 +407,7 @@ def createBag_worker(job_package):
 	'''
 
 	
-	return bag_result
+	return True
 
 
 

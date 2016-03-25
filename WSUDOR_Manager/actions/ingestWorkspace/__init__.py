@@ -181,7 +181,7 @@ def createJob_factory(job_package):
 	sm = XMLroot.find('{http://www.loc.gov/METS/}structMap')
 	sm_div1 = sm.find('{http://www.loc.gov/METS/}div')
 	# iterate through
-	sm_parts = sm_div1.getchildren()
+	sm_parts = sm_div1.getchildren() # FIX THIS, PICKS UP COMMENT CHILDREN TOO
 
 	# pop METS ingest from job_package	
 	if 'upload_data' in job_package:
@@ -393,8 +393,8 @@ def createBag_worker(job_package):
 
 	# else, create bags (either overwriting or creating new)
 	else:
-		# instantiate bag_worker from class
-		bag_worker = bag_class_handle.BagClass(
+		# instantiate bag_class_worker from class
+		bag_class_worker = bag_class_handle.BagClass(
 			object_row = o,
 			ObjMeta = models.ObjMeta,
 			bag_root_dir = job_package['bag_dir'],
@@ -407,8 +407,25 @@ def createBag_worker(job_package):
 			purge_bags = purge_bags
 		)
 
-		bag_result = bag_worker.createBag()
-				
+		bag_result = bag_class_worker.createBag()
+
+
+	# finish up with updated values from bag_class_worker
+
+	# write some data back to DB
+	if purge_bags == True:
+		# remove previously recorded and stored bag
+		os.system("rm -r %s" % o.bag_path)
+	# sets, or updates, the bag path
+	o.bag_path = bag_class_worker.obj_dir
+
+	# set objMeta
+	o.objMeta = bag_class_worker.objMeta_handle.toJSON()
+
+	# commit
+	bag_class_worker.object_row._commit()
+	
+
 	return bag_result	
 
 

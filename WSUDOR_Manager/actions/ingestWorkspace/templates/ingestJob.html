@@ -65,20 +65,16 @@
 			
 			<form class="form" id="form" role="form" method="POST" action="/fireTask/custom_loop/createBag_factory" enctype="multipart/form-data">
 				<div class="form-group">
-
-					
-
 					<label class="control-label" for="bag_creation_class">Bag Ingest Class:</label> 
 					<select class="form-control input-sm" id="bag_creation_class" name="bag_creation_class">
 						{% for bag_class in ouroboros_assets.bag_classes.__all__ %}
 							<option value="{{bag_class}}">{{bag_class}}</option>
 						{% endfor %}
 					</select> 
-
 				</div>
 				<div class="form-group">
 					<label class="control-label">Full path of files location (bag creation class determines file matching behavior):</label>
-					<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection" value="/tmp/dd_ingest_example/images"></input>
+					<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection"></input>
 				</div>
 				<div class="form-group">
 					<label class="control-label">Object ID's to create bags:</label>

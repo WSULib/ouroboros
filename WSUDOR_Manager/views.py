@@ -378,6 +378,9 @@ def userJobs():
 			job_complete_count = 0
 
 		# compute percentage complete
+		'''
+		sometimes get divide by 0 here
+		'''
 		if job_est_count != None:
 			comp_percent = '{0:.0%}'.format(float(job_complete_count) / float(job_est_count))
 		else:

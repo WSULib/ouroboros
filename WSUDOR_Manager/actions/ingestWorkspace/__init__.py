@@ -26,6 +26,7 @@ from string import upper
 import xmltodict
 import requests
 import time
+import traceback
 
 # eulfedora
 import eulfedora
@@ -177,11 +178,13 @@ def createJob_factory(job_package):
 
 	# for each section of METS, break into chunks
 	XMLroot = etree.fromstring(ingest_metadata)
+	
 	# grab stucture map
 	sm = XMLroot.find('{http://www.loc.gov/METS/}structMap')
 	sm_div1 = sm.find('{http://www.loc.gov/METS/}div')
-	# iterate through
-	sm_parts = sm_div1.getchildren() # FIX THIS, PICKS UP COMMENT CHILDREN TOO
+	
+	# iterate through, ignoring comments
+	sm_parts = [element for element in sm_div1.getchildren() if type(element) != etree._Comment]	
 
 	# pop METS ingest from job_package	
 	if 'upload_data' in job_package:
@@ -201,19 +204,21 @@ def createJob_factory(job_package):
 
 		# set internal id (used for selecting when making bags and ingesting)
 		job_package['ingest_id'] = step
-		
-		# get DMDID
-		job_package['DMDID'] = sm_part.attrib['DMDID']
-		job_package['object_title'] = sm_part.attrib['LABEL']
-		
-		print "StructMap part ID: %s" % job_package['DMDID']
 
-		# store structMap section as python dictionary
-		sm_dict = xmltodict.parse(etree.tostring(sm_part))
-		job_package['struct_map'] = json.dumps(sm_dict)
-
-		# grab descriptive mets:dmdSec
+		# attempt to fire worker
 		try:
+			
+			# get DMDID
+			job_package['DMDID'] = sm_part.attrib['DMDID']
+			job_package['object_title'] = sm_part.attrib['LABEL']
+			
+			print "StructMap part ID: %s" % job_package['DMDID']
+
+			# store structMap section as python dictionary
+			sm_dict = xmltodict.parse(etree.tostring(sm_part))
+			job_package['struct_map'] = json.dumps(sm_dict)
+
+			# grab descriptive mets:dmdSec
 			dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
 			# grab MODS record and write to temp file		
 			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
@@ -222,9 +227,10 @@ def createJob_factory(job_package):
 			fhand.write(etree.tostring(MODS_elem))
 			fhand.close()		
 			job_package['MODS_temp_filename'] = temp_filename
+
 		except:
-			print "could not bind to MODS"
-			job_package['MODS_temp_filename'] = False
+			print "ERROR"
+			print traceback.print_exc()
 
 		# fire task via custom_loop_taskWrapper			
 		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
@@ -238,6 +244,7 @@ def createJob_factory(job_package):
 
 		# bump step
 		step += 1
+
 
 	print "Finished entering rows"
 

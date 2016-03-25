@@ -26,7 +26,7 @@
 
 <!-- job objects -->
 <div class="row">
-	<div class="col-md-12">
+	<div class="col-md-11">
 
 		<!-- insert table here -->
 		<table id="object_table" class="display" cellspacing="0" width="100%">
@@ -34,15 +34,14 @@
                 <tr>            
                     <th>ingest_id</th>
                     <th>object_title</th>
-                    <th>DMDID</th>
-                    <th>struct_map</th> <!-- full values, not visible -->
-                    <th>MODS</th> <!-- full values, not visible -->
+                    <th>DMDID</th>                    
                     <th>struct_map</th>
                     <th>MODS</th>
                     <th>bag_path</th>
+                    <th>objMeta</th>
                     <th>ingested</th>
                     <th>repository</th>
-                    <th>actions</th>
+                    <th>Details</th>
                 </tr>
             </thead>  
             <tbody></tbody>          
@@ -124,18 +123,16 @@
 	    	{
     			"targets": -1,
         		"data": null,
-            	"defaultContent": "<button class='btn btn-sm btn-warning consoleMeta'>Metadata</button>"
-        	},
-        	{ "visible": false, "targets": [3,4] }
+            	"defaultContent": "<button class='btn btn-sm btn-warning details'>Details</button>"
+        	}        	
     	]
 	  });
 
 	  $('#object_table tbody').on( 'click', 'button', function () {
-	        var data = table.row( $(this).parents('tr') ).data();
-	        console.log(JSON.parse(data[3]));
-	        console.log(data[4]);
-	    } );
-
+			var data = table.row( $(this).parents('tr') ).data();
+			console.log(data);
+		});
+		
 	});
 </script>
 

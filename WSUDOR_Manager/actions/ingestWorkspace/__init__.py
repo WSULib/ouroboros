@@ -10,7 +10,10 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
-import ouroboros_assets
+try:
+	import ouroboros_assets
+except:
+	print "could not load git submodule 'ouroboros_assets'"
 import localConfig
 
 from flask import Blueprint, render_template, abort, request, redirect, session, jsonify
@@ -99,6 +102,15 @@ def createJob():
 
 
 
+# # job edit / view
+# @ingestWorkspace.route('/ingestWorkspace/createJob', methods=['POST', 'GET'])
+# def createJob():
+
+# 	# render
+# 	return render_template("createJob.html")
+
+
+
 #################################################################################
 # Datatables Endpoint
 #################################################################################
@@ -123,12 +135,11 @@ def jobjson(job_id):
 	columns = []	
 	columns.append(ColumnDT('ingest_id'))
 	columns.append(ColumnDT('object_title'))
-	columns.append(ColumnDT('DMDID'))
-	columns.append(ColumnDT('struct_map'))
-	columns.append(ColumnDT('MODS')),
+	columns.append(ColumnDT('DMDID'))	
 	columns.append(ColumnDT('struct_map', filter=exists))
 	columns.append(ColumnDT('MODS', filter=exists))
 	columns.append(ColumnDT('bag_path'))
+	columns.append(ColumnDT('objMeta', filter=exists))
 	columns.append(ColumnDT('ingested', filter=boolean))
 	columns.append(ColumnDT('repository'))
 
@@ -141,6 +152,14 @@ def jobjson(job_id):
 
 	# returns what is needed by DataTable
 	return jsonify(rowTable.output_result())
+
+
+#################################################################################
+# View SQL row data
+#################################################################################
+@ingestWorkspace.route('/ingestWorkspace/viewSQLData/<table>/<id>/<column>/<mimetype>', methods=['POST', 'GET'])
+def viewSQLData(table,id,column,mimetype):
+	return "Coming soon"
 
 
 

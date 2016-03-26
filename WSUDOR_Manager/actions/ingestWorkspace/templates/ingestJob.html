@@ -130,7 +130,8 @@
 
 	  $('#object_table tbody').on( 'click', 'button', function () {
 			var data = table.row( $(this).parents('tr') ).data();
-			console.log(data);
+			console.log(data);						
+			window.location.href = "/tasks/ingestWorkspace/objectDetails/{{j.id}}/"+data[0];
 		});
 		
 	});

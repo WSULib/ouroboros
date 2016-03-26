@@ -102,12 +102,21 @@ def createJob():
 
 
 
-# # job edit / view
-# @ingestWorkspace.route('/ingestWorkspace/createJob', methods=['POST', 'GET'])
-# def createJob():
+# job edit / view
+@ingestWorkspace.route('/ingestWorkspace/objectDetails/<job_id>/<ingest_id>', methods=['POST', 'GET'])
+def objectDetails(job_id,ingest_id):
 
-# 	# render
-# 	return render_template("createJob.html")
+	'''
+	Render out metadata components for an object for viewing and debugging
+	'''	
+
+	# get object handle from DB
+	o = models.ingest_workspace_object.query.filter_by(job_id=job_id,ingest_id=ingest_id).first()
+	print o.object_title
+
+
+	# render
+	return render_template("objectDetails.html",o=o)
 
 
 
@@ -412,6 +421,18 @@ def createBag_worker(job_package):
 	print "loading bag class for %s" % form_data['bag_creation_class']	
 	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
 
+	# load MODS as etree element
+	# try:
+	MODS_root = etree.fromstring(o.MODS)	
+	ns = MODS_root.nsmap
+	MODS_handle = {
+		"MODS_element" : MODS_root.xpath('//mods:mods', namespaces=ns)[0],
+		"MODS_ns" : ns
+	}
+	
+	# except:
+	# 	print "could not load MODS as etree element"
+
 	# if not purging bags, and previous bag_path already found, skip
 	if purge_bags == False and o.bag_path != None:
 		print "skipping bag creation for %s / %s, already exists" % (o.object_title,o.DMDID)
@@ -426,6 +447,7 @@ def createBag_worker(job_package):
 			bag_root_dir = job_package['bag_dir'],
 			files_location = form_data['files_location'],
 			MODS = o.MODS,
+			MODS_handle = MODS_handle,
 			struct_map = o.struct_map,
 			object_title = o.object_title,
 			DMDID = o.DMDID,

@@ -1,0 +1,89 @@
+{% include 'header.html' %}
+
+<style type="text/css">
+
+	/*.trunc{
+		max-height:800px;
+		overflow-y:scroll;
+	}*/
+
+</style>
+
+<!-- highlight syntax -->
+<link rel="stylesheet" href="{{ url_for('static',filename='highlight.min.css')}}">
+<script src="{{ url_for('static',filename='highlight.min.js')}}"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+<!-- metadata -->
+<div class="row">
+	<div class="col-md-12">
+
+		<h2>Object Details</h2>
+
+	</div>
+</div>
+
+<!-- MODS -->
+<div class="row">
+	<div class="col-md-12 well trunc">
+		<h3>MODS</h3>		
+		<pre><code class="language-xml">{{o.MODS}}</code></pre>
+
+	</div>
+</div>
+
+<!-- struct_map -->
+<div class="row">
+	<div class="col-md-12 well trunc">
+		<h3>METS structMap section</h3>
+		<p>METS XML --> Python dictionary (via xmltodict) --> JSON</p>
+		<pre><code class="highlight" id="structMap_pp"></code></pre>
+		<script type="text/javascript">
+			var structMap_JSON = JSON.parse('{{o.struct_map|safe}}');
+			var str = JSON.stringify(structMap_JSON, null, 2); 
+			$("#structMap_pp").html(str);
+		</script>
+
+	</div>
+</div>
+
+<!-- objMeta -->
+<div class="row">
+	<div class="col-md-12 well trunc">
+		<h3>objMeta JSON</h3>		
+		<pre><code class="highlight" id="objMeta_pp"></code></pre>
+		<script type="text/javascript">
+			var structMap_JSON = JSON.parse('{{o.objMeta|safe}}');
+			var str = JSON.stringify(structMap_JSON, null, 2); 
+			$("#objMeta_pp").html(str);
+		</script>
+	</div>
+</div>
+
+
+{% include 'footer.html' %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -26,7 +26,7 @@
 
 <!-- job objects -->
 <div class="row">
-	<div class="col-md-11">
+	<div class="col-md-12">
 
 		<!-- insert table here -->
 		<table id="object_table" class="display" cellspacing="0" width="100%">
@@ -54,7 +54,7 @@
 
 <!-- make bags -->
 <div class="row">
-	<div class="col-md-8">
+	<div class="col-md-6">
 		<!-- make bags -->
 		<div class="well">
 			<h4>Make Bags</h4>	
@@ -95,11 +95,8 @@
 		</div>
 
 	</div>
-</div>
 
-<!-- ingest bags -->
-<div class="row">
-	<div class="col-md-8">
+	<div class="col-md-6">
 		<div class="well">
 			<h4>Ingest Bags</h4>	
 			<p>Using the form below, ingest select rows to a repository of your choice.</p>
@@ -167,6 +164,7 @@
 				<div class="form-group">
 					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
 					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
+					<input class="form-control" type="hidden" name="origin" value="ingestWorkspace"></input>
 					<input type="submit" class="btn btn-success" value="Ingest Bags">
 				</div>
 			</form>

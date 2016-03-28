@@ -35,7 +35,7 @@ from bagIngest import bagIngest, bagIngest_factory, bagIngest_worker
 app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
 
 #ingestWorkspace
-from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory
+from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback
 app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
 
 #createObjectIndex

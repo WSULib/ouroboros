@@ -149,6 +149,10 @@ class ingest_workspace_job(db.Model):
 	def __repr__(self):    	
 		return '<Name: %s>, ID: %s>' % (self.name, self.id)
 
+	def _delete(self):
+		db.session.delete(self)
+		db.session.commit()
+
 	def _commit(self):
 		db.session.add(self)
 		db.session.commit()
@@ -209,6 +213,10 @@ class ingest_workspace_object(db.Model):
 			'repository':self.repository,
 			'struct_map':self.struct_map
 		}
+
+	def _delete(self):
+		db.session.delete(self)	
+		db.session.commit()		
 
 	def _commit(self):
 		db.session.add(self)

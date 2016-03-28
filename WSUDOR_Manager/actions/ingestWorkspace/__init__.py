@@ -73,8 +73,20 @@ def job(job_id):
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>/delete', methods=['POST', 'GET'])
 def deleteJob(job_id):
 
+	'''
+	Consider removing directory as well...
+	'''
+
+	# clean job
+	print "removing job"
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
-	db.session.delete(j)
+	j._delete()
+
+	# clean object
+	print "removing associated objects with job"
+	jos = models.ingest_workspace_object.query.filter_by(job_id=job_id)
+	for o in jos:		
+		o._delete()
 	db.session.commit()
 
 	return redirect('/tasks/ingestWorkspace')
@@ -118,15 +130,15 @@ def jobjson(job_id):
 
 	def exists(input):
 		if input != None:
-			return True
+			return "<span style='color:green;'>True</span>"
 		else:
-			return False
+			return "<span style='color:red;'>False</span>"
 
-	def boolean(input):
-		if input == 1:
-			return True
+	def boolean(input):		
+		if input == "1":
+			return "<span style='color:green;'>True</span>"
 		else:
-			return False
+			return "<span style='color:red;'>False</span>"
 	
 	# defining columns
 	columns = []	
@@ -493,14 +505,20 @@ def ingestBag_factory(job_package):
 		step += 1
 
 
-# @celery.task(name="ingestBag_worker")
-# def ingestBag_worker(job_package):
+@celery.task(name="ingestBag_callback")
+def ingestBag_callback(job_package):
 	
-# 	print "FIRING ingestBag_worker"
+	print "FIRING ingestBag_callback"
 
-# 	# DEBUG
-# 	print job_package
+	# DEBUG
+	print job_package
 
+	# open handle
+	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
+	print "Retrieved row: %s / %s" % (o.ingest_id,o.object_title)
+	print "Setting ingest to True"
+	o.ingested = True
+	return o._commit()
 
 
 

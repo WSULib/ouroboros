@@ -216,6 +216,10 @@ def bagIngest_worker(job_package):
 		# remove from Solr	
 		solr_handle.delete_by_key(bag_handle.pid)
 
+		# fire ingestWorkspace callback if checked
+		if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:			
+			actions.actions.ingestBag_callback.delay(job_package)
+
 		return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 
 
@@ -223,6 +227,9 @@ def bagIngest_worker(job_package):
 		# ingest bag
 		try:
 			ingest_bag = bag_handle.ingestBag()
+			# fire ingestWorkspace callback if checked
+			if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:			
+				actions.actions.ingestBag_callback.delay(job_package)
 			return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 		except Exception, e:
 			raise Exception(e)

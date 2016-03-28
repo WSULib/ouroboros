@@ -150,11 +150,7 @@ def bagIngest_factory(job_package):
 
 
 def bagIngest_worker(job_package):
-	'''
-	This is what custom_loop_taskWrapper will fire from actions.py.
-	expecting 'bag_dir' in job_package
-	'''
-
+	
 	bag_dir = job_package['bag_dir']
 
 	# load bag_handle and ingest	

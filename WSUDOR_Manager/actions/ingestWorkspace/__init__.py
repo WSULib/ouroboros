@@ -65,18 +65,6 @@ def job(job_id):
 	# get handle
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()	
 
-	# ping Github repo for bag creation classes
-	'''
-	Problematic for rate reasons, and what if GitHub is down?  We wouldn't be able to ingest / make bags.
-	Moving to git submodule, loading local classes
-	'''
-	# rate_limit = requests.get('https://api.github.com/rate_limit').json()
-	# if rate_limit['rate']['remaining'] > 0:
-	# 	ouroboros_assets = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets').json()
-	# 	bag_classes = requests.get('https://api.github.com/repos/WSULib/ouroboros_assets/contents/bagit_classes').json()
-	# else:
-	# 	ouroboros_assets, bag_classes = (False,)*2
-
 	# render
 	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets)
 
@@ -311,39 +299,6 @@ def createJob_worker(job_package):
 # Create Bag 
 #################################################################################
 
-def parseIntSet(nputstr=""):
-	selection = set()
-	invalid = set()
-	# tokens are comma seperated values
-	tokens = [x.strip() for x in nputstr.split(',')]
-	for i in tokens:
-		if len(i) > 0:
-			if i[:1] == "<":
-				i = "1-%s"%(i[1:])
-		try:
-			# typically tokens are plain old integers
-			selection.add(int(i))
-		except:
-			# if not, then it might be a range
-			try:
-				token = [int(k.strip()) for k in i.split('-')]
-				if len(token) > 1:
-					token.sort()
-					# we have items seperated by a dash
-					# try to build a valid range
-					first = token[0]
-					last = token[len(token)-1]
-					for x in range(first, last+1):
-						selection.add(x)
-			except:
-				# not an int and not a range...
-				invalid.add(i)
-	# Report invalid tokens before returning valid selection
-	if len(invalid) > 0:
-		print "Invalid set: " + str(invalid)
-	return selection
-
-
 @celery.task(name="createBag_factory")
 def createBag_factory(job_package):
 	
@@ -478,16 +433,111 @@ def createBag_worker(job_package):
 
 
 
+#################################################################################
+# Ingest Bag 
+#################################################################################
+
+@celery.task(name="ingestBag_factory")
+def ingestBag_factory(job_package):
+	
+	'''
+	offloads to actions/bagIngest.bagIngest_worker()
+	'''
+
+	print "FIRING ingestBag_factory"
+	
+	# DEBUG
+	print job_package
+
+	# get form data
+	form_data = job_package['form_data']	
+
+	# set new task_name, for the worker below
+	job_package['custom_task_name'] = 'bagIngest_worker'
+
+	# parse object rows from range (use parseIntSet() above)
+	object_rows = parseIntSet(nputstr=form_data['object_id_range'])
+
+	# update job info (need length from above)
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
+	
+	# insert into MySQL as ingest_workspace_object rows
+	step = 1
+	time.sleep(2)
+	for row in object_rows:
+
+		print "Creating bag for ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
+		job_package['step'] = step
+
+		# set row
+		job_package['ingest_id'] = row
+		job_package['job_id'] = form_data['job_id']
+
+		# open row, get currently held bag_dir
+		o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
+		if o.bag_path != None:
+			job_package['bag_dir'] = o.bag_path
+		else:
+			job_package['bag_dir'] = False
+		
+		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		task_id = result.id
+
+		# Set handle in Redis
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (step))
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		# bump step
+		step += 1
+
+
+# @celery.task(name="ingestBag_worker")
+# def ingestBag_worker(job_package):
+	
+# 	print "FIRING ingestBag_worker"
+
+# 	# DEBUG
+# 	print job_package
 
 
 
 
+#################################################################################
+# Utilities
+#################################################################################
 
-
-
-
-
-
-
+def parseIntSet(nputstr=""):
+	selection = set()
+	invalid = set()
+	# tokens are comma seperated values
+	tokens = [x.strip() for x in nputstr.split(',')]
+	for i in tokens:
+		if len(i) > 0:
+			if i[:1] == "<":
+				i = "1-%s"%(i[1:])
+		try:
+			# typically tokens are plain old integers
+			selection.add(int(i))
+		except:
+			# if not, then it might be a range
+			try:
+				token = [int(k.strip()) for k in i.split('-')]
+				if len(token) > 1:
+					token.sort()
+					# we have items seperated by a dash
+					# try to build a valid range
+					first = token[0]
+					last = token[len(token)-1]
+					for x in range(first, last+1):
+						selection.add(x)
+			except:
+				# not an int and not a range...
+				invalid.add(i)
+	# Report invalid tokens before returning valid selection
+	if len(invalid) > 0:
+		print "Invalid set: " + str(invalid)
+	return selection
 
 

@@ -30,6 +30,7 @@ import xmltodict
 import requests
 import time
 import traceback
+import subprocess
 
 # eulfedora
 import eulfedora
@@ -112,11 +113,16 @@ def objectDetails(job_id,ingest_id):
 
 	# get object handle from DB
 	o = models.ingest_workspace_object.query.filter_by(job_id=job_id,ingest_id=ingest_id).first()
-	print o.object_title
-
+	
+	# attempt directory listing of bag_path
+	if o.bag_path != None:
+		bag_tree = subprocess.check_output(['tree',o.bag_path])
+		bag_tree = bag_tree.decode('utf-8')
+	else:
+		bag_tree = False	
 
 	# render
-	return render_template("objectDetails.html",o=o)
+	return render_template("objectDetails.html",o=o,bag_tree=bag_tree)
 
 
 

@@ -58,7 +58,8 @@
 		<ul class="nav navbar-nav">			
 			<!-- <li></li> -->
 			<li><a href="/{{APP_PREFIX}}/userPage">User Home</a></li>
-			<li><a href="/{{APP_PREFIX}}/systemStatus">System Status</a></li>			
+			<li><a href="/{{APP_PREFIX}}/systemStatus">System Status</a></li>
+			<li><a href="/{{APP_PREFIX}}/userJobs">User Jobs</a></li>			
 				{% if g.user.is_authenticated()%}
 			<!-- <li class="divider"></li> -->
 			<li><a href="{{ url_for('logout') }}">Logout</a></li>

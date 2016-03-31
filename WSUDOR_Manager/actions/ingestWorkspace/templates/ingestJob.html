@@ -7,7 +7,7 @@
 <div class="row">
 	<div class="col-md-12">
 
-		<h1><a href="/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a>: Job </h1>
+		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a>: Job </h1>
 		
 		<h4>Job Information:</h4>
 		<p>
@@ -62,7 +62,7 @@
 			<p>Using a particular bag creation class, here you can create bags that will be stored on disk for ingest at a later time.  When bags are created, they will leverage symlinks to the binary files, keeping them small.  As such, they will also be compressed as a tarball and inserted in MySQL as a tarball binary.</p>
 			<p>These bags will be created under <code>/tmp/Ouroboros/ingest_job/[INGEST_JOB_NAME]</code> on disk.  This path will be stored in MySQL to be used for ingest.</p>
 			
-			<form class="form" id="form" role="form" method="POST" action="/fireTask/custom_loop/createBag_factory" enctype="multipart/form-data">
+			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/createBag_factory" enctype="multipart/form-data">
 				<div class="form-group">
 					<label class="control-label" for="bag_creation_class">Bag Ingest Class:</label> 
 					<select class="form-control input-sm" id="bag_creation_class" name="bag_creation_class">
@@ -101,7 +101,7 @@
 			<h4>Ingest Bags</h4>	
 			<p>Using the form below, ingest select rows to a repository of your choice.</p>
 			
-			<form class="form" id="form" role="form" method="POST" action="/fireTask/custom_loop/ingestBag_factory" enctype="multipart/form-data">
+			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/ingestBag_factory" enctype="multipart/form-data">
 
 				
 				
@@ -183,7 +183,7 @@
 	  var table = $('#object_table').DataTable({
 	    "processing": true,
 	    "serverSide": true,
-	    "ajax": "http://192.168.42.4:5004/tasks/ingestWorkspace/job/{{j.id}}.json",
+	    "ajax": "/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}.json",
 	    columnDefs: [ 
 	    	{
     			"targets": -1,
@@ -196,7 +196,7 @@
 	  $('#object_table tbody').on( 'click', 'button', function () {
 			var data = table.row( $(this).parents('tr') ).data();
 			console.log(data);						
-			window.location.href = "/tasks/ingestWorkspace/objectDetails/{{j.id}}/"+data[0];
+			window.location.href = "/{{APP_PREFIX}}/tasks/ingestWorkspace/objectDetails/{{j.id}}/"+data[0];
 		});
 		
 	});

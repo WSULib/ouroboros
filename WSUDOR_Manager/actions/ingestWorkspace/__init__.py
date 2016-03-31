@@ -90,7 +90,7 @@ def deleteJob(job_id):
 		o._delete()
 	db.session.commit()
 
-	return redirect('/tasks/ingestWorkspace')
+	return redirect('/%s/tasks/ingestWorkspace' % localConfig.APP_PREFIX)
 
 
 

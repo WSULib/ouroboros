@@ -3,11 +3,11 @@
 <div class="row">
 	<div class="col-md-12">
 
-		<h1><a href="/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a></h1>
+		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a></h1>
 
 		<p>Experimental: workspace to loads MODS, create bags with python Class drop-ins, and ingest objects.</p>
 
-		<p><a class="btn btn-success btn-xs" href="/tasks/ingestWorkspace/createJob">Create new Ingest Job</a></p>
+		<p><a class="btn btn-success btn-xs" href="/{{APP_PREFIX}}/tasks/ingestWorkspace/createJob">Create new Ingest Job</a></p>
 
 		<p>Or, select a previously started ingest job from the table below:</p>
 		
@@ -21,10 +21,10 @@
 				</tr>
 				{% for ij in ijs %}
 					<tr>
-						<td><a href="/tasks/ingestWorkspace/job/{{ij.id}}">{{ij.name}}</a></td>
+						<td><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{ij.id}}">{{ij.name}}</a></td>
 						<!-- <td>{{ij.id}}</td> -->
 						<td>{{ij.created}}</td>
-						<td><a href="/tasks/ingestWorkspace/job/{{ij.id}}">view</a> / <a href="/tasks/ingestWorkspace/job/{{ij.id}}/delete">delete</a></td>
+						<td><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{ij.id}}">view</a> / <a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{ij.id}}/delete">delete</a></td>
 					<tr>
 				{% endfor %}
 			</table>

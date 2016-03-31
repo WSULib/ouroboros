@@ -110,7 +110,10 @@ def objects_needed(f):
 # pass APP_PREFIX to all templates
 @app.context_processor
 def inject_prefix():
-    return dict(APP_PREFIX=APP_PREFIX)
+    return {
+    	'APP_PREFIX':APP_PREFIX,
+    	'APP_HOST':APP_HOST
+    }
 
 
 # OPINIONATED MIMETYPES

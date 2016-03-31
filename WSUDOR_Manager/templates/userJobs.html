@@ -31,9 +31,9 @@
 	}
 
 	// function to perform polling, requires wait_time variable	
-	function poll(wait_time, APP_BASE_URL){
+	function poll(wait_time){
 		var longPoller = setTimeout(function(){
-			url = APP_BASE_URL+"/{{APP_PREFIX}}/userJobs?data=true";
+			url = "/{{APP_PREFIX}}/userJobs?data=true";
 			$.ajax({ 
 				url: url, 
 				dataType:"json",
@@ -58,7 +58,7 @@
 
 					// the loop
 					if (response.job_status != "complete"){
-						poll(wait_time,APP_BASE_URL);	
+						poll(wait_time);	
 					}
 					else{
 						console.log("finis!");
@@ -81,6 +81,6 @@
 	}
 
 	// automatic start
-	poll(1500,"{{localConfig.APP_BASE_URL}}");
+	poll(1500);
 </script>
 {% include 'footer.html' %}

@@ -1,6 +1,6 @@
 {% include 'header.html' %}
 <h1>Find Your MimeType</h1>
-<form class="form-horizontal" id="form" role="form" method="POST" action="/ouroboros/tasks/mimeTypeSearch" enctype="multipart/form-data">
+<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/mimeTypeSearch" enctype="multipart/form-data">
 	<div class="col-md-3">
             <div class="form-group">
 				<label class="control-abel" for="type">Input your file extension below:</label>

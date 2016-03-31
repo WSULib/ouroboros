@@ -25,8 +25,7 @@ With the function doing bulk and single, break the actual work in a function use
 
 @DCfromMODS.route('/DCfromMODS')
 @utilities.objects_needed
-def index():	
-	# return redirect("/ouroboros/fireTask/obj_loop/DCfromMODS_worker")
+def index():		
 	return redirect(url_for('fireTask',job_type='obj_loop', task_name='DCfromMODS_worker'))
 
 

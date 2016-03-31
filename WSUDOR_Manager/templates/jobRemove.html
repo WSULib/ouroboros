@@ -3,10 +3,10 @@
 {% if result %}
 	<p>{{result}}</p>
 {% else %}
-<form action="/ouroboros/jobRemove/{{job_num}}" method="POST">
+<form action="/{{APP_PREFIX}}/jobRemove/{{job_num}}" method="POST">
 	<input type="hidden" name="commit" value="true"/>
 	<input type="submit" value="delete job?"/>
 </form>
 {% endif %}
-<a href="/ouroboros/userAllJobs">Return to user jobs</a>
+<a href="/{{APP_PREFIX}}/userAllJobs">Return to user jobs</a>
 {% include 'header.html' %}

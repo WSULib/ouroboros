@@ -1,12 +1,12 @@
 <ul class="list-inline">	
 	{% if PIDlet.pPID != None %}
-	<li><a class="btn btn-default btn-sm" href="/ouroboros/{{PIDlet.pURL}}">{{PIDlet.pPID}} &lt;-- </a></li>
+	<li><a class="btn btn-default btn-sm" href="/{{APP_PREFIX}}/{{PIDlet.pURL}}">{{PIDlet.pPID}} &lt;-- </a></li>
 	{% else %}
 	<li><a class="btn btn-default disabled btn-sm" href="#">Unmoved mover</a></li>
 	{% endif %}
 	<li><strong>{{PIDlet.cPID}} ({{PIDnum}} / {{PIDlet.count}})</strong></li>
 	{% if PIDlet.nPID != None %}
-	<li><a class="btn btn-default btn-sm" href="/ouroboros/{{PIDlet.nURL}}"> --&gt; {{PIDlet.nPID}}</a></li>
+	<li><a class="btn btn-default btn-sm" href="/{{APP_PREFIX}}/{{PIDlet.nURL}}"> --&gt; {{PIDlet.nPID}}</a></li>
 	{% else %}
 	<li><a class="btn btn-default disabled btn-sm" href="#">Thar be no more</a></li>
 	{% endif %}

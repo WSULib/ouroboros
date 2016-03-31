@@ -2,7 +2,7 @@
 <h2>Set Object State</h2>
 <p>This utility changes the state for objects in Fedora, being either Active "A", Inactive "I", or Deleted "D".</p>
 <p style="color:orange;">Note: When object state set to Inactive or Deleted, upon new Solr update, they will be removed until state set to Active again.</p>
-<form action="/ouroboros/fireTask/obj_loop/objectState_worker" method="POST">
+<form action="/{{APP_PREFIX}}/fireTask/obj_loop/objectState_worker" method="POST">
 	<label>Please select target state:</label>
 	<select name="target_state">
 		<option value="A">Active 'A'</option>

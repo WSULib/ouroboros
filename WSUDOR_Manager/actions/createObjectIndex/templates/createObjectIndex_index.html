@@ -1,7 +1,7 @@
 {% include 'header.html' %}
 <h1>Create Object Index</h1>
 
-<form role="form" action="/ouroboros/tasks/createObjectIndex/process" method="POST">
+<form role="form" action="/{{APP_PREFIX}}/tasks/createObjectIndex/process" method="POST">
 	<p>Select collection below to create object indexes:</p>
 	<p>{{ form.collection_object.label }}: {{ form.collection_object }}</p>	
 	<button class="btn btn-success" type="submit">Create Object Indexes</button>

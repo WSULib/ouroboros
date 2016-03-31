@@ -52,13 +52,13 @@
      <span class="icon-bar"></span>
      <span class="icon-bar"></span>
  	</button>
-	<a class="brand" href="/ouroboros/userPage"><img width=40 src="{{ url_for('static', filename='img/Ouroboros.png') }}"/></a>
+	<a class="brand" href="/{{APP_PREFIX}}/userPage"><img width=40 src="{{ url_for('static', filename='img/Ouroboros.png') }}"/></a>
 	</div> <!-- navbar-header -->
 	<div class="collapse navbar-collapse">
 		<ul class="nav navbar-nav">			
 			<!-- <li></li> -->
-			<li><a href="/ouroboros/userPage">User Home</a></li>
-			<li><a href="/ouroboros/systemStatus">System Status</a></li>			
+			<li><a href="/{{APP_PREFIX}}/userPage">User Home</a></li>
+			<li><a href="/{{APP_PREFIX}}/systemStatus">System Status</a></li>			
 				{% if g.user.is_authenticated()%}
 			<!-- <li class="divider"></li> -->
 			<li><a href="{{ url_for('logout') }}">Logout</a></li>

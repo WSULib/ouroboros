@@ -10,11 +10,11 @@
 
 <p>Depending on the type of objects being ingested, both options are available from this form.</p>
 
-<p>Need an object manifest? Click <a href="/ouroboros/tasks/createManifest">here</a> to generate one.</p>
+<p>Need an object manifest? Click <a href="/{{APP_PREFIX}}/tasks/createManifest">here</a> to generate one.</p>
 
 <div class="row">
 	<div class="col-md-5">
-		<form class="form" id="form" role="form" method="POST" action="/ouroboros/fireTask/custom_loop/bagIngest_factory" enctype="multipart/form-data">
+		<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/bagIngest_factory" enctype="multipart/form-data">
 			<div class="form-group">
 				<label>Ingest Type (<span style="color:red;">required</span>):</label>
 				<div class="radio">

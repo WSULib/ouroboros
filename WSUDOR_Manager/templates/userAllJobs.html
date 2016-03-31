@@ -2,7 +2,7 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<p>All jobs for user: {{username}} (<a href="/ouroboros/userJobs">Click here for all currently running jobs</a>)<p>
+		<p>All jobs for user: {{username}} (<a href="/{{APP_PREFIX}}/userJobs">Click here for all currently running jobs</a>)<p>
 	</div>
 </div>
 
@@ -11,7 +11,7 @@
 		<div class="well">
 			<ul>
 				{% for job in return_package %}
-					<li>#{{job.job_num}}, <strong>{{job.job_name}}</strong> - {{job.status}} - <a href="/ouroboros/jobDetails/{{job.job_num}}">Details</a> / <a href="/ouroboros/jobRemove/{{job.job_num}}">Remove</a></li>
+					<li>#{{job.job_num}}, <strong>{{job.job_name}}</strong> - {{job.status}} - <a href="/{{APP_PREFIX}}/jobDetails/{{job.job_num}}">Details</a> / <a href="/{{APP_PREFIX}}/jobRemove/{{job.job_num}}">Remove</a></li>
 				{% endfor %}
 			</ul>
 		</div>

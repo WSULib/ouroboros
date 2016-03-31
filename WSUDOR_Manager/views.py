@@ -279,7 +279,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 		task_handle = getattr(actions, task_name)
 		print "We've got task handle:",task_handle
 	except:		 
-		return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/ouroboros/userPage'>user page</a>.")		
+		return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/{{APP_PREFIX}}/userPage'>user page</a>.")		
 	
 	# get username from session (will pull from user auth session later)
 	username = session['username']

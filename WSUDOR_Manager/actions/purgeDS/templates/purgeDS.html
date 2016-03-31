@@ -2,11 +2,11 @@
 <h1>Purge Datastream</h1>
 
 <p>You may also browse other PIDs in the set:<br>
-	<a href='/ouroboros/tasks/purgeDS?PIDnum={{(PIDnum - 1)}}'>previous</a> / <a href='/ouroboros/tasks/purgeDS?PIDnum={{(PIDnum + 1)}}'>next</a></p>
+	<a href='/{{APP_PREFIX}}/tasks/purgeDS?PIDnum={{(PIDnum - 1)}}'>previous</a> / <a href='/{{APP_PREFIX}}/tasks/purgeDS?PIDnum={{(PIDnum + 1)}}'>next</a></p>
 <p>
 
 <p>Current PID: {{PID}}<p>
-	<form class="form-horizontal" id="form" role="form" method="POST" action="/ouroboros/fireTask/obj_loop/purgeDS_worker" enctype="multipart/form-data">
+	<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/obj_loop/purgeDS_worker" enctype="multipart/form-data">
 	<div class="col-md-3">
 		<div class="form-group">
 		{{ form.csrf_token }} 

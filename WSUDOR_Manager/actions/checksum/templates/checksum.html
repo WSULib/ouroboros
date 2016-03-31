@@ -1,7 +1,7 @@
 {% include 'header.html' %}
 <h2>Trigger Checksum</h2>
 <p>This utility computes checksums for object datastreams in Fedora, compares these computations against the stored checksum, and returns either Valid, Invalid, or Disabled.</p>
-<form action="/ouroboros/fireTask/obj_loop/objectState_worker" method="POST">
+<form action="/{{APP_PREFIX}}/fireTask/obj_loop/objectState_worker" method="POST">
 	<label>Please select target state:</label>
 	<select name="target_state">
 		<option value="A">Valid 'V'</option>

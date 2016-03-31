@@ -230,7 +230,11 @@ def fireTask(job_type,task_name):
 	}
 
 	# pass along binary uploaded data if included in job task
+	'''
+	Need to rework this to write this temp data to disdk.
+	'''
 	if 'upload' in request.files and request.files['upload'].filename != '':
+		print request.files['upload']
 		job_package['upload_data'] = request.files['upload'].read()
 
 	task_inputs_key = username+"_"+task_name+"_"+str(int(time.time()))
@@ -373,8 +377,8 @@ def userJobs():
 		if job_complete_count == None:			
 			job_complete_count = 0
 
-		# compute percentage complete
-		if job_est_count != None:
+		# compute percentage complete				
+		if all([job_complete_count,job_est_count]) != None and all([job_complete_count,job_est_count]) > 0:
 			comp_percent = '{0:.0%}'.format(float(job_complete_count) / float(job_est_count))
 		else:
 			comp_percent = 'N/A'

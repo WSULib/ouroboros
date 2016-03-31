@@ -43,7 +43,7 @@ function paintTable(json_output, APP_HOST){
 
         // send PIDs to SQL for user
         $.ajax({
-			url: "/updatePIDsfromSolr/add",
+			url: "/ouroboros/updatePIDsfromSolr/add",
 			type: "POST",
 			data: {"json_package":json_package,"group_name":$("#group_name").val()}
 		}).done(function(response) { 						
@@ -69,7 +69,7 @@ function paintTable(json_output, APP_HOST){
 
         // send PIDs to SQL for user
         $.ajax({
-			url: "/updatePIDsfromSolr/add",
+			url: "/ouroboros/updatePIDsfromSolr/add",
 			type: "POST",
 			data: {"json_package":json_package,"group_name":$("#group_name").val()}
 		}).done(function(response) { 
@@ -94,7 +94,7 @@ function paintTable(json_output, APP_HOST){
 
         // send PIDs to SQL for user
         $.ajax({
-			url: "/updatePIDsfromSolr/remove",
+			url: "/ouroboros/updatePIDsfromSolr/remove",
 			type: "POST",
 			data: {"json_package":json_package,"group_name":$("#group_name").val()}
 		}).done(function(response) { console.log(response); alert("Selected PIDs removed.") });
@@ -115,7 +115,7 @@ function paintTable(json_output, APP_HOST){
 
         // send PIDs to SQL for user
         $.ajax({
-			url: "/updatePIDsfromSolr/remove",
+			url: "/ouroboros/updatePIDsfromSolr/remove",
 			type: "POST",
 			data: {"json_package":json_package,"group_name":$("#group_name").val()}
 		}).always(function(response) { 

@@ -14,7 +14,6 @@ class ReverseProxied(object):
 	front-end server to add these headers, to let you quietly bind 
 	this to a URL other than / and to an HTTP scheme that is 
 	different than what is used locally.
-
 	In nginx:
 	location /myprefix {
 		proxy_pass http://192.168.0.1:5001;
@@ -23,7 +22,6 @@ class ReverseProxied(object):
 		proxy_set_header X-Scheme $scheme;
 		proxy_set_header X-Script-Name /myprefix;
 		}
-
 	:param app: the WSGI application
 	'''
 	def __init__(self, app, prefix=''):
@@ -46,7 +44,7 @@ class ReverseProxied(object):
 # create app
 app = Flask(__name__)
 app.wsgi_app = ReverseProxied(app.wsgi_app)
-app.config["APPLICATION_ROOT"] = "/ouroboros"
+app.config["APPLICATION_ROOT"] = "/%s" % localConfig.APP_PREFIX
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localConfig.MYSQL_USERNAME, localConfig.MYSQL_PASSWORD, localConfig.MYSQL_DATABASE ) 
 
 #setup db
@@ -72,6 +70,8 @@ if not os.path.exists('/tmp/Ouroboros'):
 	os.mkdir('/tmp/Ouroboros')
 if not os.path.exists('/tmp/Ouroboros/ingest_workspace'):
 	os.mkdir('/tmp/Ouroboros/ingest_workspace')
+if not os.path.exists('/tmp/Ouroboros/ingest_jobs'):
+	os.mkdir('/tmp/Ouroboros/ingest_jobs')
 
 
 

@@ -54,27 +54,13 @@ function paintTable(username,DT_target){
 	$('#PIDtable tbody').on('click', 'tr', function () {	    
 	    var id = $(this).children()[0].innerHTML;	    
 		$.ajax({
-			url: "/PIDRowUpdate/"+id+"/update_status/toggle",			
+			url: "/ouroboros/PIDRowUpdate/"+id+"/update_status/toggle",			
 			}).done(function() {
 			$(this).toggleClass('selected');
 			table_handle.draw( false ); // false parameter keeps current page
 		});
 	} );
  
-    // $('#button').click( function () {
-    //     alert( table.rows('.selected').data().length +' row(s) selected' );
-    // } );
-
-	// don't need, but might be worth saving
-	// var cpage = table_handle.page();
-	// console.log(cpage);
-	// table_handle.draw();
-	// $("a.paginate_button.current").click();					
-
-	// LEAVE FOR REFERENCE, searchCols WORKING ABOVE PER BUG FIX IN DATATABLES
-	// filter only the user
-	// https://datatables.net/forums/discussion/comment/61834#Comment_61834
-	// table_handle.columns(2).search(username).draw();	
 }
 
 function PIDmanageAction(action){
@@ -84,7 +70,7 @@ function PIDmanageAction(action){
 		data = {"group_name":$("#group_name").val()}
 		console.log(data);
 		$.ajax({
-			url: "/PIDmanageAction/"+action,		
+			url: "/ouroboros/PIDmanageAction/"+action,		
 			type:"POST",
 			data:data			
 			})
@@ -96,7 +82,7 @@ function PIDmanageAction(action){
 	
 	else {
 		$.ajax({
-			url: "/PIDmanageAction/"+action,					
+			url: "/ouroboros/PIDmanageAction/"+action,					
 			})
 		.done(function(response) {
 			console.log(response);		
@@ -110,7 +96,7 @@ function PIDmanageAction(action){
 // delete row
 function del_row(id){	
 	$.ajax({
-		url: "/PIDRowUpdate/"+id+"/delete/delete",			
+		url: "/ouroboros/PIDRowUpdate/"+id+"/delete/delete",
 		}).done(function() {
 			$(this).toggleClass('selected');
 			table_handle.draw();			

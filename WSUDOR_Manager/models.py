@@ -6,6 +6,11 @@ import sqlalchemy
 from json import JSONEncoder
 from flask import Response, jsonify
 
+
+########################################################################
+# User Jobs
+########################################################################
+
 class user_pids(db.Model):
 	id = db.Column(db.Integer, primary_key=True)	
 	PID = db.Column(db.String(255)) 
@@ -23,8 +28,7 @@ class user_pids(db.Model):
 		return '<PID %s, username %s>' % (self.PID, self.username)
 
 
-class user_jobs(db.Model):
-	# id = db.Column(db.Integer, primary_key=True)
+class user_jobs(db.Model):	
 	job_num = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=False)
 	username = db.Column(db.String(255))
 	# for status, expecting: spooling, pending, running, completed, supressed
@@ -47,31 +51,31 @@ ROLE_USER = 0
 ROLE_ADMIN = 1
 
 class User(db.Model):
-    id = db.Column('id', db.Integer, primary_key = True)
-    username = db.Column('username', db.String(64), index = True, unique = True)
-    email = db.Column('email', db.String(120), index = True, unique = True)
-    password = db.Column('password', db.String(120))
-    role = db.Column('role', db.SmallInteger, default = ROLE_USER)
+	id = db.Column('id', db.Integer, primary_key = True)
+	username = db.Column('username', db.String(64), index = True, unique = True)
+	email = db.Column('email', db.String(120), index = True, unique = True)
+	password = db.Column('password', db.String(120))
+	role = db.Column('role', db.SmallInteger, default = ROLE_USER)
 
-    def __init__(self , username ,password , email):
-        self.username = username
-        self.password = password
-        self.email = email
+	def __init__(self , username ,password , email):
+		self.username = username
+		self.password = password
+		self.email = email
 
-    def is_authenticated(self):
-        return True
+	def is_authenticated(self):
+		return True
 
-    def is_active(self):
-        return True
+	def is_active(self):
+		return True
 
-    def is_anonymous(self):
-        return False
+	def is_anonymous(self):
+		return False
 
-    def get_id(self):
-        return unicode(self.id)
+	def get_id(self):
+		return unicode(self.id)
 
-    def __repr__(self):
-        return '<User %r>' % (self.username)
+	def __repr__(self):
+		return '<User %r>' % (self.username)
 
 
 class job_rollback(db.Model):
@@ -125,7 +129,103 @@ class ingest_MODS(db.Model):
 		return '<Name: %s>, ID: %s>' % (self.name, self.id)
 
 
-#objMeta class Object
+########################################################################
+# DB Classes for ingestWorkspace
+########################################################################
+class ingest_workspace_job(db.Model):
+	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)	
+	name = db.Column(db.String(255))
+	created = db.Column(db.DateTime, default=datetime.now)
+
+	# column for raw ingest metadata
+	ingest_metadata = db.Column(db.Text(4294967295))
+
+	# column to hold python code (Classes) for creating bags
+	bag_creation_class = db.Column(db.String(4096))
+
+	def __init__(self, name):		
+		self.name = name	
+
+	def __repr__(self):    	
+		return '<Name: %s>, ID: %s>' % (self.name, self.id)
+
+	def _delete(self):
+		db.session.delete(self)
+		db.session.commit()
+
+	def _commit(self):
+		db.session.add(self)
+		db.session.commit()
+
+
+def dump_datetime(value):
+    """Deserialize datetime object into string form for JSON processing."""
+    if value is None:
+        return None
+    return [value.strftime("%Y-%m-%d"), value.strftime("%H:%M:%S")]
+
+
+class ingest_workspace_object(db.Model):
+	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
+	ingest_id = db.Column(db.Integer)
+	created = db.Column(db.DateTime, default=datetime.now)
+
+	# lazy link to job table above
+	job_id = db.Column(db.Integer, db.ForeignKey('ingest_workspace_job.id'))
+	job = db.relationship('ingest_workspace_job', backref=db.backref('objects', lazy='dynamic'))
+	
+	# content fields
+	MODS = db.Column(db.Text(4294967295)) 
+	objMeta = db.Column(db.Text(4294967295)) 
+	bag_binary = db.Column(db.Text(4294967295)) 
+	bag_path = db.Column(db.String(4096))
+
+	# derived metadata
+	object_title = db.Column(db.String(4096))
+	DMDID = db.Column(db.String(4096))
+	struct_map = db.Column(db.Text(4294967295))
+
+	# flags and status
+	ingested = db.Column(db.String(255))
+	repository = db.Column(db.String(255)) # eventually pull from localConfig.REPOSITORIES
+
+	# init with 'job' as ingest_workspace_job instance
+	def __init__(self, job, object_title="Unknown", DMDID=None):		
+		self.job = job
+		self.object_title = object_title
+		self.DMDID = DMDID
+		self.ingested = False
+		self.repository = None		
+
+	def __repr__(self):    	
+		return '<ID: %s>' % (self.id)
+
+	def serialize(self):
+		return {
+			'id':self.id,
+			'created':dump_datetime(self.created),
+			'job':(self.job.name,self.job.id),
+			'MODS':self.MODS,
+			'objMeta':self.objMeta,
+			'object_title':self.object_title,
+			'DMDID':self.DMDID,
+			'ingested':self.ingested,
+			'repository':self.repository,
+			'struct_map':self.struct_map
+		}
+
+	def _delete(self):
+		db.session.delete(self)	
+		db.session.commit()		
+
+	def _commit(self):
+		db.session.add(self)
+		db.session.commit()
+	
+
+########################################################################
+# objMeta class Object
+########################################################################
 class ObjMeta:
 	# requires JSONEncoder
 
@@ -176,6 +276,10 @@ class ObjMeta:
 	def toJSON(self):
 		return JSONEncoder().encode(self.__dict__)
 
+
+########################################################################
+# Solr
+########################################################################
 
 class SolrDoc(object):	
 

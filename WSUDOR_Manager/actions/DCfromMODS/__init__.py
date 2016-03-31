@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 import urllib, urllib2
 import datetime
 from lxml import etree
-from flask import Blueprint, render_template, redirect, abort
+from flask import Blueprint, render_template, redirect, abort, url_for
 
 # handles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
@@ -26,7 +26,9 @@ With the function doing bulk and single, break the actual work in a function use
 @DCfromMODS.route('/DCfromMODS')
 @utilities.objects_needed
 def index():	
-	return redirect("/fireTask/obj_loop/DCfromMODS_worker")
+	# return redirect("/ouroboros/fireTask/obj_loop/DCfromMODS_worker")
+	return redirect(url_for('fireTask',job_type='obj_loop', task_name='DCfromMODS_worker'))
+
 
 @DCfromMODS.route('/DCfromMODS/single/<PID>')
 def single(PID):

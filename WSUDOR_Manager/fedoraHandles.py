@@ -4,9 +4,9 @@ from localConfig import *
 
 # local repository handle
 fedora_handle = Repository(
-	REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_ROOT'],
-	REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_USERNAME'],
-	REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_PASSWORD'],
+	FEDORA_ROOT,
+	FEDORA_USER,
+	FEDORA_PASSWORD,
 	'wayne')
 
 # yield remote repository handle from localConfig

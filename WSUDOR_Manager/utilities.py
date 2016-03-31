@@ -5,12 +5,12 @@ import requests
 from requests.auth import HTTPBasicAuth
 from localConfig import *
 from WSUDOR_Manager import models
+from WSUDOR_Manager import app
 from flask import render_template, session
 import json
 import pickle
 from functools import wraps
 import mimetypes
-from localConfig import *
 
 
 
@@ -106,6 +106,11 @@ def objects_needed(f):
 		return f(*args, **kwargs)		
 	return decorated_function
 
+
+# pass APP_PREFIX to all templates
+@app.context_processor
+def inject_prefix():
+    return dict(APP_PREFIX=APP_PREFIX)
 
 
 # OPINIONATED MIMETYPES

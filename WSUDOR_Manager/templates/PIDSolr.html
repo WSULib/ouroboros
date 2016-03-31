@@ -52,9 +52,145 @@
     {% endif %}
 </div>
 </div>
-<script type="text/javascript" src="{{ url_for('static',filename='PIDSolr.js')}}"></script>
+
 {% if json_output %}
 <script type="text/javascript">
+
+    // javascript for /PIDSolr data tables
+
+    // table handle
+    var table_handle = "";
+
+    // paint table
+    function paintTable(json_output, APP_HOST){ 
+        table_handle = $('#PIDtable').DataTable({
+            "data":json_output,
+            "columns": [
+                {   "searchable": true, 
+                    "name":"PID" 
+                },
+                {   "searchable": true, 
+                    "name":"dc_title",
+                    "render":function (data,type,row){                                      
+                        return "<a target='_blank' href='http://"+APP_HOST+"/digitalcollections/item?id="+row[0]+"'>"+row[1]+"</a>";
+                    } 
+                }
+              ]
+        }); 
+
+        // selects row
+        $('#PIDtable tbody').on('click', 'tr', function () {
+            var PID = $(this).children()[0].innerHTML;      
+            console.log(PID);
+            $(this).toggleClass('selected');
+        });
+
+        // updates
+        $('#sendSelPIDs').click( function () {
+            // aggregate selected PIDs in list
+            var srows = table_handle.rows('.selected').data();
+            var PIDs_list = [];
+            for (var i=0; i<srows.length; i++){
+                PID = srows[i][0];
+                PIDs_list.push(PID);
+            }     
+            
+            // create json to send
+            json_package = JSON.stringify(PIDs_list);
+            console.log(json_package);
+
+            // send PIDs to SQL for user
+            $.ajax({
+                url: "/{{APP_PREFIX}}/updatePIDsfromSolr/add",
+                type: "POST",
+                data: {"json_package":json_package,"group_name":$("#group_name").val()}
+            }).done(function(response) {                        
+                var date = new Date(Date.now());
+                var timestamp = date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()
+                $("#actions_msg").append("<span>"+timestamp+" - Selected PIDs sent to user management</span><br>");
+
+            });
+        });
+
+
+        $('#sendAllPIDs').click( function () {
+            // select all PIDs
+            var srows = table_handle.rows().data();
+            var PIDs_list = [];
+            for (var i=0; i<srows.length; i++){
+                PID = srows[i][0];
+                PIDs_list.push(PID);
+            }     
+            
+            // create json to send
+            json_package = JSON.stringify(PIDs_list);        
+
+            // send PIDs to SQL for user
+            $.ajax({
+                url: "/{{APP_PREFIX}}/updatePIDsfromSolr/add",
+                type: "POST",
+                data: {"json_package":json_package,"group_name":$("#group_name").val()}
+            }).done(function(response) { 
+                var date = new Date(Date.now());
+                var timestamp = date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()
+                $("#actions_msg").append("<span>"+timestamp+" - All PIDs sent to user management</span><br>");
+            });
+        });
+
+
+        $('#removeSelPIDs').click( function () {
+            // aggregate selected PIDs in list
+            var srows = table_handle.rows('.selected').data();
+            var PIDs_list = [];
+            for (var i=0; i<srows.length; i++){
+                PID = srows[i][0];
+                PIDs_list.push(PID);
+            }     
+            
+            // create json to send
+            json_package = JSON.stringify(PIDs_list);
+
+            // send PIDs to SQL for user
+            $.ajax({
+                url: "/{{APP_PREFIX}}/updatePIDsfromSolr/remove",
+                type: "POST",
+                data: {"json_package":json_package,"group_name":$("#group_name").val()}
+            }).done(function(response) { console.log(response); alert("Selected PIDs removed.") });
+        });
+
+
+        $('#removeAllPIDs').click( function () {
+            // select all PIDs
+            var srows = table_handle.rows().data();
+            var PIDs_list = [];
+            for (var i=0; i<srows.length; i++){
+                PID = srows[i][0];
+                PIDs_list.push(PID);
+            }     
+            
+            // create json to send
+            json_package = JSON.stringify(PIDs_list);
+
+            // send PIDs to SQL for user
+            $.ajax({
+                url: "/{{APP_PREFIX}}/updatePIDsfromSolr/remove",
+                type: "POST",
+                data: {"json_package":json_package,"group_name":$("#group_name").val()}
+            }).always(function(response) { 
+                console.log(response);
+                alert("All PIDs removed."); 
+            });
+        });
+
+
+
+    } // close paintTable
+
+
+
+
+
+
     $(document).ready(function(){                
         paintTable({{json_output|safe}}, "{{APP_HOST}}");
     });    

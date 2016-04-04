@@ -33,7 +33,7 @@ def iiif_manifest(identifier):
 
 	try:
 		# fire retrieveManifest
-		response = make_response( retrieveManifest(identifier,getParams) )
+		response = make_response( retrieveManifest(identifier,getParams,request) )
 		response.headers['Access-Control-Allow-Origin'] = '*'
 		response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
 		response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
@@ -45,11 +45,11 @@ def iiif_manifest(identifier):
 
 	except Exception,e:
 		print "WSUDOR_API iiif_manifest call unsuccessful.  Error:",str(e)
-		return '{{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":%s}}' % (json.dumps(str(e)))
+		return '{"WSUDOR_APIstatus":"WSUDOR_API iiif_manifest call unsuccessful.","WSUDOR_APIstatus iiif_manifest message":%s}' % (json.dumps(str(e)))
 		
 
 @cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
-def retrieveManifest(identifier,getParams):
+def retrieveManifest(identifier,getParams,request):
 
 	'''
 	genIIIFManifest() is a function built-in to each content-type.
@@ -61,6 +61,9 @@ def retrieveManifest(identifier,getParams):
 	r_response = redisHandles.r_iiif.get(identifier)
 	if r_response != None:
 		print "manifest located and retrieved from Redis"
+		if request.is_secure:
+			print "SSL detected: flipping http --> https for '%s' hosts" % localConfig.APP_HOST
+			r_response = r_response.replace("http://%s" % localConfig.APP_HOST,"https://%s" % localConfig.APP_HOST)
 		return r_response
 	else:
 		print "generating manifest, storing in redis, returning"

@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
 import localConfig
 
+
 # http://flask.pocoo.org/snippets/35/
 class ReverseProxied(object):
 	'''Wrap the application in this middleware and configure the 
@@ -26,7 +27,7 @@ class ReverseProxied(object):
 	'''
 	def __init__(self, app, prefix=''):
 		self.app = app
-		self.prefix = prefix
+		self.prefix = prefix		
 
 	def __call__(self, environ, start_response):
 		script_name = environ.get('HTTP_X_SCRIPT_NAME', '')

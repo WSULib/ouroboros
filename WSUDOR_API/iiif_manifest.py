@@ -61,9 +61,6 @@ def retrieveManifest(identifier,getParams,request):
 	r_response = redisHandles.r_iiif.get(identifier)
 	if r_response != None:
 		print "manifest located and retrieved from Redis"
-		if request.is_secure:
-			print "SSL detected: flipping http --> https for '%s' hosts" % localConfig.APP_HOST
-			r_response = r_response.replace("http://%s" % localConfig.APP_HOST,"https://%s" % localConfig.APP_HOST)
 		return r_response
 	else:
 		print "generating manifest, storing in redis, returning"

@@ -44,8 +44,13 @@ class ReverseProxied(object):
 
 # create app
 app = Flask(__name__)
-app.wsgi_app = ReverseProxied(app.wsgi_app)
-app.config["APPLICATION_ROOT"] = "/%s" % localConfig.APP_PREFIX
+
+# if using app prefix, wrap Flask app in ReverseProxied class from above
+if localConfig.APP_PREFIX_USE:
+	print "wrapping WSUDOR_Manager for reverse proxy"
+	app.wsgi_app = ReverseProxied(app.wsgi_app)
+	app.config["APPLICATION_ROOT"] = "/%s" % localConfig.APP_PREFIX
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localConfig.MYSQL_USERNAME, localConfig.MYSQL_PASSWORD, localConfig.MYSQL_DATABASE ) 
 
 #setup db

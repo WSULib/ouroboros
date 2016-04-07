@@ -90,6 +90,10 @@ def deleteJob(job_id):
 		o._delete()
 	db.session.commit()
 
+	# remove working directory
+	print "removing ingest_jobs directory"
+	os.system('rm -r /tmp/Ouroboros/ingest_jobs/ingest_job_%s' % job_id)
+
 	return redirect('/%s/tasks/ingestWorkspace' % localConfig.APP_PREFIX)
 
 
@@ -548,7 +552,7 @@ def ingestBag_callback(job_package):
 	print "FIRING ingestBag_callback"
 
 	# DEBUG
-	print job_package
+	# print job_package
 
 	# open handle
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()

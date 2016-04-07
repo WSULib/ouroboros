@@ -34,7 +34,9 @@
                 <tr>            
                     <th>ingest_id</th>
                     <th>object_title</th>
-                    <th>DMDID</th>                    
+                    <th>pid</th>
+                    <th>object_type</th>
+                    <th>DMDID</th>
                     <th>struct_map</th>
                     <th>MODS</th>
                     <th>bag_path</th>
@@ -70,7 +72,7 @@
 							<option value="{{bag_class}}">{{bag_class}}</option>
 						{% endfor %}
 					</select> 
-				</div>
+				</div>				
 				<div class="form-group">
 					<label class="control-label">Full path of files location (bag creation class determines file matching behavior):</label>
 					<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection"></input>

@@ -150,6 +150,8 @@ def jobjson(job_id):
 	columns = []	
 	columns.append(ColumnDT('ingest_id'))
 	columns.append(ColumnDT('object_title'))
+	columns.append(ColumnDT('pid'))
+	columns.append(ColumnDT('object_type'))
 	columns.append(ColumnDT('DMDID'))	
 	columns.append(ColumnDT('struct_map', filter=exists))
 	columns.append(ColumnDT('MODS', filter=exists))
@@ -215,10 +217,17 @@ def createJob_factory(job_package):
 	
 	# grab stucture map
 	sm = XMLroot.find('{http://www.loc.gov/METS/}structMap')
-	sm_div1 = sm.find('{http://www.loc.gov/METS/}div')
+	collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
+
+	# update job with collection level DMDID (used throughout as collection identifier)
+	j.identifier = collection_level_div.attrib['DMDID']
+	j._commit()
 	
 	# iterate through, ignoring comments
-	sm_parts = [element for element in sm_div1.getchildren() if type(element) != etree._Comment]	
+	sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
+
+	# add collection object to front of list
+	sm_parts.insert(0,collection_level_div)
 
 	# pop METS ingest from job_package	
 	if 'upload_data' in job_package:
@@ -231,13 +240,21 @@ def createJob_factory(job_package):
 
 	# insert into MySQL as ingest_workspace_object rows
 	step = 1
-	for sm_part in sm_parts:
-
+	
+	# iterate through and add components
+	for i,sm_part in enumerate(sm_parts):
+		
 		print "Creating ingest_workspace_object row %s / %s" % (step, len(sm_parts))
 		job_package['step'] = step
 
 		# set internal id (used for selecting when making bags and ingesting)
 		job_package['ingest_id'] = step
+
+		# set type
+		if i == 0:
+			job_package['object_type'] = "collection"
+		else:
+			job_package['object_type'] = "component"
 
 		# attempt to fire worker
 		try:
@@ -280,8 +297,6 @@ def createJob_factory(job_package):
 		step += 1
 
 
-	print "Finished entering rows"
-
 
 @celery.task(name="createJob_worker")
 def createJob_worker(job_package):
@@ -294,6 +309,9 @@ def createJob_worker(job_package):
 
 	# instatitate object instance
 	o = models.ingest_workspace_object(j, object_title=job_package['object_title'], DMDID=job_package['DMDID'])
+
+	# set type
+	o.object_type = job_package['object_type']
 
 	# fill out object row with information from job_package
 	o.ingest_id = job_package['ingest_id']
@@ -390,21 +408,25 @@ def createBag_worker(job_package):
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
 	print "Working on: %s" % o.object_title
 
+	# GET JOB HERE AND ADD AS collection_identifier
+
 	# load bag class
 	print "loading bag class for %s" % form_data['bag_creation_class']	
 	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
 
+	# load collection class (if needed)
+	collection_class_handle = getattr(ouroboros_assets.bag_classes, 'collection_object')
+
 	# load MODS as etree element
-	# try:
-	MODS_root = etree.fromstring(o.MODS)	
-	ns = MODS_root.nsmap
-	MODS_handle = {
-		"MODS_element" : MODS_root.xpath('//mods:mods', namespaces=ns)[0],
-		"MODS_ns" : ns
-	}
-	
-	# except:
-	# 	print "could not load MODS as etree element"
+	try:
+		MODS_root = etree.fromstring(o.MODS)	
+		ns = MODS_root.nsmap
+		MODS_handle = {
+			"MODS_element" : MODS_root.xpath('//mods:mods', namespaces=ns)[0],
+			"MODS_ns" : ns
+		}
+	except:
+		print "could not load MODS as etree element"
 
 	# if not purging bags, and previous bag_path already found, skip
 	if purge_bags == False and o.bag_path != None:
@@ -414,7 +436,13 @@ def createBag_worker(job_package):
 	# else, create bags (either overwriting or creating new)
 	else:
 		# instantiate bag_class_worker from class
-		bag_class_worker = bag_class_handle.BagClass(
+		if o.object_type == 'collection':
+			print "firing collection object bag creator"
+			class_handle = collection_class_handle
+		else:
+			class_handle = bag_class_handle
+
+		bag_class_worker = class_handle.BagClass(
 			object_row = o,
 			ObjMeta = models.ObjMeta,
 			bag_root_dir = job_package['bag_dir'],
@@ -424,7 +452,7 @@ def createBag_worker(job_package):
 			struct_map = o.struct_map,
 			object_title = o.object_title,
 			DMDID = o.DMDID,
-			collection_identifier = form_data['job_name'],
+			collection_identifier = o.job.identifier,
 			purge_bags = purge_bags
 		)
 
@@ -442,6 +470,9 @@ def createBag_worker(job_package):
 
 	# set objMeta
 	o.objMeta = bag_class_worker.objMeta_handle.toJSON()
+
+	# set PID
+	o.pid = bag_class_worker.pid
 
 	# commit
 	bag_class_worker.object_row._commit()

@@ -135,11 +135,10 @@ class ingest_MODS(db.Model):
 class ingest_workspace_job(db.Model):
 	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)	
 	name = db.Column(db.String(255))
+	identifier = db.Column(db.String(255))
 	created = db.Column(db.DateTime, default=datetime.now)
-
 	# column for raw ingest metadata
 	ingest_metadata = db.Column(db.Text(4294967295))
-
 	# column to hold python code (Classes) for creating bags
 	bag_creation_class = db.Column(db.String(4096))
 
@@ -169,23 +168,21 @@ class ingest_workspace_object(db.Model):
 	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
 	ingest_id = db.Column(db.Integer)
 	created = db.Column(db.DateTime, default=datetime.now)
-
 	# lazy link to job table above
 	job_id = db.Column(db.Integer, db.ForeignKey('ingest_workspace_job.id'))
 	job = db.relationship('ingest_workspace_job', backref=db.backref('objects', lazy='dynamic'))
-	
 	# content fields
 	MODS = db.Column(db.Text(4294967295)) 
 	objMeta = db.Column(db.Text(4294967295)) 
 	bag_binary = db.Column(db.Text(4294967295)) 
 	bag_path = db.Column(db.String(4096))
-
 	# derived metadata
 	object_title = db.Column(db.String(4096))
 	DMDID = db.Column(db.String(4096))
 	struct_map = db.Column(db.Text(4294967295))
-
+	pid = db.Column(db.String(255))
 	# flags and status
+	object_type = db.Column(db.String(255))
 	ingested = db.Column(db.String(255))
 	repository = db.Column(db.String(255)) # eventually pull from localConfig.REPOSITORIES
 

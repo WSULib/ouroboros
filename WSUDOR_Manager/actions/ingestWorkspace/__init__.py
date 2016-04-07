@@ -206,7 +206,7 @@ def createJob_factory(job_package):
 		ingest_metadata = form_data['pasted_metadata'] 
 	
 	# initiate ingest job instance with name
-	j = models.ingest_workspace_job(form_data['collection_identifier'])	
+	j = models.ingest_workspace_job(form_data['collection_name'])	
 
 	# add metadata
 	j.ingest_metadata = ingest_metadata	
@@ -223,15 +223,25 @@ def createJob_factory(job_package):
 	sm = XMLroot.find('{http://www.loc.gov/METS/}structMap')
 	collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
 
-	# update job with collection level DMDID (used throughout as collection identifier)
-	j.identifier = collection_level_div.attrib['DMDID']
-	j._commit()
+	# determine collection identifier
+	try:
+		# attempt to grab DMD id
+		j.collection_identifier = collection_level_div.attrib['DMDID']
+		j._commit()
+		METS_collection = True
+	except:
+		METS_collection = False
+		if form_data['collection_identifier'] != '':
+			j.collection_identifier = form_data['collection_identifier'].split(":")[-1].split("collection")[-1]
+		else:
+			j.collection_identifier = "Loose"
 	
 	# iterate through, ignoring comments
 	sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
 
 	# add collection object to front of list
-	sm_parts.insert(0,collection_level_div)
+	if METS_collection:
+		sm_parts.insert(0,collection_level_div)
 
 	# pop METS ingest from job_package	
 	if 'upload_data' in job_package:
@@ -255,7 +265,7 @@ def createJob_factory(job_package):
 		job_package['ingest_id'] = step
 
 		# set type
-		if i == 0:
+		if METS_collection and i == 0:
 			job_package['object_type'] = "collection"
 		else:
 			job_package['object_type'] = "component"
@@ -456,7 +466,7 @@ def createBag_worker(job_package):
 			struct_map = o.struct_map,
 			object_title = o.object_title,
 			DMDID = o.DMDID,
-			collection_identifier = o.job.identifier,
+			collection_identifier = o.job.collection_identifier,
 			purge_bags = purge_bags
 		)
 

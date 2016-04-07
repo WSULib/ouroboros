@@ -9,27 +9,29 @@
 
 	</div>
 
-	<div class="col-md-4">		
+	<div class="col-md-6">		
 
-		<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/createJob_factory" enctype="multipart/form-data">
+		<form class="form well" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/createJob_factory" enctype="multipart/form-data">
 
 			<!-- collection name -->
 			<div class="form-group">
 				<label class="control-label">Ingest Job Name (human readable name for job):</label>
-				<input class="form-control" type="text" name="collection_identifier" placeholder="e.g. CFAI, DSJ, DennisCooper">
+				<input class="form-control" type="text" name="collection_name" placeholder="e.g. DSJ_full_ingest, DD_1, Swanger_addition, my_awesome_job">
+			</div>
+
+			<div class="form-group">
+				<label class="control-label">Collection PID (optional):
+					<p style='font-weight:normal;'>If a collection level object is not found in the METS file (specifically, a DMD section), provide a collection PID here for objects to become a member of.  Note: this will be skipped if a collection object exists in the METS.</p>
+					<p style='font-weight:normal;'>If neither a collection object exists in the METS, or a collection PID provided here, objects will become members of a generic collection.</p>
+				</label>
+				<input class="form-control" type="text" name="collection_identifier" placeholder="e.g. wayne:collectionDSJ, wayne:collectionNightingale">
 			</div>
 
 			<!-- METS -->	
-			<div class="well">		
-				<h4>Ingest Metadata (METS)</h4>
-				<p>Upload a METS file below:</p>
-				<!-- <div class="form-group">
-					<textarea class="form-control input-sm" id="pasted_metadata" name="pasted_metadata" rows=10 placeholder="XML goes here"></textarea>
-				</div> -->
-
-				<div class="form-group" id="upload">
-					<input id="upload" name="upload" type="file"></input>
-				</div>
+			
+			<div class="form-group" id="upload">
+				<label class="control-label">Upload a METS file:</label>
+				<input id="upload" name="upload" type="file"></input>
 			</div>
 
 			<div class="form-group">

@@ -134,8 +134,10 @@ class ingest_MODS(db.Model):
 ########################################################################
 class ingest_workspace_job(db.Model):
 	id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)	
-	name = db.Column(db.String(255))
-	identifier = db.Column(db.String(255))
+	# human readable name for job
+	name = db.Column(db.String(255)) 
+	# identifier, points to collection
+	collection_identifier = db.Column(db.String(255))
 	created = db.Column(db.DateTime, default=datetime.now)
 	# column for raw ingest metadata
 	ingest_metadata = db.Column(db.Text(4294967295))

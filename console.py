@@ -26,7 +26,6 @@ print "creating bash shortcut - 'bash'"
 def bash():
 	return os.system('bash')
 
-
 # DEBUG
 def tableWipe():
 	try:

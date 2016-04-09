@@ -1,10 +1,17 @@
-from WSUDOR_Manager import db, actions
+from WSUDOR_Manager import db, actions, app
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
+from flask.ext.login import UserMixin
 from datetime import datetime
 import sqlalchemy
 from json import JSONEncoder
 from flask import Response, jsonify
+from itsdangerous import URLSafeTimedSerializer
+
+# session data secret key
+####################################
+app.secret_key = 'WSUDOR'
+####################################
 
 
 ########################################################################
@@ -12,23 +19,23 @@ from flask import Response, jsonify
 ########################################################################
 
 class user_pids(db.Model):
-    id = db.Column(db.Integer, primary_key=True)    
-    PID = db.Column(db.String(255)) 
+    id = db.Column(db.Integer, primary_key=True)
+    PID = db.Column(db.String(255))
     username = db.Column(db.String(255))
-    status = db.Column(db.Boolean(1))   
-    group_name = db.Column(db.String(255))  
+    status = db.Column(db.Boolean(1))
+    group_name = db.Column(db.String(255))
 
     def __init__(self, PID, username, status, group_name):
-        self.PID = PID        
+        self.PID = PID
         self.username = username
         self.status = status
         self.group_name = group_name
 
-    def __repr__(self):     
+    def __repr__(self):
         return '<PID %s, username %s>' % (self.PID, self.username)
 
 
-class user_jobs(db.Model):  
+class user_jobs(db.Model):
     job_num = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=False)
     username = db.Column(db.String(255))
     # for status, expecting: spooling, pending, running, completed, supressed
@@ -46,18 +53,17 @@ class user_jobs(db.Model):
     def __repr__(self):
         return '<Job# %s, username: %s, celery_task_id: %s, status: %s>' % (self.job_num, self.username, self.celery_task_id, self.status)
 
+#Login_serializer used to encryt and decrypt the cookie token for the remember
+#me option of flask-login
+login_serializer = URLSafeTimedSerializer(app.secret_key)
 
-ROLE_USER = 0
-ROLE_ADMIN = 1
-
-class User(db.Model):
-    id = db.Column('id', db.Integer, primary_key = True)
-    username = db.Column('username', db.String(64), index = True, unique = True)
-    email = db.Column('email', db.String(120), index = True, unique = True)
-    password = db.Column('password', db.String(120), nullable = True)
-    role = db.Column('role', db.SmallInteger)
-    restrictions = db.Column('restrictions', db.SmallInteger)
-    fedoraRole = db.Column('fedoraRole', db.SmallInteger)
+class User(db.Model, UserMixin):
+    
+    id = db.Column('id', db.Integer, primary_key=True)
+    username = db.Column('username', db.String(64), index=True, unique=True)
+    role = db.Column('role', db.String(120), nullable=True)
+    restrictions = db.Column('restrictions', db.String(120), nullable=True)
+    fedoraRole = db.Column('fedoraRole', db.String(120), nullable=True)
 
     def __init__(self, username, role, restrictions, fedoraRole):
         self.username = username
@@ -69,11 +75,11 @@ class User(db.Model):
         """
         Encode a secure token for cookie
         """
-        data = [str(self.id), self.password]
+        data = [str(self.id), self.fedoraRole]
         return login_serializer.dumps(data)
  
     @staticmethod
-    def get(userid):
+    def get(user):
         """
         Static method to search the database and see if userid exists.  If it 
         does exist then return a User Object.  If not then return None as 
@@ -81,9 +87,12 @@ class User(db.Model):
         """
         #For this example the USERS database is a list consisting of 
         #(user,etc) of users.
-        for user in User:
-            if user[0] == userid:
-                return User(user[0], user[1])
+        if type(user) == 'int':
+            for user in User.query.session.query(User).filter_by(id=user):
+                return user
+        else:
+            for user in User.query.session.query(User).filter_by(username=user):
+                return user
         return None
 
 

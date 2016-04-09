@@ -19,8 +19,6 @@ from flask import render_template, request, session, redirect, make_response, Re
 from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-from itsdangerous import URLSafeTimedSerializer
-
 # WSUDOR_Manager
 from WSUDOR_Manager import app
 from WSUDOR_Manager import models
@@ -33,14 +31,14 @@ from WSUDOR_ContentTypes import *
 import utilities
 
 # flask-security
-from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin
+# from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin
 
 # login
 from flask import flash, url_for, abort, g
 from flask.ext.login import login_required, login_user, logout_user, current_user
 
 # models
-from models import User, ROLE_USER, ROLE_ADMIN
+from models import User
 
 # forms
 from flask_wtf import Form
@@ -60,15 +58,6 @@ from solrHandles import solr_handle
 
 # Fedora
 from fedoraHandles import fedora_handle
-
-# session data secret key
-####################################
-app.secret_key = 'WSUDOR'
-####################################
-
-#Login_serializer used to encryt and decrypt the cookie token for the remember
-#me option of flask-login
-login_serializer = URLSafeTimedSerializer(app.secret_key)
 
 # GENERAL
 #########################################################################################################
@@ -170,7 +159,7 @@ def before_request():
     g.user = current_user
 
 @login_manager.user_loader
-def load_user(userid):
+def load_user(username):
     """
     Flask-Login user_loader callback.
     The user_loader function asks this function to get a User Object or return 
@@ -179,7 +168,7 @@ def load_user(userid):
     user_loader stores the returned User object in current_user during every 
     flask request. 
     """
-    return User.get(userid)
+    return User.get(username)
  
 @login_manager.token_loader
 def load_token(token):
@@ -207,23 +196,12 @@ def load_token(token):
     user = User.get(data[0])
  
     #Check Password and return user or None
-    if user and data[1] == user.password:
+    if user and data[1] == user.fedoraRole:
+        print "yep"
         return user
-    return None
-
-@app.route('/register', methods=['GET', 'POST'])
-@login_required
-def register():
-    if request.method == 'POST':
-        user = User(request.form['username'] , request.form['password'], request.form['email'])
-        db.session.add(user)
-        db.session.commit()
-        flash('User successfully registered')
-        return redirect(url_for('login'))
-
-    elif request.method == 'GET': 
-        return render_template('register.html')
-
+    else:
+        print "nope"
+        return None
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -239,51 +217,49 @@ def login():
     r = s.get(url, auth=HTTPBasicAuth(username, password))
     if (r.status_code is 200):
         o = xmltodict.parse(r.content)
-        response = json.dumps(o)
-        print response
+        response = json.loads(json.dumps(o))
+    if (r.status_code is 401):
+        return redirect(url_for('login'))
 
         # Log them into the Ouroboros system
-	exists = db.session.query(db.exists().where(User.username == username)).scalar()
+    exists = db.session.query(db.exists().where(User.username == username)).scalar()
 
-        if exists:
-            user = User.get(username)
-            login_user(user, remember=True)
-            return redirect(request.args.get("next") or "/")
-        else:
-            # Create their account for them
-            # get roles
-            dict = {}
-            count = 0
-            dKey = ''
-            for each in response["user"]["attribute"]:
-		print each
-                for v in each.itervalues():
-                    print v
-                    count = count + 1
-                    if count == 1:
-                        dict[v] = ''
-                        dKey = v
-                    if count == 2:
-                        dict[dKey] = v
-                        count = 0
-
-        user = User(request.form['username'], dict['role'], dict['Restrictions'], dict['fedoraRole'])
-        db.session.add(user)
-        db.session.commit()
-        # Now log them in
-        # User.query.get(int(user))
+    if exists:
         user = User.get(username)
         login_user(user, remember=True)
-        return redirect(request.args.get("next") or "/")
+        print user
+    else:
+        # Create their account for them
+        # get roles
+        role = {}
+        count = 0
+        dKey = ''
+        for each in response["user"]["attribute"]:
+            for v in each.itervalues():
+                print v
+                count = count + 1
+                if count == 1:
+                    role[v] = ''
+                    dKey = v
+                if count == 2:
+                    role[dKey] = v
+                    count = 0
 
-        # Login to Fedora with eulfedora
-        utilities.login(username, password)
-        session['id'] = s.cookies['JSESSIONID']
-        return redirect(request.args.get('next') or url_for('index'))
-        # allow user into protected view
+            user = User(request.form['username'], role['role'], role['Restrictions'], role['fedoraRole'])
+            db.session.add(user)
+            db.session.commit()
+            # Now log them in
+            user = User.get(username)
+            login_user(user, remember=True)
 
-    return render_template("login.html")
-
+    # Login to Fedora with eulfedora
+    utilities.login(username, password)
+    session['id'] = s.cookies['JSESSIONID']
+    session['username'] = username
+    print url_for('index')
+    print request.args.get('next')
+    # Go to page
+    return redirect(request.args.get('next') or url_for('index'))
 
 # @main.route('/protected')
 # @auth_token_required

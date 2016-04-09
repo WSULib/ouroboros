@@ -89,6 +89,7 @@ class User(db.Model, UserMixin):
         #(user,etc) of users.
         if type(user) == 'int':
             for user in User.query.session.query(User).filter_by(id=user):
+                # session['user_id'] = user
                 return user
         else:
             for user in User.query.session.query(User).filter_by(username=user):

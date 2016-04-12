@@ -19,7 +19,7 @@ from localConfig import *
 
 # modules from WSUDOR_Manager
 import WSUDOR_ContentTypes
-from WSUDOR_Manager.fedoraHandles import fedora_handle_apia
+from WSUDOR_API.fedoraHandles import fedora_handle
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities
@@ -268,33 +268,33 @@ def solrTranslationHash(args):
 	return transJSONpackage
 
 
-# experiemtnal function to query and update /pubstore core in Solr4.
-# this core is used as a quasi-datastore at this point, perhaps exclusively for ephemeral data
-def pubStore(getParams):
-	urlsuff = getParams['urlsuff'][0]
-	solrString = getParams['json'][0]	
+# # experiemtnal function to query and update /pubstore core in Solr4.
+# # this core is used as a quasi-datastore at this point, perhaps exclusively for ephemeral data
+# def pubStore(getParams):
+# 	urlsuff = getParams['urlsuff'][0]
+# 	solrString = getParams['json'][0]	
 
-	# print solrString
+# 	# print solrString
 
-	baseURL = "http://localhost/solr4/pubstore/%s" % (urlsuff)
-	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
-	# print "Going to this URL:",baseURL
+# 	baseURL = "http://localhost/solr4/pubstore/%s" % (urlsuff)
+# 	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
+# 	# print "Going to this URL:",baseURL
 
-	# json post
-	if "update" in urlsuff:
-		headersDict = {
-			"Content-type":"application/json"
-		}
+# 	# json post
+# 	if "update" in urlsuff:
+# 		headersDict = {
+# 			"Content-type":"application/json"
+# 		}
 
-		r = requests.post(baseURL, data=solrString, headers=headersDict)
+# 		r = requests.post(baseURL, data=solrString, headers=headersDict)
 
-	# get
-	if "select" in urlsuff:
-		solrParams = ast.literal_eval(solrString)
-		r = requests.get(baseURL, params=solrParams)
+# 	# get
+# 	if "select" in urlsuff:
+# 		solrParams = ast.literal_eval(solrString)
+# 		r = requests.get(baseURL, params=solrParams)
 
-	jsonString = r.text
-	return jsonString
+# 	jsonString = r.text
+# 	return jsonString
 
 
 
@@ -308,7 +308,7 @@ def pubStore(getParams):
 # return Fedora MODS datastream
 def getObjectXML(getParams):	
 	baseURL = "http://localhost/fedora/objects/%s/objectXML" % (getParams['PID'][0])
-	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
+	r = requests.get(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD))			
 	xmlString = r.text
 
 	#check if valid PID
@@ -338,7 +338,7 @@ def isMemberOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -356,7 +356,7 @@ def hasMemberOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -376,7 +376,7 @@ def isMemberOfCollection(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')
 	return jsonString
@@ -395,7 +395,7 @@ def hasMemberOfCollection(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -415,7 +415,7 @@ def getSiblings(getParams):
 	}
 
 	# prepare as JSON dict
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')
 	lines = jsonString.split("\n")	
@@ -442,7 +442,7 @@ def getSiblings(getParams):
 # return Fedora MODS datastream
 def fedoraMODS(getParams):
 	baseURL = "http://localhost/fedora/objects/%s/datastreams/MODS/content" % (getParams['PID'][0])
-	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
+	r = requests.get(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD))			
 	xmlString = r.text
 	#convert XML to JSON with "xmltodict"
 	outputDict = xmltodict.parse(xmlString)
@@ -463,24 +463,24 @@ def serialWalk(getParams):
 		'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
 
 
-# return symlink (created or retrieved) to object in datastreamStore
-def fedDataSpy(getParams):
+# # return symlink (created or retrieved) to object in datastreamStore
+# def fedDataSpy(getParams):
 
-	outputDict = {}
+# 	outputDict = {}
 
-	PID = getParams['PID'][0]
-	DS = getParams['DS'][0]	
+# 	PID = getParams['PID'][0]
+# 	DS = getParams['DS'][0]	
 	
-	outputDict = makeSymLink(PID, DS)
+# 	outputDict = makeSymLink(PID, DS)
 
-	jsonString = json.dumps(outputDict)
-	return jsonString
+# 	jsonString = json.dumps(outputDict)
+# 	return jsonString
 
 
 # get isPartOf children for single PID
@@ -496,7 +496,7 @@ def hasPartOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"	
 	handle = json.loads(r.text)
 
@@ -523,7 +523,7 @@ def getObjectSize(getParams):
 		# else, try use Eulfedora API raw	
 		else:
 
-			ohandle = fedora_handle_apia.get_object(PID)
+			ohandle = fedora_handle.get_object(PID)
 
 			size_dict = {}
 			tot_size = 0
@@ -569,7 +569,7 @@ def hierarchicalTree(getParams):
 	'dt': 'on',
 	'query': risearch_query
 	}
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	parent_jsonString = r.text.replace('info:fedora/','')
 	parent_dict = json.loads(parent_jsonString)
@@ -609,7 +609,7 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	parent_sibling_jsonString = r.text.replace('info:fedora/','')
 	parent_sibling_dict = json.loads(parent_sibling_jsonString)
@@ -641,7 +641,7 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	sibling_jsonString = r.text.replace('info:fedora/','')
 	sibling_dict = json.loads(sibling_jsonString)
@@ -674,7 +674,7 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	# strip risearch namespace "info:fedora"
 	child_jsonString = r.text.replace('info:fedora/','')
 	child_dict = json.loads(child_jsonString)
@@ -1405,7 +1405,7 @@ def objectLoci(getParams):
 	print "Operating on PID:",PID,"loci_context is",loci_context
 
 	# get fed handle 
-	obj_ohandle = fedora_handle_apia.get_object(PID)
+	obj_ohandle = fedora_handle.get_object(PID)
 
 	# only if object exists
 	if obj_ohandle.exists == True:
@@ -1607,7 +1607,7 @@ def mimetypeDictionary(getParams):
 
 	# return file extension based on WSUDOR Datastream mimetype
 	if direction == "DS2extension":		
-		input_mimetype = fedora_handle_apia.get_object(getParams['PID'][0]).getDatastreamObject(getParams['DS'][0]).mimetype
+		input_mimetype = fedora_handle.get_object(getParams['PID'][0]).getDatastreamObject(getParams['DS'][0]).mimetype
 		return_string = mimetypes.guess_extension(input_mimetype)
 		return json.dumps({"extension":return_string,"input_mimetype":input_mimetype})
 

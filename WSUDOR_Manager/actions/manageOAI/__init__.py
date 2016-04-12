@@ -1,7 +1,7 @@
 # small utility to edit RELS-EXT datastream for objects
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 from celery import Task
 
 # handles

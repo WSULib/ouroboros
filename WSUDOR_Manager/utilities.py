@@ -3,39 +3,26 @@ import datetime
 import hashlib
 import requests
 from requests.auth import HTTPBasicAuth
-from localConfig import *
-from WSUDOR_Manager import models
-from WSUDOR_Manager import app
 from flask import render_template, session
 import json
 import pickle
 from functools import wraps
 import mimetypes
 
+from localConfig import *
+from WSUDOR_Manager import models, app, fedoraHandles
+from eulfedora.server import Repository
 
-def login(username, password):
-    """ Sets the FEDORA_USER and
-        FEDORA_PASSWORD found in localConfig
-        to something other than default. 
-        Also, resets your login to Fedora through eulfedora """
+def login(username,password):
+    pass
 
-    # import localConfig
-    # from WSUDOR_Manager import fedoraHandles
-    # from eulfedora.server import Repository
+# def initManage(username, password):
 
-    # localConfig.FEDORA_USER = username
-    # localConfig.FEDORA_PASSWORD = password
-    # fedora_handle = fedoraHandles.fedora_handle
+#     print "establishing fedora_handle for %s" % username
+#     fedoraHandles.fedora_handle[username] = Repository(FEDORA_ROOT, FEDORA_USER_APIA, FEDORA_PASSWORD_APIA, 'wayne')
+    
+#     return True
 
-    # fedora_handle = Repository(
-    #     localConfig.FEDORA_ROOT,
-    #     localConfig.FEDORA_USER,
-    #     localConfig.FEDORA_PASSWORD,
-    #     'wayne')
-
-    # # reset username and password
-    # fedoraHandles.fedora_handle.username = localConfig.FEDORA_USER
-    # fedoraHandles.fedora_handle.password = localConfig.FEDORA_PASSWORD
 
 escapeRules = {'+': r'\+',
                '-': r'\-',

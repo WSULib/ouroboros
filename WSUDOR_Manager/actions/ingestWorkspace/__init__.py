@@ -1,7 +1,7 @@
 # utility for Bag Ingest
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 
 # handles
 from WSUDOR_Manager.forms import RDF_edit

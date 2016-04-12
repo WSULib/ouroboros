@@ -17,7 +17,7 @@ import requests
 import bagit
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 
 # eulfedora
 import eulfedora

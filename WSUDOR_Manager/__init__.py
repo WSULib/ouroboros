@@ -8,7 +8,11 @@ from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
 import localConfig
 
+from celery import Celery
 
+##########################################################################################
+# create app
+##########################################################################################
 # http://flask.pocoo.org/snippets/35/
 class ReverseProxied(object):
 	'''Wrap the application in this middleware and configure the 
@@ -53,7 +57,34 @@ if localConfig.APP_PREFIX_USE:
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localConfig.MYSQL_USERNAME, localConfig.MYSQL_PASSWORD, localConfig.MYSQL_DATABASE ) 
 
-#setup db
+
+##########################################################################################
+# instantiate celery
+##########################################################################################
+def make_celery(app):
+	celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+	celery.conf.update(app.config)
+	TaskBase = celery.Task
+	class ContextTask(TaskBase):
+		abstract = True
+		def __call__(self, *args, **kwargs):
+			with app.app_context():
+				return TaskBase.__call__(self, *args, **kwargs)
+	celery.Task = ContextTask
+	return celery
+
+app.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379/%s' % (localConfig.REDIS_BROKER_DB),
+    CELERY_RESULT_BACKEND='redis://localhost:6379/%s' % (localConfig.REDIS_BACKEND_DB),
+    RESULT_SERIALIZER='json'
+)
+
+celery = make_celery(app)
+
+
+##########################################################################################
+# setup db
+##########################################################################################
 db = SQLAlchemy(app)
 engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], convert_unicode=True)
 metadata = MetaData(bind=engine)
@@ -64,6 +95,10 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+
+##########################################################################################
+# finish up
+##########################################################################################
 # import WSUDOR ContentTypes
 import WSUDOR_ContentTypes
 from WSUDOR_ContentTypes import *

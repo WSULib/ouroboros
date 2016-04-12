@@ -211,8 +211,10 @@ def load_token(token):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    
     if request.method == 'GET':
         return render_template('login.html')
+
     url = "http://localhost:8080/fedora/user"
     username = request.form['username']
     password = request.form['password']
@@ -267,6 +269,11 @@ def login():
         session['username'] = username
         print session
         user.id = session['user_id']
+
+        #############################################################################
+        # # deal with fedora_handle and celery
+        # utilities.initManage(username, password)
+        #############################################################################
 
         # Go to page
         return redirect(request.args.get('next') or url_for('index'))
@@ -951,12 +958,7 @@ def PIDRowUpdate(id,action,status):
 @app.route("/PIDSolr", methods=['POST', 'GET'])
 @login_required
 def PIDSolr():  
-    '''
-    Current Approach: If POST, send results as large array to template, save as JS variable
-        - works great so far at 800+ items, but what about 100,000+?
-        - documentation says ~ 50,000 is the limit
-        - will need to think of a server-side option
-    '''
+    
     # get username from session
     username = session['username']
 

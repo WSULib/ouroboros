@@ -12,7 +12,7 @@ from flask import Blueprint, render_template, abort, request, redirect
 import eulfedora
 
 # fedoraManagere2
-from cl.cl import celery
+from WSUDOR_Manager import celery
 from celery import Task
 
 

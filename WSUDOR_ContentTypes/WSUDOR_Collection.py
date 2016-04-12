@@ -11,7 +11,7 @@ import sys
 import time
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 
 # eulfedora
 import eulfedora

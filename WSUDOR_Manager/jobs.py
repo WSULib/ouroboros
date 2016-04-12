@@ -8,7 +8,7 @@ import time
 import models
 from redisHandles import *
 from WSUDOR_Manager import db, db_con
-from cl.cl import celery
+from WSUDOR_Manager import celery
 from flask import session
 
 # Job Management

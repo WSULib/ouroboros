@@ -2,7 +2,7 @@
 # TASK: import / export MODS batch update
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 
 # handles
 from WSUDOR_Manager.fedoraHandles import fedora_handle

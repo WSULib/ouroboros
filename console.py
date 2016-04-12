@@ -38,6 +38,11 @@ def tableWipe():
 		print "ingest_workspace_job dropped."
 	except:
 		print "ingest_workspace_job not found..."
+	try:
+		db.session.execute('DROP TABLE user;')
+		print "user dropped."
+	except:
+		print "user not found..."
 	print "commiting..."
 	db.session.commit()
 

@@ -85,15 +85,8 @@ class User(db.Model, UserMixin):
         does exist then return a User Object.  If not then return None as 
         required by Flask-Login. 
         """
-        #For this example the USERS database is a list consisting of 
-        #(user,etc) of users.
-        if type(user) == 'int':
-            for user in User.query.session.query(User).filter_by(id=user):
-                # session['user_id'] = user
-                return user
-        else:
-            for user in User.query.session.query(User).filter_by(username=user):
-                return user
+        for user in User.query.session.query(User).filter_by(username=user):
+            return user
         return None
 
 

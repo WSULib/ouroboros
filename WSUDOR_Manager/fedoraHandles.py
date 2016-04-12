@@ -2,11 +2,13 @@
 from eulfedora.server import Repository
 from localConfig import *
 
+fedora_handle = 'temp'
+
 # local repository handle
-fedora_handle = Repository(
+fedora_handle_apia = Repository(
 	FEDORA_ROOT,
-	FEDORA_USER,
-	FEDORA_PASSWORD,
+	FEDORA_USER_APIA,
+	FEDORA_PASSWORD_APIA,
 	'wayne')
 
 # yield remote repository handle from localConfig

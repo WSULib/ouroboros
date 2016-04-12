@@ -19,23 +19,23 @@ def login(username, password):
         to something other than default. 
         Also, resets your login to Fedora through eulfedora """
 
-    import localConfig
-    from WSUDOR_Manager import fedoraHandles
-    from eulfedora.server import Repository
+    # import localConfig
+    # from WSUDOR_Manager import fedoraHandles
+    # from eulfedora.server import Repository
 
-    localConfig.FEDORA_USER = username
-    localConfig.FEDORA_PASSWORD = password
-    fedora_handle = fedoraHandles.fedora_handle
+    # localConfig.FEDORA_USER = username
+    # localConfig.FEDORA_PASSWORD = password
+    # fedora_handle = fedoraHandles.fedora_handle
 
-    fedora_handle = Repository(
-        localConfig.FEDORA_ROOT,
-        localConfig.FEDORA_USER,
-        localConfig.FEDORA_PASSWORD,
-        'wayne')
+    # fedora_handle = Repository(
+    #     localConfig.FEDORA_ROOT,
+    #     localConfig.FEDORA_USER,
+    #     localConfig.FEDORA_PASSWORD,
+    #     'wayne')
 
-    # reset username and password
-    fedoraHandles.fedora_handle.username = localConfig.FEDORA_USER
-    fedoraHandles.fedora_handle.password = localConfig.FEDORA_PASSWORD
+    # # reset username and password
+    # fedoraHandles.fedora_handle.username = localConfig.FEDORA_USER
+    # fedoraHandles.fedora_handle.password = localConfig.FEDORA_PASSWORD
 
 escapeRules = {'+': r'\+',
                '-': r'\-',

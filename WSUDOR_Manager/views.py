@@ -18,6 +18,7 @@ import xmltodict
 from flask import render_template, request, session, redirect, make_response, Response, Blueprint
 from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
+from datetime import timedelta
 
 # WSUDOR_Manager
 from WSUDOR_Manager import app
@@ -166,7 +167,7 @@ def before_request():
 
 
 @login_manager.user_loader
-def load_user(username):
+def load_user(id):
     """
     Flask-Login user_loader callback.
     The user_loader function asks this function to get a User Object or return
@@ -175,7 +176,13 @@ def load_user(username):
     user_loader stores the returned User object in current_user during every
     flask request.
     """
-    return User.get(username)
+
+    user = User.query.get(int(id))
+    if user is not None:
+        user.id = session['user_id']
+        return user
+    else:
+        return None
 
 
 @login_manager.token_loader
@@ -186,11 +193,12 @@ def load_token(token):
     stored on the users computer process it to check if its valid and then
     return a User Object if its valid or None if its not valid.
     """
+
+    app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=14)
     max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
 
     #Decrypt the Security Token, data = [username, hashpass]
     data = login_serializer.loads(token, max_age=max_age)
-    print "STUFF"
     print data[0]
     #Find the User
     user = User.get(data[0])
@@ -241,16 +249,24 @@ def login():
                         role[dKey] = v
                         count = 0
 
-                user = User(request.form['username'], role['role'], role['Restrictions'], role['fedoraRole'])
-                db.session.add(user)
-                db.session.commit()
-                # Login
-                user = User.get(username)
+            roleList = ['role', 'Restrictions', 'fedoraRole']
+            for each in roleList:
+                value = role.get(each)
+                if value is None:
+                    role.update({each:None})
+
+            user = User(request.form['username'], role['role'], role['Restrictions'], role['fedoraRole'])
+            db.session.add(user)
+            db.session.commit()
+            # Login
+            user = User.get(username)
 
         # Login to Fedora with eulfedora and set session variables
         utilities.login(username, password)
         session['JSESSIONID'] = s.cookies['JSESSIONID']
         session['username'] = username
+        print session
+        user.id = session['user_id']
 
         # Go to page
         return redirect(request.args.get('next') or url_for('index'))

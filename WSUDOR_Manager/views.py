@@ -40,7 +40,7 @@ from flask_wtf import Form
 from wtforms import TextField
 
 # get celery instance / handle
-from cl.cl import celery
+from WSUDOR_Manager import celery
 import jobs
 import forms
 from redisHandles import *
@@ -226,7 +226,7 @@ def fireTask(job_type,task_name):
 	job_package = {		
 		"username":username,
 		"form_data":request.values,
-		"job_type":job_type			
+		"job_type":job_type
 	}
 
 	# pass along binary uploaded data if included in job task

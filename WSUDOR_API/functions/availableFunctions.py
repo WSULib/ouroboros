@@ -19,7 +19,7 @@ from localConfig import *
 
 # modules from WSUDOR_Manager
 import WSUDOR_ContentTypes
-from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle_apia
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities
@@ -523,7 +523,7 @@ def getObjectSize(getParams):
 		# else, try use Eulfedora API raw	
 		else:
 
-			ohandle = fedora_handle.get_object(PID)
+			ohandle = fedora_handle_apia.get_object(PID)
 
 			size_dict = {}
 			tot_size = 0
@@ -1405,7 +1405,7 @@ def objectLoci(getParams):
 	print "Operating on PID:",PID,"loci_context is",loci_context
 
 	# get fed handle 
-	obj_ohandle = fedora_handle.get_object(PID)
+	obj_ohandle = fedora_handle_apia.get_object(PID)
 
 	# only if object exists
 	if obj_ohandle.exists == True:
@@ -1607,7 +1607,7 @@ def mimetypeDictionary(getParams):
 
 	# return file extension based on WSUDOR Datastream mimetype
 	if direction == "DS2extension":		
-		input_mimetype = fedora_handle.get_object(getParams['PID'][0]).getDatastreamObject(getParams['DS'][0]).mimetype
+		input_mimetype = fedora_handle_apia.get_object(getParams['PID'][0]).getDatastreamObject(getParams['DS'][0]).mimetype
 		return_string = mimetypes.guess_extension(input_mimetype)
 		return json.dumps({"extension":return_string,"input_mimetype":input_mimetype})
 

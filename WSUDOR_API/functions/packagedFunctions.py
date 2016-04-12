@@ -19,7 +19,7 @@ from utils import *
 from localConfig import *
 
 # modules from WSUDOR_Manager
-from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle_apia
 from WSUDOR_Manager.solrHandles import solr_handle
 import WSUDOR_ContentTypes
 
@@ -165,16 +165,16 @@ class SingleObjectMethods(object):
 				parts_imageDict[each['ds_id']] = {
 					'ds_id':each['ds_id'],
 					'pid':each['pid'],
-					'thumbnail' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "%s" % (each['object'])).next().split("/")[-1],
-					'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "%s" % (each['object'])).next().split("/")[-1],
-					'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "%s" % (each['object'])).next().split("/")[-1],
+					'thumbnail' : fedora_handle_apia.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "%s" % (each['object'])).next().split("/")[-1],
+					'preview' : fedora_handle_apia.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "%s" % (each['object'])).next().split("/")[-1],
+					'jp2' : fedora_handle_apia.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "%s" % (each['object'])).next().split("/")[-1],
 					# RIGHT HERE, PUT THE QUERY THAT GRABS THE ORDER THAT WE NOW HAVE AS A RELS-INT #
 
 				}
 
 				# check for order and assign
 				try:
-					order = int(fedora_handle.risearch.get_objects("%s" % (each['object']), "info:fedora/fedora-system:def/relations-internal#isOrder").next())
+					order = int(fedora_handle_apia.risearch.get_objects("%s" % (each['object']), "info:fedora/fedora-system:def/relations-internal#isOrder").next())
 				except:
 					order = False
 				parts_imageDict[each['ds_id']]['order'] = order

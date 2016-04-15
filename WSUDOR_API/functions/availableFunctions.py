@@ -1156,60 +1156,60 @@ def cookieAuth(getParams):
 	return jsonString
 
 
-def createUserAccount(getParams):
-# function to take jsonAddString, index in Solr, and return confirmation code
-######################################################################################################################	
+# def createUserAccount(getParams):
+# # function to take jsonAddString, index in Solr, and return confirmation code
+# ######################################################################################################################	
 
-	# print getParams
+# 	# print getParams
 
-	# create solrString to add doc
-	solrDict = {}
-	solrDict['id'] = getParams['id'][0]
-	solrDict['user_username'] = getParams['user_username'][0]
-	solrDict['user_displayName'] = getParams['user_displayName'][0]
-	# not currently storing passwords in solr...authenticating based on matching hash values for now
-	# solrDict['user_password'] = getParams['user_password'][0]
-	solrDict['user_WSU'] = getParams['user_WSU'][0]
-	# create hash of username and password	
-	hashString = solrDict['user_username']+getParams['user_password'][0]+USER_ACCOUNT_SALT
-	solrDict['user_hash'] = hashlib.sha256(hashString).hexdigest()
-	# print solrDict
+# 	# create solrString to add doc
+# 	solrDict = {}
+# 	solrDict['id'] = getParams['id'][0]
+# 	solrDict['user_username'] = getParams['user_username'][0]
+# 	solrDict['user_displayName'] = getParams['user_displayName'][0]
+# 	# not currently storing passwords in solr...authenticating based on matching hash values for now
+# 	# solrDict['user_password'] = getParams['user_password'][0]
+# 	solrDict['user_WSU'] = getParams['user_WSU'][0]
+# 	# create hash of username and password	
+# 	hashString = solrDict['user_username']+getParams['user_password'][0]+USER_ACCOUNT_SALT
+# 	solrDict['user_hash'] = hashlib.sha256(hashString).hexdigest()
+# 	# print solrDict
 
-	solrString = json.dumps(solrDict)
-	solrString = "["+solrString+"]"
-	# print solrString
+# 	solrString = json.dumps(solrDict)
+# 	solrString = "["+solrString+"]"
+# 	# print solrString
 
-	baseURL = "http://localhost/solr4/users/update/json?commit=true"
-	headersDict = {
-		"Content-type":"application/json"
-	}
+# 	baseURL = "http://localhost/solr4/users/update/json?commit=true"
+# 	headersDict = {
+# 		"Content-type":"application/json"
+# 	}
 
-	r = requests.post(baseURL, data=solrString, headers=headersDict)	
-	responseString = json.loads(r.text)
+# 	r = requests.post(baseURL, data=solrString, headers=headersDict)	
+# 	responseString = json.loads(r.text)
 
-	userReturnDict = {}
-	userReturnDict['clientHash'] = solrDict['user_hash']
-	userReturnDict['createResponse'] = responseString
+# 	userReturnDict = {}
+# 	userReturnDict['clientHash'] = solrDict['user_hash']
+# 	userReturnDict['createResponse'] = responseString
 
-	jsonString = json.dumps(userReturnDict)
+# 	jsonString = json.dumps(userReturnDict)
 
-	return jsonString
+# 	return jsonString
 
 
-def addFavorite(getParams):
-# function to take jsonAddString, index in Solr, and return confirmation code
-######################################################################################################################	
-	solrString = getParams['raw'][0]
-	# print solrString	
+# def addFavorite(getParams):
+# # function to take jsonAddString, index in Solr, and return confirmation code
+# ######################################################################################################################	
+# 	solrString = getParams['raw'][0]
+# 	# print solrString	
 
-	baseURL = "http://localhost/solr4/users/update/json?commit=true"
-	headersDict = {
-		"Content-type":"application/json"
-	}
+# 	baseURL = "http://localhost/solr4/users/update/json?commit=true"
+# 	headersDict = {
+# 		"Content-type":"application/json"
+# 	}
 
-	r = requests.post(baseURL, data=solrString, headers=headersDict)
-	jsonString = r.text
-	return jsonString
+# 	r = requests.post(baseURL, data=solrString, headers=headersDict)
+# 	jsonString = r.text
+# 	return jsonString
 
 
 '''

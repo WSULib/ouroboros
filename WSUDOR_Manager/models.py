@@ -61,12 +61,14 @@ class User(db.Model, UserMixin):
     
     id = db.Column('id', db.Integer, primary_key=True)
     username = db.Column('username', db.String(64), index=True, unique=True)
+    password = db.Column('password', db.String(64), index=True, unique=True)
     role = db.Column('role', db.String(120), nullable=True)
     restrictions = db.Column('restrictions', db.String(120), nullable=True)
     fedoraRole = db.Column('fedoraRole', db.String(120), nullable=True)
 
-    def __init__(self, username, role, restrictions, fedoraRole):
+    def __init__(self, username, password, role, restrictions, fedoraRole):
         self.username = username
+        self.password = password
         self.role = role
         self.restrictions = restrictions
         self.fedoraRole = fedoraRole

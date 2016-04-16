@@ -17,6 +17,7 @@ import logging
 import os
 import atexit
 import lockfile
+import xmlrpclib
 
 # local
 from localConfig import *
@@ -45,6 +46,21 @@ def pidfileRemove():
 	os.system("rm /var/run/ouroboros/%s.pid" % (APP_NAME))
 
 
+# Ouroboros pidfile ##############################################################
+def shutdown():
+	# remove PID
+	pidfileRemove()
+	# remove celery task if running
+	print "removing celery task from supervisor"
+	try:
+		process_group = 'celery-%s' % WSUDOR_Manager_app.config['USERNAME']
+		sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+		sup_server.supervisor.stopProcessGroup(process_group)
+		sup_server.supervisor.removeProcessGroup(process_group)
+		print "remove conf file"
+		os.remove('/etc/supervisor/conf.d/%s.conf' % process_group)
+	except:
+		print "could not find, or remove, celery supervisor process"
 
 # mainRouter class for all components not in Flask apps #########################################################
 class mainRouter:
@@ -59,28 +75,28 @@ routes 'fedEvents' to fedoraConsumer()
 Dev: Disabled
 '''
 class fedoraConsumerWorker(object):
-    QUEUE = "/topic/fedora.apim.update"
-    def __init__(self, config=None):
-        if config is None:
-            config = StompConfig('tcp://localhost:%s' % (FEDCONSUMER_PORT))
-        self.config = config
+	QUEUE = "/topic/fedora.apim.update"
+	def __init__(self, config=None):
+		if config is None:
+			config = StompConfig('tcp://localhost:%s' % (FEDCONSUMER_PORT))
+		self.config = config
 
-    @defer.inlineCallbacks
-    def run(self):
-        client = yield Stomp(self.config).connect()
-        headers = {
-            # client-individual mode is necessary for concurrent processing
-            # (requires ActiveMQ >= 5.2)
-            StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
-            # the maximal number of messages the broker will let you work on at the same time
-            'activemq.prefetchSize': '100',
-        }
-        client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
+	@defer.inlineCallbacks
+	def run(self):
+		client = yield Stomp(self.config).connect()
+		headers = {
+			# client-individual mode is necessary for concurrent processing
+			# (requires ActiveMQ >= 5.2)
+			StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
+			# the maximal number of messages the broker will let you work on at the same time
+			'activemq.prefetchSize': '100',
+		}
+		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
 
-    def consume(self, client, frame):
-        #send to clearkRouter           
-        worker = mainRouter()        
-        worker.fedoraConsumer(msg=frame.body)
+	def consume(self, client, frame):
+		#send to clearkRouter           
+		worker = mainRouter()        
+		worker.fedoraConsumer(msg=frame.body)
 
 
 
@@ -98,7 +114,7 @@ WSUDOR_API_site = Site(WSUDOR_API_resource)
 if __name__ == '__main__':
 
 	# write PID to /var/run
-	atexit.register(pidfileRemove)
+	atexit.register(shutdown)
 	ouroboros_pidlock = pidfileCreate()
 
 	# WSUDOR Manager
@@ -118,10 +134,10 @@ if __name__ == '__main__':
 
 
 	print '''               
-                ::+:/`              
-         :----:+ssoo+:.`           
-      `-:+sssossysoooooo+/-`       
-    `:oysyo++ooooo+////+ooss+-`    
+				::+:/`              
+		 :----:+ssoo+:.`           
+	  `-:+sssossysoooooo+/-`       
+	`:oysyo++ooooo+////+ooss+-`    
    :ssyy/-`   `..     ..:/+osso:   
  `/ssyo:                 `-+:oss+` 
  +sso+:                    `//sss+ 
@@ -133,9 +149,9 @@ osso+o.                  `+//ooysoo
 `+ssssoo:`   ``.-` .-    `-ooosss+`
  `ossso///-.--:.``::. `.:+ooossso` 
   `+sossyo++o++::///:/+ooossoss+`  
-    -ossssss+oo+sossoosossssso-    
-      ./osssssysyysssssssso/.      
-         `-:++sosyssyyo+:.   
+	-ossssss+oo+sossoosossssso-    
+	  ./osssssysyysssssssso/.      
+		 `-:++sosyssyyo+:.   
 
   <-- Ouroboros says hissss -->
 	'''

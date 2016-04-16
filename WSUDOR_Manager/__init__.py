@@ -97,12 +97,16 @@ else:
 	
 
 app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379/%s' % (localConfig.REDIS_BROKER_DB),
-    CELERY_RESULT_BACKEND='redis://localhost:6379/%s' % (localConfig.REDIS_BACKEND_DB),
-    RESULT_SERIALIZER='json'
+	CELERY_BROKER_URL='redis://localhost:6379/%s' % (localConfig.REDIS_BROKER_DB),
+	CELERY_RESULT_BACKEND='redis://localhost:6379/%s' % (localConfig.REDIS_BACKEND_DB),
+	RESULT_SERIALIZER='json'
 )
 
 celery = make_celery(app)
+
+
+
+
 
 
 ##########################################################################################

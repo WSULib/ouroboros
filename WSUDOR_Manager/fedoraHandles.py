@@ -3,13 +3,16 @@ from eulfedora.server import Repository
 from localConfig import *
 from WSUDOR_Manager import fedora_handle
 
-# # local repository handle
-# fedora_handle = Repository(
-# 	FEDORA_ROOT,
-# 	False,
-# 	False,
-# 	'wayne'
-# )
+
+# if celery worker, fire fedora_handle with auth credentials
+if fedora_handle == False:
+
+	print "creating user authenticated fedora_handle"
+	
+	# retrieve user creds from...
+
+	# uesr authenticated repository handle
+	fedora_handle = Repository(FEDORA_ROOT, 'fedoraAdmin', 'fedorapassword', 'wayne')
 
 
 

@@ -79,6 +79,9 @@ def make_celery(app):
 
 '''
 fire general, localhost fedora_handle
+IMPROVEMENT: conver this process to proper arg parsing for the app
+TO-DO: fire supervisor celery worker with proper queue
+	- very doable
 '''
 print sys.argv
 if len(sys.argv) == 1:
@@ -89,8 +92,8 @@ if len(sys.argv) == 1:
 else:
 	print "generating user authenticated fedora_handle"
 	app.config['USERNAME'] = sys.argv[5]
-	app.config.update(CELERY_DEFAULT_QUEUE = app.config['USERNAME'])	
-	fedora_handle = Repository(FEDORA_ROOT, False, False, 'wayne')
+	app.config.update(CELERY_DEFAULT_QUEUE = app.config['USERNAME'])
+	fedora_handle = False
 	
 
 app.config.update(

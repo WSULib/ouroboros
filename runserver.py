@@ -52,15 +52,18 @@ def shutdown():
 	pidfileRemove()
 	# remove celery task if running
 	print "removing celery task from supervisor"
-	try:
-		process_group = 'celery-%s' % WSUDOR_Manager_app.config['USERNAME']
-		sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-		sup_server.supervisor.stopProcessGroup(process_group)
-		sup_server.supervisor.removeProcessGroup(process_group)
-		print "remove conf file"
-		os.remove('/etc/supervisor/conf.d/%s.conf' % process_group)
-	except:
-		print "could not find, or remove, celery supervisor process"
+	'''
+	need to remove them all...
+	'''
+	# try:
+	# 	process_group = 'celery-%s' % WSUDOR_Manager_app.config['USERNAME']
+	# 	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+	# 	sup_server.supervisor.stopProcessGroup(process_group)
+	# 	sup_server.supervisor.removeProcessGroup(process_group)
+	# 	print "remove conf file"
+	# 	os.remove('/etc/supervisor/conf.d/%s.conf' % process_group)
+	# except:
+	# 	print "could not find, or remove, celery supervisor process"
 
 # mainRouter class for all components not in Flask apps #########################################################
 class mainRouter:

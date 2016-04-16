@@ -83,12 +83,10 @@ fire general, localhost fedora_handle
 print sys.argv
 if len(sys.argv) == 1:
 	print "generating generic fedora_handle"	
-	app.config.update(CELERY_DEFAULT_QUEUE = "graham")
 	fedora_handle = Repository(FEDORA_ROOT, False, False, 'wayne')
 else:
 	print "generating user authenticated fedora_handle"
 	app.config['USERNAME'] = sys.argv[5]
-	# app.config.update(CELERY_DEFAULT_QUEUE = app.config['USERNAME'])
 	fedora_handle = False
 	
 

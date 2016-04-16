@@ -19,9 +19,6 @@ def login(username,password):
 
 		print "\n\n\nFIRING LOGIN\n\n\n"
 
-		print "setting username"
-		app.config['USERNAME'] = username
-		
 		# fire celery worker
 		# fire the suprevisor celery worker process
 		celery_process = '''[program:celery-%(username)s]
@@ -31,13 +28,13 @@ user = ouroboros
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/celery-%(username)s.err.log
-stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': app.config['USERNAME']}
+stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': username}
 
-		with open('/etc/supervisor/conf.d/celery-%s.conf' % app.config['USERNAME'],'w') as fhand:
+		with open('/etc/supervisor/conf.d/celery-%s.conf' % username,'w') as fhand:
 			fhand.write(celery_process)
 		server = xmlrpclib.Server('http://127.0.0.1:9001')
 		server.supervisor.reloadConfig()
-		server.supervisor.addProcessGroup('celery-%s' % app.config['USERNAME'])
+		server.supervisor.addProcessGroup('celery-%s' % username)
 
 
 escapeRules = {'+': r'\+',

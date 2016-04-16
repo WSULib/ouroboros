@@ -306,13 +306,11 @@ def login():
 
 @app.route('/logout')
 def logout():
-	session["username"] = ""
-	logout_user()
 
 	# remove celery task if running
 	print "removing celery task from supervisor"
 	try:
-		process_group = 'celery-%s' % app.config['USERNAME']
+		process_group = 'celery-%s' % session["username"]
 		sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 		sup_server.supervisor.stopProcessGroup(process_group)
 		sup_server.supervisor.removeProcessGroup(process_group)
@@ -320,6 +318,9 @@ def logout():
 		os.remove('/etc/supervisor/conf.d/%s.conf' % process_group)
 	except:
 		print "could not find, or remove, celery supervisor process"
+
+	session["username"] = ""
+	logout_user()
 
 	return redirect(url_for('index'))
 
@@ -427,7 +428,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 		passing username, task_name, and job_package containing all the update handles  
 		'celery_task_id' below contains celery task key, that contains all eventual children objects
 		'''
-		celery_task_id = actions.obj_loop_taskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist,queue=username)
+		celery_task_id = actions.obj_loop_taskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist,queue='horse')
 
 
 	# Custom Loop
@@ -438,7 +439,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 		Fire particular task. This task handle is pulled from actions above,
 		and it should act like a taskFactory of sorts for the custom loop.  
 		'''
-		celery_task_id = task_handle.delay(job_package=job_package,queue=username)
+		celery_task_id = task_handle.delay(job_package=job_package,queue='horse')
 
 
 

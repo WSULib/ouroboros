@@ -1,5 +1,6 @@
 # root file, app instantiator
 import os
+import sys
 
 # modules / packages import
 from flask import Flask, render_template, g
@@ -7,6 +8,9 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
 import localConfig
+
+from eulfedora.server import Repository
+from localConfig import *
 
 from celery import Celery
 
@@ -59,19 +63,35 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localCon
 
 
 ##########################################################################################
-# instantiate celery
+# instantiate fedora_handle and celery
 ##########################################################################################
 def make_celery(app):
-	celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
-	celery.conf.update(app.config)
-	TaskBase = celery.Task
-	class ContextTask(TaskBase):
-		abstract = True
-		def __call__(self, *args, **kwargs):
-			with app.app_context():
-				return TaskBase.__call__(self, *args, **kwargs)
-	celery.Task = ContextTask
-	return celery
+		celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+		celery.conf.update(app.config)
+		TaskBase = celery.Task
+		class ContextTask(TaskBase):
+			abstract = True
+			def __call__(self, *args, **kwargs):
+				with app.app_context():
+					return TaskBase.__call__(self, *args, **kwargs)
+		celery.Task = ContextTask
+		return celery
+
+'''
+fire general, localhost fedora_handle
+'''
+print sys.argv
+if len(sys.argv) == 1:
+	print "generating generic fedora_handle"
+	app.config['USERNAME'] = 'fedoraAdmin' # defaults to generic queue
+	app.config.update(CELERY_DEFAULT_QUEUE = app.config['USERNAME'])
+	fedora_handle = Repository(FEDORA_ROOT, False, False, 'wayne')
+else:
+	print "generating user authenticated fedora_handle"
+	app.config['USERNAME'] = sys.argv[5]
+	app.config.update(CELERY_DEFAULT_QUEUE = app.config['USERNAME'])	
+	fedora_handle = Repository(FEDORA_ROOT, False, False, 'wayne')
+	
 
 app.config.update(
     CELERY_BROKER_URL='redis://localhost:6379/%s' % (localConfig.REDIS_BROKER_DB),

@@ -14,14 +14,11 @@ from WSUDOR_Manager import models, app, fedoraHandles
 from eulfedora.server import Repository
 
 def login(username,password):
-    pass
 
-# def initManage(username, password):
-
-#     print "establishing fedora_handle for %s" % username
-#     fedoraHandles.fedora_handle[username] = Repository(FEDORA_ROOT, FEDORA_USER_APIA, FEDORA_PASSWORD_APIA, 'wayne')
+    print "\n\n\nFIRING LOGIN\n\n\n"
     
-#     return True
+    # init fedora_handle
+    # session['fedora_handle'] = Repository(FEDORA_ROOT,username,password,'wayne').api
 
 
 escapeRules = {'+': r'\+',

@@ -18,6 +18,9 @@ from eulfedora.server import Repository
 def login(username,password):
 
 		print "\n\n\nFIRING LOGIN\n\n\n"
+
+		print "setting username"
+		app.config['USERNAME'] = username
 		
 		# fire celery worker
 		# fire the suprevisor celery worker process

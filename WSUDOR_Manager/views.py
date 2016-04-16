@@ -427,7 +427,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 		passing username, task_name, and job_package containing all the update handles  
 		'celery_task_id' below contains celery task key, that contains all eventual children objects
 		'''
-		celery_task_id = actions.obj_loop_taskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist,queue=app.config['USERNAME'])
+		celery_task_id = actions.obj_loop_taskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist,queue=username)
 
 
 	# Custom Loop
@@ -438,7 +438,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 		Fire particular task. This task handle is pulled from actions above,
 		and it should act like a taskFactory of sorts for the custom loop.  
 		'''
-		celery_task_id = task_handle.delay(job_package=job_package)
+		celery_task_id = task_handle.delay(job_package=job_package,queue=username)
 
 
 

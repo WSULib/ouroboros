@@ -12,7 +12,7 @@ import xmlrpclib
 
 
 from localConfig import *
-from WSUDOR_Manager import models, app, fedoraHandles
+from WSUDOR_Manager import models, app, fedoraHandles, celery
 from eulfedora.server import Repository
 
 def login(username,password):
@@ -35,6 +35,9 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': username}
 		server = xmlrpclib.Server('http://127.0.0.1:9001')
 		server.supervisor.reloadConfig()
 		server.supervisor.addProcessGroup('celery-%s' % username)
+
+		# add queue
+		celery.control.add_consumer(username,reply=True)
 
 
 escapeRules = {'+': r'\+',

@@ -87,6 +87,7 @@ if len(sys.argv) == 1:
 else:
 	print "generating user authenticated fedora_handle"
 	app.config['USERNAME'] = sys.argv[5]
+	print "app.config username is", app.config['USERNAME']
 	fedora_handle = False
 	
 

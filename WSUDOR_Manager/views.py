@@ -367,6 +367,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 	
 	# get username from session (will pull from user auth session later)
 	username = session['username']
+	job_package['username'] = username
 
 	# instantiate job number and add to job_package
 	''' pulling from incrementing redis counter, considering MySQL '''
@@ -398,7 +399,15 @@ def fireTaskWorker(task_name,task_inputs_key):
 		passing username, task_name, and job_package containing all the update handles  
 		'celery_task_id' below contains celery task key, that contains all eventual children objects
 		'''
-		celery_task_id = actions.obj_loop_taskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist,queue='horse')
+		celery_task_id = actions.obj_loop_taskFactory.apply_async(
+			kwargs={
+				'job_num':job_num,
+				'task_name':task_name,
+				'job_package':job_package,
+				'PIDlist':PIDlist
+			},
+			queue=username
+		)
 
 
 	# Custom Loop
@@ -409,7 +418,12 @@ def fireTaskWorker(task_name,task_inputs_key):
 		Fire particular task. This task handle is pulled from actions above,
 		and it should act like a taskFactory of sorts for the custom loop.  
 		'''
-		celery_task_id = task_handle.delay(job_package=job_package,queue='horse')
+		celery_task_id = task_handle.apply_async(
+			kwargs={
+				'job_package':job_package
+			},
+			queue=username
+		)
 
 
 
@@ -606,9 +620,9 @@ def jobDetails(job_num):
 	if job_details.children != None:
 		for child in job_details.children:
 			tasks_package[child.status].append([child.task_id,child.task_name])
-		return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)   
+		return render_template("jobDetails.html", job_num=job_num, tasks_package=tasks_package)   
 	else:
-		return render_template("jobDetails.html",job_num=job_num)   
+		return render_template("jobDetails.html", job_num=job_num)   
 
 	
 # Details of a given task

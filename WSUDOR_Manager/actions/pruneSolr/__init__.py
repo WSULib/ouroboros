@@ -47,7 +47,8 @@ def pruneSolr_factory(job_package):
 			job_package['doc_id'] = doc_id
 			
 			# fire task via custom_loop_taskWrapper			
-			result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+			result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username']
+			)
 			task_id = result.id
 
 			# Set handle in Redis

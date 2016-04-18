@@ -298,7 +298,7 @@ def createJob_factory(job_package):
 			print traceback.print_exc()
 
 		# fire task via custom_loop_taskWrapper			
-		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 		task_id = result.id
 
 		# Set handle in Redis
@@ -387,7 +387,7 @@ def createBag_factory(job_package):
 		job_package['ingest_id'] = row
 		job_package['job_id'] = form_data['job_id']
 		
-		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 		task_id = result.id
 
 		# Set handle in Redis
@@ -543,7 +543,7 @@ def ingestBag_factory(job_package):
 		else:
 			job_package['bag_dir'] = False
 		
-		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 		task_id = result.id
 
 		# Set handle in Redis

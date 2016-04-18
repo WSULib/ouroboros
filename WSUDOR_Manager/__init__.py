@@ -65,18 +65,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localCon
 ##########################################################################################
 # instantiate fedora_handle and celery
 ##########################################################################################
-def make_celery(app):
-		celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
-		celery.conf.update(app.config)
-		TaskBase = celery.Task
-		class ContextTask(TaskBase):
-			abstract = True
-			def __call__(self, *args, **kwargs):
-				with app.app_context():
-					return TaskBase.__call__(self, *args, **kwargs)
-		celery.Task = ContextTask
-		return celery
-
 '''
 fire general, localhost fedora_handle
 '''
@@ -87,20 +75,29 @@ if len(sys.argv) == 1:
 else:
 	print "generating user authenticated fedora_handle"
 	app.config['USERNAME'] = sys.argv[5]
+	
 	print "app.config username is", app.config['USERNAME']
 	fedora_handle = False
-	
+
 
 app.config.update(
 	CELERY_BROKER_URL='redis://localhost:6379/%s' % (localConfig.REDIS_BROKER_DB),
-	CELERY_RESULT_BACKEND='redis://localhost:6379/%s' % (localConfig.REDIS_BACKEND_DB),
-	RESULT_SERIALIZER='json'
+	RESULT_SERIALIZER='json',
 )
 
+def make_celery(app):
+	celery = Celery(backend='redis://localhost:6379/1')
+	celery.config_from_object('cl.celeryConfig')
+	TaskBase = celery.Task
+	class ContextTask(TaskBase):
+		abstract = True
+		def __call__(self, *args, **kwargs):
+			with app.app_context():
+				return TaskBase.__call__(self, *args, **kwargs)
+	celery.Task = ContextTask
+	return celery
+
 celery = make_celery(app)
-
-
-
 
 
 

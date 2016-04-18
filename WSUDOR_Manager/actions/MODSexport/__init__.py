@@ -164,7 +164,7 @@ def MODSimport_factory(job_package):
 		job_package['MODS'] = temp_filename
 		
 		# fire task via custom_loop_taskWrapper			
-		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 		task_id = result.id
 
 		# Set handle in Redis
@@ -223,7 +223,7 @@ def MODSimport_worker(job_package):
 # 		job_package['upload_data'] = request.files['upload'].read()
 
 # 	# job celery_task_id
-# 	celery_task_id = celeryTaskFactoryImportMODS.delay(job_num,job_package)		 
+# 	celery_task_id = celeryTaskFactoryImportMODS.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 
 # 	# send job to user_jobs SQL table
 # 	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", "importMODS"))	
@@ -279,7 +279,7 @@ def MODSimport_worker(job_package):
 # 		job_package['MODS'] = temp_filename
 
 # 		# fire ingester
-# 		result = actions.actions.taskWrapper.delay(job_package)
+# 		result = actions.actions.taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 
 # 		task_id = result.id		
 			

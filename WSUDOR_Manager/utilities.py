@@ -15,33 +15,18 @@ from localConfig import *
 from WSUDOR_Manager import models, app, fedoraHandles, celery
 from eulfedora.server import Repository
 
+
+
+
+
+
 def login(username,password):
 
-		print "\n\n\nFIRING LOGIN\n\n\n"
+		print "Logging in..."
 
-		try:
-			# fire celery worker
-			# fire the suprevisor celery worker process
-			celery_process = '''[program:celery-%(username)s]
-	command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A cl.cl -Q %(username)s --loglevel=Info --concurrency=1
-	directory=/opt/ouroboros
-	user = ouroboros
-	autostart=true
-	autorestart=true
-	stderr_logfile=/var/log/celery-%(username)s.err.log
-	stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': username}
-
-			with open('/etc/supervisor/conf.d/celery-%s.conf' % username,'w') as fhand:
-				fhand.write(celery_process)
-			server = xmlrpclib.Server('http://127.0.0.1:9001')
-			server.supervisor.reloadConfig()
-			server.supervisor.addProcessGroup('celery-%s' % username)
-
-			# add queue
-			celery.control.add_consumer(username,reply=True)
-		
-		except:
-			print "COULD NOT START CELERY WORKER"
+		# fire celery worker
+		cw = models.CeleryWorker(username,password)
+		cw.start()		
 
 
 escapeRules = {'+': r'\+',

@@ -186,28 +186,28 @@ def load_user(id):
 		return None
 
 
-@login_manager.token_loader
-def load_token(token):
-	"""
-	Flask-Login token_loader callback.
-	The token_loader function asks this function to take the token that was
-	stored on the users computer process it to check if its valid and then
-	return a User Object if its valid or None if its not valid.
-	"""
+# @login_manager.token_loader
+# def load_token(token):
+# 	"""
+# 	Flask-Login token_loader callback.
+# 	The token_loader function asks this function to take the token that was
+# 	stored on the users computer process it to check if its valid and then
+# 	return a User Object if its valid or None if its not valid.
+# 	"""
 
-	app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=14)
-	max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
+# 	app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=14)
+# 	max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
 
-	#Decrypt the Security Token, data = [username, hashpass]
-	data = models.login_serializer.loads(token, max_age=max_age)
-	print data[0]
-	#Find the User
-	user = User.get(data[0])
+# 	#Decrypt the Security Token, data = [username, hashpass]
+# 	data = models.login_serializer.loads(token, max_age=max_age)
+# 	print data[0]
+# 	#Find the User
+# 	user = User.get(data[0])
 
-	#Check Password and return user or None
-	if user and data[1] == user.fedoraRole:
-		return user
-	return None
+# 	#Check Password and return user or None
+# 	if user and data[1] == user.fedoraRole:
+# 		return user
+# 	return None
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -281,44 +281,14 @@ def login():
 	else:
 		return render_template('login.html')
 
-# @main.route('/protected')
-# @auth_token_required
-# def protected():
-#     return render_template('protected.html')
-
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#   if request.method == 'GET':
-#       return render_template('login.html')
-#   username = request.form['username']
-#   password = request.form['password']
-#   registered_user = User.query.filter_by(username=username,password=password).first()
-#   print registered_user
-#   if registered_user is None:
-#       flash('Username or Password is invalid' , 'error')
-#       return redirect(url_for('login'))
-#   login_user(registered_user)
-#   print dir(login_user)
-#   flash('Logged in successfully')
-#   session["username"] = username
-#   return redirect(request.args.get('next') or url_for('index'))
-
 
 @app.route('/logout')
 def logout():
 
-	# remove celery task if running
-	print "removing celery task from supervisor"
-	try:
-		process_group = 'celery-%s' % session["username"]
-		sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-		sup_server.supervisor.stopProcessGroup(process_group)
-		sup_server.supervisor.removeProcessGroup(process_group)
-		print "remove conf file"
-		os.remove('/etc/supervisor/conf.d/%s.conf' % process_group)
-	except:
-		print "could not find, or remove, celery supervisor process"
-
+	# fire celery worker
+	cw = models.CeleryWorker(session['username'],False)
+	cw.stop()
+	
 	session["username"] = ""
 	logout_user()
 

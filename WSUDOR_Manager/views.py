@@ -199,7 +199,7 @@ def load_token(token):
 	max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
 
 	#Decrypt the Security Token, data = [username, hashpass]
-	data = login_serializer.loads(token, max_age=max_age)
+	data = models.login_serializer.loads(token, max_age=max_age)
 	print data[0]
 	#Find the User
 	user = User.get(data[0])

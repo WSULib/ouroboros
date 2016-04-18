@@ -137,10 +137,10 @@ if __name__ == '__main__':
 
 
 	print '''               
-				::+:/`              
-		 :----:+ssoo+:.`           
-	  `-:+sssossysoooooo+/-`       
-	`:oysyo++ooooo+////+ooss+-`    
+                ::+:/`              
+         :----:+ssoo+:.`           
+      `-:+sssossysoooooo+/-`       
+    `:oysyo++ooooo+////+ooss+-`    
    :ssyy/-`   `..     ..:/+osso:   
  `/ssyo:                 `-+:oss+` 
  +sso+:                    `//sss+ 
@@ -152,9 +152,9 @@ osso+o.                  `+//ooysoo
 `+ssssoo:`   ``.-` .-    `-ooosss+`
  `ossso///-.--:.``::. `.:+ooossso` 
   `+sossyo++o++::///:/+ooossoss+`  
-	-ossssss+oo+sossoosossssso-    
-	  ./osssssysyysssssssso/.      
-		 `-:++sosyssyyo+:.   
+    -ossssss+oo+sossoosossssso-    
+      ./osssssysyysssssssso/.      
+         `-:++sosyssyyo+:.   
 
   <-- Ouroboros says hissss -->
 	'''

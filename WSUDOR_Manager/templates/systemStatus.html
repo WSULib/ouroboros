@@ -1,15 +1,78 @@
 {% include 'header.html' %}
-<h2>System Status</h2>
 
-<h3>Ports</h3>
-<ul>
-{% for port,desc,msg in imp_ports_results %}
-	{% if msg == 'active' %}	
-		<li style="color:green;">{{port}} / {{desc}}: <strong>{{msg}}</strong></li>
-	{% else %}
-		<li style="color:red;">{{port}} / {{desc}}: <strong>{{msg}}</strong></li>
-	{% endif %}
-{% endfor %}
-</ul>
+<!-- highlight syntax -->
+<link rel="stylesheet" href="{{ url_for('static',filename='highlight.min.css')}}">
+<script src="{{ url_for('static',filename='highlight.min.js')}}"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<div class="row">
+
+	<div class="col-md-12">
+		<h2>System Status</h2>
+	</div>
+
+</div>
+
+<div class="row">
+
+	<div class="col-md-6">
+
+		<h3>Ports</h3>		
+
+		<table class="table">
+			<tr>
+				<td><strong>Service</strong></td>
+				<td><strong>Port</strong></td>
+				<td><strong>Status</strong></td>
+			</tr>
+			{% for port,desc,msg in imp_ports_results %}
+			<tr>
+				{% if msg == 'active' %}	
+					<td style="color:green;">{{desc}}</td>
+					<td style="color:green;">{{port}}</td>
+					<td style="color:green;"><strong>{{msg}}</strong></td>
+				{% else %}
+					<td style="color:red;">{{desc}}</td>
+					<td style="color:red;">{{port}}</td>
+					<td style="color:red;"><strong>{{msg}}</strong></td>
+				{% endif %}
+			</tr>
+			{% endfor %}
+		</table>
+
+	</div>
+
+</div>
+
+<div class="row">
+
+	<div class="col-md-6">
+
+		<h3>User Celery Worker</h3>
+
+		<div class="col-md-12">
+			<pre><code class="highlight" id="cw"></code></pre>
+			<script type="text/javascript">
+				var cw = '{{sup_info.worker|safe}}';
+				if (cw == "False") {
+					$("#cw").html("Celery Worker not active.");	
+				}
+				else {
+					var cw_JSON = JSON.parse(cw);
+					var str = JSON.stringify(cw_JSON, null, 2);
+					$("#cw").html(str);
+				}
+			</script>
+		</div>
+		{% if sup_info.worker|safe == 'False' %}
+			<a href="/{{APP_PREFIX}}/systemStatus/cw/start"><button class="btn btn-success">Start Celery Worker</button></a>
+		{% else %}
+			<a href="/{{APP_PREFIX}}/systemStatus/cw/restart"><button class="btn btn-warning">Restart Celery Worker</button></a>
+		{% endif %}
+			<a href="/{{APP_PREFIX}}/systemStatus/cw/stop"><button class="btn btn-danger">Stop Celery Worker</button></a>
+
+	</div>
+
+</div>
 
 {% include 'footer.html' %}

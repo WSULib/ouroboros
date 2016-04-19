@@ -403,7 +403,6 @@ class CeleryWorker(object):
 
     sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
     
-
     def __init__(self,username,password):
         self.username = username
         self.password = password       
@@ -450,15 +449,22 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': self.usern
             return False
 
 
-    # def _restartSupervisorProcess(self):
-    #     pass
+    def _restartSupervisorProcess(self):
+        try:
+            self.sup_server.supervisor.stopProcess('celery-%s' % self.username)
+        except:
+            print "could not stop process"
+        try:
+            self.sup_server.supervisor.startProcess('celery-%s' % self.username)
+        except:
+            print "could not start process"
 
 
     def _stopSupervisorProcess(self):
         print "removing celery proccessGroup from supervisor"           
         try:
             process_group = 'celery-%s' % self.username
-            self.sup_server.supervisor.login_serializer(process_group)
+            self.sup_server.supervisor.stopProcess(process_group)
             self.sup_server.supervisor.removeProcessGroup(process_group)
         except:
             return False
@@ -468,10 +474,12 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': self.usern
         self._writeConfFile()
         self._startSupervisorProcess()
 
-    # def restart(self):
-    #     pass
 
-    def stop(self):
+    def restart(self):
+        self._restartSupervisorProcess()
+
+
+    def stop(self):        
         self._removeConfFile()
         self._stopSupervisorProcess()
 

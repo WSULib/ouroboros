@@ -104,7 +104,14 @@ def userPage():
 def systemStatus():
 
 	#check important ports
-	imp_ports = [(61616, "Fedora JMS"), (61617, "WSUDOR_API - prod"), (61618, "imageServer - prod"), (61619, "WSUDOR_API - dev"), (61620, "imageServer - dev"), (8080, "Tomcat"), (5001, "Ouroboros dev @:5001"), (5002, "Ouroboros dev @:5002"), (5004, "Ouroboros prod @:5004"), (6379, "Redis"), (3306, "MySQL")]
+	imp_ports = [		
+		(localConfig.WSUDOR_MANAGER_PORT, "WSUDOR_Manager"),
+		(localConfig.WSUDOR_API_LISTENER_PORT, "WSUDOR_API"),		
+		(61616, "Fedora Messaging Service"),
+		(8080, "Tomcat"),		
+		(6379, "Redis"),
+		(3306, "MySQL")
+	]
 
 	imp_ports_results = []
 	for port, desc in imp_ports:
@@ -117,7 +124,42 @@ def systemStatus():
 
 		imp_ports_results.append((str(port), desc, msg))
 
-	return render_template("systemStatus.html", imp_ports_results=imp_ports_results)
+
+	# get celery worker information
+	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+	sup_info = {}
+	try:
+		sup_info['worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
+	except:
+		sup_info['worker'] = False
+
+	# render template
+	return render_template("systemStatus.html", imp_ports_results=imp_ports_results, sup_info=sup_info)
+
+
+@app.route('/systemStatus/cw/<action>')
+@login_required
+def cw(action):
+
+	# grab user
+	user = models.User.query.filter_by(username=session['username']).first()
+
+	# grab model
+	cw = models.CeleryWorker(user.username,user.password)
+
+	# start
+	if action == 'start':
+		cw.start()
+
+	# restart
+	if action == 'restart':
+		cw.restart()
+
+	# stop
+	if action == 'stop':
+		cw.stop()
+
+	return redirect("systemStatus")
 
 
 # MAJOR SUB-SECTIONS

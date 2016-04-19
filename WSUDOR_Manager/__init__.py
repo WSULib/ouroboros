@@ -8,11 +8,11 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData
 from flask.ext.login import LoginManager
 import localConfig
-
-from eulfedora.server import Repository
 from localConfig import *
-
+from eulfedora.server import Repository
 from celery import Celery
+import xmlrpclib
+
 
 ##########################################################################################
 # create app
@@ -63,21 +63,120 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localCon
 
 
 ##########################################################################################
-# instantiate fedora_handle and celery
+# instantiate fedora_handle
 ##########################################################################################
 '''
-fire general, localhost fedora_handle
+Needs Improvement.
+
+If no args passed, assume 'python runserver.py', and thus, not celery worker.
+	- fire generic fedora_handle with username / password from localConfig
+	- handles API-M calls and some tasks (e.g. solrIndexer)
+	- but again, would be ideal if these all worked from generic, localhost fedora_handle
+
+If celery worker -- with multiple args -- fire fedora_handle based on username
+	- set fedora_handle to False, knowing it will get built in fedora_handle
 '''
 print sys.argv
 if len(sys.argv) == 1:
-	print "generating generic fedora_handle"	
-	fedora_handle = Repository(FEDORA_ROOT, False, False, 'wayne')
+	print "generating generic fedora_handle and generic celery worker"	
+	fedora_handle = Repository(FEDORA_ROOT, localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD, 'wayne')
+	fire_cw = True	
 else:
 	print "generating user authenticated fedora_handle"
 	app.config['USERNAME'] = sys.argv[5]
-	
 	print "app.config username is", app.config['USERNAME']
 	fedora_handle = False
+	fire_cw = False
+
+
+##########################################################################################
+# instantiate celery
+##########################################################################################
+
+# class for User Celery Workers
+class CeleryWorker(object):
+
+    sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+    
+    def __init__(self,username,password):
+        self.username = username
+        self.password = password       
+
+
+    def _writeConfFile(self):
+        print "adding celery conf file"
+        # fire the suprevisor celery worker process
+        celery_process = '''[program:celery-%(username)s]
+command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A cl.cl -Q %(username)s --loglevel=Info --concurrency=1 -n %(username)s.local --without-mingle
+directory=/opt/ouroboros
+user = ouroboros
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/celery-%(username)s.err.log
+stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': self.username}
+
+        filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
+        if not os.path.exists(filename):
+            with open(filename ,'w') as fhand:
+                fhand.write(celery_process)
+            return filename
+        else:
+            print "Conf files exists, skipping"
+            return False
+
+
+    def _removeConfFile(self):
+        print "remove celery conf file"
+        filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
+        if os.path.exists(filename):
+            return os.remove(filename)
+        else:
+            print "could not find conf file, skipping"
+            return False
+
+
+    def _startSupervisorProcess(self):
+        print "adding celery proccessGroup from supervisor"
+        try:
+            self.sup_server.supervisor.reloadConfig()
+            self.sup_server.supervisor.addProcessGroup('celery-%s' % self.username)
+        except:
+            return False
+
+
+    def _restartSupervisorProcess(self):
+        try:
+            self.sup_server.supervisor.stopProcess('celery-%s' % self.username)
+        except:
+            print "could not stop process"
+        try:
+            self.sup_server.supervisor.startProcess('celery-%s' % self.username)
+        except:
+            print "could not start process"
+
+
+    def _stopSupervisorProcess(self):
+        print "removing celery proccessGroup from supervisor"           
+        try:
+            process_group = 'celery-%s' % self.username
+            self.sup_server.supervisor.stopProcess(process_group)
+            self.sup_server.supervisor.removeProcessGroup(process_group)
+        except:
+            return False
+
+
+    def start(self):
+        self._writeConfFile()
+        self._startSupervisorProcess()
+
+
+    def restart(self):
+        self._restartSupervisorProcess()
+
+
+    def stop(self):        
+        self._removeConfFile()
+        self._stopSupervisorProcess()
 
 
 app.config.update(
@@ -99,6 +198,12 @@ def make_celery(app):
 
 celery = make_celery(app)
 
+# assuming Ouroboros Celery worker
+if fire_cw:
+	# fire celery worker
+	print "firing generic celery worker"
+	cw = CeleryWorker("celery",False)
+	cw.start()
 
 
 ##########################################################################################

@@ -9,14 +9,19 @@ if fedora_handle == False:
 
 	print "creating user authenticated fedora_handle"
 	
-	# retrieve user creds from DB
-	from WSUDOR_Manager import models
-	user = models.User.query.filter_by(username=app.config['USERNAME']).first()
-	print "using auth %s / %s" % (user.username,user.password)
+	# if not generic celery user
+	if app.config['USERNAME'] != "celery":
+		# retrieve user creds from DB
+		from WSUDOR_Manager import models
+		user = models.User.query.filter_by(username=app.config['USERNAME']).first()
+		print "using auth %s / %s" % (user.username,user.password)
 
-	# uesr authenticated repository handle
-	fedora_handle = Repository(FEDORA_ROOT, user.username, user.password, 'wayne')
+		# uesr authenticated repository handle
+		fedora_handle = Repository(FEDORA_ROOT, user.username, user.password, 'wayne')
 
+	# fire generic fedora_handle for system tasks
+	else:
+		fedora_handle = Repository(FEDORA_ROOT, FEDORA_USER, FEDORA_PASSWORD, 'wayne')		
 
 
 # yield remote repository handle from localConfig

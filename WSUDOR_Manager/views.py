@@ -128,24 +128,37 @@ def systemStatus():
 	# get celery worker information
 	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 	sup_info = {}
+
+	# user cw
 	try:
 		sup_info['worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
 	except:
 		sup_info['worker'] = False
 
+	# generic cw
+	try:
+		sup_info['generic_worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-celery'))
+	except:
+		sup_info['generic_worker'] = False
+
 	# render template
 	return render_template("systemStatus.html", imp_ports_results=imp_ports_results, sup_info=sup_info)
 
 
-@app.route('/systemStatus/cw/<action>')
+@app.route('/systemStatus/cw/<target>/<action>')
 @login_required
-def cw(action):
+def cw(target, action):
 
-	# grab user
-	user = models.User.query.filter_by(username=session['username']).first()
+	if target == 'user':
+		# grab user
+		user = models.User.query.filter_by(username=session['username']).first()
 
-	# grab model
-	cw = models.CeleryWorker(user.username,user.password)
+		# grab model
+		cw = models.CeleryWorker(user.username,user.password)
+
+	else:
+		# grab model
+		cw = models.CeleryWorker("celery", False)		
 
 	# start
 	if action == 'start':
@@ -226,7 +239,6 @@ def load_user(id):
 		return user
 	else:
 		return None
-
 
 # @login_manager.token_loader
 # def load_token(token):

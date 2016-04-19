@@ -8,8 +8,8 @@ Username and Password are False by default, not needed for API-A
 '''
 fedora_handle = Repository(
 	FEDORA_ROOT,
-	False,
-	False,
+	FEDORA_USER,
+	FEDORA_PASSWORD,
 	'wayne'
 )
 

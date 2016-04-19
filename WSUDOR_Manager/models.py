@@ -1,6 +1,7 @@
 from WSUDOR_Manager import db, actions, app
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager import CeleryWorker
 from flask.ext.login import UserMixin
 from datetime import datetime
 import sqlalchemy
@@ -395,93 +396,7 @@ class SolrSearchDoc(object):
         return self.doc.__dict__
 
     
-########################################################################
-# Celery
-########################################################################
-# class for User Celery Workers
-class CeleryWorker(object):
 
-    sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-    
-    def __init__(self,username,password):
-        self.username = username
-        self.password = password       
-
-
-    def _writeConfFile(self):
-        print "adding celery conf file"
-        # fire the suprevisor celery worker process
-        celery_process = '''[program:celery-%(username)s]
-command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A cl.cl -Q %(username)s --loglevel=Info --concurrency=1 -n %(username)s.local --without-mingle
-directory=/opt/ouroboros
-user = ouroboros
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/celery-%(username)s.err.log
-stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': self.username}
-
-        filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
-        if not os.path.exists(filename):
-            with open(filename ,'w') as fhand:
-                fhand.write(celery_process)
-            return filename
-        else:
-            print "Conf files exists, skipping"
-            return False
-
-
-    def _removeConfFile(self):
-        print "remove celery conf file"
-        filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
-        if os.path.exists(filename):
-            return os.remove(filename)
-        else:
-            print "could not find conf file, skipping"
-            return False
-
-
-    def _startSupervisorProcess(self):
-        print "adding celery proccessGroup from supervisor"
-        try:
-            self.sup_server.supervisor.reloadConfig()
-            self.sup_server.supervisor.addProcessGroup('celery-%s' % self.username)
-        except:
-            return False
-
-
-    def _restartSupervisorProcess(self):
-        try:
-            self.sup_server.supervisor.stopProcess('celery-%s' % self.username)
-        except:
-            print "could not stop process"
-        try:
-            self.sup_server.supervisor.startProcess('celery-%s' % self.username)
-        except:
-            print "could not start process"
-
-
-    def _stopSupervisorProcess(self):
-        print "removing celery proccessGroup from supervisor"           
-        try:
-            process_group = 'celery-%s' % self.username
-            self.sup_server.supervisor.stopProcess(process_group)
-            self.sup_server.supervisor.removeProcessGroup(process_group)
-        except:
-            return False
-
-
-    def start(self):
-        self._writeConfFile()
-        self._startSupervisorProcess()
-
-
-    def restart(self):
-        self._restartSupervisorProcess()
-
-
-    def stop(self):        
-        self._removeConfFile()
-        self._stopSupervisorProcess()
 
 
 

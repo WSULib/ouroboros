@@ -16,10 +16,6 @@ from WSUDOR_Manager import models, app, fedoraHandles, celery
 from eulfedora.server import Repository
 
 
-
-
-
-
 def login(username,password):
 
 		print "Logging in..."

@@ -129,6 +129,12 @@ def systemStatus():
 	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 	sup_info = {}
 
+	# ouroboros 
+	try:
+		sup_info['ouroboros'] = json.dumps(sup_server.supervisor.getProcessInfo('Ouroboros'))
+	except:
+		sup_info['ouroboros'] = False
+
 	# user cw
 	try:
 		sup_info['worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
@@ -173,6 +179,13 @@ def cw(target, action):
 		cw.stop()
 
 	return redirect("systemStatus")
+
+
+# @app.route('/systemStatus/restartOuroboros')
+# @login_required
+# def restartOuroboros():
+
+# 	os.system('supervisorctl restart Ouroboros')
 
 
 # MAJOR SUB-SECTIONS

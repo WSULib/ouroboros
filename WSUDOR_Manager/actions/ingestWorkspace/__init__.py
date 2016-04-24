@@ -16,7 +16,7 @@ except:
 	print "could not load git submodule 'ouroboros_assets'"
 import localConfig
 
-from flask import Blueprint, render_template, abort, request, redirect, session, jsonify
+from flask import Blueprint, render_template, abort, request, redirect, session, jsonify, Response
 
 #python modules
 from lxml import etree
@@ -133,6 +133,17 @@ def objectDetails(job_id,ingest_id):
 
 
 
+# job edit / view
+@ingestWorkspace.route('/ingestWorkspace/job/<job_id>/viewMETS', methods=['POST', 'GET'])
+def viewMETS(job_id):
+
+	# get handle
+	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+
+	return Response(j.ingest_metadata, mimetype='text/xml')
+
+
+
 #################################################################################
 # Datatables Endpoint
 #################################################################################
@@ -234,6 +245,10 @@ def createJob_factory(job_package):
 	# parse with metsrw
 	mets = metsrw.METSDocument.fromstring(ingest_metadata)
 	print mets.all_files()
+
+
+
+
 
 
 

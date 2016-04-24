@@ -11,13 +11,21 @@
 		
 		<h4>Job Information:</h4>
 		<p>
-			<ul>
-				<li><strong>Name:</strong> {{j.name}}</li>
-				<li><strong>Collection Identifier:</strong> {{j.collection_identifier}}</li>
-				<li><strong>Job ID:</strong> {{j.id}}</li>
-				<li><strong>Created:</strong> {{j.created}}</li>
-				<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
-			</ul>
+			<div class="col-md-6">
+				<ul>
+					<li><strong>Name:</strong> {{j.name}}</li>
+					<li><strong>Collection Identifier:</strong> {{j.collection_identifier}}</li>
+					<li><strong>Job ID:</strong> {{j.id}}</li>
+					<li><strong>Created:</strong> {{j.created}}</li>
+					<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
+					<li>View input METS</li>
+				</ul>
+			</div>
+			<div class="col-md-6">
+				<ul>
+					<li><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewMETS">View job METS</a></li>
+				</ul>
+			</div>
 		</p>
 
 	</div>

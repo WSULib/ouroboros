@@ -308,7 +308,8 @@ def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
 	sm = mets.tree.find('{http://www.loc.gov/METS/}structMap')
 
 	# original files
-	orig_files = [ fs for fs in mets.all_files() if fs.use == 'original' ]
+	# orig_files = [ fs for fs in mets.all_files() if fs.use == 'original' ]
+	orig_files = [ fs for fs in mets.all_files() ]
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(orig_files))

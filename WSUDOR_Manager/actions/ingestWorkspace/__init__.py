@@ -233,10 +233,7 @@ def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
 		sm_parts.insert(0,collection_level_div)
 
 	# pop METS ingest from job_package	
-	if 'upload_data' in job_package:
-		job_package['upload_data'] = ''
-	elif 'pasted_metadata' in form_data:
-		job_package['form_data']['pasted_metadata'] = ''
+	job_package['upload_data'] = ''
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
@@ -307,8 +304,81 @@ def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
 	mets = metsrw.METSDocument.fromstring(ingest_metadata)
 	print mets.all_files()
 
-	
+	# grab stucture map
+	sm = mets.tree.find('{http://www.loc.gov/METS/}structMap')
 
+	# original files
+	orig_files = [ fs for fs in mets.all_files() if fs.use == 'original' ]
+
+	# update job info (need length from above)
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(orig_files))
+
+	# insert into MySQL as ingest_workspace_object rows
+	step = 1
+	
+	# iterate through and add components
+	for i, fs in enumerate(orig_files):
+		print i,fs.label
+
+		print "Creating ingest_workspace_object row %s / %s" % (step, len(orig_files))
+		job_package['step'] = step
+
+		# set internal id (used for selecting when making bags and ingesting)
+		job_package['ingest_id'] = step
+
+		# set type				
+		job_package['object_type'] = fs.type
+
+		# attempt to fire worker
+		# try:
+			
+		# get DMDID
+		job_package['DMDID'] = fs.file_uuid
+		job_package['object_title'] = fs.label
+		
+		print "StructMap part ID: %s" % job_package['DMDID']
+
+		# store structMap section as python dictionary
+		sm_dict = xmltodict.parse(etree.tostring(fs.serialize_structmap()))
+		job_package['struct_map'] = json.dumps(sm_dict)
+
+		# grab descriptive mets:dmdSec
+		# dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (fs.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
+		# # grab MODS record and write to temp file		
+		# MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
+		raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+<mods:titleInfo>
+<mods:title>%s</mods:title>
+</mods:titleInfo>
+<mods:identifier type="local">%s</mods:identifier>
+<mods:extension>
+<PID>wayne:%s</PID>
+</mods:extension>
+</mods:mods>
+			''' % (fs.label, fs.file_uuid, fs.file_uuid)
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
+		fhand = open(temp_filename,'w')
+		fhand.write(raw_MODS)
+		fhand.close()		
+		job_package['MODS_temp_filename'] = temp_filename
+
+		# except:
+		# 	print "ERROR"
+		# 	print traceback.print_exc()
+
+		# fire task via custom_loop_taskWrapper			
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+		task_id = result.id
+
+		# Set handle in Redis
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (job_package['DMDID']))
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		# bump step
+		step += 1
 
 
 @celery.task(name="createJob_factory")

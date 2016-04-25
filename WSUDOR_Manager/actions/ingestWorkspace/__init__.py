@@ -202,6 +202,115 @@ def viewSQLData(table,id,column,mimetype):
 # Create Ingest Job
 #################################################################################
 
+
+def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
+	# parse WSU METS
+	# for each section of METS, break into chunks
+	XMLroot = etree.fromstring(ingest_metadata)
+	
+	# grab stucture map
+	sm = XMLroot.find('{http://www.loc.gov/METS/}structMap')
+	collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
+
+	# determine collection identifier
+	try:
+		# attempt to grab DMD id
+		j.collection_identifier = collection_level_div.attrib['DMDID']
+		j._commit()
+		METS_collection = True
+	except:
+		METS_collection = False
+		if form_data['collection_identifier'] != '':
+			j.collection_identifier = form_data['collection_identifier'].split(":")[-1].split("collection")[-1]
+		else:
+			j.collection_identifier = "Loose"
+	
+	# iterate through, ignoring comments
+	sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
+
+	# add collection object to front of list
+	if METS_collection:
+		sm_parts.insert(0,collection_level_div)
+
+	# pop METS ingest from job_package	
+	if 'upload_data' in job_package:
+		job_package['upload_data'] = ''
+	elif 'pasted_metadata' in form_data:
+		job_package['form_data']['pasted_metadata'] = ''
+
+	# update job info (need length from above)
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
+
+	# insert into MySQL as ingest_workspace_object rows
+	step = 1
+	
+	# iterate through and add components
+	for i,sm_part in enumerate(sm_parts):
+		
+		print "Creating ingest_workspace_object row %s / %s" % (step, len(sm_parts))
+		job_package['step'] = step
+
+		# set internal id (used for selecting when making bags and ingesting)
+		job_package['ingest_id'] = step
+
+		# set type
+		if METS_collection and i == 0:
+			job_package['object_type'] = "collection"
+		else:
+			job_package['object_type'] = "component"
+
+		# attempt to fire worker
+		try:
+			
+			# get DMDID
+			job_package['DMDID'] = sm_part.attrib['DMDID']
+			job_package['object_title'] = sm_part.attrib['LABEL']
+			
+			print "StructMap part ID: %s" % job_package['DMDID']
+
+			# store structMap section as python dictionary
+			sm_dict = xmltodict.parse(etree.tostring(sm_part))
+			job_package['struct_map'] = json.dumps(sm_dict)
+
+			# grab descriptive mets:dmdSec
+			dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
+			# grab MODS record and write to temp file		
+			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
+			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
+			fhand = open(temp_filename,'w')
+			fhand.write(etree.tostring(MODS_elem))
+			fhand.close()		
+			job_package['MODS_temp_filename'] = temp_filename
+
+		except:
+			print "ERROR"
+			print traceback.print_exc()
+
+		# fire task via custom_loop_taskWrapper			
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+		task_id = result.id
+
+		# Set handle in Redis
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (job_package['DMDID']))
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		# bump step
+		step += 1
+
+
+
+def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
+	
+	# parse Archivematica METS
+	mets = metsrw.METSDocument.fromstring(ingest_metadata)
+	print mets.all_files()
+
+	
+
+
+
 @celery.task(name="createJob_factory")
 def createJob_factory(job_package):
 	
@@ -231,126 +340,10 @@ def createJob_factory(job_package):
 	job_package['job_name'] = j.name
 
 
-	'''
-	Rewrite section to parse METS with metsrw 
-		- handle abitrary depth in structMap
-		- allow external linking
-			- metadata MDref
-			- images, xlink
-		- add link to page with METS file
-		- ability to re-parse structMap and generate rows
-	'''
-
-
-	# parse with metsrw
-	mets = metsrw.METSDocument.fromstring(ingest_metadata)
-	print mets.all_files()
-
-
-
-
-
-
-
-
-
-
-
-	# old style of METS parsing
-
-	# # # for each section of METS, break into chunks
-	# # XMLroot = etree.fromstring(ingest_metadata)
-	
-	# # # grab stucture map
-	# # sm = XMLroot.find('{http://www.loc.gov/METS/}structMap')
-	# # collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
-
-	# # # determine collection identifier
-	# # try:
-	# # 	# attempt to grab DMD id
-	# # 	j.collection_identifier = collection_level_div.attrib['DMDID']
-	# # 	j._commit()
-	# # 	METS_collection = True
-	# # except:
-	# # 	METS_collection = False
-	# # 	if form_data['collection_identifier'] != '':
-	# # 		j.collection_identifier = form_data['collection_identifier'].split(":")[-1].split("collection")[-1]
-	# # 	else:
-	# # 		j.collection_identifier = "Loose"
-	
-	# # # iterate through, ignoring comments
-	# # sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
-
-	# # # add collection object to front of list
-	# # if METS_collection:
-	# # 	sm_parts.insert(0,collection_level_div)
-
-	# # pop METS ingest from job_package	
-	# if 'upload_data' in job_package:
-	# 	job_package['upload_data'] = ''
-	# elif 'pasted_metadata' in form_data:
-	# 	job_package['form_data']['pasted_metadata'] = ''
-
-	# # update job info (need length from above)
-	# redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
-
-	# # insert into MySQL as ingest_workspace_object rows
-	# step = 1
-	
-	# # iterate through and add components
-	# for i,sm_part in enumerate(sm_parts):
-		
-	# 	print "Creating ingest_workspace_object row %s / %s" % (step, len(sm_parts))
-	# 	job_package['step'] = step
-
-	# 	# set internal id (used for selecting when making bags and ingesting)
-	# 	job_package['ingest_id'] = step
-
-	# 	# set type
-	# 	if METS_collection and i == 0:
-	# 		job_package['object_type'] = "collection"
-	# 	else:
-	# 		job_package['object_type'] = "component"
-
-	# 	# attempt to fire worker
-	# 	try:
-			
-	# 		# get DMDID
-	# 		job_package['DMDID'] = sm_part.attrib['DMDID']
-	# 		job_package['object_title'] = sm_part.attrib['LABEL']
-			
-	# 		print "StructMap part ID: %s" % job_package['DMDID']
-
-	# 		# store structMap section as python dictionary
-	# 		sm_dict = xmltodict.parse(etree.tostring(sm_part))
-	# 		job_package['struct_map'] = json.dumps(sm_dict)
-
-	# 		# grab descriptive mets:dmdSec
-	# 		dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
-	# 		# grab MODS record and write to temp file		
-	# 		MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
-	# 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
-	# 		fhand = open(temp_filename,'w')
-	# 		fhand.write(etree.tostring(MODS_elem))
-	# 		fhand.close()		
-	# 		job_package['MODS_temp_filename'] = temp_filename
-
-	# 	except:
-	# 		print "ERROR"
-	# 		print traceback.print_exc()
-
-	# 	# fire task via custom_loop_taskWrapper			
-	# 	result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
-	# 	task_id = result.id
-
-	# 	# Set handle in Redis
-	# 	redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (job_package['DMDID']))
-			
-	# 	# update incrementer for total assigned
-	# 	jobs.jobUpdateAssignedCount(job_package['job_num'])
-
-	# 	# bump step
-	# 	step += 1
+	if form_data['METS_type'] == 'wsu':
+		createJob_WSU_METS(form_data,job_package,ingest_metadata,j)
+	if form_data['METS_type'] == 'archivematica':
+		createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j)
 
 
 

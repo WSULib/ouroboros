@@ -1,33 +1,26 @@
 {% include 'header.html' %}
 
-
-
-
 <!-- metadata -->
 <div class="row">
 	<div class="col-md-12">
-
-		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a>: Job </h1>
-		
-		<h4>Job Information:</h4>
-		<p>
-			<div class="col-md-6">
-				<ul>
-					<li><strong>Name:</strong> {{j.name}}</li>
-					<li><strong>Collection Identifier:</strong> {{j.collection_identifier}}</li>
-					<li><strong>Job ID:</strong> {{j.id}}</li>
-					<li><strong>Created:</strong> {{j.created}}</li>
-					<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
-					<li>View input METS</li>
-				</ul>
-			</div>
-			<div class="col-md-6">
-				<ul>
-					<li><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewMETS">View job METS</a></li>
-				</ul>
-			</div>
-		</p>
-
+		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a> : Job "{{j.name}}"</h1>
+		<div class="col-md-6">
+			<h4><strong>Information</strong></h4>
+			<ul>
+				<li><strong>Name:</strong> {{j.name}}</li>
+				<li><strong>Collection Identifier:</strong> {{j.collection_identifier}}</li>
+				<li><strong>Job ID:</strong> {{j.id}}</li>
+				<li><strong>Created:</strong> {{j.created}}</li>
+				<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
+			</ul>
+		</div>
+		<div class="col-md-6">
+			<h4><strong>Actions</strong></h4>
+			<ul>
+				<li style="margin-bottom:5px;"><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewMETS"><button class="btn btn-sm btn-success details">View METS</button></a></li>
+				<!-- <li style="margin-bottom:5px;"></li> -->
+			</ul>
+		</div>
 	</div>
 </div>
 

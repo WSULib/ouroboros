@@ -224,6 +224,7 @@ def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
 			j.collection_identifier = form_data['collection_identifier'].split(":")[-1].split("collection")[-1]
 		else:
 			j.collection_identifier = "Loose"
+		j._commit()
 	
 	# iterate through, ignoring comments
 	sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
@@ -299,6 +300,13 @@ def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
 
 
 def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
+
+	# handle collection
+	if form_data['collection_identifier'] != '':
+		j.collection_identifier = form_data['collection_identifier'].split(":")[-1].split("collection")[-1]
+	else:
+		j.collection_identifier = "Loose"
+	j._commit()
 	
 	# parse Archivematica METS
 	mets = metsrw.METSDocument.fromstring(ingest_metadata)

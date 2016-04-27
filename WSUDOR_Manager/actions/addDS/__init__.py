@@ -38,8 +38,9 @@ def addDS_worker(job_package):
 		newDS.ds_location = form_data['dsLocation']	
 
 	# content
-	if 'upload_data' in job_package:		
-		newDS.content = job_package['upload_data']
+	if 'upload_data' in job_package:
+		with open(job_package['upload_data'],'r') as fhand:
+			newDS.content = fhand.read()
 	elif form_data['content'] != '':
 		newDS.content = form_data['content']	
 

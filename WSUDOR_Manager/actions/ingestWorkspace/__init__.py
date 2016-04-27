@@ -231,10 +231,7 @@ def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
 
 	# add collection object to front of list
 	if METS_collection:
-		sm_parts.insert(0,collection_level_div)
-
-	# pop METS ingest from job_package	
-	job_package['upload_data'] = ''
+		sm_parts.insert(0,collection_level_div)	
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
@@ -402,10 +399,8 @@ def createJob_factory(job_package):
 	job_package['custom_task_name'] = 'createJob_worker'	
 
 	# get ingest metadata
-	if 'upload_data' in job_package:		
-		ingest_metadata = job_package['upload_data']
-	elif form_data['pasted_metadata'] != '':
-		ingest_metadata = form_data['pasted_metadata']
+	with open(job_package['upload_data'],'r') as fhand:
+		ingest_metadata = fhand.read()
 	
 	# initiate ingest job instance with name
 	j = models.ingest_workspace_job(form_data['collection_name'])	

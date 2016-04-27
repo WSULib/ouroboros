@@ -14,6 +14,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import xmltodict
 import xmlrpclib
+import uuid
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response, Response, Blueprint
@@ -380,13 +381,24 @@ def fireTask(job_type,task_name):
 		"job_type":job_type         
 	}
 
-	# pass along binary uploaded data if included in job task
-	'''
-	Need to rework this to write this temp data to disdk.
-	'''
+	# pass along binary uploaded data if included in job task	
+	# writes to temp file in /tmp/Ouroboros
+	temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())
 	if 'upload' in request.files and request.files['upload'].filename != '':
+		print "Form provided file, uploading and reading file to variable"
 		print request.files['upload']
-		job_package['upload_data'] = request.files['upload'].read()
+		# write uploaded file to temp file
+		with open(temp_filename,'w') as fhand:
+			fhand.write(request.files['upload'].read())
+		job_package['upload_data'] = temp_filename
+
+	if 'upload_path' in request.form and request.form['upload_path'] != '':
+		print "Form provided path, reading file to variable"
+		print request.form['upload_path']
+		# create symlink from path to temp file
+		os.symlink(request.form['upload_path'], temp_filename)
+		job_package['upload_data'] = temp_filename
+
 
 	task_inputs_key = username+"_"+task_name+"_"+str(int(time.time()))
 	print "Assigning to Redis-Cached key:",task_inputs_key

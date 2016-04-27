@@ -531,8 +531,6 @@ def createBag_worker(job_package):
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
 	print "Working on: %s" % o.object_title
 
-	# GET JOB HERE AND ADD AS collection_identifier
-
 	# load bag class
 	print "loading bag class for %s" % form_data['bag_creation_class']	
 	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
@@ -565,17 +563,33 @@ def createBag_worker(job_package):
 		else:
 			class_handle = bag_class_handle
 
+		# OLD - unnecessary extraction of values here
+		# bag_class_worker = class_handle.BagClass(
+		# 	object_row = o,
+		# 	ObjMeta = models.ObjMeta,
+		# 	bag_root_dir = job_package['bag_dir'],
+		# 	files_location = form_data['files_location'],
+		# 	MODS = o.MODS,
+		# 	MODS_handle = MODS_handle,
+		# 	struct_map = o.struct_map,
+		# 	object_title = o.object_title,
+		# 	DMDID = o.DMDID,
+		# 	collection_identifier = o.job.collection_identifier,
+		# 	purge_bags = purge_bags
+		# )
+
+		# NEW - streamlined
 		bag_class_worker = class_handle.BagClass(
 			object_row = o,
 			ObjMeta = models.ObjMeta,
 			bag_root_dir = job_package['bag_dir'],
 			files_location = form_data['files_location'],
-			MODS = o.MODS,
-			MODS_handle = MODS_handle,
-			struct_map = o.struct_map,
-			object_title = o.object_title,
-			DMDID = o.DMDID,
-			collection_identifier = o.job.collection_identifier,
+			#MODS = o.MODS,
+			#MODS_handle = MODS_handle,
+			#struct_map = o.struct_map,
+			#object_title = o.object_title,
+			#DMDID = o.DMDID,
+			#collection_identifier = o.job.collection_identifier,
 			purge_bags = purge_bags
 		)
 

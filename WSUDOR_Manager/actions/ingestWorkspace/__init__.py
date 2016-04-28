@@ -339,7 +339,7 @@ def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
 		# try:
 			
 		# get DMDID
-		job_package['DMDID'] = fs.file_uuid
+		job_package['DMDID'] = None
 		job_package['object_title'] = fs.label
 		
 		print "StructMap part ID: %s" % job_package['DMDID']
@@ -348,10 +348,7 @@ def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
 		sm_dict = xmltodict.parse(etree.tostring(fs.serialize_structmap()))
 		job_package['struct_map'] = json.dumps(sm_dict)
 
-		# grab descriptive mets:dmdSec
-		# dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (fs.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
-		# # grab MODS record and write to temp file		
-		# MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
+		# write generic MODS
 		raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
 <mods:titleInfo>
@@ -368,10 +365,6 @@ def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
 		fhand.write(raw_MODS)
 		fhand.close()		
 		job_package['MODS_temp_filename'] = temp_filename
-
-		# except:
-		# 	print "ERROR"
-		# 	print traceback.print_exc()
 
 		# fire task via custom_loop_taskWrapper			
 		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])

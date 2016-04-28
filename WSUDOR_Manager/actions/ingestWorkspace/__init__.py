@@ -563,33 +563,12 @@ def createBag_worker(job_package):
 		else:
 			class_handle = bag_class_handle
 
-		# OLD - unnecessary extraction of values here
-		# bag_class_worker = class_handle.BagClass(
-		# 	object_row = o,
-		# 	ObjMeta = models.ObjMeta,
-		# 	bag_root_dir = job_package['bag_dir'],
-		# 	files_location = form_data['files_location'],
-		# 	MODS = o.MODS,
-		# 	MODS_handle = MODS_handle,
-		# 	struct_map = o.struct_map,
-		# 	object_title = o.object_title,
-		# 	DMDID = o.DMDID,
-		# 	collection_identifier = o.job.collection_identifier,
-		# 	purge_bags = purge_bags
-		# )
-
 		# NEW - streamlined
 		bag_class_worker = class_handle.BagClass(
 			object_row = o,
 			ObjMeta = models.ObjMeta,
 			bag_root_dir = job_package['bag_dir'],
-			files_location = form_data['files_location'],
-			#MODS = o.MODS,
-			#MODS_handle = MODS_handle,
-			#struct_map = o.struct_map,
-			#object_title = o.object_title,
-			#DMDID = o.DMDID,
-			#collection_identifier = o.job.collection_identifier,
+			files_location = form_data['files_location'],			
 			purge_bags = purge_bags
 		)
 

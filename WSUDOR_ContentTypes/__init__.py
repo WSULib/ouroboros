@@ -6,4 +6,5 @@ from WSUDOR_WSUebook import WSUDOR_WSUebook
 from WSUDOR_HierarchicalFiles import WSUDOR_HierarchicalFiles 
 from WSUDOR_ContentModel import WSUDOR_ContentModel 
 from WSUDOR_Volume import WSUDOR_Volume
-
+from WSUDOR_Document import WSUDOR_Document
+from WSUDOR_Container import WSUDOR_Container

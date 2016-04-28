@@ -170,7 +170,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				'''
 				This FILE datastream serves as shorthand to what should be the only binary of the object
 				'''
-				rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="E")
+				rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="R")
 				rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
 				rep_handle.label = "FILE"
 				rep_handle.save()				

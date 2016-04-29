@@ -153,7 +153,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
-			################################################################################################################################################
+
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
 
@@ -188,15 +188,9 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					os.system('rm %s' % (temp_filename))		
 
 
-				else:
-
-					'''
-					Approach is thus:
-						- if original datastream is pdf, create FILE datastream that points to it						
-							- create thumb from the original, filesystem file
-						- else, create PDF derivative
-							- use derivative file on filesystem to create thumb
-					'''
+				# create derivative FILE datastream with appropriate converter
+				# CONSIDER REWORKING AS RECIPES A LA PRINCETON'S KAKADU JP2 RECIPES
+				else:					
 
 					oo_formats = [
 						'application/vnd.oasis.opendocument.text',
@@ -205,7 +199,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					if ds['mimetype'] in oo_formats:
 
 						# create PDF deriv for Word Doc
-						deriv_PDF = '/tmp/Ouroboros/%s.pdf' % ds['filename'].split(".")[0]
+						deriv_PDF = '/tmp/Ouroboros/%s.pdf' % ds['filename'].split(".")[0] # assumes no period in datastream id...
 						os.system('soffice --headless --convert-to pdf --outdir /tmp/Ouroboros %s' % file_path)
 
 						# write derivative PDF for FILE datastream
@@ -230,20 +224,6 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					rep_handle.label = gen_type
 					rep_handle.save()
 
-
-
-
-
-
-
-					
-
-
-
-				
-
-
-			################################################################################################################################################
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()

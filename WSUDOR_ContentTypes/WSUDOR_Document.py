@@ -153,6 +153,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
+			################################################################################################################################################
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
 
@@ -166,33 +167,83 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				orig_handle.content = open(file_path)
 				orig_handle.save()
 
-				# write FILE datastream
-				'''
-				This FILE datastream serves as shorthand to what should be the only binary of the object
-				'''
-				rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="R")
-				rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
-				rep_handle.label = "FILE"
-				rep_handle.save()
 
-				# make thumb for PDF
+				# make thumb for PDF				
 				if ds['mimetype'] == "application/pdf":
-					print "Creating derivative thumbnail from PDF"					
+
+					# writing FILE datastream
+					rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="R")
+					rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+					rep_handle.label = "FILE"
+					rep_handle.save()
+
+					print "Creating derivative thumbnail from PDF"
+					# thumb if incoming file as pdf							
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
 					os.system('convert -thumbnail 200x200 -background white %s[0] %s' % (file_path, temp_filename))
 					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group='M')
 					thumb_handle.label = "%s_THUMBNAIL" % (ds['label'])
 					thumb_handle.content = open(temp_filename)
 					thumb_handle.save()
-					os.system('rm %s' % (temp_filename))
+					os.system('rm %s' % (temp_filename))		
 
-					# write generic thumbnail for what should be SINGLE file per object
-					for gen_type in ['THUMBNAIL']:
-						rep_handle = eulfedora.models.DatastreamObject(self.ohandle, gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-						rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
-						rep_handle.label = gen_type
-						rep_handle.save()
 
+				else:
+
+					'''
+					Approach is thus:
+						- if original datastream is pdf, create FILE datastream that points to it						
+							- create thumb from the original, filesystem file
+						- else, create PDF derivative
+							- use derivative file on filesystem to create thumb
+					'''
+
+					oo_formats = [
+						'application/vnd.oasis.opendocument.text',
+						'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+					]
+					if ds['mimetype'] in oo_formats:
+
+						# create PDF deriv for Word Doc
+						deriv_PDF = '/tmp/Ouroboros/%s.pdf' % ds['filename'].split(".")[0]
+						os.system('soffice --headless --convert-to pdf --outdir /tmp/Ouroboros %s' % file_path)
+
+						# write derivative PDF for FILE datastream
+						orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'FILE', 'FILE', mimetype='application/pdf', control_group='M')
+						orig_handle.label = 'FILE'
+						orig_handle.content = open(deriv_PDF)
+						orig_handle.save()
+
+						temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+						os.system('convert -thumbnail 200x200 -background white %s[0] %s' % (deriv_PDF, temp_filename))
+						thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group='M')
+						thumb_handle.label = "%s_THUMBNAIL" % (ds['label'])
+						thumb_handle.content = open(temp_filename)
+						thumb_handle.save()
+						os.system('rm %s' % (temp_filename))
+
+
+				# write generic thumbnail for what should be SINGLE file per object
+				for gen_type in ['THUMBNAIL']:
+					rep_handle = eulfedora.models.DatastreamObject(self.ohandle, gen_type, gen_type, mimetype="image/jpeg", control_group="M")
+					rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
+					rep_handle.label = gen_type
+					rep_handle.save()
+
+
+
+
+
+
+
+					
+
+
+
+				
+
+
+			################################################################################################################################################
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()

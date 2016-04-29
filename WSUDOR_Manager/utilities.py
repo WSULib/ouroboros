@@ -145,7 +145,28 @@ for k, v in opinionated_mimes.items():
 # OPINIONATED MIMETYPES for CONTENT TYPES
 #########################################################################################################
 mime_CM_hash = {
-	'application/pdf' : 'WSUDOR_Document'			
+
+	# Document
+	'application/pdf' : 'WSUDOR_Document',
+	'application/vnd.oasis.opendocument.text' : 'WSUDOR_Document',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'WSUDOR_Document',
+
+	# Image
+	'image/jpg' : 'WSUDOR_Image',
+	'image/jpeg' : 'WSUDOR_Image',
+	'image/tiff' : 'WSUDOR_Image',
+	'image/tif' : 'WSUDOR_Image',
+	'image/gif' : 'WSUDOR_Image',
+	'image/png' : 'WSUDOR_Image',
+
+	# Audio
+	'audio/mpeg' : 'WSUDOR_Audio',
+	'audio/wav' : 'WSUDOR_Audio',
+	'audio/x-wav' : 'WSUDOR_Audio',
+
+	# Video
+	'video/mp4' : 'WSUDOR_Video',
+
 }
 
 

@@ -230,6 +230,9 @@ from WSUDOR_ContentTypes import *
 # get handlers
 import views
 
+# ouroboros_assets
+import ouroboros_assets
+
 # generate required folders if not present
 if not os.path.exists('/tmp/Ouroboros'):
 	os.mkdir('/tmp/Ouroboros')

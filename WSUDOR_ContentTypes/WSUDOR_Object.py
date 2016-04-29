@@ -881,24 +881,36 @@ class WSUDOR_GenObject(object):
 		dest_repo = string key from localConfig for remote repositories credentials
 		'''
 
+		# handle string or eulfedora handle
+		if type(dest_repo) == str:
+			dest_repo_handle = fedoraHandles.remoteRepo(dest_repo)
+		elif type(dest_repo) == eulfedora.server.Repository:
+			dest_repo_handle = dest_repo
+		else:
+			print "destination eulfedora not found, try again"
+			return False
+
 		# use syncutil
 		print "sending object..."
 		result = syncutil.sync_object(
 			self.ohandle,
-			fedoraHandles.remoteRepo(dest_repo),
+			dest_repo_handle,
 			export_context=export_context,
 			overwrite=overwrite,
 			show_progress=show_progress)
 
 		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
-		if refresh_remote:
-			print "refreshing remote object in remote repository"
-			refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
-			print refresh_remote_url
-			r = requests.get( refresh_remote_url )
-			print r.content
+		if type(dest_repo) == str:
+			if refresh_remote:
+				print "refreshing remote object in remote repository"
+				refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
+				print refresh_remote_url
+				r = requests.get( refresh_remote_url )
+				print r.content
+			else:
+				print "skipping remote refresh"
 		else:
-			print "skipping remote refresh"
+			print "Cannot refresh remote.  It is likely you passed an Eulfedora Repository object.  To refresh remote, please provide string of remote repository that aligns with localConfig"
 
 
 

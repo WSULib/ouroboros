@@ -386,7 +386,7 @@ def fireTask(job_type,task_name):
 	temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())
 	if 'upload' in request.files and request.files['upload'].filename != '':
 		print "Form provided file, uploading and reading file to variable"
-		print request.files['upload']
+		# print request.files['upload']
 		# write uploaded file to temp file
 		with open(temp_filename,'w') as fhand:
 			fhand.write(request.files['upload'].read())
@@ -394,7 +394,7 @@ def fireTask(job_type,task_name):
 
 	if 'upload_path' in request.form and request.form['upload_path'] != '':
 		print "Form provided path, reading file to variable"
-		print request.form['upload_path']
+		# print request.form['upload_path']
 		# create symlink from path to temp file
 		os.symlink(request.form['upload_path'], temp_filename)
 		job_package['upload_data'] = temp_filename

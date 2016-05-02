@@ -203,15 +203,8 @@ def viewSQLData(table,id,column,mimetype):
 #################################################################################
 
 
-def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
-	# parse WSU METS
-	# for each section of METS, break into chunks
-	XMLroot = etree.fromstring(ingest_metadata)
+def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm_parts,j):
 	
-	# grab stucture map
-	sm = XMLroot.find('{http://www.loc.gov/METS/}structMap')
-	collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
-
 	# determine collection identifier
 	try:
 		# attempt to grab DMD id
@@ -226,9 +219,6 @@ def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
 			j.collection_identifier = "Loose"
 		j._commit()
 	
-	# iterate through, ignoring comments
-	sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
-
 	# add collection object to front of list
 	if METS_collection:
 		sm_parts.insert(0,collection_level_div)	
@@ -268,9 +258,14 @@ def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
 			job_package['struct_map'] = json.dumps(sm_dict)
 
 			# grab descriptive mets:dmdSec
-			dmd_handle = XMLroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
+
+			# This section can be slow for large files - better way to find element?
+			#############################################################################
+			dmd_handle = METSroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
 			# grab MODS record and write to temp file		
 			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
+			#############################################################################
+			
 			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
 			fhand = open(temp_filename,'w')
 			fhand.write(etree.tostring(MODS_elem))
@@ -296,7 +291,7 @@ def createJob_WSU_METS(form_data,job_package,ingest_metadata,j):
 
 
 
-def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
+def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 
 	# handle collection
 	if form_data['collection_identifier'] != '':
@@ -306,8 +301,9 @@ def createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j):
 	j._commit()
 	
 	# parse Archivematica METS
-	mets = metsrw.METSDocument.fromstring(ingest_metadata)
-	print mets.all_files()
+	# mets = metsrw.METSDocument.fromstring(ingest_metadata)
+	mets = metsrw_handle
+	# print mets.all_files()
 
 	# grab stucture map
 	sm = mets.tree.find('{http://www.loc.gov/METS/}structMap')
@@ -407,10 +403,21 @@ def createJob_factory(job_package):
 	job_package['job_name'] = j.name
 
 
+	# WSU METS
 	if form_data['METS_type'] == 'wsu':
-		createJob_WSU_METS(form_data,job_package,ingest_metadata,j)
+		# for each section of METS, break into chunks
+		METSroot = etree.fromstring(ingest_metadata)
+		# grab stucture map
+		sm = METSroot.find('{http://www.loc.gov/METS/}structMap')
+		collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
+		# iterate through, ignoring comments
+		sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
+		createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm_parts,j)
+
+	# Archivematica based METS
 	if form_data['METS_type'] == 'archivematica':
-		createJob_Archivematica_METS(form_data,job_package,ingest_metadata,j)
+		metsrw_handle = metsrw.METSDocument.fromstring(ingest_metadata)
+		createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j)
 
 
 

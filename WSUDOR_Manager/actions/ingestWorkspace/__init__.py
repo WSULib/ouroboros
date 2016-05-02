@@ -261,7 +261,7 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 
 			# This section can be slow for large files - better way to find element?
 			#############################################################################
-			dmd_handle = METSroot.xpath("//mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})[0]
+			dmd_handle = METSroot.find("mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})
 			# grab MODS record and write to temp file		
 			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
 			#############################################################################

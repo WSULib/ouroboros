@@ -291,6 +291,8 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 
 
 
+
+
 def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 
 	# handle collection
@@ -483,7 +485,31 @@ def createBag_factory(job_package):
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
-	
+
+
+	############################################################################################################
+	# If file path included, reindex files
+	# parse and index files, add to job rows
+	if form_data['files_location'] != '':
+
+		# get job
+		j = models.ingest_workspace_job.query.filter_by(id=int(form_data['job_id'])).first()
+		print "adding file index for %s" % j.name
+		time.sleep(5)
+
+		print "updating file index for bags"
+		fd = {}
+		for root, directories, files in os.walk (form_data['files_location'], followlinks=False):
+			for filename in files:
+				filePath = os.path.join(root,filename)
+				print "adding",filePath
+				fd[filename] = filePath
+
+		# add to job in MySQL
+		j.file_index = json.dumps(fd)
+		j._commit()
+	############################################################################################################
+
 	# insert into MySQL as ingest_workspace_object rows
 	step = 1
 	time.sleep(2)

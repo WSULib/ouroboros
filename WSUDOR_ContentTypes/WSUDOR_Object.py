@@ -882,7 +882,8 @@ class WSUDOR_GenObject(object):
 		'''
 
 		# handle string or eulfedora handle
-		if type(dest_repo) == str:
+		print dest_repo,type(dest_repo)
+		if type(dest_repo) == str or type(dest_repo) == unicode:
 			dest_repo_handle = fedoraHandles.remoteRepo(dest_repo)
 		elif type(dest_repo) == eulfedora.server.Repository:
 			dest_repo_handle = dest_repo
@@ -900,7 +901,7 @@ class WSUDOR_GenObject(object):
 			show_progress=show_progress)
 
 		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
-		if type(dest_repo) == str:
+		if type(dest_repo) == str or type(dest_repo) == unicode:
 			if refresh_remote:
 				print "refreshing remote object in remote repository"
 				refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)

@@ -95,7 +95,7 @@ def deleteJob(job_id):
 
 	# remove working directory
 	print "removing ingest_jobs directory"
-	os.system('rm -r /tmp/Ouroboros/ingest_jobs/ingest_job_%s' % job_id)
+	os.system('rm -r /home/ouroboros/ingest_jobs/ingest_job_%s' % job_id)
 
 	return redirect('/%s/tasks/ingestWorkspace' % localConfig.APP_PREFIX)
 
@@ -472,7 +472,7 @@ def createBag_factory(job_package):
 	form_data = job_package['form_data']	
 
 	# set bag dir
-	bag_dir = '/tmp/Ouroboros/ingest_jobs/ingest_job_%s' % (form_data['job_id'])
+	bag_dir = '/home/ouroboros/ingest_jobs/ingest_job_%s' % (form_data['job_id'])
 	job_package['bag_dir'] = bag_dir
 	if not os.path.exists(bag_dir):
 		os.mkdir(bag_dir)

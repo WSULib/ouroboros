@@ -67,7 +67,15 @@ def index():
 def job(job_id):
 
 	# get handle
-	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()	
+	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+
+	# set session filters if present
+	print "checking for filters..."
+	print request.args
+	if "row_range" in request.args:
+		row_s,row_e = request.args['row_range'].split("-")
+		session['row_s'] = row_s
+		session['row_e'] = row_e
 
 	# render
 	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets)
@@ -178,9 +186,14 @@ def jobjson(job_id):
 	columns.append(ColumnDT('ingested', filter=boolean))
 	columns.append(ColumnDT('repository'))
 
-
-	# defining the initial query depending on your purpose
+	# begin query definition
 	query = db.session.query(models.ingest_workspace_object).filter(models.ingest_workspace_object.job_id == job_id)
+
+	# row start
+	if "row_s" in session and "row_e" in session:
+		print "adding filters!"
+		query = query.filter(models.ingest_workspace_object.ingest_id >= session['row_s'])
+		query = query.filter(models.ingest_workspace_object.ingest_id <= session['row_e'])
 
 	# instantiating a DataTable for the query and table needed
 	rowTable = DataTables(request.args, models.ingest_workspace_object, query, columns)

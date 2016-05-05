@@ -20,7 +20,8 @@ def login(username,password):
 
 		print "Logging in..."
 
-		# fire celery worker
+		# fire user celery worker
+		print "firing user celery worker for: %s" % username
 		cw = models.CeleryWorker(username,password)
 		cw.start()		
 
@@ -125,6 +126,14 @@ def inject_prefix():
 				'APP_PREFIX':APP_PREFIX,
 				'APP_HOST':APP_HOST
 		}
+
+
+def sessionVarClean(session,var):
+	try:
+		del session[var]
+		return True
+	except:
+		return False
 
 
 # OPINIONATED MIMETYPES

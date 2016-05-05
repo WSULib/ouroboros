@@ -51,14 +51,24 @@ def shutdown():
 	# remove PID
 	pidfileRemove()
 
-	# remove celery tasks 
-	print "removing celery tasks from supervisor"
-	'''
-	need to remove them all...
-	'''
+	# # remove celery tasks 
+	# print "removing generic celery tasks from supervisor"
+	# celery_conf_files = os.listdir('/etc/supervisor/conf.d')
+	# for conf in celery_conf_files:
+	# 	if conf.startswith('celery'):			
+	# 		process_group = conf.split(".conf")[0]
+	# 		print "stopping celery worker: %s" % process_group
+	# 		sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+	# 		sup_server.supervisor.stopProcessGroup(process_group)
+	# 		sup_server.supervisor.removeProcessGroup(process_group)
+	# 		os.system('rm /etc/supervisor/conf.d/%s' % conf)
+
+
+	# remove generic celery task ONLY
+	print "removing generic celery tasks from supervisor"
 	celery_conf_files = os.listdir('/etc/supervisor/conf.d')
 	for conf in celery_conf_files:
-		if conf.startswith('celery'):			
+		if conf == "celery-celery.conf":	
 			process_group = conf.split(".conf")[0]
 			print "stopping celery worker: %s" % process_group
 			sup_server = xmlrpclib.Server('http://127.0.0.1:9001')

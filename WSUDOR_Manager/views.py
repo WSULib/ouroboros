@@ -353,9 +353,12 @@ def login():
 @app.route('/logout')
 def logout():
 
-	# fire celery worker
-	cw = models.CeleryWorker(session['username'],False)
-	cw.stop()
+	# stop user-based celery worker
+	'''
+	Removed: thought being celery workers should continue even if Ouroboros goes down intentionally or unintentionally
+	'''
+	# cw = models.CeleryWorker(session['username'],False)
+	# cw.stop()
 	
 	session["username"] = ""
 	logout_user()

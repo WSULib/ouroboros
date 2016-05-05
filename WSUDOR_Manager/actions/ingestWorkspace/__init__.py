@@ -1,7 +1,7 @@
 # utility for Bag Ingest
 
 # celery
-from WSUDOR_Manager import celery
+from WSUDOR_Manager import celery, utilities
 
 # handles
 from WSUDOR_Manager.forms import RDF_edit
@@ -73,9 +73,14 @@ def job(job_id):
 	print "checking for filters..."
 	print request.args
 	if "row_range" in request.args:
-		row_s,row_e = request.args['row_range'].split("-")
-		session['row_s'] = row_s
-		session['row_e'] = row_e
+		try:
+			row_s,row_e = request.args['row_range'].split("-")
+			session['row_s'] = row_s
+			session['row_e'] = row_e
+		except:
+			print "range malformed, cleaning session"
+			utilities.sessionVarClean(session,'row_s')
+			utilities.sessionVarClean(session,'row_e')
 
 	# render
 	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets)

@@ -69,8 +69,9 @@
 
 <div style="margin-top:30px;"></div>
 
-<!-- make bags -->
 <div class="row">
+
+	<!-- make bags -->
 	<div class="col-md-6">
 		<!-- make bags -->
 		<div class="well">
@@ -114,6 +115,7 @@
 
 	</div>
 
+	<!-- ingest bags -->
 	<div class="col-md-6">
 		<div class="well">
 			<h4>Ingest Bags</h4>	
@@ -169,6 +171,31 @@
 						</div>
 					</div>
 				</div>
+				<div class="form-group">
+					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
+					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
+					<input class="form-control" type="hidden" name="origin" value="ingestWorkspace"></input>
+					<input type="submit" class="btn btn-success" value="Ingest Bags">
+				</div>
+			</form>
+			
+		</div>
+
+	</div>
+
+	<!-- check bag and ingest status -->
+	<div class="col-md-6">
+		<div class="well">
+			<h4>(Re)Check Object Status</h4>	
+			<p>Here you can recheck the status of bags and/or the ingest status of objects in repositories.</p>
+			
+			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/ingestBag_factory" enctype="multipart/form-data">
+				
+				<div class="form-group">
+					<label class="control-label">Object ID's to create bags:</label>
+					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
+				</div>
+				
 				<div class="form-group">
 					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
 					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>

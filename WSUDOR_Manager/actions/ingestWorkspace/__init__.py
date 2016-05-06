@@ -675,7 +675,7 @@ def ingestBag_factory(job_package):
 	time.sleep(2)
 	for row in object_rows:
 
-		print "Creating bag for ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
+		print "Preparing to ingest ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
 		job_package['step'] = step
 
 		# set row

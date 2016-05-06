@@ -1,7 +1,7 @@
 # utility for Bag Ingest
 
 # celery
-from WSUDOR_Manager import celery, utilities
+from WSUDOR_Manager import celery, utilities, fedoraHandles
 
 # handles
 from WSUDOR_Manager.forms import RDF_edit
@@ -171,6 +171,13 @@ def jobjson(job_id):
 		else:
 			return "<span style='color:red;'>False</span>"
 
+
+	def existsReturnValue(input):
+		if input != None:
+			return input
+		else:
+			return "<span style='color:red;'>False</span>"
+
 	def boolean(input):		
 		if input == "1":
 			return "<span style='color:green;'>True</span>"
@@ -188,7 +195,7 @@ def jobjson(job_id):
 	columns.append(ColumnDT('MODS', filter=exists))
 	columns.append(ColumnDT('bag_path'))
 	columns.append(ColumnDT('objMeta', filter=exists))
-	columns.append(ColumnDT('ingested', filter=boolean))
+	columns.append(ColumnDT('ingested', filter=existsReturnValue))
 	columns.append(ColumnDT('repository'))
 
 	# begin query definition
@@ -484,7 +491,7 @@ def createBag_factory(job_package):
 	print "FIRING createBag_factory"
 	
 	# DEBUG
-	print job_package
+	# print job_package
 
 	# get form data
 	form_data = job_package['form_data']	
@@ -560,7 +567,7 @@ def createBag_worker(job_package):
 	print "FIRING createBag_worker"
 
 	# DEBUG
-	print job_package
+	# print job_package
 
 	# get form data
 	form_data = job_package['form_data']
@@ -705,18 +712,122 @@ def ingestBag_factory(job_package):
 @celery.task(name="ingestBag_callback")
 def ingestBag_callback(job_package):
 	
-	print "FIRING ingestBag_callback"
-
-	# DEBUG
-	# print job_package
+	print "FIRING ingestBag_callback"	
 
 	# open handle
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
 	print "Retrieved row: %s / %s" % (o.ingest_id,o.object_title)
-	print "Setting ingest to True"
-	o.ingested = True
+	print "Setting ingest JSON"
+	o.ingested = job_package['form_data']['dest_repo']
 	return o._commit()
 
+
+#################################################################################
+# Check Object Status
+#################################################################################
+
+@celery.task(name="checkObjectStatus_factory")
+def checkObjectStatus_factory(job_package):
+	
+	print "FIRING checkObjectStatus_factory"
+
+	# get form data
+	form_data = job_package['form_data']	
+
+	# set new task_name, for the worker below
+	job_package['custom_task_name'] = 'checkObjectStatus_worker'
+
+	# parse object rows from range (use parseIntSet() above)
+	object_rows = parseIntSet(nputstr=form_data['object_id_range'])
+
+	# update job info (need length from above)
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
+
+	# insert into MySQL as ingest_workspace_object rows
+	step = 1
+	time.sleep(2)
+	for row in object_rows:
+
+		print "Preparing to check object ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
+		job_package['step'] = step
+
+		# set row
+		job_package['ingest_id'] = row
+		job_package['job_id'] = form_data['job_id']
+
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+		task_id = result.id
+
+		# Set handle in Redis
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (step))
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		# bump step
+		step += 1
+	
+
+
+@celery.task(name="checkObjectStatus_worker")
+def checkObjectStatus_worker(job_package):
+
+	print "FIRING checkObjectStatus_worker"
+
+	# get form data
+	form_data = job_package['form_data']
+
+	# get object row
+	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
+	print "Checking status of: %s" % o.object_title
+
+	# assume False commit
+	to_commit = False
+
+	# bag path
+	if 'check_bag_path' in form_data and form_data['check_bag_path'] == 'on':
+		print "checking bag path: %s" % o.bag_path
+		if o.bag_path != None and os.path.exists(o.bag_path):
+			print "bag_path found."
+		else:
+			o.bag_path = None
+			to_commit = True
+
+	
+	# repo status
+	if 'check_repo' in form_data and form_data['check_repo'] == 'on':
+		print "checking existence in repository against %s" % o.ingested
+
+		# get fedora handle
+		if form_data['dest_repo'] == 'local':
+			dest_repo = fedora_handle
+		else:
+			dest_repo = fedoraHandles.remoteRepo(form_data['dest_repo'])
+
+		# check status
+		check_result = dest_repo.get_object(o.pid).exists
+		if not check_result == bool(o.ingested): # suggests they are not in agreement
+			to_commit = True
+
+			# clean status if not found
+			if check_result:			
+				o.ingested = True
+
+			# clean status if not found
+			else:			
+				o.ingested = None
+				to_commit = True
+	
+
+	# commit if changes made to row
+	if to_commit:
+		o._commit()
+	
+
+	return job_package
+
+
+	
 
 
 #################################################################################

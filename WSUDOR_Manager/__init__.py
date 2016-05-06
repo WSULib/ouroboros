@@ -1,6 +1,7 @@
 # root file, app instantiator
 import os
 import sys
+import time
 
 # modules / packages import
 from flask import Flask, render_template, g
@@ -246,7 +247,6 @@ def check_connection(dbapi_con, con_record, con_proxy):
 		cursor.execute("SELECT 1")  # could also be dbapi_con.ping(),
 									# not sure what is better
 	except exc.OperationalError, ex:
-		print "------------------------------------------------------------------------------------------"
 		if ex.args[0] in (2006,   # MySQL server has gone away
 						  2013,   # Lost connection to MySQL server during query
 						  2014,    # out of sync
@@ -256,8 +256,6 @@ def check_connection(dbapi_con, con_record, con_proxy):
 		else:
 			raise
 		
-
-
 listen(Pool, 'checkout', check_connection)
 
 

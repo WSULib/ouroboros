@@ -21,6 +21,7 @@ else:
 	run_context = 'celery'
 
 
+
 ##########################################################################################
 # create app
 ##########################################################################################
@@ -232,31 +233,31 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_POOL_SIZE'] = 1
 db = SQLAlchemy(app)
 
-from sqlalchemy import exc, event
-from sqlalchemy.event import listen
-from sqlalchemy.pool import Pool
+#from sqlalchemy import exc, event
+#from sqlalchemy.event import listen
+#from sqlalchemy.pool import Pool
 
-@event.listens_for(Pool, "checkout")
-def check_connection(dbapi_con, con_record, con_proxy):
-	'''Listener for Pool checkout events that pings every connection before using.
-	Implements pessimistic disconnect handling strategy. See also:
-	http://docs.sqlalchemy.org/en/rel_0_8/core/pooling.html#disconnect-handling-pessimistic'''
-
-	cursor = dbapi_con.cursor()
-	try:
-		cursor.execute("SELECT 1")  # could also be dbapi_con.ping(),
-									# not sure what is better
-	except exc.OperationalError, ex:
-		if ex.args[0] in (2006,   # MySQL server has gone away
-						  2013,   # Lost connection to MySQL server during query
-						  2014,    # out of sync
-						  2055):  # Lost connection to MySQL server at '%s', system error: %d
-			# caught by pool, which will retry with a new connection
-			raise exc.DisconnectionError()
-		else:
-			raise
-		
-listen(Pool, 'checkout', check_connection)
+#@event.listens_for(Pool, "checkout")
+#def check_connection(dbapi_con, con_record, con_proxy):
+#	'''Listener for Pool checkout events that pings every connection before using.
+#	Implements pessimistic disconnect handling strategy. See also:
+#	http://docs.sqlalchemy.org/en/rel_0_8/core/pooling.html#disconnect-handling-pessimistic'''
+#
+#	cursor = dbapi_con.cursor()
+#	try:
+#		cursor.execute("SELECT 1")  # could also be dbapi_con.ping(),
+#									# not sure what is better
+#	except exc.OperationalError, ex:
+#		if ex.args[0] in (2006,   # MySQL server has gone away
+#						  2013,   # Lost connection to MySQL server during query
+#						  2014,    # out of sync
+#						  2055):  # Lost connection to MySQL server at '%s', system error: %d
+#			# caught by pool, which will retry with a new connection
+#			raise exc.DisconnectionError()
+#		else:
+#			raise
+#		
+#listen(Pool, 'checkout', check_connection)
 
 
 

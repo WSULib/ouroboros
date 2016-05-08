@@ -5,8 +5,9 @@ import redis
 import WSUDOR_Manager.jobs as jobs
 import WSUDOR_Manager.redisHandles as redisHandles
 import WSUDOR_Manager.models as models
-from WSUDOR_Manager import app
+from WSUDOR_Manager import app,db
 from flask import session
+
 
 # local dependecies
 import time
@@ -147,7 +148,7 @@ class postTask(Task):
 
 		# increments completed tasks
 		if status == "SUCCESS":
-			jobs.jobUpdateCompletedCount(job_num)	
+			jobs.jobUpdateCompletedCount(job_num)
 
 
 

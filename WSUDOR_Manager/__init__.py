@@ -114,13 +114,13 @@ class CeleryWorker(object):
 		print "adding celery conf file"
 		# fire the suprevisor celery worker process
 		celery_process = '''[program:celery-%(username)s]
-command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=1 -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
+command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=%(CELERY_CONCURRENCY)s -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
 directory=/opt/ouroboros
 user = ouroboros
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/celery-%(username)s.err.log
-stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username': self.username}
+stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.username, 'CELERY_CONCURRENCY':localConfig.CELERY_CONCURRENCY}
 
 		filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
 		if not os.path.exists(filename):
@@ -233,31 +233,24 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_POOL_SIZE'] = 1
 db = SQLAlchemy(app)
 
-#from sqlalchemy import exc, event
-#from sqlalchemy.event import listen
-#from sqlalchemy.pool import Pool
 
-#@event.listens_for(Pool, "checkout")
-#def check_connection(dbapi_con, con_record, con_proxy):
-#	'''Listener for Pool checkout events that pings every connection before using.
-#	Implements pessimistic disconnect handling strategy. See also:
-#	http://docs.sqlalchemy.org/en/rel_0_8/core/pooling.html#disconnect-handling-pessimistic'''
-#
-#	cursor = dbapi_con.cursor()
-#	try:
-#		cursor.execute("SELECT 1")  # could also be dbapi_con.ping(),
-#									# not sure what is better
-#	except exc.OperationalError, ex:
-#		if ex.args[0] in (2006,   # MySQL server has gone away
-#						  2013,   # Lost connection to MySQL server during query
-#						  2014,    # out of sync
-#						  2055):  # Lost connection to MySQL server at '%s', system error: %d
-#			# caught by pool, which will retry with a new connection
-#			raise exc.DisconnectionError()
-#		else:
-#			raise
-#		
-#listen(Pool, 'checkout', check_connection)
+## EXP ##
+# from sqlalchemy import exc, event
+# from sqlalchemy.event import listen
+# from sqlalchemy.pool import Pool
+
+# @event.listens_for(Pool, "checkout")
+# def check_connection(dbapi_con, con_record, con_proxy):
+# 	'''Listener for Pool checkout events that pings every connection before using.
+# 	Implements pessimistic disconnect handling strategy. See also:
+# 	http://docs.sqlalchemy.org/en/rel_0_8/core/pooling.html#disconnect-handling-pessimistic'''
+
+# 	if run_context == 'celery':
+# 		# invesitage scoped session
+# 		print db.session
+		
+# listen(Pool, 'checkout', check_connection)
+## EXP ##
 
 
 

@@ -173,7 +173,7 @@ def jobjson(job_id):
 
 
 	def existsReturnValue(input):
-		if input != None:
+		if input != None and input != "0":
 			return input
 		else:
 			return "<span style='color:red;'>False</span>"

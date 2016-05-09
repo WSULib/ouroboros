@@ -21,7 +21,18 @@
 				<div class="form-group">
 					<label class="control-label">Row Range:</label>					
 					<input class="form-control" type="text" name="row_range" placeholder="Range of rows to include. e.g. 42-244 (#-#, no spaces)"></input>
-				</div>				
+				</div>
+				<div class="form-group">
+					<label class="control-label">Ingest Status:</label>					
+					<input class="form-control" type="text" name="ingested" placeholder="String for remote repositories as defined in localConfig, e.g. 'local','new_prod'"></input>
+				</div>	
+				<div class="form-group">
+					<div class="checkbox">
+						<label>
+							<input name="no_bag_path" type="checkbox"> Bag Path NOT created?
+						</label>
+					</div>
+				</div>			
 				<div class="form-group">
 					<input type="submit" class="btn btn-success" value="Filter">
 				</div>
@@ -99,12 +110,12 @@
 					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
 				</div>
 				<div class="form-group">
-				<div class="checkbox">
-					<label>
-						<input name="purge_bags" type="checkbox"> Purge bags if already created?
-					</label>
+					<div class="checkbox">
+						<label>
+							<input name="purge_bags" type="checkbox"> Purge bags if already created?
+						</label>
+					</div>
 				</div>
-			</div>
 				<div class="form-group">
 					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
 					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>

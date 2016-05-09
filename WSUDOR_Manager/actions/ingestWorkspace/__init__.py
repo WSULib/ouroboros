@@ -32,6 +32,9 @@ import time
 import traceback
 import subprocess
 
+# sql or
+from sqlalchemy import or_
+
 # eulfedora
 import eulfedora
 
@@ -69,9 +72,19 @@ def job(job_id):
 	# get handle
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
 
+
+	'''
+	Two things happen here:
+		1) filters are set in session so that AJAX based datatables will pick them up
+		2) ingest_id's of query are stored temporarily for filter based celery job
+	'''
+
+	# SET SESSIONS VARS
 	# set session filters if present
 	print "checking for filters..."
 	print request.args
+
+	# row range
 	if "row_range" in request.args:
 		try:
 			row_s,row_e = request.args['row_range'].split("-")
@@ -81,6 +94,23 @@ def job(job_id):
 			print "range malformed, cleaning session"
 			utilities.sessionVarClean(session,'row_s')
 			utilities.sessionVarClean(session,'row_e')
+
+	# ingested status
+	if "ingested" in request.args and request.args['ingested'] != '':
+		session['ingested'] = request.args['ingested']
+	else:
+		utilities.sessionVarClean(session,'ingested')
+
+	# bag created
+	if 'no_bag_path' in request.args and request.args['no_bag_path'] == 'on':
+		session['no_bag_path'] = True
+	else:
+		utilities.sessionVarClean(session,'no_bag_path')
+
+	# SET SESSIONS VARS
+	print "filtered rows stored in Redis"
+	current_row_set = currentRowsSet(job_id,session)
+	redisHandles.r_catchall.set('%s_crows_%s' % (session['username'],job_id),json.dumps(list(current_row_set)))
 
 	# render
 	return render_template("ingestJob.html", j=j, localConfig=localConfig, ouroboros_assets=ouroboros_assets)
@@ -198,17 +228,12 @@ def jobjson(job_id):
 	columns.append(ColumnDT('ingested', filter=existsReturnValue))
 	columns.append(ColumnDT('repository'))
 
-	# begin query definition
-	query = db.session.query(models.ingest_workspace_object).filter(models.ingest_workspace_object.job_id == job_id)
-
-	# row start
-	if "row_s" in session and "row_e" in session:
-		print "adding filters!"
-		query = query.filter(models.ingest_workspace_object.ingest_id >= session['row_s'])
-		query = query.filter(models.ingest_workspace_object.ingest_id <= session['row_e'])
+	# build query
+	query = rowQueryBuild(job_id, session)	
 
 	# instantiating a DataTable for the query and table needed
 	rowTable = DataTables(request.args, models.ingest_workspace_object, query, columns)
+
 
 	# returns what is needed by DataTable
 	return jsonify(rowTable.output_result())
@@ -506,7 +531,10 @@ def createBag_factory(job_package):
 	job_package['custom_task_name'] = 'createBag_worker'
 
 	# parse object rows from range (use parseIntSet() above)
-	object_rows = parseIntSet(nputstr=form_data['object_id_range'])
+	if form_data['object_id_range'].lower() == "all":
+		object_rows = set(json.loads(redisHandles.r_catchall.get('%s_crows_%s' % (job_package['username'],form_data['job_id']) )))
+	else:
+		object_rows = parseIntSet(nputstr=form_data['object_id_range'])
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
@@ -672,7 +700,10 @@ def ingestBag_factory(job_package):
 	job_package['custom_task_name'] = 'bagIngest_worker'
 
 	# parse object rows from range (use parseIntSet() above)
-	object_rows = parseIntSet(nputstr=form_data['object_id_range'])
+	if form_data['object_id_range'].lower() == "all":
+		object_rows = set(json.loads(redisHandles.r_catchall.get('%s_crows_%s' % (job_package['username'],form_data['job_id']) )))
+	else:
+		object_rows = parseIntSet(nputstr=form_data['object_id_range'])
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
@@ -738,7 +769,11 @@ def checkObjectStatus_factory(job_package):
 	job_package['custom_task_name'] = 'checkObjectStatus_worker'
 
 	# parse object rows from range (use parseIntSet() above)
-	object_rows = parseIntSet(nputstr=form_data['object_id_range'])
+	print form_data['object_id_range'].lower()
+	if form_data['object_id_range'].lower() == "all":
+		object_rows = set(json.loads(redisHandles.r_catchall.get('%s_crows_%s' % (job_package['username'],form_data['job_id']) )))
+	else:
+		object_rows = parseIntSet(nputstr=form_data['object_id_range'])
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
@@ -796,8 +831,8 @@ def checkObjectStatus_worker(job_package):
 	
 	# repo status
 	if 'check_repo' in form_data and form_data['check_repo'] == 'on':
-		print "checking existence in repository against %s" % o.ingested
-
+		print "checking existence in repository against %s" % form_data['dest_repo']
+		
 		# get fedora handle
 		if form_data['dest_repo'] == 'local':
 			dest_repo = fedora_handle
@@ -806,23 +841,21 @@ def checkObjectStatus_worker(job_package):
 
 		# check status
 		check_result = dest_repo.get_object(o.pid).exists
-		if not check_result == bool(o.ingested): # suggests they are not in agreement
-			to_commit = True
+		print "existence check: %s" % check_result
 
-			# clean status if not found
-			if check_result:			
-				o.ingested = True
-
-			# clean status if not found
-			else:			
-				o.ingested = None
+		# clean status if not found
+		if check_result:
+			if o.ingested != form_data['dest_repo']:
+				o.ingested = form_data['dest_repo']
 				to_commit = True
-	
+		# clean status if not found
+		else:			
+			o.ingested = None
 
 	# commit if changes made to row
 	if to_commit:
 		o._commit()
-	
+
 
 	return job_package
 
@@ -833,6 +866,45 @@ def checkObjectStatus_worker(job_package):
 #################################################################################
 # Utilities
 #################################################################################
+
+def rowQueryBuild(job_id, session):
+
+	# begin query definition
+	query = db.session.query(models.ingest_workspace_object).filter(models.ingest_workspace_object.job_id == job_id)
+
+	# row start
+	if "row_s" in session and "row_e" in session:
+		print "adding row range filter"
+		query = query.filter(models.ingest_workspace_object.ingest_id >= session['row_s'])
+		query = query.filter(models.ingest_workspace_object.ingest_id <= session['row_e'])
+
+	# ingested status
+	if 'ingested' in session:
+		print "adding ingest filter"
+		if session['ingested'] == "None":
+			query = query.filter(or_(models.ingest_workspace_object.ingested == None, models.ingest_workspace_object.ingested == "0" ))
+		else:
+			query = query.filter(models.ingest_workspace_object.ingested == session['ingested'])
+
+	# bag created
+	if 'no_bag_path' in session:
+		print "adding bag created filter"
+		query = query.filter(or_(models.ingest_workspace_object.bag_path == None, models.ingest_workspace_object.bag_path == "0" ))
+
+	# return query object
+	return query
+
+
+def currentRowsSet(job_id,session):
+	print 'determining all current rows after filter, setting as selection'
+	# perform query and add to set
+	query = rowQueryBuild(job_id,session)
+	selection = set()
+	for o in query.all():
+		selection.add(int(o.ingest_id))
+	# return
+	return selection
+
 
 def parseIntSet(nputstr=""):
 	selection = set()

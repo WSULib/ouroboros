@@ -851,6 +851,7 @@ def checkObjectStatus_worker(job_package):
 		# clean status if not found
 		else:			
 			o.ingested = None
+			to_commit = True
 
 	# commit if changes made to row
 	if to_commit:

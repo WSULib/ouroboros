@@ -17,6 +17,8 @@ import time
 import ast
 import zipfile
 import shutil
+import ConfigParser
+import glob
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -845,6 +847,52 @@ class WSUDOR_GenObject(object):
 		objMeta_handle.save()
 
 
+	# remove from Loris cache
+	def removeObjFromLorisCache(self):
+		
+		'''
+		Method to remove remenants of object from Loris cache.
+		Uses /etc/loris2/lors2.conf file for determining cache location.
+
+		NEED TO ADDRESS PERMISSION ISSUES
+		'''
+
+		print "Removing object from Loris caches..."
+
+		# read config file for Loris
+		data = StringIO.StringIO('\n'.join(line.strip() for line in open('/etc/loris2/loris2.conf')))
+		config = ConfigParser.ConfigParser()
+		config.readfp(data)
+
+		# get cache location(s)
+		image_cache = config.get('img.ImageCache','cache_dp').replace("'","")
+		print image_cache
+
+		# remove traces of object via PID from image cache
+		# root
+		obj_dirs = glob.glob('%s/fedora:%s*' % (image_cache, self.pid))
+		print obj_dirs
+		for obj_dir in obj_dirs:
+			print "Removing directory: %s" % obj_dir
+			shutil.rmtree(obj_dir)
+
+		# http
+		obj_dirs = glob.glob('%s/http/fedora:%s*' % (image_cache, self.pid))
+		print obj_dirs
+		for obj_dir in obj_dirs:
+			print "Removing directory: %s" % obj_dir
+			shutil.rmtree(obj_dir)
+
+		# https
+		obj_dirs = glob.glob('%s/https/fedora:%s*' % (image_cache, self.pid))
+		print obj_dirs
+		for obj_dir in obj_dirs:
+			print "Removing directory: %s" % obj_dir
+			shutil.rmtree(obj_dir)
+
+		return True
+
+
 	# refresh object
 	def objectRefresh(self):
 
@@ -867,6 +915,9 @@ class WSUDOR_GenObject(object):
 
 			# update object size in Solr
 			self.update_objSizeDict()
+
+			# remove object from Loris cache
+			# self.removeObjFromLorisCache() # waiting on permissions issues
 
 			return True
 			

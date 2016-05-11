@@ -17,12 +17,14 @@ import time
 import ast
 import zipfile
 import shutil
+import ConfigParser
+import glob
 
 # library for working with LOC BagIt standard 
 import bagit
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 
 # eulfedora
 import eulfedora
@@ -845,6 +847,62 @@ class WSUDOR_GenObject(object):
 		objMeta_handle.save()
 
 
+	# remove from Loris cache
+	def removeObjFromLorisCache(self):
+		
+		'''
+		Method to remove remenants of object from Loris cache.
+		Uses /etc/loris2/lors2.conf file for determining cache location.
+
+		NEED TO ADDRESS PERMISSION ISSUES
+		'''
+
+		print "Removing object from Loris caches..."
+
+		# read config file for Loris
+		data = StringIO.StringIO('\n'.join(line.strip() for line in open('/etc/loris2/loris2.conf')))
+		config = ConfigParser.ConfigParser()
+		config.readfp(data)
+
+		# get cache location(s)
+		image_cache = config.get('img.ImageCache','cache_dp').replace("'","")
+		print image_cache
+
+		# remove traces of object via PID from image cache
+		# root
+		try:
+			obj_dirs = glob.glob('%s/fedora:%s*' % (image_cache, self.pid))
+			print obj_dirs
+			for obj_dir in obj_dirs:
+				print "Removing directory: %s" % obj_dir
+				shutil.rmtree(obj_dir)
+			print "removed from Loris image cache"
+		except:
+			print "could not remove from Loris image cache"
+
+		try:
+
+			# http
+			obj_dirs = glob.glob('%s/http/fedora:%s*' % (image_cache, self.pid))
+			print obj_dirs
+			for obj_dir in obj_dirs:
+				print "Removing directory: %s" % obj_dir
+				shutil.rmtree(obj_dir)
+
+			# https
+			obj_dirs = glob.glob('%s/https/fedora:%s*' % (image_cache, self.pid))
+			print obj_dirs
+			for obj_dir in obj_dirs:
+				print "Removing directory: %s" % obj_dir
+				shutil.rmtree(obj_dir)
+
+			print "remove from Loris info cache"
+		except:
+			print "could not remove from Loris info cache"
+
+		return True
+
+
 	# refresh object
 	def objectRefresh(self):
 
@@ -868,6 +926,9 @@ class WSUDOR_GenObject(object):
 			# update object size in Solr
 			self.update_objSizeDict()
 
+			# remove object from Loris cache
+			self.removeObjFromLorisCache()			
+
 			return True
 			
 		except:
@@ -881,24 +942,37 @@ class WSUDOR_GenObject(object):
 		dest_repo = string key from localConfig for remote repositories credentials
 		'''
 
+		# handle string or eulfedora handle
+		print dest_repo,type(dest_repo)
+		if type(dest_repo) == str or type(dest_repo) == unicode:
+			dest_repo_handle = fedoraHandles.remoteRepo(dest_repo)
+		elif type(dest_repo) == eulfedora.server.Repository:
+			dest_repo_handle = dest_repo
+		else:
+			print "destination eulfedora not found, try again"
+			return False
+
 		# use syncutil
 		print "sending object..."
 		result = syncutil.sync_object(
 			self.ohandle,
-			fedoraHandles.remoteRepo(dest_repo),
+			dest_repo_handle,
 			export_context=export_context,
 			overwrite=overwrite,
 			show_progress=show_progress)
 
 		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
-		if refresh_remote:
-			print "refreshing remote object in remote repository"
-			refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
-			print refresh_remote_url
-			r = requests.get( refresh_remote_url )
-			print r.content
+		if type(dest_repo) == str or type(dest_repo) == unicode:
+			if refresh_remote:
+				print "refreshing remote object in remote repository"
+				refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
+				print refresh_remote_url
+				r = requests.get( refresh_remote_url )
+				print r.content
+			else:
+				print "skipping remote refresh"
 		else:
-			print "skipping remote refresh"
+			print "Cannot refresh remote.  It is likely you passed an Eulfedora Repository object.  To refresh remote, please provide string of remote repository that aligns with localConfig"
 
 
 

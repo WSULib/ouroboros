@@ -30,8 +30,25 @@
 			<!-- METS -->	
 			
 			<div class="form-group" id="upload">
-				<label class="control-label">Upload a METS file:</label>
-				<input id="upload" name="upload" type="file"></input>
+				<label class="control-label">Provide METS file:</label>
+				<input id="upload" name="upload" type="file"></input><br>
+				<p>Or provide path to METS on filesystem</p>
+				<input class="form-control" type="text" id="upload_path" name="upload_path"></input>
+			</div>
+
+			<div class="form-group" id="METS_type">
+				<div class="radio">
+				  <label>
+				    <input type="radio" name="METS_type" value="wsu" checked>
+				    WSU METS
+				  </label>
+				</div>
+				<div class="radio">
+				  <label>
+				    <input type="radio" name="METS_type" value="archivematica">
+				    Archivematica METS
+				  </label>
+				</div>
 			</div>
 
 			<div class="form-group">

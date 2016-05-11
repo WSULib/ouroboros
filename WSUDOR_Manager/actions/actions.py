@@ -1,12 +1,13 @@
-from cl.cl import celery
+from WSUDOR_Manager import celery
 from celery import Task
 import redis
 
 import WSUDOR_Manager.jobs as jobs
 import WSUDOR_Manager.redisHandles as redisHandles
 import WSUDOR_Manager.models as models
-from WSUDOR_Manager import app
+from WSUDOR_Manager import app,db
 from flask import session
+
 
 # local dependecies
 import time
@@ -35,7 +36,7 @@ from bagIngest import bagIngest, bagIngest_factory, bagIngest_worker
 app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
 
 #ingestWorkspace
-from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback
+from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback, checkObjectStatus_factory, checkObjectStatus_worker
 app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
 
 #createObjectIndex
@@ -121,12 +122,12 @@ app.register_blueprint(createObj, url_prefix=tasks_URL_prefix)
 # Fires *after* task is complete
 class postTask(Task):
 	abstract = True
-	def after_return(self, *args, **kwargs):
+	def after_return(self, *args, **kwargs):		
 
 		# extract task data		
 		status = args[0]
 		task_id = args[2]
-		job_package = args[3][0]
+		job_package = args[4]['job_package']
 		job_num = job_package['job_num']
 
 		# obj_loop jobs
@@ -147,17 +148,20 @@ class postTask(Task):
 
 		# increments completed tasks
 		if status == "SUCCESS":
-			jobs.jobUpdateCompletedCount(job_num)	
+			jobs.jobUpdateCompletedCount(job_num)
 
 
 
 # obj_loop TASK FACTORY
 ##################################################################
-@celery.task(name="obj_loop_taskFactory")
+@celery.task(name="obj_loop_taskFactory",trail=True)
 def obj_loop_taskFactory(**kwargs):
-	
+
 	# create job_package
-	job_package = kwargs['job_package']	
+	job_package = kwargs['job_package']
+
+	# username
+	username = job_package['username']
 
 	# get job_num
 	job_num = kwargs['job_num']
@@ -179,7 +183,7 @@ def obj_loop_taskFactory(**kwargs):
 		job_package['PID'] = PID
 
 		# fire off async task via obj_loop_taskWrapper		
-		result = obj_loop_taskWrapper.delay(job_package)		
+		result = obj_loop_taskWrapper.apply_async(kwargs={'job_package':job_package,}, queue=username)
 		task_id = result.id
 
 		# Set handle in 
@@ -194,8 +198,10 @@ def obj_loop_taskFactory(**kwargs):
 	print "Finished assigning tasks"
 
 
-@celery.task(base=postTask,bind=True,max_retries=3,name="obj_loop_taskWrapper")
-def obj_loop_taskWrapper(self,job_package,*args, **kwargs):
+@celery.task(base=postTask, bind=True, max_retries=3, name="obj_loop_taskWrapper",trail=True)
+def obj_loop_taskWrapper(self, **kwargs):
+
+	job_package = kwargs['job_package']
 	
 	# check PIDlock
 	lock_status = redisHandles.r_PIDlock.exists(job_package['PID'])
@@ -217,8 +223,10 @@ def obj_loop_taskWrapper(self,job_package,*args, **kwargs):
 
 # custom_loop TASK FACTORY
 ##################################################################
-@celery.task(base=postTask,bind=True,max_retries=3,name="custom_loop_taskWrapper")
-def custom_loop_taskWrapper(self,job_package,*args, **kwargs):
+@celery.task(base=postTask,bind=True,max_retries=3,name="custom_loop_taskWrapper",trail=True)
+def custom_loop_taskWrapper(self, *args, **kwargs):
+
+	job_package = kwargs['job_package']
 	
 	# execute function				
 	'''

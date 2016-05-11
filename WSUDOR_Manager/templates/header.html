@@ -60,13 +60,9 @@
 			<li><a href="/{{APP_PREFIX}}/userPage">User Home</a></li>
 			<li><a href="/{{APP_PREFIX}}/systemStatus">System Status</a></li>
 			<li><a href="/{{APP_PREFIX}}/userJobs">User Jobs</a></li>			
-				{% if g.user.is_authenticated()%}
+				{% if g.user.is_authenticated%}
 			<!-- <li class="divider"></li> -->
 			<li><a href="{{ url_for('logout') }}">Logout</a></li>
-			<!-- <li class="divider"></li> -->
-			<li><a href="{{ url_for('register') }}">Create New Account</a></li>
-				{% endif %}
-				{% if not g.user.is_authenticated()%}
 			<!-- <li class="divider"></li> -->
 			<li><a href="{{ url_for('login') }}">Login</a></li>
 				{% endif %}

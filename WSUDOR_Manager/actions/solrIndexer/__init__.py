@@ -13,7 +13,7 @@ from flask import Blueprint, render_template, make_response, abort, request, red
 import json
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 from celery import Task
 
 # WSUDOR

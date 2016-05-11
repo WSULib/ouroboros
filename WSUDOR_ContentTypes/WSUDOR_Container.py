@@ -29,22 +29,22 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
 
 
-class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
+class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
-	label = "Hierarchical File"
+	label = "Container"
 
-	description = "Still under development.  The Hierarchical File Content Type is meant to model content where the filesystem / archival hierarchical order is important for understanding the object."
+	description = "Generic container object for hierarchical (usually mixed, archival) materials."
 
-	Fedora_ContentType = "CM:HierarchicalFiles"
+	Fedora_ContentType = "CM:Container"
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 		
 		# run __init__ from parent class
 		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
 		
-		# Add WSUDOR_HierarchicalFiles struct_requirements to WSUDOR_Object instance struct_requirements
-		self.struct_requirements['WSUDOR_HierarchicalFiles'] = {
+		# Add WSUDOR_Container struct_requirements to WSUDOR_Object instance struct_requirements
+		self.struct_requirements['WSUDOR_Container'] = {
 			"datastreams":[],
 			"external_relationships":[]
 		}
@@ -74,6 +74,8 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# ingest image type
 	@helpers.timing
 	def ingestBag(self):
+
+		print "\n\n\nWSUDOR_Container IS FIRING\n\n\n"
 
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
@@ -153,45 +155,11 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
-			# create derivatives and write datastreams
-			for ds in self.objMeta['datastreams']:
-
-				# set file_path
-				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				print "Operating on:",file_path
-
-				# original
-				orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
-				orig_handle.label = ds['label']
-				orig_handle.content = open(file_path)
-				orig_handle.save()
-
-				# write FILE datastream
-				'''
-				This FILE datastream serves as shorthand to what should be the only binary of the object
-				'''
-				rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="E")
-				rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
-				rep_handle.label = "FILE"
-				rep_handle.save()				
-
-				# make thumb for PDF
-				if ds['mimetype'] == "application/pdf":
-					print "Creating derivative thumbnail from PDF"					
-					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
-					os.system('convert -thumbnail 200x200 -background white %s[0] %s' % (file_path, temp_filename))
-					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group='M')
-					thumb_handle.label = "%s_THUMBNAIL" % (ds['label'])
-					thumb_handle.content = open(temp_filename)
-					thumb_handle.save()
-					os.system('rm %s' % (temp_filename))
-
-					# write generic thumbnail for what should be SINGLE file per object
-					for gen_type in ['THUMBNAIL']:
-						rep_handle = eulfedora.models.DatastreamObject(self.ohandle, gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-						rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
-						rep_handle.label = gen_type
-						rep_handle.save()
+			# make generic container thumb
+			thumb_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/png", control_group="M")
+			thumb_handle.ds_location = "http://localhost/fedora/objects/wayne:WSUDORThumbnails/datastreams/WSUDOR_Container/content"
+			thumb_handle.label = "THUMBNAIL"
+			thumb_handle.save()
 
 
 			# save and commit object before finishIngest()
@@ -199,7 +167,6 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# finish generic ingest
 			return self.finishIngest()
-
 
 
 		# exception handling

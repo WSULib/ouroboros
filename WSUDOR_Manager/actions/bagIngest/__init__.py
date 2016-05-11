@@ -1,7 +1,7 @@
 # utility for Bag Ingest
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 
 # handles
 from WSUDOR_Manager.forms import RDF_edit
@@ -68,7 +68,7 @@ def bagIngest_factory(job_package):
 
 		step = 1
 
-		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 		task_id = result.id
 
 		# Set handle in Redis
@@ -134,7 +134,7 @@ def bagIngest_factory(job_package):
 			job_package['bag_dir'] = bag_dir
 			
 			# fire task via custom_loop_taskWrapper			
-			result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+			result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 			task_id = result.id
 
 			# Set handle in Redis
@@ -176,6 +176,8 @@ def bagIngest_worker(job_package):
 
 	# push to remote
 	if 'push_remote' in job_package['form_data']:
+
+		print "*******PUSHING TO REMOTE REPOSITORY*********"
 
 		# get options
 		# set destination repo
@@ -219,7 +221,7 @@ def bagIngest_worker(job_package):
 		# fire ingestWorkspace callback if checked
 		if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:
 			print "firing ingest callback"			
-			actions.actions.ingestBag_callback.delay(job_package)
+			actions.actions.ingestBag_callback.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 
 		return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 
@@ -231,7 +233,7 @@ def bagIngest_worker(job_package):
 			# fire ingestWorkspace callback if checked
 			if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:
 				print "firing ingest callback"
-				actions.actions.ingestBag_callback.delay(job_package)
+				actions.actions.ingestBag_callback.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 			return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 		except Exception, e:
 			raise Exception(e)

@@ -17,6 +17,7 @@ import logging
 import os
 import atexit
 import lockfile
+import xmlrpclib
 
 # local
 from localConfig import *
@@ -45,6 +46,23 @@ def pidfileRemove():
 	os.system("rm /var/run/ouroboros/%s.pid" % (APP_NAME))
 
 
+# Ouroboros pidfile ##############################################################
+def shutdown():
+	# remove PID
+	pidfileRemove()
+
+	# remove generic celery task ONLY
+	print "removing generic celery tasks from supervisor"
+	celery_conf_files = os.listdir('/etc/supervisor/conf.d')
+	for conf in celery_conf_files:
+		if conf == "celery-celery.conf":	
+			process_group = conf.split(".conf")[0]
+			print "stopping celery worker: %s" % process_group
+			sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+			sup_server.supervisor.stopProcessGroup(process_group)
+			sup_server.supervisor.removeProcessGroup(process_group)
+			os.system('rm /etc/supervisor/conf.d/%s' % conf)
+
 
 # mainRouter class for all components not in Flask apps #########################################################
 class mainRouter:
@@ -59,28 +77,28 @@ routes 'fedEvents' to fedoraConsumer()
 Dev: Disabled
 '''
 class fedoraConsumerWorker(object):
-    QUEUE = "/topic/fedora.apim.update"
-    def __init__(self, config=None):
-        if config is None:
-            config = StompConfig('tcp://localhost:%s' % (FEDCONSUMER_PORT))
-        self.config = config
+	QUEUE = "/topic/fedora.apim.update"
+	def __init__(self, config=None):
+		if config is None:
+			config = StompConfig('tcp://localhost:%s' % (FEDCONSUMER_PORT))
+		self.config = config
 
-    @defer.inlineCallbacks
-    def run(self):
-        client = yield Stomp(self.config).connect()
-        headers = {
-            # client-individual mode is necessary for concurrent processing
-            # (requires ActiveMQ >= 5.2)
-            StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
-            # the maximal number of messages the broker will let you work on at the same time
-            'activemq.prefetchSize': '100',
-        }
-        client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
+	@defer.inlineCallbacks
+	def run(self):
+		client = yield Stomp(self.config).connect()
+		headers = {
+			# client-individual mode is necessary for concurrent processing
+			# (requires ActiveMQ >= 5.2)
+			StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
+			# the maximal number of messages the broker will let you work on at the same time
+			'activemq.prefetchSize': '100',
+		}
+		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
 
-    def consume(self, client, frame):
-        #send to clearkRouter           
-        worker = mainRouter()        
-        worker.fedoraConsumer(msg=frame.body)
+	def consume(self, client, frame):
+		#send to clearkRouter           
+		worker = mainRouter()        
+		worker.fedoraConsumer(msg=frame.body)
 
 
 
@@ -98,7 +116,7 @@ WSUDOR_API_site = Site(WSUDOR_API_resource)
 if __name__ == '__main__':
 
 	# write PID to /var/run
-	atexit.register(pidfileRemove)
+	atexit.register(shutdown)
 	ouroboros_pidlock = pidfileCreate()
 
 	# WSUDOR Manager

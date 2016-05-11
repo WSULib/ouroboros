@@ -19,7 +19,7 @@ from localConfig import *
 
 # modules from WSUDOR_Manager
 import WSUDOR_ContentTypes
-from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_API.fedoraHandles import fedora_handle
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities
@@ -268,33 +268,33 @@ def solrTranslationHash(args):
 	return transJSONpackage
 
 
-# experiemtnal function to query and update /pubstore core in Solr4.
-# this core is used as a quasi-datastore at this point, perhaps exclusively for ephemeral data
-def pubStore(getParams):
-	urlsuff = getParams['urlsuff'][0]
-	solrString = getParams['json'][0]	
+# # experiemtnal function to query and update /pubstore core in Solr4.
+# # this core is used as a quasi-datastore at this point, perhaps exclusively for ephemeral data
+# def pubStore(getParams):
+# 	urlsuff = getParams['urlsuff'][0]
+# 	solrString = getParams['json'][0]	
 
-	# print solrString
+# 	# print solrString
 
-	baseURL = "http://localhost/solr4/pubstore/%s" % (urlsuff)
-	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
-	# print "Going to this URL:",baseURL
+# 	baseURL = "http://localhost/solr4/pubstore/%s" % (urlsuff)
+# 	# baseURL = "http://localhost/solr4/pubstore/update/json?commit=true"
+# 	# print "Going to this URL:",baseURL
 
-	# json post
-	if "update" in urlsuff:
-		headersDict = {
-			"Content-type":"application/json"
-		}
+# 	# json post
+# 	if "update" in urlsuff:
+# 		headersDict = {
+# 			"Content-type":"application/json"
+# 		}
 
-		r = requests.post(baseURL, data=solrString, headers=headersDict)
+# 		r = requests.post(baseURL, data=solrString, headers=headersDict)
 
-	# get
-	if "select" in urlsuff:
-		solrParams = ast.literal_eval(solrString)
-		r = requests.get(baseURL, params=solrParams)
+# 	# get
+# 	if "select" in urlsuff:
+# 		solrParams = ast.literal_eval(solrString)
+# 		r = requests.get(baseURL, params=solrParams)
 
-	jsonString = r.text
-	return jsonString
+# 	jsonString = r.text
+# 	return jsonString
 
 
 
@@ -308,7 +308,7 @@ def pubStore(getParams):
 # return Fedora MODS datastream
 def getObjectXML(getParams):	
 	baseURL = "http://localhost/fedora/objects/%s/objectXML" % (getParams['PID'][0])
-	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
+	r = requests.get(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD))			
 	xmlString = r.text
 
 	#check if valid PID
@@ -338,7 +338,8 @@ def isMemberOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -356,7 +357,8 @@ def hasMemberOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -376,7 +378,8 @@ def isMemberOfCollection(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')
 	return jsonString
@@ -395,7 +398,8 @@ def hasMemberOfCollection(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
@@ -415,7 +419,8 @@ def getSiblings(getParams):
 	}
 
 	# prepare as JSON dict
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')
 	lines = jsonString.split("\n")	
@@ -442,7 +447,7 @@ def getSiblings(getParams):
 # return Fedora MODS datastream
 def fedoraMODS(getParams):
 	baseURL = "http://localhost/fedora/objects/%s/datastreams/MODS/content" % (getParams['PID'][0])
-	r = requests.get(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD))			
+	r = requests.get(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD))			
 	xmlString = r.text
 	#convert XML to JSON with "xmltodict"
 	outputDict = xmltodict.parse(xmlString)
@@ -463,24 +468,25 @@ def serialWalk(getParams):
 		'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	jsonString = r.text.replace('info:fedora/','')			
 	return jsonString
 
 
-# return symlink (created or retrieved) to object in datastreamStore
-def fedDataSpy(getParams):
+# # return symlink (created or retrieved) to object in datastreamStore
+# def fedDataSpy(getParams):
 
-	outputDict = {}
+# 	outputDict = {}
 
-	PID = getParams['PID'][0]
-	DS = getParams['DS'][0]	
+# 	PID = getParams['PID'][0]
+# 	DS = getParams['DS'][0]	
 	
-	outputDict = makeSymLink(PID, DS)
+# 	outputDict = makeSymLink(PID, DS)
 
-	jsonString = json.dumps(outputDict)
-	return jsonString
+# 	jsonString = json.dumps(outputDict)
+# 	return jsonString
 
 
 # get isPartOf children for single PID
@@ -496,7 +502,8 @@ def hasPartOf(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"	
 	handle = json.loads(r.text)
 
@@ -569,7 +576,8 @@ def hierarchicalTree(getParams):
 	'dt': 'on',
 	'query': risearch_query
 	}
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	parent_jsonString = r.text.replace('info:fedora/','')
 	parent_dict = json.loads(parent_jsonString)
@@ -609,7 +617,8 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	parent_sibling_jsonString = r.text.replace('info:fedora/','')
 	parent_sibling_dict = json.loads(parent_sibling_jsonString)
@@ -641,7 +650,8 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	sibling_jsonString = r.text.replace('info:fedora/','')
 	sibling_dict = json.loads(sibling_jsonString)
@@ -674,7 +684,8 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	r = requests.post(baseURL, auth=(FEDORA_USER, FEDORA_PASSWORD), data=risearch_params)
+	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
+	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	child_jsonString = r.text.replace('info:fedora/','')
 	child_dict = json.loads(child_jsonString)
@@ -1145,60 +1156,60 @@ def cookieAuth(getParams):
 	return jsonString
 
 
-def createUserAccount(getParams):
-# function to take jsonAddString, index in Solr, and return confirmation code
-######################################################################################################################	
+# def createUserAccount(getParams):
+# # function to take jsonAddString, index in Solr, and return confirmation code
+# ######################################################################################################################	
 
-	# print getParams
+# 	# print getParams
 
-	# create solrString to add doc
-	solrDict = {}
-	solrDict['id'] = getParams['id'][0]
-	solrDict['user_username'] = getParams['user_username'][0]
-	solrDict['user_displayName'] = getParams['user_displayName'][0]
-	# not currently storing passwords in solr...authenticating based on matching hash values for now
-	# solrDict['user_password'] = getParams['user_password'][0]
-	solrDict['user_WSU'] = getParams['user_WSU'][0]
-	# create hash of username and password	
-	hashString = solrDict['user_username']+getParams['user_password'][0]+USER_ACCOUNT_SALT
-	solrDict['user_hash'] = hashlib.sha256(hashString).hexdigest()
-	# print solrDict
+# 	# create solrString to add doc
+# 	solrDict = {}
+# 	solrDict['id'] = getParams['id'][0]
+# 	solrDict['user_username'] = getParams['user_username'][0]
+# 	solrDict['user_displayName'] = getParams['user_displayName'][0]
+# 	# not currently storing passwords in solr...authenticating based on matching hash values for now
+# 	# solrDict['user_password'] = getParams['user_password'][0]
+# 	solrDict['user_WSU'] = getParams['user_WSU'][0]
+# 	# create hash of username and password	
+# 	hashString = solrDict['user_username']+getParams['user_password'][0]+USER_ACCOUNT_SALT
+# 	solrDict['user_hash'] = hashlib.sha256(hashString).hexdigest()
+# 	# print solrDict
 
-	solrString = json.dumps(solrDict)
-	solrString = "["+solrString+"]"
-	# print solrString
+# 	solrString = json.dumps(solrDict)
+# 	solrString = "["+solrString+"]"
+# 	# print solrString
 
-	baseURL = "http://localhost/solr4/users/update/json?commit=true"
-	headersDict = {
-		"Content-type":"application/json"
-	}
+# 	baseURL = "http://localhost/solr4/users/update/json?commit=true"
+# 	headersDict = {
+# 		"Content-type":"application/json"
+# 	}
 
-	r = requests.post(baseURL, data=solrString, headers=headersDict)	
-	responseString = json.loads(r.text)
+# 	r = requests.post(baseURL, data=solrString, headers=headersDict)	
+# 	responseString = json.loads(r.text)
 
-	userReturnDict = {}
-	userReturnDict['clientHash'] = solrDict['user_hash']
-	userReturnDict['createResponse'] = responseString
+# 	userReturnDict = {}
+# 	userReturnDict['clientHash'] = solrDict['user_hash']
+# 	userReturnDict['createResponse'] = responseString
 
-	jsonString = json.dumps(userReturnDict)
+# 	jsonString = json.dumps(userReturnDict)
 
-	return jsonString
+# 	return jsonString
 
 
-def addFavorite(getParams):
-# function to take jsonAddString, index in Solr, and return confirmation code
-######################################################################################################################	
-	solrString = getParams['raw'][0]
-	# print solrString	
+# def addFavorite(getParams):
+# # function to take jsonAddString, index in Solr, and return confirmation code
+# ######################################################################################################################	
+# 	solrString = getParams['raw'][0]
+# 	# print solrString	
 
-	baseURL = "http://localhost/solr4/users/update/json?commit=true"
-	headersDict = {
-		"Content-type":"application/json"
-	}
+# 	baseURL = "http://localhost/solr4/users/update/json?commit=true"
+# 	headersDict = {
+# 		"Content-type":"application/json"
+# 	}
 
-	r = requests.post(baseURL, data=solrString, headers=headersDict)
-	jsonString = r.text
-	return jsonString
+# 	r = requests.post(baseURL, data=solrString, headers=headersDict)
+# 	jsonString = r.text
+# 	return jsonString
 
 
 '''

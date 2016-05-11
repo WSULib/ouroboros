@@ -18,7 +18,6 @@ from flask import Blueprint, render_template, redirect, abort, request, session
 
 import eulfedora
 
-from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.jobs import getSelPIDs, genPIDlet
 from WSUDOR_Manager import utilities, redisHandles
 import WSUDOR_ContentTypes

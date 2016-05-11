@@ -1,16 +1,11 @@
 {% include 'header.html' %}
 
-
-
-
 <!-- metadata -->
 <div class="row">
 	<div class="col-md-12">
-
-		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a>: Job </h1>
-		
-		<h4>Job Information:</h4>
-		<p>
+		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a> : Job "{{j.name}}"</h1>
+		<div class="col-md-4">
+			<h4><strong>Information</strong></h4>
 			<ul>
 				<li><strong>Name:</strong> {{j.name}}</li>
 				<li><strong>Collection Identifier:</strong> {{j.collection_identifier}}</li>
@@ -18,8 +13,43 @@
 				<li><strong>Created:</strong> {{j.created}}</li>
 				<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
 			</ul>
-		</p>
-
+			<h4><strong>Actions</strong></h4>
+			<ul>
+				<li style="margin-bottom:5px;"><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewMETS"><button class="btn btn-sm btn-success details">View METS</button></a></li>
+				<!-- <li style="margin-bottom:5px;"></li> -->
+			</ul>
+		</div>
+		<div class="col-md-8">
+			<h4><strong>Filter Rows</strong></h4>
+			<p>Note: these filters remove rows from view only, they will still be acted upon if included in ranges below.</p>
+			<form class="form" id="form" role="form" method="GET" action="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}" enctype="multipart/form-data">
+				<div class="col-md-7">
+					<div class="form-group">
+						<label class="control-label">Row Range:</label>					
+						<input class="form-control" type="text" name="row_range" placeholder="Range of rows to include. e.g. 42-244 (#-#, no spaces)"></input>
+					</div>
+					<div class="form-group">
+						<label class="control-label">Ingest Location:</label>					
+						<input class="form-control" type="text" name="ingested" placeholder="String of  remote repositories (e.g. 'local' or 'new_prod'), or 'None' for not ingested "></input>
+					</div>
+				</div>
+				<div class="col-md-5">	
+					<div class="form-group">
+						<div class="checkbox">
+							<label>
+								<input name="no_bag_path" type="checkbox"> See rows <em>without</em> bags
+							</label>
+						</div>
+					</div>			
+					<div class="form-group">
+						<input type="submit" class="btn btn-success" value="Filter">
+					</div>
+				</div>
+			</form>
+		</div>
+		<div class="col-md-4">
+					
+		</div>
 	</div>
 </div>
 
@@ -55,8 +85,9 @@
 
 <div style="margin-top:30px;"></div>
 
-<!-- make bags -->
 <div class="row">
+
+	<!-- make bags -->
 	<div class="col-md-6">
 		<!-- make bags -->
 		<div class="well">
@@ -75,7 +106,8 @@
 					</select> 
 				</div>				
 				<div class="form-group">
-					<label class="control-label">Full path of files location (bag creation class determines file matching behavior):</label>
+					<label class="control-label">Path of Binaries:</label>
+					<p>If value entered for this field, job will create an index of the files, and store this in the DB.  If left blank, it will skip this step and used what was previously stored.</p>
 					<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection"></input>
 				</div>
 				<div class="form-group">
@@ -83,12 +115,12 @@
 					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
 				</div>
 				<div class="form-group">
-				<div class="checkbox">
-					<label>
-						<input name="purge_bags" type="checkbox"> Purge bags if already created?
-					</label>
+					<div class="checkbox">
+						<label>
+							<input name="purge_bags" type="checkbox"> Purge bags if already created?
+						</label>
+					</div>
 				</div>
-			</div>
 				<div class="form-group">
 					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
 					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
@@ -99,20 +131,17 @@
 
 	</div>
 
+	<!-- ingest bags -->
 	<div class="col-md-6">
 		<div class="well">
 			<h4>Ingest Bags</h4>	
 			<p>Using the form below, ingest select rows to a repository of your choice.</p>
 			
 			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/ingestBag_factory" enctype="multipart/form-data">
-
-				
-				
 				<div class="form-group">
-					<label class="control-label">Object ID's to create bags:</label>
+					<label class="control-label">Object ID's to ingest:</label>
 					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
 				</div>
-
 				<div class="form-group">
 					<div class="checkbox">
 						<label>
@@ -127,17 +156,16 @@
 						</label>
 					</div>
 				</div>
-
 				<div style="display:none;" class="push_remote">
 					<div class="form-group">
 						<label class="control-label" for="dest_repo">Destination Repository:</label> 
 						<select class="form-control input-sm" id="dest_repo" name="dest_repo">
+							<option value="local">local</option>
 							{% for repo in localConfig.REMOTE_REPOSITORIES %}
 								<option value="{{repo}}">{{repo}}</option>
 							{% endfor %}
 						</select> 
 					</div>		
-
 					<div class="form-group">
 						<label class="control-label" for="export_context">Export Context:</label> 
 						<select class="form-control input-sm" id="export_context" name="export_context">
@@ -145,7 +173,6 @@
 							<option value="migrate">migrate</option>
 						</select> 
 					</div>	
-
 					<div class="form-group">
 						<div class="checkbox">
 							<label>
@@ -153,7 +180,6 @@
 							</label>
 						</div>
 					</div>			
-
 					<div class="form-group">
 						<div class="checkbox">
 							<label>
@@ -162,12 +188,62 @@
 						</div>
 					</div>
 				</div>
-
-				
 				<div class="form-group">
 					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
 					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
 					<input class="form-control" type="hidden" name="origin" value="ingestWorkspace"></input>
+					<input type="submit" class="btn btn-success" value="Ingest Bags">
+				</div>
+			</form>
+			
+		</div>
+
+	</div>
+
+	<!-- check bag and ingest status -->
+	<div class="col-md-6">
+		<div class="well">
+			<h4>(Re)Check Object Statuses</h4>	
+			<p>Here you can recheck the status of bags and/or the ingest status of objects in repositories.</p>
+			
+			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/checkObjectStatus_factory" enctype="multipart/form-data">
+				
+				<div class="form-group">
+					<label class="control-label">Object ID's to (re)check statuses:</label>
+					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
+				</div>
+
+				<div class="form-group">
+					<div class="checkbox">
+						<label>
+							<input name="check_bag_path" type="checkbox"> Check bag path?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group">
+					<div class="checkbox">
+						<label>
+							<input name="check_repo" type="checkbox" onclick="$('.check_remote').fadeToggle();"> Check object status in repository?
+						</label>
+					</div>
+				</div>
+
+				<div style="display:none;" class="check_remote">
+					<div class="form-group">
+						<label class="control-label" for="dest_repo">Target Repository:</label> 
+						<select class="form-control input-sm" id="dest_repo" name="dest_repo">
+							<option value="local">local</option>
+							{% for repo in localConfig.REMOTE_REPOSITORIES %}
+								<option value="{{repo}}">{{repo}}</option>
+							{% endfor %}
+						</select> 
+					</div>
+				</div>
+				
+				<div class="form-group">
+					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
+					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
 					<input type="submit" class="btn btn-success" value="Ingest Bags">
 				</div>
 			</form>

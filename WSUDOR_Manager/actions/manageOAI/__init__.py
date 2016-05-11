@@ -1,7 +1,7 @@
 # small utility to edit RELS-EXT datastream for objects
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 from celery import Task
 
 # handles
@@ -245,7 +245,14 @@ def manageOAI_toggleSet(PID):
 	# toggle relationships for child objects (runs as celery task)	
 	# collection_objects = obj_ohandle.risearch.get_subjects("fedora-rels-ext:isMemberOfCollection",obj_ohandle.uriref)	
 	# for object_uri in collection_objects:
-	# 	manageOAI_toggleSet_worker.delay(harvest_status,object_uri,PID)
+	# 	manageOAI_toggleSet_worker.apply_async(
+		# 	kwargs={
+		# 		'harvest_status':harvest_status,
+		# 		'object_uri':object_uri,
+		# 		'PID':PID
+		# 	},
+		# 	queue=job_package['username']
+		# )
 
 	return redirect("/tasks/manageOAI/serverWide")	
 

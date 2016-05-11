@@ -4,18 +4,23 @@ import json
 import pickle
 import sys
 from uuid import uuid4
-import json
 import unicodedata
 import shlex, subprocess
 import socket
 import hashlib
 import os
 import pkgutil
+import requests
+from requests.auth import HTTPBasicAuth
+import xmltodict
+import xmlrpclib
+import uuid
 
 # flask proper
 from flask import render_template, request, session, redirect, make_response, Response, Blueprint
 from flask.ext.sqlalchemy import SQLAlchemy
 from datetime import datetime
+from datetime import timedelta
 
 # WSUDOR_Manager
 from WSUDOR_Manager import app
@@ -28,19 +33,22 @@ from WSUDOR_Manager import WSUDOR_ContentTypes
 from WSUDOR_ContentTypes import *
 import utilities
 
+# flask-security
+# from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin
+
 # login
 from flask import flash, url_for, abort, g
-from flask.ext.login import login_user, logout_user, current_user, login_required
+from flask.ext.login import login_required, login_user, logout_user, current_user
 
 # models
-from models import User, ROLE_USER, ROLE_ADMIN
+from models import User
 
 # forms
 from flask_wtf import Form
 from wtforms import TextField
 
 # get celery instance / handle
-from cl.cl import celery
+from WSUDOR_Manager import celery
 import jobs
 import forms
 from redisHandles import *
@@ -54,25 +62,19 @@ from solrHandles import solr_handle
 # Fedora
 from fedoraHandles import fedora_handle
 
-# session data secret key
-####################################
-app.secret_key = 'WSUDOR'
-####################################
-
-
-
 # GENERAL
 #########################################################################################################
+
 
 @app.route("/")
 @login_required
 def index():
 	if "username" in session:
-		username = session['username']		
+		username = session['username']
 		return redirect("userPage")
 	else:
 		username = "User not set."
-		return render_template("index.html",username=username)
+		return render_template("index.html", username=username)
 
 
 @app.route("/about")
@@ -95,7 +97,7 @@ def userPage():
 	# get selected PIDs to show user
 	userData['selected_objects'] = len(jobs.getSelPIDs())
 
-	return render_template("userPage.html",userData=userData)	
+	return render_template("userPage.html", userData=userData)
 
 
 @app.route('/systemStatus')
@@ -103,48 +105,120 @@ def userPage():
 def systemStatus():
 
 	#check important ports
-	imp_ports = [(61616,"Fedora JMS"),(61617,"WSUDOR_API - prod"),(61618,"imageServer - prod"),(61619,"WSUDOR_API - dev"),(61620,"imageServer - dev"),(8080,"Tomcat"),(5001,"Ouroboros dev @:5001"),(5002,"Ouroboros dev @:5002"),(5004,"Ouroboros prod @:5004"),(6379,"Redis"),(3306,"MySQL")]
-	
+	imp_ports = [		
+		(localConfig.WSUDOR_MANAGER_PORT, "WSUDOR_Manager"),
+		(localConfig.WSUDOR_API_LISTENER_PORT, "WSUDOR_API"),		
+		(61616, "Fedora Messaging Service"),
+		(8080, "Tomcat"),		
+		(6379, "Redis"),
+		(3306, "MySQL")
+	]
+
 	imp_ports_results = []
-	for port,desc in imp_ports:
+	for port, desc in imp_ports:
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		check = result = s.connect_ex(("localhost",port))
+		check = result = s.connect_ex(("localhost", port))
 		if check == 0:
 			msg = "active"
 		else:
 			msg = "inactive"
 
-		imp_ports_results.append((str(port),desc,msg))	
-
-	return render_template("systemStatus.html",imp_ports_results=imp_ports_results)
+		imp_ports_results.append((str(port), desc, msg))
 
 
-# MAJOR SUB-SECTIONS	
+	# get celery worker information
+	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+	sup_info = {}
+
+	# ouroboros 
+	try:
+		sup_info['ouroboros'] = json.dumps(sup_server.supervisor.getProcessInfo('Ouroboros'))
+	except:
+		sup_info['ouroboros'] = False
+
+	# user cw
+	try:
+		sup_info['worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
+	except:
+		sup_info['worker'] = False
+
+	# generic cw
+	try:
+		sup_info['generic_worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-celery'))
+	except:
+		sup_info['generic_worker'] = False
+
+	# render template
+	return render_template("systemStatus.html", imp_ports_results=imp_ports_results, sup_info=sup_info)
+
+
+@app.route('/systemStatus/cw/<target>/<action>')
+@login_required
+def cw(target, action):
+
+	if target == 'user':
+		# grab user
+		user = models.User.query.filter_by(username=session['username']).first()
+
+		# grab model
+		cw = models.CeleryWorker(user.username,user.password)
+
+	else:
+		# grab model
+		cw = models.CeleryWorker("celery", False)		
+
+	# start
+	if action == 'start':
+		cw.start()
+
+	# restart
+	if action == 'restart':
+		cw.restart()
+
+	# stop
+	if action == 'stop':
+		cw.stop()
+
+	return redirect("systemStatus")
+
+
+# @app.route('/systemStatus/restartOuroboros')
+# @login_required
+# def restartOuroboros():
+
+# 	os.system('supervisorctl restart Ouroboros')
+
+
+# MAJOR SUB-SECTIONS
 #########################################################################################################
 @app.route('/contentModels', methods=['GET', 'POST'])
 @login_required
 def contentModels():
-	
+
 	# WSUDOR_ContentTypes
 	wcts = [name for _, name, _ in pkgutil.iter_modules(['WSUDOR_ContentTypes'])]
 	print wcts
 
-	return render_template("contentModels.html",wcts=wcts)
+	return render_template("contentModels.html", wcts=wcts)
+
 
 @app.route('/MODSedit', methods=['GET', 'POST'])
 @login_required
 def MODSedit():
 	return render_template("MODSedit.html")
 
+
 @app.route('/datastreamManagement', methods=['GET', 'POST'])
 @login_required
 def datastreamManagement():
 	return render_template("datastreamManagement.html")
 
+
 @app.route('/objectManagement', methods=['GET', 'POST'])
 @login_required
 def objectManagement():
 	return render_template("objectManagement.html")
+
 
 @app.route('/WSUDORManagement', methods=['GET', 'POST'])
 @login_required
@@ -155,59 +229,140 @@ def WSUDORManagement():
 #########################################################################################################
 # Use @login_required when you want to lock down a page
 
-@login_manager.user_loader
-def user_loader(userid):
-	'''Flask-Login user_loader callback.
-	The user_loader function asks this function to get a User Object or return 
-	None based on the userid.
-	The userid was stored in the session environment by Flask-Login.  
-	user_loader stores the returned User object in current_user during every 
-	flask request. 
-	'''
-	return User.query.get(int(userid))
-
 
 @app.before_request
-def before_request():	
+def before_request():
 	# This is executed before every request
 	g.user = current_user
 
 
+@login_manager.user_loader
+def load_user(id):
+	"""
+	Flask-Login user_loader callback.
+	The user_loader function asks this function to get a User Object or return
+	None based on the userid.
+	The userid was stored in the session environment by Flask-Login.
+	user_loader stores the returned User object in current_user during every
+	flask request.
+	"""
 
-@app.route('/register', methods=['GET', 'POST'])
-@login_required
-def register():
-	if request.method == 'POST':
-		user = User(request.form['username'] , request.form['password'], request.form['email'])
-		db.session.add(user)
-		db.session.commit()
-		flash('User successfully registered')
-		return redirect(url_for('login'))
+	user = User.query.get(int(id))
+	if user is not None:
+		user.id = session['user_id']
+		return user
+	else:
+		return None
 
-	elif request.method == 'GET': 
-		return render_template('register.html')
+# @login_manager.token_loader
+# def load_token(token):
+# 	"""
+# 	Flask-Login token_loader callback.
+# 	The token_loader function asks this function to take the token that was
+# 	stored on the users computer process it to check if its valid and then
+# 	return a User Object if its valid or None if its not valid.
+# 	"""
+
+# 	app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=14)
+# 	max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
+
+# 	#Decrypt the Security Token, data = [username, hashpass]
+# 	data = models.login_serializer.loads(token, max_age=max_age)
+# 	print data[0]
+# 	#Find the User
+# 	user = User.get(data[0])
+
+# 	#Check Password and return user or None
+# 	if user and data[1] == user.fedoraRole:
+# 		return user
+# 	return None
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route("/login", methods=["GET", "POST"])
 def login():
+	
 	if request.method == 'GET':
 		return render_template('login.html')
+
+	url = "http://localhost:8080/fedora/user"
 	username = request.form['username']
 	password = request.form['password']
-	registered_user = User.query.filter_by(username=username,password=password).first()
-	if registered_user is None:
-		flash('Username or Password is invalid' , 'error')
-		return redirect(url_for('login'))
-	login_user(registered_user)
-	flash('Logged in successfully')
-	session["username"] = username
-	return redirect(request.args.get('next') or url_for('index'))
+
+	#login to web service
+	s = requests.Session()
+	r = s.get(url, auth=HTTPBasicAuth(username, password))
+
+	if r.status_code is 200:
+		o = xmltodict.parse(r.content)
+		response = json.loads(json.dumps(o))
+
+		# Begin to log them into the Ouroboros system
+		exists = db.session.query(db.exists().where(User.username == username)).scalar()
+
+		if exists:
+			user = User.get(username)
+			login_user(user, remember=True)
+
+		else:
+			# Create user account
+			# get roles
+			role = {}
+			count = 0
+			dKey = ''
+			for each in response["user"]["attribute"]:
+				for v in each.itervalues():
+					print v
+					count = count + 1
+					if count == 1:
+						role[v] = ''
+						dKey = v
+					if count == 2:
+						role[dKey] = v
+						count = 0
+
+			roleList = ['role', 'Restrictions', 'fedoraRole']
+			for each in roleList:
+				value = role.get(each)
+				if value is None:
+					role.update({each:None})
+
+			user = User(request.form['username'], request.form['password'], role['role'], role['Restrictions'], role['fedoraRole'])
+			db.session.add(user)
+			db.session.commit()
+			# Login
+			user = User.get(username)
+
+		# Login to Fedora with eulfedora and set session variables
+		utilities.login(username, password)
+		session['JSESSIONID'] = s.cookies['JSESSIONID']
+		session['username'] = username
+		print session
+		user.id = session['user_id']
+
+		#############################################################################
+		# # deal with fedora_handle and celery
+		# utilities.initManage(username, password)
+		#############################################################################
+
+		# Go to page
+		return redirect(request.args.get('next') or url_for('index'))
+	else:
+		return render_template('login.html')
 
 
 @app.route('/logout')
 def logout():
+
+	# stop user-based celery worker
+	'''
+	Removed: thought being celery workers should continue even if Ouroboros goes down intentionally or unintentionally
+	'''
+	# cw = models.CeleryWorker(session['username'],False)
+	# cw.stop()
+	
 	session["username"] = ""
 	logout_user()
+
 	return redirect(url_for('index'))
 
 
@@ -222,20 +377,31 @@ def fireTask(job_type,task_name):
 
 	username = session['username']
 
-	# create job_package	
-	job_package = {		
+	# create job_package    
+	job_package = {     
 		"username":username,
 		"form_data":request.values,
-		"job_type":job_type			
+		"job_type":job_type         
 	}
 
-	# pass along binary uploaded data if included in job task
-	'''
-	Need to rework this to write this temp data to disdk.
-	'''
+	# pass along binary uploaded data if included in job task	
+	# writes to temp file in /tmp/Ouroboros
+	temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())
 	if 'upload' in request.files and request.files['upload'].filename != '':
-		print request.files['upload']
-		job_package['upload_data'] = request.files['upload'].read()
+		print "Form provided file, uploading and reading file to variable"
+		# print request.files['upload']
+		# write uploaded file to temp file
+		with open(temp_filename,'w') as fhand:
+			fhand.write(request.files['upload'].read())
+		job_package['upload_data'] = temp_filename
+
+	if 'upload_path' in request.form and request.form['upload_path'] != '':
+		print "Form provided path, reading file to variable"
+		# print request.form['upload_path']
+		# create symlink from path to temp file
+		os.symlink(request.form['upload_path'], temp_filename)
+		job_package['upload_data'] = temp_filename
+
 
 	task_inputs_key = username+"_"+task_name+"_"+str(int(time.time()))
 	print "Assigning to Redis-Cached key:",task_inputs_key
@@ -278,15 +444,16 @@ def fireTaskWorker(task_name,task_inputs_key):
 		'''
 		task_handle = getattr(actions, task_name)
 		print "We've got task handle:",task_handle
-	except:		 
-		return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/{{APP_PREFIX}}/userPage'>user page</a>.")		
+	except:      
+		return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/{{APP_PREFIX}}/userPage'>user page</a>.")        
 	
 	# get username from session (will pull from user auth session later)
 	username = session['username']
+	job_package['username'] = username
 
 	# instantiate job number and add to job_package
 	''' pulling from incrementing redis counter, considering MySQL '''
-	job_num = jobs.jobStart()		
+	job_num = jobs.jobStart()       
 	job_package['job_num'] = job_num
 
 	print "Job Type is:",job_package['job_type']
@@ -296,25 +463,33 @@ def fireTaskWorker(task_name,task_inputs_key):
 	#####################################################################################################################
 	if job_package['job_type'] == "obj_loop":
 
-		# get user-selectedd objects	
+		# get user-selectedd objects    
 		stime = time.time()
-		userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
-		PIDlist = [PID.PID for PID in userSelectedPIDs]	
+		userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)  
+		PIDlist = [PID.PID for PID in userSelectedPIDs] 
 		etime = time.time()
 		ttime = (etime - stime) * 1000
-		print "Took this long to create list from SQL query",ttime,"ms"	
+		print "Took this long to create list from SQL query",ttime,"ms" 
 
 		# begin job and set estimated tasks
-		print "Antipcating",userSelectedPIDs.count(),"tasks...."	
+		print "Antipcating",userSelectedPIDs.count(),"tasks...."    
 		redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
 
 		# send to celeryTaskFactory in actions.py
 		'''
 		iterates through PIDs and creates secondary async tasks for each
-		passing username, task_name, and job_package containing all the update handles	
+		passing username, task_name, and job_package containing all the update handles  
 		'celery_task_id' below contains celery task key, that contains all eventual children objects
 		'''
-		celery_task_id = actions.obj_loop_taskFactory.delay(job_num=job_num,task_name=task_name,job_package=job_package,PIDlist=PIDlist)	
+		celery_task_id = actions.obj_loop_taskFactory.apply_async(
+			kwargs={
+				'job_num':job_num,
+				'task_name':task_name,
+				'job_package':job_package,
+				'PIDlist':PIDlist
+			},
+			queue=username
+		)
 
 
 	# Custom Loop
@@ -323,9 +498,14 @@ def fireTaskWorker(task_name,task_inputs_key):
 
 		'''
 		Fire particular task. This task handle is pulled from actions above,
-		and it should act like a taskFactory of sorts for the custom loop.	
+		and it should act like a taskFactory of sorts for the custom loop.  
 		'''
-		celery_task_id = task_handle.delay(job_package=job_package)
+		celery_task_id = task_handle.apply_async(
+			kwargs={
+				'job_package':job_package
+			},
+			queue=username
+		)
 
 
 
@@ -333,10 +513,10 @@ def fireTaskWorker(task_name,task_inputs_key):
 	#####################################################################################################################
 
 	# send job to user_jobs SQL table
-	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", task_name))	
+	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", task_name))  
 	db.session.commit() 
 
-	print "Started job #",job_num,"Celery task #",celery_task_id	
+	print "Started job #",job_num,"Celery task #",celery_task_id    
 	try:
 		return redirect("userJobs")
 	except:
@@ -345,17 +525,17 @@ def fireTaskWorker(task_name,task_inputs_key):
 
 #status of currently running, spooling, or pending jobs for user
 @app.route("/userJobs")
-def userJobs():	
+def userJobs(): 
 
-	username = session['username']	
+	username = session['username']  
 
 	# get user jobs
-	user_jobs_list = models.user_jobs.query.filter(models.user_jobs.status != "complete", models.user_jobs.status != "retired", models.user_jobs.username == username)	
+	user_jobs_list = models.user_jobs.query.filter(models.user_jobs.status != "complete", models.user_jobs.status != "retired", models.user_jobs.username == username)  
 
 	# return package
 	return_package = []
 
-	for job in user_jobs_list:		
+	for job in user_jobs_list:      
 
 		# get job num
 		job_num = job.job_num
@@ -365,7 +545,7 @@ def userJobs():
 		status_package["job_num"] = job_num #this is pulled from SQL table
 		
 		# get estimated tasks
-		job_est_count = redisHandles.r_job_handle.get("job_%s_est_count" % (job_num))		
+		job_est_count = redisHandles.r_job_handle.get("job_%s_est_count" % (job_num))       
 		
 		# get assigned tasks
 		job_assign_count = redisHandles.r_job_handle.get("job_%s_assign_count" % (job_num))
@@ -374,10 +554,10 @@ def userJobs():
 		
 		# get completed tasks
 		job_complete_count = redisHandles.r_job_handle.get("job_%s_complete_count" % (job_num))
-		if job_complete_count == None:			
+		if job_complete_count == None:          
 			job_complete_count = 0
 
-		# compute percentage complete				
+		# compute percentage complete               
 		if all([job_complete_count,job_est_count]) != None and all([job_complete_count,job_est_count]) > 0:
 			comp_percent = '{0:.0%}'.format(float(job_complete_count) / float(job_est_count))
 		else:
@@ -390,12 +570,12 @@ def userJobs():
 
 		# check if pending
 		elif job_assign_count == job_est_count and job_complete_count == 0:
-			status_package['job_status'] = "pending"	
-			job.status = "pending"	
+			status_package['job_status'] = "pending"    
+			job.status = "pending"  
 
 		# check if completed
-		elif job_complete_count == job_est_count:						
-			status_package['job_status'] = "complete"	
+		elif job_complete_count == job_est_count:                       
+			status_package['job_status'] = "complete"   
 			# udpate job status in SQL db here
 			job.status = "complete"
 			# update redis end time (etime)
@@ -404,7 +584,7 @@ def userJobs():
 
 		# else, must be running
 		else:
-			status_package['job_status'] = "running"	
+			status_package['job_status'] = "running"    
 
 		# determine time elapsed / remaining
 		def formatTime(seconds):
@@ -439,7 +619,7 @@ def userJobs():
 			session['job_%s_time_remaining' % (job_num)] = seconds_remaining
 			time_remaining = formatTime(seconds_remaining)
 			# print "updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining)
-		else:			
+		else:           
 			time_remaining = formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
 
 
@@ -456,14 +636,14 @@ def userJobs():
 			"time_remaining":time_remaining
 		}
 
-		# return_package[status_package["job_num"]] = response_dict		
+		# return_package[status_package["job_num"]] = response_dict     
 		return_package.append(response_dict)
 
 	# commit all changes to SQL db
 	db.session.commit()
 
 	# return return_package
-	if request.args.get("data","") == "true":		
+	if request.args.get("data","") == "true":       
 		json_string = json.dumps(return_package)
 		resp = make_response(json_string)
 		resp.headers['Content-Type'] = 'application/json'
@@ -488,7 +668,7 @@ def userAllJobs():
 	for job in user_jobs_list:
 
 		job_package = {}
-		job_package['job_num'] = job.job_num		
+		job_package['job_num'] = job.job_num        
 		job_package['status'] = job.status
 		job_package['job_name'] = job.job_name
 
@@ -509,7 +689,7 @@ def jobDetails(job_num):
 	job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
 	print "job celery task id:",job_SQL.celery_task_id
 
-	job_details = jobs.getTaskDetails(job_SQL.celery_task_id)	
+	job_details = jobs.getTaskDetails(job_SQL.celery_task_id)   
 	print job_details
 
 	# get tasks
@@ -522,21 +702,21 @@ def jobDetails(job_num):
 	if job_details.children != None:
 		for child in job_details.children:
 			tasks_package[child.status].append([child.task_id,child.task_name])
-		return render_template("jobDetails.html",job_num=job_num,tasks_package=tasks_package)	
+		return render_template("jobDetails.html", job_num=job_num, tasks_package=tasks_package)   
 	else:
-		return render_template("jobDetails.html",job_num=job_num)	
+		return render_template("jobDetails.html", job_num=job_num)   
 
 	
 # Details of a given task
 @app.route("/taskDetails/<task_id>/<job_num>")
 def taskDetails(task_id,job_num):
 	
-	if task_id != "NULL":	
+	if task_id != "NULL":   
 		# async, celery status
 		task_async = jobs.getTaskDetails(task_id)
 		
 		try:
-			task_returns = redisHandles.r_job_handle.get(task_id).split(",")		
+			task_returns = redisHandles.r_job_handle.get(task_id).split(",")        
 			PID = task_returns[1]
 		except:
 			PID = "N/A"
@@ -549,12 +729,12 @@ def taskDetails(task_id,job_num):
 			"result":"N/A"
 		}
 
-	return render_template("taskDetails.html",task_async=task_async,PID=PID)	
+	return render_template("taskDetails.html",task_async=task_async,PID=PID)    
 
 
 # Remove job from SQL, remove tasks from Redis
 @app.route("/jobRemove/<job_num>", methods=['POST', 'GET'])
-def jobRemove(job_num):	
+def jobRemove(job_num): 
 		
 	if request.method == "POST" and request.form['commit'] == "true":
 		print "Removing job %s" % (job_num)
@@ -568,9 +748,9 @@ def jobRemove(job_num):
 
 # Remove job from SQL, remove tasks from Redis
 @app.route("/jobRetire/<job_num>", methods=['POST', 'GET'])
-def jobRetire(job_num):		
+def jobRetire(job_num):     
 	
-	result = jobs.jobRetire_worker(job_num)		
+	result = jobs.jobRetire_worker(job_num)     
 	print result
 
 	return redirect("userJobs")
@@ -598,7 +778,7 @@ def retireAllJobs():
 
 	for job in user_jobs_list:
 		if job.status != "complete":
-			result = jobs.jobRetire_worker(job.job_num)		
+			result = jobs.jobRetire_worker(job.job_num)     
 
 	print "All non-complete jobs, retired"
 
@@ -631,16 +811,16 @@ def flushCeleryTasks():
 @app.route("/objPreview/<PIDnum>", methods=['POST', 'GET'])
 @login_required
 @utilities.objects_needed
-def objPreview(PIDnum):	
+def objPreview(PIDnum): 
 
 	object_package = {}
 
-	# GET CURRENT OBJECTS	
+	# GET CURRENT OBJECTS   
 	PIDlet = jobs.genPIDlet(int(PIDnum))
 	if PIDlet == False:
 		return utilities.applicationError("PIDnum is out of range or invalid.  Object-at-a-Glance is displeased.")
 	PIDlet['pURL'] = "/objPreview/"+str(int(PIDnum)-1)
-	PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)	
+	PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)  
 
 	# WSUDOR handle
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PIDlet['cPID'])
@@ -659,7 +839,7 @@ def objPreview(PIDnum):
 	for s,p,o in riquery:
 		object_package['components_package'].append(s.encode('utf-8'))
 	if len(object_package['components_package']) == 0:
-		object_package.pop('components_package')		
+		object_package.pop('components_package')        
 
 
 	# RDF RELATIONSHIPS
@@ -667,13 +847,13 @@ def objPreview(PIDnum):
 	
 	# parse
 	riquery_filtered = []
-	for s,p,o in riquery:	
+	for s,p,o in riquery:   
 		riquery_filtered.append((p,o))
 	riquery_filtered.sort()
 	object_package['rdf_package'] = riquery_filtered
 
 	
-	# DATASTREAMS		
+	# DATASTREAMS       
 	ds_list = obj_handle.ohandle.ds_list
 	object_package['datastream_package'] = ds_list
 
@@ -683,7 +863,7 @@ def objPreview(PIDnum):
 	object_package['size_dict_json'] = json.dumps(size_dict)
 	
 	# OAI
-	OAI_dict = {}	
+	OAI_dict = {}   
 	#identifer
 	try:
 		riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://www.openarchives.org/OAI/2.0/itemID", object=None)
@@ -697,7 +877,7 @@ def objPreview(PIDnum):
 	try:
 		riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", object=None)
 		for each in riquery.objects():
-			OAI_dict['sets'].append(each)					
+			OAI_dict['sets'].append(each)                   
 	except:
 		print "No OAI sets found."
 
@@ -705,55 +885,55 @@ def objPreview(PIDnum):
 	print object_package['OAI_package']
 
 	# RENDER
-	return render_template("objPreview.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet,object_package=object_package,localConfig=localConfig)	
+	return render_template("objPreview.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet,object_package=object_package,localConfig=localConfig)    
 
 
 # PID check for user
 @app.route("/userWorkspace")
 @login_required
-def userWorkspace():	
+def userWorkspace():    
 	# get username from session
 	username = session['username']
 
-	# gen group list	
+	# gen group list    
 	user_pid_groups = db.session.query(models.user_pids).filter(models.user_pids.username == username).group_by("group_name")
-	group_names = [each.group_name.encode('ascii','ignore') for each in user_pid_groups]	
+	group_names = [each.group_name.encode('ascii','ignore') for each in user_pid_groups]    
 
-	# pass the current PIDs to page as list	
+	# pass the current PIDs to page as list 
 	return render_template("userWorkspace.html",username=username, group_names=group_names, localConfig=localConfig)
 
 
 # PID check for user
 @app.route("/selObjsOverview")
 @login_required
-def selObjsOverview():	
+def selObjsOverview():  
 	
 	# get username from session
-	username = session['username']	
+	username = session['username']  
 	PIDs = jobs.getSelPIDs()
 
 	# get objects size dictionary
 	'''
 	{
-	    labels: ["January", "February", "March", "April", "May", "June", "July"],
-	    datasets: [
-	        {
-	            label: "My First dataset",
-	            fillColor: "rgba(220,220,220,0.5)",
-	            strokeColor: "rgba(220,220,220,0.8)",
-	            highlightFill: "rgba(220,220,220,0.75)",
-	            highlightStroke: "rgba(220,220,220,1)",
-	            data: [65, 59, 80, 81, 56, 55, 40]
-	        },
-	        {
-	            label: "My Second dataset",
-	            fillColor: "rgba(151,187,205,0.5)",
-	            strokeColor: "rgba(151,187,205,0.8)",
-	            highlightFill: "rgba(151,187,205,0.75)",
-	            highlightStroke: "rgba(151,187,205,1)",
-	            data: [28, 48, 40, 19, 86, 27, 90]
-	        }
-	    ]
+		labels: ["January", "February", "March", "April", "May", "June", "July"],
+		datasets: [
+			{
+				label: "My First dataset",
+				fillColor: "rgba(220,220,220,0.5)",
+				strokeColor: "rgba(220,220,220,0.8)",
+				highlightFill: "rgba(220,220,220,0.75)",
+				highlightStroke: "rgba(220,220,220,1)",
+				data: [65, 59, 80, 81, 56, 55, 40]
+			},
+			{
+				label: "My Second dataset",
+				fillColor: "rgba(151,187,205,0.5)",
+				strokeColor: "rgba(151,187,205,0.8)",
+				highlightFill: "rgba(151,187,205,0.75)",
+				highlightStroke: "rgba(151,187,205,1)",
+				data: [28, 48, 40, 19, 86, 27, 90]
+			}
+		]
 	}
 	'''
 
@@ -761,8 +941,8 @@ def selObjsOverview():
 		# slow, but rich
 	# tup_list = []
 	# for each in PIDs:
-	# 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(each)
-	# 	tup_list.append( ( obj_handle.SolrDoc.asDictionary()['obj_size_i'], each ) )
+	#   obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(each)
+	#   tup_list.append( ( obj_handle.SolrDoc.asDictionary()['obj_size_i'], each ) )
 	
 	# print tup_list
 
@@ -778,25 +958,25 @@ def selObjsOverview():
 
 
 
-	# pass the current PIDs to page as list	
+	# pass the current PIDs to page as list 
 	return render_template("selObjsOverview.html",username=username, localConfig=localConfig)
 
 
 # Select / Deselect / Remove PIDs from user list
 @app.route("/PIDmanageAction/<action>", methods=['POST', 'GET'])
-def PIDmanageAction(action):	
+def PIDmanageAction(action):    
 	# get username from session
 	username = session['username']
 	print "Current action is:",action
 
 	# if post AND group toggle
-	if request.method == 'POST' and action == 'group_toggle':		
+	if request.method == 'POST' and action == 'group_toggle':       
 		group_name = request.form['group_name']
 		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '%s' AND group_name = '%s';" % (username, group_name))
 
 	# select all
 	if action == "s_all":
-		print "All PIDs selected..."		
+		print "All PIDs selected..."        
 		db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': True})
 	
 	# select none
@@ -804,8 +984,8 @@ def PIDmanageAction(action):
 		print "All PIDs unselected..."
 		db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': False})
 	
-	# select toggle	
-	if action == "s_toggle":		
+	# select toggle 
+	if action == "s_toggle":        
 		print "All PIDs toggling..."
 		db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '%s';" % (username))
 	
@@ -818,7 +998,7 @@ def PIDmanageAction(action):
 
 	return "Update Complete."
 
-	# pass the current PIDs to page as list	
+	# pass the current PIDs to page as list 
 	return redirect("PIDmanage")
 
 
@@ -840,7 +1020,7 @@ def PIDRowUpdate(id,action,status):
 			elif PID.status == True:
 				PID.status = False
 		else:
-			PID.status = status		
+			PID.status = status     
 
 	# delete single row
 	if action == "delete":
@@ -850,7 +1030,7 @@ def PIDRowUpdate(id,action,status):
 		print "Deleted PID id#",id,"from SQL database"
 
 	# commit
-	db.session.commit()	
+	db.session.commit() 
 
 	return "PID updated."
 
@@ -858,13 +1038,8 @@ def PIDRowUpdate(id,action,status):
 # PID selection via Solr
 @app.route("/PIDSolr", methods=['POST', 'GET'])
 @login_required
-def PIDSolr():	
-	'''
-	Current Approach: If POST, send results as large array to template, save as JS variable
-		- works great so far at 800+ items, but what about 100,000+?
-		- documentation says ~ 50,000 is the limit
-		- will need to think of a server-side option
-	'''
+def PIDSolr():  
+	
 	# get username from session
 	username = session['username']
 
@@ -882,15 +1057,15 @@ def PIDSolr():
 			each['dc_title'] = [ 'Unknown Collection Title' + each['id'].encode('ascii','ignore') ]
 
 	form.collection_object.choices = [(each['id'].encode('ascii','ignore'), each['dc_title'][0].encode('ascii','ignore')) for each in coll_docs]
-	form.collection_object.choices.insert(0,("","All Collections"))	
+	form.collection_object.choices.insert(0,("","All Collections")) 
 
 	# content model
 	cm_query = {'q':'*', 'facet' : 'true', 'facet.field' : 'rels_hasContentModel'}
-	cm_results = solr_handle.search(**cm_query)	
+	cm_results = solr_handle.search(**cm_query) 
 	form.content_model.choices = [(each, each.split(":")[-1]) for each in cm_results.facets['facet_fields']['rels_hasContentModel']]
 	form.content_model.choices.insert(0,("","All Content Types"))
 
-	# perform search	
+	# perform search    
 	if request.method == 'POST':
 		
 		# build base with native Solr queries
@@ -898,17 +1073,17 @@ def PIDSolr():
 				
 		# Fedora RELS-EXT
 		# collection selection
-		if form.collection_object.data:			
-			print "Collection refinement:",form.collection_object.data						
+		if form.collection_object.data:         
+			print "Collection refinement:",form.collection_object.data                      
 			escaped_coll = form.collection_object.data.replace(":","\:") 
-			query['fq'].append("rels_isMemberOfCollection:info\:fedora/"+escaped_coll)				
+			query['fq'].append("rels_isMemberOfCollection:info\:fedora/"+escaped_coll)              
 
 
 		# content model / type selection
-		if form.content_model.data:			
+		if form.content_model.data:         
 			print "Content Model refinement:",form.content_model.data
 			escaped_cm = form.content_model.data.replace(":","\:") 
-			query['fq'].append("rels_hasContentModel:"+escaped_cm)				
+			query['fq'].append("rels_hasContentModel:"+escaped_cm)              
 
 		
 
@@ -918,47 +1093,47 @@ def PIDSolr():
 		q_results = solr_handle.search(**query)
 		etime = time.time()
 		ttime = (etime - stime) * 1000
-		print "Solr Query took:",ttime,"ms"		
+		print "Solr Query took:",ttime,"ms"     
 		output_dict = {}
 		data = []
 		stime = time.time()
 		for each in q_results.documents:
-			try:			
+			try:            
 				PID = each['id'].encode('ascii','ignore')
 				dc_title = each['dc_title'][0].encode('ascii','ignore')
 				data.append([PID,dc_title])
-			except:				
+			except:             
 				print "Could not render:",each['id'] #unicdoe solr id
 		etime = time.time()
 		ttime = (etime - stime) * 1000
-		print "Solr Munging for DataTables took::",ttime,"ms"		
+		print "Solr Munging for DataTables took::",ttime,"ms"       
 
 		output_dict['data'] = data
 		json_output = json.dumps(data)
 
-		return render_template("PIDSolr.html",username=username, form=form, q_results=q_results, json_output=json_output, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)		
+		return render_template("PIDSolr.html",username=username, form=form, q_results=q_results, json_output=json_output, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)        
 
-	# pass the current PIDs to page as list	
+	# pass the current PIDs to page as list 
 	return render_template("PIDSolr.html",username=username, form=form, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
 
 
 # PID check for user
 @app.route("/updatePIDsfromSolr/<update_type>", methods=['POST', 'GET'])
-def updatePIDsfromSolr(update_type):	
+def updatePIDsfromSolr(update_type):    
 	# get username from session
-	username = session['username']	
+	username = session['username']  
 	print "Sending PIDs to",username
 
 	# retrieve PIDs
 	PIDs = request.form['json_package']
-	PIDs = json.loads(PIDs)	
+	PIDs = json.loads(PIDs) 
 
 	# get PIDs group_name
 	group_name = request.form['group_name'].encode('ascii','ignore')
 
 	# add PIDs to SQL
-	if update_type == "add":		
-		jobs.sendUserPIDs(username,PIDs,group_name)		
+	if update_type == "add":        
+		jobs.sendUserPIDs(username,PIDs,group_name)     
 	
 	# remove PIDs from SQL
 	if update_type == "remove":
@@ -977,7 +1152,7 @@ def updatePIDsfromSolr(update_type):
 def imgServerCacheClear():
 
 	# run os command an return results
-	results = os.system("rm /tmp/imageServer/*")	
+	results = os.system("rm /tmp/imageServer/*")    
 	if results == 0:
 		msg = "imageServer Cache successfully cleared."
 	else:
@@ -991,7 +1166,7 @@ def imgServerCacheClear():
 def clearSymLinks():
 
 	# run os command an return results
-	results = os.system("rm /var/www/wsuls/symLinks/*")	
+	results = os.system("rm /var/www/wsuls/symLinks/*") 
 	if results == 0:
 		msg = "symLInks successfully cleared."
 	else:
@@ -1006,11 +1181,11 @@ def clearSymLinks():
 def clearExportBagItArchives():
 
 	# get username from session
-	username = session['username']	
+	username = session['username']  
 	target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
 
 	# run os command and return results
-	results = os.system("rm -r %s/*" % (target_dir))	
+	results = os.system("rm -r %s/*" % (target_dir))    
 	
 	if results == 0:
 		msg = "User exported, BagIt archives successfully cleared."
@@ -1047,8 +1222,8 @@ def collectionsOverview():
 		results = solr_handle.search(**{ "q":"rels_isMemberOfCollection:"+collection.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
 		print results.stats
 
-		if results != None and results.total_results > 0 and results.stats['obj_size_i'] != None:			
-			collection_obj_sum = results.stats['obj_size_i']['sum']					
+		if results != None and results.total_results > 0 and results.stats['obj_size_i'] != None:           
+			collection_obj_sum = results.stats['obj_size_i']['sum']                 
 			object_package['coll_size_dict'][collection] = (collection_obj_sum,utilities.sizeof_fmt(collection_obj_sum),results.total_results)
 
 	# print object_package['coll_size_dict']
@@ -1061,7 +1236,7 @@ def collectionsOverview():
 # Run Generic Method from WSUDOR Object
 @app.route("/genericMethod", methods=['POST', 'GET'])
 @login_required
-def genericMethod():	
+def genericMethod():    
 
 
 	return render_template("genericMethod.html")
@@ -1092,20 +1267,20 @@ def wcts(wct):
 # stream bits from Fedora through WSUDOR_Manager
 # @app.route("/strDS/<PID>/<DS>", methods=['POST', 'GET'])
 # def strDS(PID,DS):
-# 	obj_handle = fedora_handle.get_object(PID)
-# 	obj_ds_handle = obj_handle.getDatastreamObject(DS)
+#   obj_handle = fedora_handle.get_object(PID)
+#   obj_ds_handle = obj_handle.getDatastreamObject(DS)
 
-# 	# chunked, generator
-# 	def stream():
-# 		step = 1024
-# 		pointer = 0
-# 		for chunk in range(0, len(obj_ds_handle.content), step):
-# 			yield obj_ds_handle.content[chunk:chunk+step]
+#   # chunked, generator
+#   def stream():
+#       step = 1024
+#       pointer = 0
+#       for chunk in range(0, len(obj_ds_handle.content), step):
+#           yield obj_ds_handle.content[chunk:chunk+step]
 
-# 	return Response(stream(), mimetype=obj_ds_handle.mimetype)
+#   return Response(stream(), mimetype=obj_ds_handle.mimetype)
 
-# 	# straight pipe, thinking maybe download first?
-# 	# return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)	
+#   # straight pipe, thinking maybe download first?
+#   # return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)   
 
 
 

@@ -2,7 +2,7 @@
 # TASK: import / export MODS batch update
 
 # celery
-from cl.cl import celery
+from WSUDOR_Manager import celery
 
 # handles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
@@ -24,7 +24,6 @@ MODSexport = Blueprint('MODSexport', __name__, template_folder='templates', stat
 @MODSexport.route('/MODSexport')
 @utilities.objects_needed
 def index():
-
 	
 	return render_template("MODSexport_index.html")
 
@@ -122,8 +121,9 @@ def MODSimport_factory(job_package):
 	job_package['custom_task_name'] = 'MODSimport_worker'	
 
 	# get mods:collection 
-	if 'upload_data' in job_package:		
-		MODS_collection = job_package['upload_data']
+	if 'upload_data' in job_package:
+		with open(job_package['upload_data'], 'r') as fhand:		
+			MODS_collection = fhand.read()
 	elif form_data['content'] != '':
 		MODS_collection = form_data['content'] 
 
@@ -164,7 +164,7 @@ def MODSimport_factory(job_package):
 		job_package['MODS'] = temp_filename
 		
 		# fire task via custom_loop_taskWrapper			
-		result = actions.actions.custom_loop_taskWrapper.delay(job_package)
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 		task_id = result.id
 
 		# Set handle in Redis
@@ -200,124 +200,6 @@ def MODSimport_worker(job_package):
 	ds_handle.content = MODS_string
 	return ds_handle.save()
 
-
-
-# @MODSexport.route('/MODSexport/import_fire', methods=['POST','GET'])
-# def import_fire():	
-	
-# 	# get new job num
-# 	job_num = jobs.jobStart()
-
-# 	# get username
-# 	username = session['username']	
-
-# 	# prepare job_package for boutique celery wrapper
-# 	job_package = {
-# 		'job_num':job_num,
-# 		'task_name':"importMODS_worker",
-# 		'form_data':request.form
-# 	}	
-
-# 	# pass along binary uploaded data if included in job task
-# 	if 'upload' in request.files and request.files['upload'].filename != '':
-# 		job_package['upload_data'] = request.files['upload'].read()
-
-# 	# job celery_task_id
-# 	celery_task_id = celeryTaskFactoryImportMODS.delay(job_num,job_package)		 
-
-# 	# send job to user_jobs SQL table
-# 	db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", "importMODS"))	
-# 	db.session.commit()		
-
-# 	print "Started job #",job_num,"Celery task #",celery_task_id
-# 	return redirect("/userJobs")
-
-
-# @celery.task(name="celeryTaskFactoryImportMODS")
-# def celeryTaskFactoryImportMODS(job_num,job_package):
-
-# 	# reconstitute
-# 	form_data = job_package['form_data']
-# 	job_num = job_package['job_num']
-
-# 	# get mods:collection 
-# 	if 'upload_data' in job_package:		
-# 		MODS_collection = job_package['upload_data']
-# 		job_package['upload_data'] = False #scrub data
-# 	elif form_data['content'] != '':
-# 		MODS_collection = form_data['content'] 
-# 		form_data['content'] = False #scrub data
-
-# 	# shunt each MODS record to list
-# 	MODS_collection = unicode(MODS_collection, 'utf-8')
-# 	XMLroot = etree.fromstring(MODS_collection.encode('utf-8'))	
-# 	MODS_list = XMLroot.findall('{http://www.loc.gov/mods/v3}mods')	
-
-# 	# update job info
-# 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_num), len(MODS_list))
-
-# 	# ingest in Fedora
-# 	step = 1
-# 	for MODS_elem in MODS_list:
-
-# 		# read <mods:extension><PID>, pass this as PID
-# 		PID_search = MODS_elem.findall("{http://www.loc.gov/mods/v3}extension/PID")
-# 		if len(PID_search) == 0:
-# 			print "Could not find PID, skipping"
-# 			continue
-# 		else:
-# 			PID = PID_search[0].text
-
-# 		# write MODS to temp file
-# 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
-# 		fhand = open(temp_filename,'w')
-# 		fhand.write(etree.tostring(MODS_elem))
-# 		fhand.close()
-
-# 		job_package['PID'] = PID
-# 		job_package['step'] = step		
-# 		job_package['MODS'] = temp_filename
-
-# 		# fire ingester
-# 		result = actions.actions.taskWrapper.delay(job_package)
-
-# 		task_id = result.id		
-			
-# 		# update incrementer for total assigned
-# 		jobs.jobUpdateAssignedCount(job_num)
-
-# 		# bump step
-# 		step += 1
-
-	
-# def genMODS(MODS):	
-
-# 	XMLroot = etree.fromstring(MODS.encode('utf-8'))	
-# 	single_elem_list = XMLroot.findall('{http://www.loc.gov/mods/v3}mods')
-
-# 	MODS_list = [etree.tostring(MODS) for MODS in single_elem_list]
-# 	return MODS_list
-
-
-# def importMODS_worker(job_package):	
-# 	'''
-# 	Receive job_package, which contains PID, update MODS
-# 	'''	
-
-# 	PID = job_package['PID']
-# 	MODS = job_package['MODS']	
-# 	print "Updating MODS for %s" % (PID)
-
-# 	# open temp MODS file, read, delete
-# 	fhand = open(MODS,'r')
-# 	MODS_string = fhand.read()
-# 	fhand.close()
-# 	os.system("rm %s" % (MODS))
-
-# 	obj_handle = fedora_handle.get_object(PID)
-# 	ds_handle = obj_handle.getDatastreamObject("MODS")
-# 	ds_handle.content = MODS_string
-# 	return ds_handle.save()
 
 
 

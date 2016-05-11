@@ -870,25 +870,35 @@ class WSUDOR_GenObject(object):
 
 		# remove traces of object via PID from image cache
 		# root
-		obj_dirs = glob.glob('%s/fedora:%s*' % (image_cache, self.pid))
-		print obj_dirs
-		for obj_dir in obj_dirs:
-			print "Removing directory: %s" % obj_dir
-			shutil.rmtree(obj_dir)
+		try:
+			obj_dirs = glob.glob('%s/fedora:%s*' % (image_cache, self.pid))
+			print obj_dirs
+			for obj_dir in obj_dirs:
+				print "Removing directory: %s" % obj_dir
+				shutil.rmtree(obj_dir)
+			print "removed from Loris image cache"
+		except:
+			print "could not remove from Loris image cache"
 
-		# http
-		obj_dirs = glob.glob('%s/http/fedora:%s*' % (image_cache, self.pid))
-		print obj_dirs
-		for obj_dir in obj_dirs:
-			print "Removing directory: %s" % obj_dir
-			shutil.rmtree(obj_dir)
+		try:
 
-		# https
-		obj_dirs = glob.glob('%s/https/fedora:%s*' % (image_cache, self.pid))
-		print obj_dirs
-		for obj_dir in obj_dirs:
-			print "Removing directory: %s" % obj_dir
-			shutil.rmtree(obj_dir)
+			# http
+			obj_dirs = glob.glob('%s/http/fedora:%s*' % (image_cache, self.pid))
+			print obj_dirs
+			for obj_dir in obj_dirs:
+				print "Removing directory: %s" % obj_dir
+				shutil.rmtree(obj_dir)
+
+			# https
+			obj_dirs = glob.glob('%s/https/fedora:%s*' % (image_cache, self.pid))
+			print obj_dirs
+			for obj_dir in obj_dirs:
+				print "Removing directory: %s" % obj_dir
+				shutil.rmtree(obj_dir)
+
+			print "remove from Loris info cache"
+		except:
+			print "could not remove from Loris info cache"
 
 		return True
 
@@ -917,7 +927,7 @@ class WSUDOR_GenObject(object):
 			self.update_objSizeDict()
 
 			# remove object from Loris cache
-			# self.removeObjFromLorisCache() # waiting on permissions issues
+			self.removeObjFromLorisCache()			
 
 			return True
 			

@@ -43,6 +43,10 @@ from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 # derivatives
 from inc.derivatives import JP2DerivativeMaker
 
+# jpylyzer
+from jpylyzer import jpylyzer
+from jpylyzer import etpatch
+
 
 
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
@@ -276,8 +280,8 @@ class WSUDOR_GenObject(object):
 		# flattens MODS with GSearch XSLT and loads as dictionary
 		XSLhand = open('inc/xsl/MODS_extract.xsl','r')		
 		xslt_tree = etree.parse(XSLhand)
-  		transform = etree.XSLT(xslt_tree)
-  		XMLroot = etree.fromstring(self.MODS_XML)
+		transform = etree.XSLT(xslt_tree)
+		XMLroot = etree.fromstring(self.MODS_XML)
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
 	
@@ -295,8 +299,8 @@ class WSUDOR_GenObject(object):
 		# flattens MODS with GSearch XSLT and loads as dictionary
 		XSLhand = open('inc/xsl/DC_extract.xsl','r')		
 		xslt_tree = etree.parse(XSLhand)
-  		transform = etree.XSLT(xslt_tree)
-  		XMLroot = etree.fromstring(self.DC_XML)
+		transform = etree.XSLT(xslt_tree)
+		XMLroot = etree.fromstring(self.DC_XML)
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
 
@@ -306,11 +310,11 @@ class WSUDOR_GenObject(object):
 		# flattens MODS with GSearch XSLT and loads as dictionary
 		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
 		xslt_tree = etree.parse(XSLhand)
-  		transform = etree.XSLT(xslt_tree)
-  		# raw, unmodified RDF
-  		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (self.pid)
-  		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
-  		XMLroot = etree.fromstring(raw_xml)
+		transform = etree.XSLT(xslt_tree)
+		# raw, unmodified RDF
+		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (self.pid)
+		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+		XMLroot = etree.fromstring(raw_xml)
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
 
@@ -319,11 +323,11 @@ class WSUDOR_GenObject(object):
 		# flattens MODS with GSearch XSLT and loads as dictionary
 		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
 		xslt_tree = etree.parse(XSLhand)
-  		transform = etree.XSLT(xslt_tree)
-  		# raw, unmodified RDF
-  		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-INT/content" % (self.pid)
-  		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
-  		XMLroot = etree.fromstring(raw_xml)
+		transform = etree.XSLT(xslt_tree)
+		# raw, unmodified RDF
+		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-INT/content" % (self.pid)
+		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+		XMLroot = etree.fromstring(raw_xml)
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
 
@@ -721,7 +725,6 @@ class WSUDOR_GenObject(object):
 		
 		A lot are failing because the TIFFS are compressed, are PNG files.  We need a secondary attempt
 		that converts to uncompressed TIFF first.
-
 		'''
 
 		# iterate through datastreams and look for JP2s	
@@ -770,13 +773,65 @@ class WSUDOR_GenObject(object):
 					jp2_ds_handle.content = fhand.read()
 				print "Result for",ds,jp2_ds_handle.save()
 				# cleanup
-				j.cleanupTempFiles()					
+				j.cleanupTempFiles()		
+
+				# remove from Loris cache
+				self.removeObjFromLorisCache()			
 
 			else:
 				# cleanup
 				# j.cleanupTempFiles()
 				raise Exception("Could not regen JP2")	
 
+
+	# regnerate derivative JP2s 
+	def checkJP2(self):
+		'''
+		Function to check health and integrity of JP2s
+		Uses jpylyzer library
+		'''
+
+		print "Checking integrity of JP2 with jpylyzer..."
+
+		# iterate through datastreams and look for JP2s	
+		jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]	
+
+		count = 0
+		for ds in jp2_ds_list:
+
+			temp_filename = "/tmp/Ouroboros/%s.jp2" % uuid.uuid4()
+
+			ds_handle = self.ohandle.getDatastreamObject(ds)
+			with open(temp_filename, 'w') as f:
+				for chunk in ds_handle.get_chunked_content():
+					f.write(chunk)
+
+			# wrap in try block to make sure we remove the file even if jpylyzer fails
+			try:
+				# open jpylyzer handle
+				jpylyzer_handle = jpylyzer.checkOneFile(temp_filename)
+
+				# check for codestream box
+				codestream_check = jpylyzer_handle.find('properties/contiguousCodestreamBox')
+
+				# remove temp file
+				os.remove(temp_filename)
+
+				# good JP2
+				if type(codestream_check) == etpatch.Element:
+					return True
+
+				elif type(codestream_check) == None:
+					return False
+
+				else:
+					return False
+			
+			except:
+				# remove temp file
+				os.remove(temp_filename)
+
+				return False
 
 
 	# regnerate derivative JP2s 

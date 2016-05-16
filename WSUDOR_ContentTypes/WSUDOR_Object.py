@@ -786,6 +786,7 @@ class WSUDOR_GenObject(object):
 
 	# regnerate derivative JP2s 
 	def checkJP2(self):
+		
 		'''
 		Function to check health and integrity of JP2s
 		Uses jpylyzer library
@@ -832,6 +833,17 @@ class WSUDOR_GenObject(object):
 				os.remove(temp_filename)
 
 				return False
+
+	def fixJP2(self):
+
+		'''
+		Use checkJP2 to check, fire JP2 if bad
+		'''
+
+		print "Checking integrity of JP2 with jpylyzer..."
+
+		if not self.checkJP2():
+			self.regenJP2()
 
 
 	# regnerate derivative JP2s 

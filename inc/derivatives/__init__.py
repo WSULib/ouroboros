@@ -185,11 +185,10 @@ class JP2DerivativeMaker(object):
 
 		# get tempfile
 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".tif"
-		fhand = open(temp_filename,'wb')
-
-		# write to tempfile
-		fhand.write(ds_handle.content)
-		fhand.close()
+		
+		with open(temp_filename,'wb') as fhand:
+			# write to tempfile
+			fhand.write(ds_handle.content)
 
 		return temp_filename
 
@@ -198,10 +197,10 @@ class JP2DerivativeMaker(object):
 
 		# cleanup if deriv tiffs made
 		try:
-			os.remove(self.inPath+".tif")
-			print "removed",self.inPath+".tif"
+			os.remove(self.inPath)
+			print "removed",self.inPath
 		except:
-			print "could not remove / find",self.inPath+".tif"
+			print "could not remove / find",self.inPath
 
 		# remove temp outPath
 		try:

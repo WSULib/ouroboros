@@ -299,8 +299,14 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 			
 			# get DMDID
 			job_package['DMDID'] = sm_part.attrib['DMDID']
-			job_package['object_title'] = sm_part.attrib['LABEL']
-			
+
+			# attempt to get label
+			if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
+				job_package['object_title'] = sm_part.attrib['LABEL']
+			else:
+				print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
+				job_package['object_title'] = sm_part.attrib['DMDID']
+
 			print "StructMap part ID: %s" % job_package['DMDID']
 
 			# store structMap section as python dictionary
@@ -338,8 +344,6 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 
 		# bump step
 		step += 1
-
-
 
 
 

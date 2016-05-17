@@ -195,13 +195,6 @@ class JP2DerivativeMaker(object):
 
 	def cleanupTempFiles(self):
 
-		# cleanup if deriv tiffs made
-		try:
-			os.remove(self.inPath)
-			print "removed",self.inPath
-		except:
-			print "could not remove / find",self.inPath
-
 		# remove temp outPath
 		try:
 			os.remove(self.outPath)

@@ -769,11 +769,14 @@ class WSUDOR_GenObject(object):
 
 			# write new JP2 datastream
 			if makeJP2result:
+				
 				with open(j.outPath) as fhand:
 					jp2_ds_handle.content = fhand.read()
 				print "Result for",ds,jp2_ds_handle.save()
+				
 				# cleanup
-				j.cleanupTempFiles()		
+				os.remove(j.inPath) # input
+				j.cleanupTempFiles() # cleanup
 
 				# remove from Loris cache
 				self.removeObjFromLorisCache()			

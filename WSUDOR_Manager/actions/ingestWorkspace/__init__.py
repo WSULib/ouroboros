@@ -253,7 +253,61 @@ def viewSQLData(table,id,column,mimetype):
 #################################################################################
 
 
-def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm_parts,j):
+@celery.task(name="createJob_factory")
+def createJob_factory(job_package):
+	
+	print "FIRING createJob_factory"
+
+	# get form data
+	form_data = job_package['form_data']	
+
+	# set new task_name, for the worker below
+	job_package['custom_task_name'] = 'createJob_worker'	
+
+	# get ingest metadata
+	with open(job_package['upload_data'],'r') as fhand:
+		ingest_metadata = fhand.read()
+	
+	# initiate ingest job instance with name
+	j = models.ingest_workspace_job(form_data['collection_name'])	
+
+	# add metadata
+	j.ingest_metadata = ingest_metadata	
+
+	# set final ingest job values, and commit, add job number to job_package
+	j._commit()
+	job_package['job_id'] = j.id
+	job_package['job_name'] = j.name
+
+	# WSU METS
+	if form_data['METS_type'] == 'wsu':
+		
+		# for each section of METS, break into chunks
+		METSroot = etree.fromstring(ingest_metadata)
+		
+		# grab stucture map
+		sm = METSroot.find('{http://www.loc.gov/METS/}structMap')
+		collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
+		
+		# get sm_parts through, ignoring comments
+		sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
+		sm_index = { element.attrib['DMDID']:element for element in sm_parts }
+
+		# get dmd parts
+		dmd_parts = [element for element in METSroot.findall('{http://www.loc.gov/METS/}dmdSec')]
+		dmd_index = { element.attrib['ID']:element for element in dmd_parts }
+
+		# fire 
+		createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_div, sm_parts, sm_index, dmd_index, j)
+
+	# Archivematica based METS
+	if form_data['METS_type'] == 'archivematica':
+		metsrw_handle = metsrw.METSDocument.fromstring(ingest_metadata)
+		createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j)
+
+
+
+def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_div, sm_parts, sm_index, dmd_index, j):
 	
 	# determine collection identifier
 	try:
@@ -271,7 +325,7 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 	
 	# add collection object to front of list
 	if METS_collection:
-		sm_parts.insert(0,collection_level_div)	
+		sm_parts.insert(0,collection_level_div)
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
@@ -280,7 +334,7 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 	step = 1
 	
 	# iterate through and add components
-	for i,sm_part in enumerate(sm_parts):
+	for i, sm_part in enumerate(sm_parts):
 		
 		print "Creating ingest_workspace_object row %s / %s" % (step, len(sm_parts))
 		job_package['step'] = step
@@ -307,7 +361,7 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 				print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
 				job_package['object_title'] = sm_part.attrib['DMDID']
 
-			print "StructMap part ID: %s" % job_package['DMDID']
+			# print "StructMap part ID: %s" % job_package['DMDID']
 
 			# store structMap section as python dictionary
 			sm_dict = xmltodict.parse(etree.tostring(sm_part))
@@ -315,12 +369,10 @@ def createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm
 
 			# grab descriptive mets:dmdSec
 
-			# This section can be slow for large files - better way to find element?
-			#############################################################################
-			dmd_handle = METSroot.find("mets:dmdSec[@ID='%s']" % (sm_part.attrib['DMDID']), namespaces={'mets':'http://www.loc.gov/METS/'})
+			# Use DMD index
+			dmd_handle = dmd_index[sm_part.attrib['DMDID']]
 			# grab MODS record and write to temp file		
 			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
-			#############################################################################
 			
 			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
 			fhand = open(temp_filename,'w')
@@ -432,82 +484,66 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		step += 1
 
 
-@celery.task(name="createJob_factory")
-def createJob_factory(job_package):
-	
-	print "FIRING createJob_factory"
 
-	# get form data
-	form_data = job_package['form_data']	
-
-	# set new task_name, for the worker below
-	job_package['custom_task_name'] = 'createJob_worker'	
-
-	# get ingest metadata
-	with open(job_package['upload_data'],'r') as fhand:
-		ingest_metadata = fhand.read()
-	
-	# initiate ingest job instance with name
-	j = models.ingest_workspace_job(form_data['collection_name'])	
-
-	# add metadata
-	j.ingest_metadata = ingest_metadata	
-
-	# set final ingest job values, and commit, add job number to job_package
-	j._commit()
-	job_package['job_id'] = j.id
-	job_package['job_name'] = j.name
-
-
-	# WSU METS
-	if form_data['METS_type'] == 'wsu':
-		# for each section of METS, break into chunks
-		METSroot = etree.fromstring(ingest_metadata)
-		# grab stucture map
-		sm = METSroot.find('{http://www.loc.gov/METS/}structMap')
-		collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
-		# iterate through, ignoring comments
-		sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
-		createJob_WSU_METS(form_data,job_package,METSroot,sm,collection_level_div,sm_parts,j)
-
-	# Archivematica based METS
-	if form_data['METS_type'] == 'archivematica':
-		metsrw_handle = metsrw.METSDocument.fromstring(ingest_metadata)
-		createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j)
 
 
 
 @celery.task(name="createJob_worker")
 def createJob_worker(job_package):
 
-	print job_package.keys()
+	# USR ORM
+	############################################################################################################
+	# print "Adding ingest_workspace_object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+
+	# # open instance of job
+	# j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
+
+	# # instatitate object instance
+	# o = models.ingest_workspace_object(j, object_title=job_package['object_title'], DMDID=job_package['DMDID'])
+
+	# # set type
+	# o.object_type = job_package['object_type']
+
+	# # fill out object row with information from job_package
+	# o.ingest_id = job_package['ingest_id']
+
+	# # structMap
+	# o.struct_map = job_package['struct_map']
+
+	# # MODS file
+	# if job_package['MODS_temp_filename']:
+	# 	with open(job_package['MODS_temp_filename'], 'r') as fhand:
+	# 		o.MODS = fhand.read()
+	# 		os.remove(job_package['MODS_temp_filename'])
+	# else:
+	# 	o.MODS = None
+
+	# # add and commit(for now)
+	# return o._commit()
+	############################################################################################################
+
+	# USR RAW
+	############################################################################################################	
 	print "Adding ingest_workspace_object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
-
-	# open instance of job
-	j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
-
-	# instatitate object instance
-	o = models.ingest_workspace_object(j, object_title=job_package['object_title'], DMDID=job_package['DMDID'])
-
-	# set type
-	o.object_type = job_package['object_type']
-
-	# fill out object row with information from job_package
-	o.ingest_id = job_package['ingest_id']
-
-	# structMap
-	o.struct_map = job_package['struct_map']
 
 	# MODS file
 	if job_package['MODS_temp_filename']:
 		with open(job_package['MODS_temp_filename'], 'r') as fhand:
-			o.MODS = fhand.read()
+			MODS = fhand.read()
 			os.remove(job_package['MODS_temp_filename'])
 	else:
-		o.MODS = None
+		MODS = None
 
-	# add and commit(for now)
-	return o._commit()
+	# insert with SQLalchemy Core
+	db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
+		'job_id': job_package['job_id'],	    
+		'object_type': job_package['object_type'],
+		'ingest_id': job_package['ingest_id'],
+		'struct_map': job_package['struct_map'],
+		'MODS': MODS
+	}])
+
+	db.session.commit()
 
 
 #################################################################################

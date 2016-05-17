@@ -484,46 +484,9 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		step += 1
 
 
-
-
-
-
 @celery.task(name="createJob_worker")
 def createJob_worker(job_package):
 
-	# USR ORM
-	############################################################################################################
-	# print "Adding ingest_workspace_object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
-
-	# # open instance of job
-	# j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
-
-	# # instatitate object instance
-	# o = models.ingest_workspace_object(j, object_title=job_package['object_title'], DMDID=job_package['DMDID'])
-
-	# # set type
-	# o.object_type = job_package['object_type']
-
-	# # fill out object row with information from job_package
-	# o.ingest_id = job_package['ingest_id']
-
-	# # structMap
-	# o.struct_map = job_package['struct_map']
-
-	# # MODS file
-	# if job_package['MODS_temp_filename']:
-	# 	with open(job_package['MODS_temp_filename'], 'r') as fhand:
-	# 		o.MODS = fhand.read()
-	# 		os.remove(job_package['MODS_temp_filename'])
-	# else:
-	# 	o.MODS = None
-
-	# # add and commit(for now)
-	# return o._commit()
-	############################################################################################################
-
-	# USR RAW
-	############################################################################################################	
 	print "Adding ingest_workspace_object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
 
 	# MODS file
@@ -534,7 +497,7 @@ def createJob_worker(job_package):
 	else:
 		MODS = None
 
-	# insert with SQLalchemy Core
+	# insert with SQLAlchemy Core
 	db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
 		'job_id': job_package['job_id'],	    
 		'object_type': job_package['object_type'],
@@ -847,6 +810,18 @@ def checkObjectStatus_factory(job_package):
 @celery.task(name="checkObjectStatus_worker")
 def checkObjectStatus_worker(job_package):
 
+	'''
+	Consider optimizing with SQLAlchemy Core...
+	e.g.
+	db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
+		'job_id': job_package['job_id'],	    
+		'object_type': job_package['object_type'],
+		'ingest_id': job_package['ingest_id'],
+		'struct_map': job_package['struct_map'],
+		'MODS': MODS
+	}])
+	'''
+
 	print "FIRING checkObjectStatus_worker"
 
 	# get form data
@@ -899,7 +874,6 @@ def checkObjectStatus_worker(job_package):
 
 
 	return job_package
-
 
 	
 

@@ -951,13 +951,6 @@ def selObjsOverview():
 		# fast, not as rich
 	# results = solr_handle.search(**{ "q":"*:*", "fq":["obj_size_i:*","id:*RENCEN*"], "stats":"true", "stats.field":"obj_size_i", "rows":0 })
 
-
-
-
-
-
-
-
 	# pass the current PIDs to page as list 
 	return render_template("selObjsOverview.html",username=username, localConfig=localConfig)
 
@@ -1283,8 +1276,16 @@ def wcts(wct):
 #   # return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)   
 
 
+# preview solr document values (a la eulindexer / indexdata functions from eulfedora)
+@app.route("/solrDoc/<pid>", methods=['POST', 'GET'])
+def solrDoc(pid):  
 
+	o = WSUDOR_ContentTypes.WSUDOR_Object(pid)
 
+	json_string = json.dumps(o.previewSolrDict())
+	resp = make_response(json_string)
+	resp.headers['Content-Type'] = 'application/json'
+	return resp
 
 
 ######################################################

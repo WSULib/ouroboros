@@ -499,6 +499,8 @@ def createJob_worker(job_package):
 
 	# insert with SQLAlchemy Core
 	db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
+		'object_title': job_package['object_title'],
+		'DMDID': job_package['DMDID'],
 		'job_id': job_package['job_id'],	    
 		'object_type': job_package['object_type'],
 		'ingest_id': job_package['ingest_id'],

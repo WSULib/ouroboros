@@ -384,20 +384,107 @@ class SolrSearchDoc(object):
         if len(response.documents) > 0:
             self.doc = self.SolrFields(**response.documents[0])
             #store version, remove from doc
-            self.version = self.doc._version_ 
+            self.version = self.doc._version_
             del self.doc._version_
             # finally, set exists to True
             self.exists = True
         else:
             self.doc = self.SolrFields()
             self.doc.id = self.id # automatically set ID as PID
-            self.exists = False 
+            self.exists = False
 
 
     def asDictionary(self):
         return self.doc.__dict__
 
-    
+# class for Generic Supervisor creation
+class createSupervisorProcess(object):
+
+    def __init__(self,sup_filename,supervisor_name,supervisor_process):
+        print "instantiating self"
+        self.supervisor_name = supervisor_name
+        self.filename_short = sup_filename
+        self.filename = '/etc/supervisor/conf.d/'+sup_filename
+        self.supervisor_process = supervisor_process
+
+    def _writeConfFile(self):
+        print "adding conf file"
+        # fire the supervisor worker process
+        supervisor_process = self.supervisor_process
+
+        if not os.path.exists(self.filename):
+            with open(self.filename ,'w') as fhand:
+                fhand.write(supervisor_process)
+            return self.filename
+        else:
+            print "Conf files exists, skipping"
+            return False
+
+
+    def _removeConfFile(self):
+        print "remove conf file"
+        if os.path.exists(self.filename):
+            return os.remove(self.filename)
+        else:
+            print "could not find conf file, skipping"
+            return False
+
+
+    def _startSupervisorProcess(self):
+        print "adding proccessGroup from supervisor"
+        try:
+            self.sup_server.supervisor.reloadConfig()
+            self.sup_server.supervisor.addProcessGroup(self.supervisor_name)
+        except:
+            return False
+
+
+    def _restartSupervisorProcess(self):
+        try:
+            self.sup_server.supervisor.stopProcess(self.supervisor_name)
+        except:
+            print "could not stop process"
+        try:
+            self.sup_server.supervisor.startProcess(self.supervisor_name)
+        except:
+            print "could not start process"
+
+
+    def _stopSupervisorProcess(self):
+        print "stopping proccessGroup from supervisor"
+        try:
+            process_group = self.supervisor_name
+            self.sup_server.supervisor.stopProcess(process_group)
+            self.sup_server.supervisor.removeProcessGroup(process_group)
+        except:
+            return False
+
+
+    def _removeSupervisorProcess(self):
+        print "manually removing proccessGroup from supervisor"
+        try:
+            process_group = self.supervisor_name
+            self.sup_server.supervisor.removeProcessGroup(process_group)
+        except:
+            return False
+
+
+    def start(self):
+        self._writeConfFile()
+        self._startSupervisorProcess()
+
+
+    def restart(self):
+        self.stop()
+        self.start()
+
+
+    def stop(self):
+        self._removeConfFile()
+        stop_result = self._stopSupervisorProcess()
+        if stop_result == False:
+            self._removeSupervisorProcess()
+
 
 
 

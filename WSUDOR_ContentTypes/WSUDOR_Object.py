@@ -19,6 +19,8 @@ import zipfile
 import shutil
 import ConfigParser
 import glob
+import hashlib
+from urllib import unquote, quote_plus
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -936,12 +938,35 @@ class WSUDOR_GenObject(object):
 
 		# get cache location(s)
 		image_cache = config.get('img.ImageCache','cache_dp').replace("'","")
+		if image_cache.endswith('/'):
+			image_cache = image_cache[:-1]
 		print image_cache
 
 		# remove traces of object via PID from image cache
-		# root
+
+		# get obj_dirs
+		obj_dirs = glob.glob('%s/fedora:%s*' % (image_cache, self.pid))
+
+		# get obj + ds
+		instances = [ instance.split(image_cache+"/")[-1] for instance in obj_dirs  ]
+
+		# clear from fedora resolver cache
 		try:
-			obj_dirs = glob.glob('%s/fedora:%s*' % (image_cache, self.pid))
+			for ident in instances:
+				print "removing instance: %s" % ident
+				file_structure = ''
+				ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
+				file_structure_list = [ident_hash[0:2]] + [ident_hash[i:i+3] for i in range(2, len(ident_hash), 3)]
+				for piece in file_structure_list:
+					file_structure = os.path.join(file_structure, piece)
+					final_file_structure = "%s/fedora/wayne/%s" % ( image_cache, file_structure )
+				print "removing dir: %s" % final_file_structure
+				shutil.rmtree(final_file_structure)
+		except:
+			print "could not remove from fedora resolver cache"
+
+		# clear root
+		try:
 			print obj_dirs
 			for obj_dir in obj_dirs:
 				print "Removing directory: %s" % obj_dir

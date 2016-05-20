@@ -235,14 +235,14 @@ def before_request():
     # This is executed before every request
     g.user = current_user
 
-    # Make sure rtail-server is running
-    sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-    sup_info = {}
-    sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
-    if sup_info['rtail-server']['statename'] == "RUNNING":
-        g.rtail_is_running = True
-    else:
-        g.rtail_is_running = False
+    # # Make sure rtail-server is running
+    # sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+    # sup_info = {}
+    # sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
+    # if sup_info['rtail-server']['statename'] == "RUNNING":
+    #     g.rtail_is_running = True
+    # else:
+    #     g.rtail_is_running = False
 
 
 @login_manager.user_loader

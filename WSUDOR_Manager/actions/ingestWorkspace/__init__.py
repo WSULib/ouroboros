@@ -102,10 +102,12 @@ def job(job_id):
 		utilities.sessionVarClean(session,'ingested')
 
 	# bag created
-	if 'no_bag_path' in request.args and request.args['no_bag_path'] == 'on':
-		session['no_bag_path'] = True
+	if 'bag_path' in request.args and request.args['bag_path'] == "True":
+		session['bag_path'] = True
+	elif 'bag_path' in request.args and request.args['bag_path'] == "False":
+		session['bag_path'] = False
 	else:
-		utilities.sessionVarClean(session,'no_bag_path')
+		utilities.sessionVarClean(session,'bag_path')
 
 	# SET SESSIONS VARS
 	print "filtered rows stored in Redis"
@@ -322,6 +324,9 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 		else:
 			j.collection_identifier = "Loose"
 		j._commit()
+
+	# set collection identifier in job_package
+	job_package['collection_identifier'] = j.collection_identifier
 	
 	# add collection object to front of list
 	if METS_collection:
@@ -407,6 +412,9 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 	else:
 		j.collection_identifier = "Loose"
 	j._commit()
+
+	# set collection identifier in job_package
+	job_package['collection_identifier'] = j.collection_identifier
 	
 	# parse Archivematica METS
 	# mets = metsrw.METSDocument.fromstring(ingest_metadata)
@@ -497,12 +505,21 @@ def createJob_worker(job_package):
 	else:
 		MODS = None
 
-	# insert with SQLAlchemy Core
+	# determine pid
+	if job_package['object_type'] == 'collection':
+		id_prefix = 'collection'
+	else:
+		id_prefix = ''
+
+	derived_pid = 'wayne:%s%s' % (id_prefix,job_package['DMDID'])
+
+		# insert with SQLAlchemy Core
 	db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
-		'object_title': job_package['object_title'],
-		'DMDID': job_package['DMDID'],
 		'job_id': job_package['job_id'],	    
 		'object_type': job_package['object_type'],
+		'object_title': job_package['object_title'],
+		'DMDID': job_package['DMDID'],
+		'pid': derived_pid,
 		'ingest_id': job_package['ingest_id'],
 		'struct_map': job_package['struct_map'],
 		'MODS': MODS
@@ -904,9 +921,12 @@ def rowQueryBuild(job_id, session):
 			query = query.filter(models.ingest_workspace_object.ingested == session['ingested'])
 
 	# bag created
-	if 'no_bag_path' in session:
+	if 'bag_path' in session:
 		print "adding bag created filter"
-		query = query.filter(or_(models.ingest_workspace_object.bag_path == None, models.ingest_workspace_object.bag_path == "0" ))
+		if session['bag_path']:
+			query = query.filter(or_(models.ingest_workspace_object.bag_path != None, models.ingest_workspace_object.bag_path != "0" ))
+		if not session['bag_path']:
+			query = query.filter(or_(models.ingest_workspace_object.bag_path == None, models.ingest_workspace_object.bag_path == "0" ))
 
 	# return query object
 	return query

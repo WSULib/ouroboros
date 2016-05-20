@@ -400,11 +400,12 @@ class SolrSearchDoc(object):
 # class for Generic Supervisor creation
 class createSupervisorProcess(object):
 
-    def __init__(self,sup_filename,supervisor_name,supervisor_process):
+    sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+
+    def __init__(self,supervisor_name,supervisor_process):
         print "instantiating self"
         self.supervisor_name = supervisor_name
-        self.filename_short = sup_filename
-        self.filename = '/etc/supervisor/conf.d/'+sup_filename
+        self.filename = '/etc/supervisor/conf.d/'+supervisor_name+".conf"
         self.supervisor_process = supervisor_process
 
     def _writeConfFile(self):

@@ -132,15 +132,15 @@ def systemStatus():
 
     # ouroboros 
     try:
-        sup_info['ouroboros'] = json.dumps(sup_server.supervisor.getProcessInfo('Ouroboros'))
+        ouroboros_info = json.dumps(sup_server.supervisor.getProcessInfo('Ouroboros'))
     except:
-        sup_info['ouroboros'] = False
+        ouroboros_info = False
 
     # user cw
     try:
-        sup_info['worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
+        sup_info['celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
     except:
-        sup_info['worker'] = False
+        sup_info['celery-%s' % session['username']] = False
 
     # generic cw
     try:
@@ -148,8 +148,20 @@ def systemStatus():
     except:
         sup_info['generic_worker'] = False
 
+    # rtail-server
+    try:
+        sup_info['rtail-server'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-server'))
+    except:
+        sup_info['rtail-server'] = False
+
+    # user log streaming
+    # try:
+    #     sup_info['log-streaming-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
+    # except:
+    #     sup_info['log-streaming-celery-%s' % session['username']] = False
+
     # render template
-    return render_template("systemStatus.html", imp_ports_results=imp_ports_results, sup_info=sup_info)
+    return render_template("systemStatus.html", imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)
 
 
 @app.route('/systemStatus/cw/<target>/<action>')
@@ -161,11 +173,32 @@ def cw(target, action):
         user = models.User.query.filter_by(username=session['username']).first()
 
         # grab model
-        cw = models.CeleryWorker(user.username,user.password)
+        cw = models.CeleryWorker(user.username, user.password)
+
+    elif target == 'stream_cw':
+        supervisor_process = '''[program:rtail-celery-%(username)s]
+command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s --mute"
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true''' % {'username': username}
+        user = models.User.query.filter_by(username=session['username']).first()
+        cw = models.createSupervisorProcess('rtail-celery-%s' % user, supervisor_process)
+
+    elif target == 'rtail-server':
+        supervisor_process = '''[program:rtail-server]
+command=/usr/local/bin/rtail-server
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true'''
+        cw = models.createSupervisorProcess('rtail-server', supervisor_process)
 
     else:
         # grab model
-        cw = models.CeleryWorker("celery", False)       
+        cw = models.CeleryWorker("celery", False)
 
     # start
     if action == 'start':
@@ -235,16 +268,6 @@ def before_request():
     # This is executed before every request
     g.user = current_user
 
-    # Make sure rtail-server is running
-    sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-    sup_info = {}
-    sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
-    if sup_info['rtail-server']['statename'] == "RUNNING":
-        g.rtail_is_running = True
-    else:
-        g.rtail_is_running = False
-
-
 @login_manager.user_loader
 def load_user(id):
     """
@@ -262,29 +285,6 @@ def load_user(id):
         return user
     else:
         return None
-
-# @login_manager.token_loader
-# def load_token(token):
-#   """
-#   Flask-Login token_loader callback.
-#   The token_loader function asks this function to take the token that was
-#   stored on the users computer process it to check if its valid and then
-#   return a User Object if its valid or None if its not valid.
-#   """
-
-#   app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=14)
-#   max_age = app.config["REMEMBER_COOKIE_DURATION"].total_seconds()
-
-#   #Decrypt the Security Token, data = [username, hashpass]
-#   data = models.login_serializer.loads(token, max_age=max_age)
-#   print data[0]
-#   #Find the User
-#   user = User.get(data[0])
-
-#   #Check Password and return user or None
-#   if user and data[1] == user.fedoraRole:
-#       return user
-#   return None
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -355,23 +355,26 @@ def login():
         
         # Rtail
         # Make sure rtail-server is running
-        sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-        sup_info = {}
-        sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
-        if sup_info['rtail-server']['statename'] == "RUNNING":
-        # Make sure to start the user's own log streaming
-            sup_filename = 'rtail-celery-%s.conf' % username
-            supervisor_name = 'rtail-celery-%s' % username
-            supervisor_process = '''[program:rtail-celery-%(username)s]
-command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s --mute"
-user = ouroboros
-autostart=true
-autorestart=true''' % {'username':username}
-            global stream_cw
-            # create Log streamer for user celery worker
-            print "streaming activity log for %s celery worker " % username
-            stream_cw = models.createSupervisorProcess(sup_filename,supervisor_name,supervisor_process)
-            stream_cw.start()
+        try:
+            sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+            sup_info = {}
+            sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
+            if sup_info['rtail-server']['statename'] == "RUNNING":
+            # Make sure to start the user's own log streaming
+                supervisor_name = 'rtail-celery-%s' % username
+                supervisor_process = '''[program:rtail-celery-%(username)s]
+    command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s --mute"
+    user = ouroboros
+    autostart=true
+    autorestart=true
+    stopasgroup=true
+    killasgroup=true''' % {'username':username}
+                # create Log streamer for user
+                print "streaming activity log for %s celery worker " % username
+                stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process)
+                stream_cw.start()
+        except:
+            print "Rtail-server not running; therefore, not creating a log streamer for current user"
 
         # Go to page
         return redirect(request.args.get('next') or url_for('index'))
@@ -390,6 +393,7 @@ def logout():
     # cw.stop()
 
     # stop user-based celery log streaming
+    stream_cw = models.createSupervisorProcess('rtail-celery-%s' % username, False)
     stream_cw.stop()
     
     session["username"] = ""

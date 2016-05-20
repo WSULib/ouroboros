@@ -57,6 +57,7 @@ from redisHandles import *
 import localConfig
 
 # Solr
+import solrHandles
 from solrHandles import solr_handle
 
 # Fedora
@@ -1318,6 +1319,35 @@ def solrDoc(pid):
     resp = make_response(json_string)
     resp.headers['Content-Type'] = 'application/json'
     return resp
+
+
+# returns document as run through readux
+@app.route("/solrReaduxDoc/<pid>/<action>", methods=['POST', 'GET'])
+def solrReaduxDoc(pid,action):  
+
+    r = requests.get('http://192.168.42.4:8000/indexdata/%s' % pid).json()
+
+    # fix times
+    if 'created' in r:
+        r['created'] = datetime.strptime(r['created'],'%Y-%m-%dT%H:%M:%S.%f+00:00').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    
+    if 'last_modified' in r:
+        r['last_modified'] = datetime.strptime(r['last_modified'],'%Y-%m-%dT%H:%M:%S.%f+00:00').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+    # view
+    if action == 'view':
+        json_string = json.dumps(r)
+        resp = make_response(json_string)
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
+
+    # index into readux solr
+    if action == 'index':
+        response = solrHandles.onDemand('readux').update([r],'json',commit=True)
+        json_string = json.dumps(response.raw_content)
+        resp = make_response(json_string)
+        resp.headers['Content-Type'] = 'application/json'
+        return resp
 
 
 ######################################################

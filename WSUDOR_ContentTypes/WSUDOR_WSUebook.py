@@ -510,6 +510,26 @@ def imMode(im):
 	return im
 
 
+#############################################################################
+# experimenting with Readux style virtual objects
+#############################################################################
+
+'''
+Notes 
+
+Setting up Book via Readux models (works from Django shell `python manage.py shell`):
+b = books.models.Book('wayne:FooBar_vBook')
+b.pid = 'wayne:FooBar_vBook'
+
+But then immdiately get affordances of readux models:
+In [13]: b.get_absolute_url()
+Out[13]: u'/books/wayne:FooBar_vBook/'
+
+
+
+'''
+
+
 
 
 

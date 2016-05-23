@@ -525,11 +525,76 @@ But then immdiately get affordances of readux models:
 In [13]: b.get_absolute_url()
 Out[13]: u'/books/wayne:FooBar_vBook/'
 
-
-
 '''
 
 
+# create Book Object (e.g. emory:b5hnv)
+def createVirtBook(self):
+
+	'''
+	Target Datastreams:
+		- DC
+			- text/xml			
+		MARCXML
+			- text/xml
+		RELS-EXT
+			- application/rdf+xml
+	'''
+	
+	print "generating virtual ScannedBook object"
+
+	virt_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualBook)
+	virt_book_handle.create(self)
+
+
+
+def createVirtVolume(self):
+	'''
+	Target Datastreams:
+		- DC
+			- text/xml			
+		- OCR
+			- text/xml
+		- PDF 
+			- application/pdf
+		- RELS-EXT
+			- applicaiton/rdf+xml
+	'''
+	
+	print "generating virtual ScannedVolume object"
+
+	virt_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualVolume)
+	virt_book_handle.create(self)
+
+
+def createVirtPages(self):
+	'''
+	Target Datastreams:
+		- text
+			- application/x-empty
+		- DC
+			- text/xml			
+		- position
+			- text/plain
+		- source-image
+			- image/jp2
+		- text
+			- text/xml		
+		- RELS-EXT
+			- applicaiton/rdf+xml
+	'''
+	print "generating virtual ScannedPage object"
+
+	'''
+	for page in pages:
+		fire below
+	'''
+
+	# get pages
+	sparql_query = 'SELECT ?subject ?order WHERE  {{ ?subject <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/wayne:DSJv4i14DSJ19990221> . ?subject <info:fedora/fedora-system:def/relations-internal#isOrder> ?order . }} ORDER BY ASC(?order)'
+
+	virt_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualPage)
+	virt_book_handle.create(self,page)
 
 
 

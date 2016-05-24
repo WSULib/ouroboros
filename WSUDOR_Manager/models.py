@@ -7,6 +7,7 @@ from datetime import datetime
 import sqlalchemy
 from json import JSONEncoder
 from flask import Response, jsonify
+import fileinput
 import xmlrpclib
 import os
 # from itsdangerous import URLSafeTimedSerializer
@@ -402,11 +403,15 @@ class createSupervisorProcess(object):
 
     sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 
-    def __init__(self,supervisor_name,supervisor_process):
+    def __init__(self,supervisor_name,supervisor_process,group):
         print "instantiating self"
+        self.supervisor_name_orig = supervisor_name
         self.supervisor_name = supervisor_name
-        self.filename = '/etc/supervisor/conf.d/'+supervisor_name+".conf"
+        self.path = '/etc/supervisor/conf.d/'
+        self.filename = self.path+supervisor_name+".conf"
         self.supervisor_process = supervisor_process
+        self.group = group
+        self._setGroup(group)
 
     def _writeConfFile(self):
         print "adding conf file"
@@ -425,6 +430,10 @@ class createSupervisorProcess(object):
     def _removeConfFile(self):
         print "remove conf file"
         if os.path.exists(self.filename):
+            # first check and if needed, remove file from custom process group
+            self._removeFromGroup()
+
+            # then remove conf file
             return os.remove(self.filename)
         else:
             print "could not find conf file, skipping"
@@ -468,6 +477,60 @@ class createSupervisorProcess(object):
             self.sup_server.supervisor.removeProcessGroup(process_group)
         except:
             return False
+
+    def _setGroup(self, group):
+        print "setting group"
+        try:
+            if not group:
+                # Set group to its default value
+                group = (item for item in self.sup_server.supervisor.getAllProcessInfo() if item['name'] == self.supervisor_name_orig).next()
+                group = group['group']
+            else:
+                # write the specified group to the "groupname"-group.conf file or append to it if it already exists
+                group_file = self.path+group+"-group.conf"
+                group_data = '''[group:%(group)s]
+programs=%(supervisor_process)s''' % {'group':group,'supervisor_process':self.supervisor_name_orig}
+                if not os.path.exists(group_file):
+                    with open(group_file ,'w') as fhand:
+                        fhand.write(group_data)
+                else:
+                    # append to existing file
+                    with open(group, 'a',) as fhand:
+                        fhand.write(','+group)
+            self.supervisor_name = group+":"+self.supervisor_name_orig
+            self.group = group
+        except:
+            return False
+
+    def _removeFromGroup(self):
+        group_file = self.path+self.group+"-group.conf"
+        if os.path.exists(group_file):
+            print "removing process from group file"
+            print group_file
+            print self.supervisor_name_orig
+            # removes process entry name from the group file
+            with open(group_file,'r+') as f:
+                content = f.read()
+                f.seek(0)
+                f.truncate()
+                f.write(content.replace(self.supervisor_name_orig,''))
+                f.close()
+                print "STUFFFFFFFF"
+            # checks for 2 edge cases that would trip up the group file
+            # 1: removing entry from middle of line and leaving two commas
+            with open(group_file,'r+') as f:
+                content = f.read()
+                f.seek(0)
+                f.truncate()
+                f.write(content.replace(',,',','))
+                f.close()
+                print "STUFFF@#$"
+            # 2: removing entry from end of line and leaving a single errant comma
+            for line in fileinput.input(group_file, inplace=True):
+                if line.endswith(',\n'):
+                    print line.replace(line, line[:-2].rstrip())
+                else:
+                    print line.rstrip()
 
 
     def start(self):

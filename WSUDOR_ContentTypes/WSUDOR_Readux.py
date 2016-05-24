@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import os
 import mimetypes
 import json
@@ -13,11 +12,9 @@ import re
 from bs4 import BeautifulSoup
 import requests
 
-# library for working with LOC BagIt standard 
-import bagit
-
-# celery
-from WSUDOR_Manager import celery
+# rdflib
+import rdflib
+from rdflib.namespace import XSD, RDF, Namespace
 
 # eulfedora
 import eulfedora
@@ -33,82 +30,11 @@ from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 # localconfig
 import localConfig
 
-# import manifest factory instance
-from inc.manifest_factory import iiif_manifest_factory_instance
 
-# derivatives
-from inc.derivatives import JP2DerivativeMaker
+# RDF namespaces
+emory = Namespace(rdflib.URIRef('http://pid.emory.edu/ns/2011/repo-management/#'))
+wsudor = Namespace(rdflib.URIRef('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/'))
 
-
-####################################################################################
-# From Readux
-####################################################################################
-
-
-# class WSUDOR_Readux_VirtualBook(DigitalObject):
-
-# 	'''Fedora Book Object.  Extends :class:`~eulfedora.models.DigitalObject`.
-
-# 	.. Note::
-
-# 		This is a bare-minimum model, only implemented enough to support
-# 		indexing and access to volumes.
-# 	'''
-# 	#: content model for books
-# 	BOOK_CONTENT_MODEL = 'info:fedora/emory-control:ScannedBook-1.0'
-# 	CONTENT_MODELS = [BOOK_CONTENT_MODEL]
-
-# 	#: marcxml :class:`~eulfedora.models.XMlDatastream` with the metadata
-# 	#: record for all associated volumes; xml content will be instance of
-# 	#: :class:`MinMarcxml`
-# 	marcxml = XmlDatastream("MARCXML", "MARC21 metadata", MinMarcxml, defaults={
-# 		'control_group': 'M',
-# 		'versionable': True,
-# 	})
-
-# 	#: :class:`~readux.collection.models.Collection` this book belongs to,
-# 	#: via fedora rels-ext isMemberOfcollection
-# 	collection = Relation(relsext.isMemberOfCollection, type=Collection)
-
-# 	#: default view for new object
-# 	NEW_OBJECT_VIEW = 'books:volume'
-# 	# NOTE: this is semi-bogus, since book-level records are currently
-# 	# not displayed in readux
-
-# 	@permalink
-# 	def get_absolute_url(self):
-# 		'Absolute url to view this object within the site'
-# 		return (self.NEW_OBJECT_VIEW, [str(self.pid)])
-
-# 	@property
-# 	def best_description(self):
-# 		'''Single best description to use when only one can be displayed (e.g.,
-# 		for twitter or facebook integration). Currently selects the longest
-# 		description from available dc:description values.
-# 		'''
-# 		# for now, just return the longest description
-# 		# eventually we should be able to update this to make use of the MARCXML
-# 		descriptions = list(self.dc.content.description_list)
-# 		if descriptions:
-# 			return sorted(descriptions, key=len, reverse=True)[0]
-
-# 	@staticmethod
-# 	def pids_by_label(label):
-# 		'''Search Books by label and return a list of matching pids.'''
-# 		solr = solr_interface()
-# 		q = solr.query(content_model=Book.BOOK_CONTENT_MODEL,
-# 					   label=label).field_limit('pid')
-# 		return [result['pid'] for result in q]
-
-
-# # # Virtual Readux Volume Object
-# class WSUDOR_Readux_VirtualVolume(object):
-
-
-
-####################################################################################
-# Local
-####################################################################################
 
 # Virtual Readux Book Object
 class WSUDOR_Readux_VirtualBook(DigitalObject):
@@ -135,15 +61,15 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		'''
 
 		# PID
-		pid_prefix = wsudor_book.pid
-		self.pid = pid_prefix + "_Readux_VirtualBook"
+		self.pid = wsudor_book.pid + "_Readux_VirtualBook"
 
 		# init
 		print "Initializing %s" % (self.pid)
 		self.save()
 
 		# Dublin Core
-		self.dc = wsudor_book.ohandle.dc.content.serialize()
+		self.dc.content = wsudor_book.ohandle.dc.content
+		self.dc.save()
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
@@ -158,41 +84,47 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		self.label = wsudor_book.ohandle.label
 
 		# Build RELS-EXT
+
+		# bind namespaces
+		self.rels_ext.content.bind('eul-repomgmt',emory)
+		self.rels_ext.content.bind('wsudor',wsudor)
+
 		object_relationships = [
 
 			# Readux specific
 			{
-				"predicate": "info:fedora/fedora-system:def/model#hasModel",
-				"object": "info:fedora/emory-control:ScannedBook-1.0"
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
+				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedBook-1.0")
 			},
 			{
-				"predicate": "info:fedora/fedora-system:def/relations-external#isMemberOfCollection",
-				"object": "info:fedora/wayne:collectionWSUebooks"
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isMemberOfCollection"),
+				"object": rdflib.term.URIRef("info:fedora/wayne:collectionWSUebooks")
 			},
 			{
-				"predicate": "info:fedora/fedora-system:def/relations-external#hasConstituent",
-				"object": "info:fedora/%s_Readux_VirtualVolume" % (pid_prefix)
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#hasConstituent"),
+				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualVolume" % (wsudor_book.pid))
 			},
 			
 			# WSUDOR related
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtual",
-				"object": "True"
+				"predicate": wsudor.isVirtual,
+				"object": rdflib.term.Literal("True")
 			},
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor",
-				"object": "info:fedora/%s" % wsudor_book.pid
+				"predicate": wsudor.isVirtualFor,
+				"object": rdflib.term.URIRef("info:fedora/%s" % wsudor_book.pid)
 			},
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
-				"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
+				"predicate": wsudor.hasSecurityPolicy,
+				"object": rdflib.term.URIRef("info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted")
 			}
 		]
 
-		# write explicit RELS-EXT relationships			
-		for relationship in object_relationships:
-			print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
-			self.add_relationship(str(relationship['predicate']),str(relationship['object']))
+		for r in object_relationships:
+			self.rels_ext.content.set((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
+
+		self.rels_ext.save()
+
 
 
 		# Content Type Unique
@@ -248,7 +180,8 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		self.save()
 
 		# Dublin Core
-		self.dc = wsudor_book.ohandle.dc.content.serialize()
+		self.dc.content = wsudor_book.ohandle.dc.content
+		self.dc.save()
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
@@ -263,45 +196,48 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		self.label = wsudor_book.ohandle.label
 
 		# Build RELS-EXT
+		self.rels_ext.content.bind('eul-repomgmt',emory)
+		self.rels_ext.content.bind('wsudor',wsudor)
+
 		object_relationships = [
 
 			# Readux specific
 			{
-				"predicate": "info:fedora/fedora-system:def/model#hasModel",
-				"object": "info:fedora/emory-control:ScannedVolume-1.0"
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
+				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedVolume-1.1") #important this be 1.1
 			},
+			# {
+			# 	"predicate": rdflib.term.URIRef("http://pid.emory.edu/ns/2011/repo-management/#startPage"),
+			# 	"object": rdflib.term.Literal(1, datatype='http://www.w3.org/2001/XMLSchema#integer')
+			# },
 			{
-				"predicate": "http://pid.emory.edu/ns/2011/repo-management/#startPage",
-				"object": "2"
-			},
-			{
-				"predicate": "http://pid.emory.edu/ns/2011/repo-management/#hasPrimaryImage",
-				"object": "info:fedora/%s_Readux_VirtualPage_1" % (pid_prefix)
+				"predicate": emory.hasPrimaryImage,
+				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualPage_1" % (pid_prefix))
 			},			
 			{
-				"predicate": "info:fedora/fedora-system:def/relations-external#isConstituentOf",
-				"object": "info:fedora/%s_Readux_VirtualBook" % (pid_prefix)
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isConstituentOf"),
+				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualBook" % (pid_prefix))
 			},
 			
 			# WSUDOR related
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtual",
-				"object": "True"
+				"predicate": wsudor.isVirtual,
+				"object": rdflib.term.Literal("True")
 			},
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor",
-				"object": "info:fedora/%s" % wsudor_book.pid
+				"predicate": wsudor.isVirtualFor,
+				"object": rdflib.term.URIRef("info:fedora/%s" % wsudor_book.pid)
 			},
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
-				"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
+				"predicate": wsudor.hasSecurityPolicy,
+				"object": rdflib.term.URIRef("info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted")
 			}
 		]
 
-		# write explicit RELS-EXT relationships			
-		for relationship in object_relationships:
-			print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
-			self.add_relationship(str(relationship['predicate']),str(relationship['object']))
+		for r in object_relationships:
+			self.rels_ext.content.set((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
+
+		self.rels_ext.save()
 
 
 		# Content Type Unique
@@ -403,45 +339,48 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		self.label = "%s / %s" % (wsudor_book.ohandle.label,page['order'])
 
 		# Build RELS-EXT
+		self.rels_ext.content.bind('eul-repomgmt',emory)
+		self.rels_ext.content.bind('wsudor',wsudor)
+
 		object_relationships = [
 
 			# Readux specific
 			{
-				"predicate": "info:fedora/fedora-system:def/model#hasModel",
-				"object": "info:fedora/emory-control:ScannedPage-1.0"
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
+				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedPage-1.1") #important this be 1.1
 			},
 			{
-				"predicate": "info:fedora/fedora-system:def/model#hasModel",
-				"object": "info:fedora/emory-control:Image-1.0"
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
+				"object": rdflib.term.URIRef("info:fedora/emory-control:Image-1.0")
 			},
 			{
-				"predicate": "http://pid.emory.edu/ns/2011/repo-management/#pageOrder",
-				"object": page['order']
+				"predicate": emory.pageOrder,
+				"object": rdflib.term.Literal(page['order'], datatype=rdflib.term.URIRef(u'http://www.w3.org/2001/XMLSchema#int'))
 			},						
 			{
-				"predicate": "info:fedora/fedora-system:def/relations-external#isConstituentOf",
-				"object": "info:fedora/%s_Readux_VirtualVolume" % (pid_prefix)
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isConstituentOf"),
+				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualVolume" % (pid_prefix))
 			},
 			
 			# WSUDOR related
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtual",
-				"object": "True"
+				"predicate": wsudor.isVirtual,
+				"object": rdflib.term.Literal("True")
 			},
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor",
-				"object": "info:fedora/%s" % wsudor_book.pid
+				"predicate": wsudor.isVirtualFor,
+				"object": rdflib.term.URIRef("info:fedora/%s" % wsudor_book.pid)
 			},
 			{
-				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
-				"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
+				"predicate": wsudor.hasSecurityPolicy,
+				"object": rdflib.term.URIRef("info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted")
 			}
 		]
 
-		# write explicit RELS-EXT relationships			
-		for relationship in object_relationships:
-			print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
-			self.add_relationship(str(relationship['predicate']),str(relationship['object']))
+		for r in object_relationships:
+			self.rels_ext.content.set((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
+
+		self.rels_ext.save()
 
 
 		# Content Type Unique
@@ -455,18 +394,11 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		source_image_handle.save()
 
 		# text
-		print "Writing 'text' datastream"
-		text_handle = eulfedora.models.DatastreamObject(self, "text", "text", mimetype="text/plain", control_group='M')
-		text_handle.label = "text"
-		text_handle.content = "There shall be text."
-		text_handle.save()
-
-		# position
-		print "Writing 'position' datastream"
-		position_handle = eulfedora.models.DatastreamObject(self, "position", "position", mimetype="text/plain", control_group='M')
-		position_handle.label = "position"
-		position_handle.content = "There shall be position."
-		position_handle.save()
+		print "Writing 'text' datastream, aka 'alto'"
+		alto_handle = eulfedora.models.DatastreamObject(self, "text", "text", mimetype="text/xml", control_group='M')
+		alto_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/ALTOXML_%s/content" % (wsudor_book.pid, page['order'])
+		alto_handle.label = "text"
+		alto_handle.save()
 
 		# tei
 		print "Writing 'tei' datastream"
@@ -476,7 +408,6 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		tei_handle.save()
 
 		###############################################################
-
 
 		# save new object
 		self.save()

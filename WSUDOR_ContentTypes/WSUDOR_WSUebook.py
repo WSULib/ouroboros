@@ -509,14 +509,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	'''
 
-	
-	def createReaduxVirtualObjects(self):
-
-		self._createVirtBook()
-		self._createVirtVolume()
-		self._createVirtPages()
-
-
 	# create Book Object (e.g. emory:b5hnv)
 	def _createVirtBook(self):
 
@@ -585,17 +577,59 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			virtual_page_handle.create(self,page)
 
 
+	def createReaduxVirtualObjects(self):
+
+		self._createVirtBook()
+		self._createVirtVolume()
+		self._createVirtPages()
+
+
 	def purgeReaduxVirtualObjects(self):
 
 		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 
 		for obj in sparql_response:
-
 			print "Purging virtual object: %s" % obj['virtobj']
-
 			fedora_handle.purge_object( obj['virtobj'].split("info:fedora/")[-1] )
 
 		return True
+
+
+	def indexReaduxVirtualObjects(self,action='index'):
+
+		'''
+		NOTE: will need to wait here for risearch to index
+		'''
+
+		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
+
+		for obj in sparql_response:
+			print "Indexing object: %s" % obj['virtobj']
+			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
+
+		return True
+
+
+	def regenReaduxVirtualObjects(self):
+
+		self.purgeReaduxVirtualObjects()
+
+		time.sleep(1)
+
+		self.createReaduxVirtualObjects()
+		
+		print "waiting for risearch to catch up..."
+		while True:
+			sparql_count = fedora_handle.risearch.sparql_count('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
+			if sparql_count < 1:
+				time.sleep(.5)
+				continue
+			else:
+				print 'proxy objects indexed in risearch, continuing'
+				break
+
+		self.indexReaduxVirtualObjects(action='index')
+
 
 
 

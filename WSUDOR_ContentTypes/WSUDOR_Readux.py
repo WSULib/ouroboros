@@ -154,12 +154,6 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		policy_handle.label = "POLICY"
 		policy_handle.save()
 
-		# MARCXML
-		MARCXML_handle = eulfedora.models.DatastreamObject(self,"MARCXML", "MARCXML", mimetype="text/xml", control_group="M")
-		MARCXML_handle.content = "</empty>"
-		MARCXML_handle.label = "MARCXML"
-		MARCXML_handle.save()
-
 		# label
 		self.label = wsudor_book.ohandle.label
 
@@ -186,6 +180,10 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 				"object": "True"
 			},
 			{
+				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor",
+				"object": "info:fedora/%s" % wsudor_book.pid
+			},
+			{
 				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
 				"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
 			}
@@ -197,12 +195,20 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 			self.add_relationship(str(relationship['predicate']),str(relationship['object']))
 
 
+		# Content Type Unique
+		###############################################################
+
+		# MARCXML
+		MARCXML_handle = eulfedora.models.DatastreamObject(self,"MARCXML", "MARCXML", mimetype="text/xml", control_group="M")
+		MARCXML_handle.content = "</empty>"
+		MARCXML_handle.label = "MARCXML"
+		MARCXML_handle.save()
+
+		###############################################################
+
 		# save new object
 		self.save()
 
-
-
-	
 
 
 # Virtual Readux Volume Object
@@ -253,26 +259,6 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		policy_handle.label = "POLICY"
 		policy_handle.save()
 
-		# OCR
-		'''
-		Merge alto XMLs 
-		BLUFF FOR NOW
-		'''
-		print "Writing METS ALTO XML"
-		ocr_handle = eulfedora.models.DatastreamObject(self, "OCR", "Fulltext PDF for item", mimetype="text/xml", control_group='M')
-		ocr_handle.label = "OCR from Abbyy"
-		ocr_handle.content = "</empty>"
-		ocr_handle.save()
-
-
-		# PDF
-		print "Writing full-text PDF"
-		pdf_handle = eulfedora.models.DatastreamObject(self, "PDF", "Fulltext PDF for item", mimetype="application/pdf", control_group='E')
-		pdf_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/PDF_FULL/content" % (wsudor_book.pid) 
-		pdf_handle.label = "Fulltext PDF for item"
-		pdf_handle.save()
-
-
 		# label
 		self.label = wsudor_book.ohandle.label
 
@@ -303,6 +289,10 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 				"object": "True"
 			},
 			{
+				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor",
+				"object": "info:fedora/%s" % wsudor_book.pid
+			},
+			{
 				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
 				"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
 			}
@@ -312,6 +302,31 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		for relationship in object_relationships:
 			print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
 			self.add_relationship(str(relationship['predicate']),str(relationship['object']))
+
+
+		# Content Type Unique
+		###############################################################
+
+		# OCR
+		'''
+		Merge alto XMLs 
+		BLUFF FOR NOW
+		'''
+		print "Writing METS ALTO XML"
+		ocr_handle = eulfedora.models.DatastreamObject(self, "OCR", "Fulltext PDF for item", mimetype="text/xml", control_group='M')
+		ocr_handle.label = "OCR from Abbyy"
+		ocr_handle.content = "</empty>"
+		ocr_handle.save()
+
+
+		# PDF
+		print "Writing full-text PDF"
+		pdf_handle = eulfedora.models.DatastreamObject(self, "PDF", "Fulltext PDF for item", mimetype="application/pdf", control_group='E')
+		pdf_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/PDF_FULL/content" % (wsudor_book.pid) 
+		pdf_handle.label = "Fulltext PDF for item"
+		pdf_handle.save()
+
+		###############################################################
 
 
 		# save new object
@@ -373,7 +388,6 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		'''
 		Will need to write this a bit more carefull - including the PID of this new object!
 		'''
-		self.dc = wsudor_book.ohandle.dc.content.serialize()
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
@@ -385,10 +399,8 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		policy_handle.save()
 
 		
-
-
 		# label
-		self.label = wsudor_book.ohandle.label
+		self.label = "%s / %s" % (wsudor_book.ohandle.label,page['order'])
 
 		# Build RELS-EXT
 		object_relationships = [
@@ -396,25 +408,29 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 			# Readux specific
 			{
 				"predicate": "info:fedora/fedora-system:def/model#hasModel",
-				"object": "info:fedora/emory-control:ScannedVolume-1.0"
+				"object": "info:fedora/emory-control:ScannedPage-1.0"
 			},
 			{
-				"predicate": "http://pid.emory.edu/ns/2011/repo-management/#startPage",
-				"object": "2"
+				"predicate": "info:fedora/fedora-system:def/model#hasModel",
+				"object": "info:fedora/emory-control:Image-1.0"
 			},
 			{
-				"predicate": "http://pid.emory.edu/ns/2011/repo-management/#hasPrimaryImage",
-				"object": "info:fedora/%s_Readux_VirtualPage_1" % (pid_prefix)
-			},			
+				"predicate": "http://pid.emory.edu/ns/2011/repo-management/#pageOrder",
+				"object": page['order']
+			},						
 			{
 				"predicate": "info:fedora/fedora-system:def/relations-external#isConstituentOf",
-				"object": "info:fedora/%s_Readux_VirtualBook" % (pid_prefix)
+				"object": "info:fedora/%s_Readux_VirtualVolume" % (pid_prefix)
 			},
 			
 			# WSUDOR related
 			{
 				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtual",
 				"object": "True"
+			},
+			{
+				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor",
+				"object": "info:fedora/%s" % wsudor_book.pid
 			},
 			{
 				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
@@ -426,6 +442,40 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		for relationship in object_relationships:
 			print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
 			self.add_relationship(str(relationship['predicate']),str(relationship['object']))
+
+
+		# Content Type Unique
+		###############################################################
+
+		# source-image
+		print "Linking Image"
+		source_image_handle = eulfedora.models.DatastreamObject(self,"source-image", "source-image", mimetype="image/jp2", control_group="E")
+		source_image_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/IMAGE_%s_JP2/content" % (wsudor_book.pid, page['order'])
+		source_image_handle.label = "source-image"
+		source_image_handle.save()
+
+		# text
+		print "Writing 'text' datastream"
+		text_handle = eulfedora.models.DatastreamObject(self, "text", "text", mimetype="text/plain", control_group='M')
+		text_handle.label = "text"
+		text_handle.content = "There shall be text."
+		text_handle.save()
+
+		# position
+		print "Writing 'position' datastream"
+		position_handle = eulfedora.models.DatastreamObject(self, "position", "position", mimetype="text/plain", control_group='M')
+		position_handle.label = "position"
+		position_handle.content = "There shall be position."
+		position_handle.save()
+
+		# tei
+		print "Writing 'tei' datastream"
+		tei_handle = eulfedora.models.DatastreamObject(self, "tei", "tei", mimetype="text/xml", control_group='M')
+		tei_handle.label = "tei"
+		tei_handle.content = "</empty>"
+		tei_handle.save()
+
+		###############################################################
 
 
 		# save new object

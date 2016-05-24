@@ -491,6 +491,114 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print solr_bookreader_handle.commit()
 
 
+
+	#############################################################################
+	# experimenting with Readux style virtual objects
+	#############################################################################
+
+	'''
+	Notes 
+
+	Setting up Book via Readux models (works from Django shell `python manage.py shell`):
+	b = books.models.Book('wayne:FooBar_vBook')
+	b.pid = 'wayne:FooBar_vBook'
+
+	But then immdiately get affordances of readux models:
+	In [13]: b.get_absolute_url()
+	Out[13]: u'/books/wayne:FooBar_vBook/'
+
+	'''
+
+	
+	def createReaduxVirtualObjects(self):
+
+		self._createVirtBook()
+		self._createVirtVolume()
+		self._createVirtPages()
+
+
+	# create Book Object (e.g. emory:b5hnv)
+	def _createVirtBook(self):
+
+		'''
+		Target Datastreams:
+			- DC
+				- text/xml			
+			MARCXML
+				- text/xml
+			RELS-EXT
+				- application/rdf+xml
+		'''
+		
+		print "generating virtual ScannedBook object"
+
+		virtual_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualBook)
+		virtual_book_handle.create(self)
+
+
+	def _createVirtVolume(self):
+		'''
+		Target Datastreams:
+			- DC
+				- text/xml			
+			- OCR
+				- text/xml
+			- PDF 
+				- application/pdf
+			- RELS-EXT
+				- applicaiton/rdf+xml
+		'''
+		
+		print "generating virtual ScannedVolume object"
+
+		virtual_volume_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualVolume)
+		virtual_volume_handle.create(self)
+
+
+	def _createVirtPages(self):
+		'''
+		Target Datastreams:
+			- text
+				- application/x-empty
+			- DC
+				- text/xml			
+			- position
+				- text/plain
+			- source-image
+				- image/jp2
+			- text
+				- text/xml		
+			- RELS-EXT
+				- applicaiton/rdf+xml
+		'''
+		print "generating virtual ScannedPage object"
+
+		
+		# get pages
+		sparql_response = fedora_handle.risearch.sparql_query('select $primary_image $order WHERE {{ $primary_image <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s> . $primary_image <info:fedora/fedora-system:def/relations-internal#isOrder> $order . }} ORDER BY ASC($order)' % (self.pid))
+
+		for page in sparql_response:
+
+			print page
+
+			virtual_page_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualPage)
+			virtual_page_handle.create(self,page)
+
+
+	def purgeReaduxVirtualObjects(self):
+
+		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
+
+		for obj in sparql_response:
+
+			print "Purging virtual object: %s" % obj['virtobj']
+
+			fedora_handle.purge_object( obj['virtobj'].split("info:fedora/")[-1] )
+
+		return True
+
+
+
 # helpers
 '''
 This might be where we can fix the gray TIFFs
@@ -510,91 +618,7 @@ def imMode(im):
 	return im
 
 
-#############################################################################
-# experimenting with Readux style virtual objects
-#############################################################################
 
-'''
-Notes 
-
-Setting up Book via Readux models (works from Django shell `python manage.py shell`):
-b = books.models.Book('wayne:FooBar_vBook')
-b.pid = 'wayne:FooBar_vBook'
-
-But then immdiately get affordances of readux models:
-In [13]: b.get_absolute_url()
-Out[13]: u'/books/wayne:FooBar_vBook/'
-
-'''
-
-
-# create Book Object (e.g. emory:b5hnv)
-def createVirtBook(self):
-
-	'''
-	Target Datastreams:
-		- DC
-			- text/xml			
-		MARCXML
-			- text/xml
-		RELS-EXT
-			- application/rdf+xml
-	'''
-	
-	print "generating virtual ScannedBook object"
-
-	virt_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualBook)
-	virt_book_handle.create(self)
-
-
-
-def createVirtVolume(self):
-	'''
-	Target Datastreams:
-		- DC
-			- text/xml			
-		- OCR
-			- text/xml
-		- PDF 
-			- application/pdf
-		- RELS-EXT
-			- applicaiton/rdf+xml
-	'''
-	
-	print "generating virtual ScannedVolume object"
-
-	virt_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualVolume)
-	virt_book_handle.create(self)
-
-
-def createVirtPages(self):
-	'''
-	Target Datastreams:
-		- text
-			- application/x-empty
-		- DC
-			- text/xml			
-		- position
-			- text/plain
-		- source-image
-			- image/jp2
-		- text
-			- text/xml		
-		- RELS-EXT
-			- applicaiton/rdf+xml
-	'''
-	print "generating virtual ScannedPage object"
-
-	'''
-	for page in pages:
-		fire below
-	'''
-
-	# get pages
-	sparql_query = 'SELECT ?subject ?order WHERE  {{ ?subject <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/wayne:DSJv4i14DSJ19990221> . ?subject <info:fedora/fedora-system:def/relations-internal#isOrder> ?order . }} ORDER BY ASC(?order)'
-
-	virt_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualPage)
-	virt_book_handle.create(self,page)
 
 
 

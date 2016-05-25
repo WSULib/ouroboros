@@ -401,11 +401,11 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		alto_handle.save()
 
 		# tei
-		print "Writing 'tei' datastream"
-		tei_handle = eulfedora.models.DatastreamObject(self, "tei", "tei", mimetype="text/xml", control_group='M')
-		tei_handle.label = "tei"
-		tei_handle.content = "</empty>"
-		tei_handle.save()
+		# print "Writing 'tei' datastream"
+		# tei_handle = eulfedora.models.DatastreamObject(self, "tei", "tei", mimetype="text/xml", control_group='M')
+		# tei_handle.label = "tei"
+		# tei_handle.content = "</empty>"
+		# tei_handle.save()
 
 		###############################################################
 

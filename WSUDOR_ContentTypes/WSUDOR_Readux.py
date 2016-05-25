@@ -117,7 +117,7 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		]
 
 		for r in object_relationships:
-			self.rels_ext.content.set((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
+			self.rels_ext.content.add((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
 
 		self.rels_ext.save()
 
@@ -223,7 +223,7 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		]
 
 		for r in object_relationships:
-			self.rels_ext.content.set((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
+			self.rels_ext.content.add((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
 
 		self.rels_ext.save()
 
@@ -327,9 +327,6 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		self.label = "%s / %s" % (wsudor_book.ohandle.label,page['order'])
 
 		# Build RELS-EXT
-		'''
-		problem here with approach: relationships with same predicate are over-writing each other
-		'''
 		self.rels_ext.content.bind('eul-repomgmt',emory)
 		self.rels_ext.content.bind('wsudor',wsudor)
 
@@ -365,7 +362,7 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		]
 
 		for r in object_relationships:
-			self.rels_ext.content.set((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
+			self.rels_ext.content.add((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
 
 		self.rels_ext.save()
 

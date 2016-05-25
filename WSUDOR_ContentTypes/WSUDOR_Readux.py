@@ -90,8 +90,6 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		self.rels_ext.content.bind('wsudor',wsudor)
 
 		object_relationships = [
-
-			# Readux specific
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
 				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedBook-1.0")
@@ -104,8 +102,6 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#hasConstituent"),
 				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualVolume" % (wsudor_book.pid))
 			},
-			
-			# WSUDOR related
 			{
 				"predicate": wsudor.isVirtual,
 				"object": rdflib.term.Literal("True")
@@ -200,16 +196,10 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		self.rels_ext.content.bind('wsudor',wsudor)
 
 		object_relationships = [
-
-			# Readux specific
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
-				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedVolume-1.1") #important this be 1.1
+				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedVolume-1.1")
 			},
-			# {
-			# 	"predicate": rdflib.term.URIRef("http://pid.emory.edu/ns/2011/repo-management/#startPage"),
-			# 	"object": rdflib.term.Literal(1, datatype='http://www.w3.org/2001/XMLSchema#integer')
-			# },
 			{
 				"predicate": emory.hasPrimaryImage,
 				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualPage_1" % (pid_prefix))
@@ -218,8 +208,6 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isConstituentOf"),
 				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualBook" % (pid_prefix))
 			},
-			
-			# WSUDOR related
 			{
 				"predicate": wsudor.isVirtual,
 				"object": rdflib.term.Literal("True")
@@ -339,19 +327,20 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		self.label = "%s / %s" % (wsudor_book.ohandle.label,page['order'])
 
 		# Build RELS-EXT
+		'''
+		problem here with approach: relationships with same predicate are over-writing each other
+		'''
 		self.rels_ext.content.bind('eul-repomgmt',emory)
 		self.rels_ext.content.bind('wsudor',wsudor)
 
 		object_relationships = [
-
-			# Readux specific
-			{
-				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
-				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedPage-1.1") #important this be 1.1
-			},
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
 				"object": rdflib.term.URIRef("info:fedora/emory-control:Image-1.0")
+			},
+			{
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
+				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedPage-1.1")
 			},
 			{
 				"predicate": emory.pageOrder,
@@ -361,8 +350,6 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isConstituentOf"),
 				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualVolume" % (pid_prefix))
 			},
-			
-			# WSUDOR related
 			{
 				"predicate": wsudor.isVirtual,
 				"object": rdflib.term.Literal("True")

@@ -305,24 +305,18 @@ def solrTranslationHash(args):
 # --------------------------------------------------------------------------------------------------------------------#
 #######################################################################################################################
 
-# return Fedora MODS datastream
+# get object state
 def getObjectXML(getParams):	
-	baseURL = "http://localhost/fedora/objects/%s/objectXML" % (getParams['PID'][0])
-	r = requests.get(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD))			
-	xmlString = r.text
+	o = fedora_handle.get_object(getParams['PID'][0])
 
 	#check if valid PID
-	if xmlString.startswith("Object not found in low-level storage:"):
+	if o.exists == False:
 		outputDict = {"object_status" : 'Absent' }
 	else:
-		#convert XML to JSON with "xmltodict"
-		xmlDict = xmltodict.parse(xmlString)	
-		objectStatus = xmlDict['foxml:digitalObject']['foxml:objectProperties']['foxml:property'][0]['@VALUE']
-		outputDict = {"object_status" : objectStatus }
+		outputDict = {"object_status" : o.state }
 
 	output = json.dumps(outputDict)
 	return output
-
 
 # gets children for single PID
 def isMemberOf(getParams):

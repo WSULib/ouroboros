@@ -403,7 +403,7 @@ class createSupervisorProcess(object):
 
     sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 
-    def __init__(self,supervisor_name,supervisor_process,group):
+    def __init__(self,supervisor_name,supervisor_process,group=False,restartGroup=False):
         print "instantiating self"
         self.supervisor_name_orig = supervisor_name
         self.supervisor_name = supervisor_name
@@ -411,6 +411,7 @@ class createSupervisorProcess(object):
         self.filename = self.path+supervisor_name+".conf"
         self.supervisor_process = supervisor_process
         self.group = group
+        self.restartGroup = restartGroup
         self._setGroup(group)
 
     def _writeConfFile(self):
@@ -441,10 +442,9 @@ class createSupervisorProcess(object):
 
 
     def _startSupervisorProcess(self):
-        print "adding proccessGroup from supervisor"
+        print "adding process to supervisor"
         try:
-            self.sup_server.supervisor.reloadConfig()
-            self.sup_server.supervisor.addProcessGroup(self.supervisor_name)
+            os.system('/usr/local/bin/supervisorctl reread; /usr/local/bin/supervisorctl update')
         except:
             return False
 
@@ -461,20 +461,18 @@ class createSupervisorProcess(object):
 
 
     def _stopSupervisorProcess(self):
-        print "stopping proccessGroup from supervisor"
+        print "stopping proccess from supervisor"
         try:
-            process_group = self.supervisor_name
-            self.sup_server.supervisor.stopProcess(process_group)
-            self.sup_server.supervisor.removeProcessGroup(process_group)
+            self.sup_server.supervisor.stopProcess(self.supervisor_name)
+            os.system('/usr/local/bin/supervisorctl reread; /usr/local/bin/supervisorctl update')
         except:
             return False
 
 
     def _removeSupervisorProcess(self):
-        print "manually removing proccessGroup from supervisor"
+        print "manually removing proccess from supervisor"
         try:
-            process_group = self.supervisor_name
-            self.sup_server.supervisor.removeProcessGroup(process_group)
+            os.system('/usr/local/bin/supervisorctl reread; /usr/local/bin/supervisorctl update')
         except:
             return False
 
@@ -495,8 +493,12 @@ programs=%(supervisor_process)s''' % {'group':group,'supervisor_process':self.su
                         fhand.write(group_data)
                 else:
                     # append to existing file
-                    with open(group, 'a',) as fhand:
-                        fhand.write(','+group)
+                    with open(group_file, 'r') as fhand:
+                        data = fhand.readlines()
+                    data[1] = data[1].rstrip()+','+self.supervisor_name_orig
+                    with open(group_file, 'w') as fhand:
+                        fhand.writelines(data)
+                        print "wrote process to group file"
             self.supervisor_name = group+":"+self.supervisor_name_orig
             self.group = group
         except:
@@ -506,16 +508,16 @@ programs=%(supervisor_process)s''' % {'group':group,'supervisor_process':self.su
         group_file = self.path+self.group+"-group.conf"
         if os.path.exists(group_file):
             print "removing process from group file"
-            print group_file
-            print self.supervisor_name_orig
             # removes process entry name from the group file
+            with open(group_file, 'r') as f:
+                print f.read()
             with open(group_file,'r+') as f:
                 content = f.read()
                 f.seek(0)
                 f.truncate()
                 f.write(content.replace(self.supervisor_name_orig,''))
                 f.close()
-                print "STUFFFFFFFF"
+
             # checks for 2 edge cases that would trip up the group file
             # 1: removing entry from middle of line and leaving two commas
             with open(group_file,'r+') as f:
@@ -524,13 +526,19 @@ programs=%(supervisor_process)s''' % {'group':group,'supervisor_process':self.su
                 f.truncate()
                 f.write(content.replace(',,',','))
                 f.close()
-                print "STUFFF@#$"
             # 2: removing entry from end of line and leaving a single errant comma
             for line in fileinput.input(group_file, inplace=True):
                 if line.endswith(',\n'):
                     print line.replace(line, line[:-2].rstrip())
                 else:
                     print line.rstrip()
+            with open(group_file, 'r') as f:
+                print f.read()
+                print "removed?"
+
+    def _restartGroup(self):
+        self.sup_server.supervisor.stopProcessGroup(self.group)
+        self.sup_server.supervisor.startProcessGroup(self.group)
 
 
     def start(self):
@@ -539,8 +547,11 @@ programs=%(supervisor_process)s''' % {'group':group,'supervisor_process':self.su
 
 
     def restart(self):
-        self.stop()
-        self.start()
+        if self.restartGroup:
+            self._restartGroup()
+        else:
+            self.stop()
+            self.start()
 
 
     def stop(self):

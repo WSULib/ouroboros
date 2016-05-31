@@ -278,12 +278,26 @@ import views
 import ouroboros_assets
 
 # generate required folders if not present
-if not os.path.exists('/tmp/Ouroboros'):
-	os.mkdir('/tmp/Ouroboros')
-if not os.path.exists('/tmp/Ouroboros/ingest_workspace'):
-	os.mkdir('/tmp/Ouroboros/ingest_workspace')
-if not os.path.exists('/home/ouroboros/ingest_jobs'):
-	os.mkdir('/home/ouroboros/ingest_jobs')
+try:
+	if not os.path.exists('/tmp/Ouroboros'):
+		os.mkdir('/tmp/Ouroboros')
+except OSError as e:
+	print e
+	print "could not make /tmp/Ouroboros"
+
+try:
+	if not os.path.exists('/tmp/Ouroboros/ingest_workspace'):
+		os.mkdir('/tmp/Ouroboros/ingest_workspace')
+except OSError as e:
+	print e
+	print "could not make /tmp/Ouroboros/ingest_workspace"
+
+try:
+	if not os.path.exists('/home/ouroboros/ingest_jobs'):
+		os.mkdir('/home/ouroboros/ingest_jobs')
+except OSError as e:
+	print e
+	print "could not make /home/ouroboros/ingest_jobs"
 
 
 

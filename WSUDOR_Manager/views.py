@@ -1217,7 +1217,7 @@ def quickPID():
 	username = session['username']
 
 	PID = request.args.get('pid')
-	print "selecting",PID
+	print "quick adding",PID
 
 	# add PID to MySQL
 	PIDs = [PID]
@@ -1233,7 +1233,6 @@ def quickPID():
 
 	# get PID with query
 	PID_handle = models.user_pids.query.filter_by(PID=PID,group_name='boutique').first()
-	print PID_handle
 	
 	# select
 	PID_handle.status = True

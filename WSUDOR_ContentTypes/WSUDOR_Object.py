@@ -903,7 +903,7 @@ class WSUDOR_GenObject(object):
 
 
 	# regnerate derivative JP2s 
-	def checkJP2(self, regenJP2_on_fail=False):
+	def checkJP2(self, regenJP2_on_fail=False, tests=['all']):
 		
 		'''
 		Function to check health and integrity of JP2s for object
@@ -920,15 +920,17 @@ class WSUDOR_GenObject(object):
 			print "checking %s, %s / %s" % (ds,i,len(jp2_ds_list))
 			
 			# check codesteram present
-			checks.append( self._checkJP2Codestream(ds) )
+			if 'all' in tests or 'codestream' in tests:
+				checks.append( self._checkJP2Codestream(ds) )
 
 			# check aspect ratio
-			checks.append( self._checkJP2Orientation(ds) )
+			if 'all' in tests or 'orientation' in tests:
+				checks.append( self._checkJP2Orientation(ds) )
 
 			print "Final checks:", checks
 
 			# if regen on check fail
-		if regenJP2_on_fail:
+		if regenJP2_on_fail and False in checks:
 			self.regenJP2(regenIIIFManifest=True, target_ds=ds)
 
 		

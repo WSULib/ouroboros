@@ -83,7 +83,11 @@ app.register_blueprint(purgeDS, url_prefix=tasks_URL_prefix)
 from objectState import objectState, objectState_worker
 app.register_blueprint(objectState, url_prefix=tasks_URL_prefix)
 
-#objectState
+#checkJP2
+from checkJP2 import checkJP2, checkJP2_worker
+app.register_blueprint(checkJP2, url_prefix=tasks_URL_prefix)
+
+#purgeObject
 from purgeObject import purgeObject, purgeObject_worker
 app.register_blueprint(purgeObject, url_prefix=tasks_URL_prefix)
 

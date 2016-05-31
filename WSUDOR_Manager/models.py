@@ -7,6 +7,7 @@ from datetime import datetime
 import sqlalchemy
 from json import JSONEncoder
 from flask import Response, jsonify
+import fileinput
 import xmlrpclib
 import os
 # from itsdangerous import URLSafeTimedSerializer
@@ -402,11 +403,16 @@ class createSupervisorProcess(object):
 
     sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 
-    def __init__(self,supervisor_name,supervisor_process):
+    def __init__(self,supervisor_name,supervisor_process,group=False,restartGroup=False):
         print "instantiating self"
+        self.supervisor_name_orig = supervisor_name
         self.supervisor_name = supervisor_name
-        self.filename = '/etc/supervisor/conf.d/'+supervisor_name+".conf"
+        self.path = '/etc/supervisor/conf.d/'
+        self.filename = self.path+supervisor_name+".conf"
         self.supervisor_process = supervisor_process
+        self.group = group
+        self.restartGroup = restartGroup
+        self._setGroup(group)
 
     def _writeConfFile(self):
         print "adding conf file"
@@ -425,6 +431,10 @@ class createSupervisorProcess(object):
     def _removeConfFile(self):
         print "remove conf file"
         if os.path.exists(self.filename):
+            # first check and if needed, remove file from custom process group
+            self._removeFromGroup()
+
+            # then remove conf file
             return os.remove(self.filename)
         else:
             print "could not find conf file, skipping"
@@ -432,10 +442,9 @@ class createSupervisorProcess(object):
 
 
     def _startSupervisorProcess(self):
-        print "adding proccessGroup from supervisor"
+        print "adding process to supervisor"
         try:
-            self.sup_server.supervisor.reloadConfig()
-            self.sup_server.supervisor.addProcessGroup(self.supervisor_name)
+            os.system('/usr/local/bin/supervisorctl reread; /usr/local/bin/supervisorctl update')
         except:
             return False
 
@@ -452,22 +461,84 @@ class createSupervisorProcess(object):
 
 
     def _stopSupervisorProcess(self):
-        print "stopping proccessGroup from supervisor"
+        print "stopping proccess from supervisor"
         try:
-            process_group = self.supervisor_name
-            self.sup_server.supervisor.stopProcess(process_group)
-            self.sup_server.supervisor.removeProcessGroup(process_group)
+            self.sup_server.supervisor.stopProcess(self.supervisor_name)
+            os.system('/usr/local/bin/supervisorctl reread; /usr/local/bin/supervisorctl update')
         except:
             return False
 
 
     def _removeSupervisorProcess(self):
-        print "manually removing proccessGroup from supervisor"
+        print "manually removing proccess from supervisor"
         try:
-            process_group = self.supervisor_name
-            self.sup_server.supervisor.removeProcessGroup(process_group)
+            os.system('/usr/local/bin/supervisorctl reread; /usr/local/bin/supervisorctl update')
         except:
             return False
+
+    def _setGroup(self, group):
+        print "setting group"
+        try:
+            if not group:
+                # Set group to its default value
+                group = (item for item in self.sup_server.supervisor.getAllProcessInfo() if item['name'] == self.supervisor_name_orig).next()
+                group = group['group']
+            else:
+                # write the specified group to the "groupname"-group.conf file or append to it if it already exists
+                group_file = self.path+group+"-group.conf"
+                group_data = '''[group:%(group)s]
+programs=%(supervisor_process)s''' % {'group':group,'supervisor_process':self.supervisor_name_orig}
+                if not os.path.exists(group_file):
+                    with open(group_file ,'w') as fhand:
+                        fhand.write(group_data)
+                else:
+                    # append to existing file
+                    with open(group_file, 'r') as fhand:
+                        data = fhand.readlines()
+                    data[1] = data[1].rstrip()+','+self.supervisor_name_orig
+                    with open(group_file, 'w') as fhand:
+                        fhand.writelines(data)
+                        print "wrote process to group file"
+            self.supervisor_name = group+":"+self.supervisor_name_orig
+            self.group = group
+        except:
+            return False
+
+    def _removeFromGroup(self):
+        group_file = self.path+self.group+"-group.conf"
+        if os.path.exists(group_file):
+            print "removing process from group file"
+            # removes process entry name from the group file
+            with open(group_file, 'r') as f:
+                print f.read()
+            with open(group_file,'r+') as f:
+                content = f.read()
+                f.seek(0)
+                f.truncate()
+                f.write(content.replace(self.supervisor_name_orig,''))
+                f.close()
+
+            # checks for 2 edge cases that would trip up the group file
+            # 1: removing entry from middle of line and leaving two commas
+            with open(group_file,'r+') as f:
+                content = f.read()
+                f.seek(0)
+                f.truncate()
+                f.write(content.replace(',,',','))
+                f.close()
+            # 2: removing entry from end of line and leaving a single errant comma
+            for line in fileinput.input(group_file, inplace=True):
+                if line.endswith(',\n'):
+                    print line.replace(line, line[:-2].rstrip())
+                else:
+                    print line.rstrip()
+            with open(group_file, 'r') as f:
+                print f.read()
+                print "removed?"
+
+    def _restartGroup(self):
+        self.sup_server.supervisor.stopProcessGroup(self.group)
+        self.sup_server.supervisor.startProcessGroup(self.group)
 
 
     def start(self):
@@ -476,8 +547,11 @@ class createSupervisorProcess(object):
 
 
     def restart(self):
-        self.stop()
-        self.start()
+        if self.restartGroup:
+            self._restartGroup()
+        else:
+            self.stop()
+            self.start()
 
 
     def stop(self):

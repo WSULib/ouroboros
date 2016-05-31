@@ -151,15 +151,27 @@ def systemStatus():
 
     # rtail-server
     try:
-        sup_info['rtail-server'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail:rtail-server'))
+        sup_info['rtail-server'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-server'))
     except:
         sup_info['rtail-server'] = False
 
     # user log streaming
     try:
-        sup_info['rtail-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail:rtail-celery-%s' % session['username']))
+        sup_info['rtail-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
     except:
         sup_info['rtail-celery-%s' % session['username']] = False
+
+    # ouroboros error streaming
+    try:
+        sup_info['rtail-ouroboros-err'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-ouroboros-err'))
+    except:
+        sup_info['rtail-ouroboros-err'] = False
+
+    # celery-celery streaming
+    try:
+        sup_info['rtail-celery-celery'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-celery'))
+    except:
+        sup_info['rtail-celery-celery'] = False
 
     # render template
     return render_template("systemStatus.html", imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)
@@ -169,18 +181,18 @@ def systemStatus():
 @login_required
 def cw(target, action):
 
-    if target == 'user':
+    if target == 'celery-%s' % session['username']:
         # grab user
         user = models.User.query.filter_by(username=session['username']).first()
 
         # grab model
         cw = models.CeleryWorker(user.username, user.password)
 
-    elif target == 'stream_cw':
+    elif target == 'rtail-celery-%s' % session['username']:
 
         # define the supervisor process
         supervisor_process = '''[program:rtail-celery-%(username)s]
-command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s --mute"
+command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
 user = ouroboros
 autostart=true
 autorestart=true
@@ -196,7 +208,28 @@ autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true'''
-        cw = models.createSupervisorProcess('rtail-server', supervisor_process, "rtail")
+        cw = models.createSupervisorProcess('rtail-server', supervisor_process, "rtail", True)
+
+    elif target == 'rtail-ouroboros-err':
+        supervisor_process = '''[program:rtail-ouroboros-err]
+command=/bin/bash -c "tail -F /var/log/ouroboros.err.log | /usr/local/bin/rtail --id ouroboros-error"
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true'''
+        cw = models.createSupervisorProcess('rtail-ouroboros-err', supervisor_process, "rtail")
+
+    elif target == 'rtail-celery-celery':
+        supervisor_process = '''[program:rtail-celery-celery]
+command=/bin/bash -c "tail -F /var/log/celery-celery.err.log | /usr/local/bin/rtail --id celery-celery"
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true'''
+        cw = models.createSupervisorProcess('rtail-celery-celery', supervisor_process, "rtail")
+
 
     else:
         # grab model
@@ -360,13 +393,13 @@ def login():
         try:
             sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
             sup_info = {}
-            sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail:rtail-server')
+            sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
             if sup_info['rtail-server']['statename'] == "RUNNING":
 
                 # Make sure to start the user's own log streaming
                 supervisor_name = 'rtail-celery-%s' % session['username']
                 supervisor_process = '''[program:rtail-celery-%(username)s]
-command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s --mute"
+command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
 user = ouroboros
 autostart=true
 autorestart=true
@@ -375,7 +408,6 @@ killasgroup=true''' % {'username':session['username']}
                 # create Log streamer for user
                 print "streaming activity log for %s celery worker " % session['username']
                 stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")
-                stream_cw.addtoGroup()
                 stream_cw.start()
         except:
             print "Rtail-server not running; therefore, not creating a log streamer for current user"
@@ -397,9 +429,8 @@ def logout():
     # cw.stop()
 
     # stop user-based celery log streaming
-    stream_cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], "rtail")
+    stream_cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], False, "rtail")
     stream_cw.stop()
-    
     session["username"] = ""
     logout_user()
 

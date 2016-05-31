@@ -20,7 +20,10 @@ import shutil
 import ConfigParser
 import glob
 import hashlib
-from urllib import unquote, quote_plus
+from urllib import unquote, quote_plus, urlopen
+from collections import deque
+import struct
+from PIL import Image
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -720,7 +723,7 @@ class WSUDOR_GenObject(object):
 
 
 	# regnerate derivative JP2s 
-	def regenJP2(self):
+	def regenJP2(self, regenIIIFManifest=False, target_ds=None):
 		'''
 		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
 		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
@@ -730,13 +733,14 @@ class WSUDOR_GenObject(object):
 		'''
 
 		# iterate through datastreams and look for JP2s	
-		jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]	
+		if target_ds is None:
+			jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]	
+		else:
+			jp2_ds_list = [target_ds]
 
-		count = 0
-		for ds in jp2_ds_list:
+		for i,ds in enumerate(jp2_ds_list):
 			
-			print "converting %s, %s / %s" % (ds,str(count),str(len(jp2_ds_list)))
-			count += 1
+			print "converting %s, %s / %s" % (ds,str(i),str(len(jp2_ds_list)))
 
 			# init JP2DerivativeMaker
 			j = JP2DerivativeMaker(inObj=self)
@@ -786,58 +790,150 @@ class WSUDOR_GenObject(object):
 			else:
 				# cleanup
 				# j.cleanupTempFiles()
-				raise Exception("Could not regen JP2")	
+				raise Exception("Could not regen JP2")
+
+
+			# if regenIIIFManifest
+			if regenIIIFManifest:
+				print "regenerating IIIF manifest"
+				self.genIIIFManifest()
+
+
+
+	def _checkJP2Codestream(self,ds):
+		print "Checking integrity of JP2 with jpylyzer..."
+
+		temp_filename = "/tmp/Ouroboros/%s.jp2" % uuid.uuid4()
+
+		ds_handle = self.ohandle.getDatastreamObject(ds)
+		with open(temp_filename, 'w') as f:
+			for chunk in ds_handle.get_chunked_content():
+				f.write(chunk)
+
+		# wrap in try block to make sure we remove the file even if jpylyzer fails
+		try:
+			# open jpylyzer handle
+			jpylyzer_handle = jpylyzer.checkOneFile(temp_filename)
+			# check for codestream box
+			codestream_check = jpylyzer_handle.find('properties/contiguousCodestreamBox')
+			# remove temp file
+			os.remove(temp_filename)
+			# good JP2
+			if type(codestream_check) == etpatch.Element:
+				print "codestream found"
+				return True
+			elif type(codestream_check) == None:
+				print "codestream not found"
+				return False
+			else:
+				print "codestream check inconclusive, returning false"
+				return False
+		except:
+			# remove temp file
+			os.remove(temp_filename)
+			print "codestream check inconclusive, returning false"
+			return False
+
+
+
+	# from Loris
+	def _from_jp2(self,jp2):
+
+		'''
+		where 'jp2' is file-like object
+		'''
+
+		b = jp2.read(1)
+		window =  deque([], 4)
+		while ''.join(window) != 'ihdr':
+			b = jp2.read(1)
+			c = struct.unpack('c', b)[0]
+			window.append(c)
+		height = int(struct.unpack(">I", jp2.read(4))[0]) # height (pg. 136)
+		width = int(struct.unpack(">I", jp2.read(4))[0]) # width
+		return (width,height)
+
+
+
+	# from Loris
+	def _extract_with_pillow(self, fp):
+		im = Image.open(fp)
+		width,height = im.size
+		return (width,height)
+
+
+
+	def _imageOrientation(self,dimensions):
+		if dimensions[0] > dimensions[1]:
+			return "landscape"
+		elif dimensions[1] > dimensions[0]:
+			return "portrait"
+		elif dimensions[0] == dimensions[1]:
+			return "square"
+		else:
+			return False
+
+
+
+	def _checkJP2Orientation(self,ds):
+		print "Checking aspect ratio of JP2 with Loris"
+
+		# check jp2
+		print "checking jp2 dimensions..."
+		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
+		print ds_url
+		uf = urlopen(ds_url)
+		jp2_dimensions = self._from_jp2(uf)
+		print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
+
+		# check original
+		print "checking original dimensions..."
+		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
+		print ds_url
+		uf = urlopen(ds_url)
+		orig_dimensions = self._extract_with_pillow(uf)
+		print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
+
+		if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
+			print "same orientation"
+			return True
+		else:
+			return False
+
 
 
 	# regnerate derivative JP2s 
-	def checkJP2(self):
+	def checkJP2(self, regenJP2_on_fail=False):
 		
 		'''
-		Function to check health and integrity of JP2s
+		Function to check health and integrity of JP2s for object
 		Uses jpylyzer library
 		'''
 
-		print "Checking integrity of JP2 with jpylyzer..."
+		checks = []
 
 		# iterate through datastreams and look for JP2s	
 		jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]	
+		
+		for i,ds in enumerate(jp2_ds_list):
 
-		count = 0
-		for ds in jp2_ds_list:
-
-			temp_filename = "/tmp/Ouroboros/%s.jp2" % uuid.uuid4()
-
-			ds_handle = self.ohandle.getDatastreamObject(ds)
-			with open(temp_filename, 'w') as f:
-				for chunk in ds_handle.get_chunked_content():
-					f.write(chunk)
-
-			# wrap in try block to make sure we remove the file even if jpylyzer fails
-			try:
-				# open jpylyzer handle
-				jpylyzer_handle = jpylyzer.checkOneFile(temp_filename)
-
-				# check for codestream box
-				codestream_check = jpylyzer_handle.find('properties/contiguousCodestreamBox')
-
-				# remove temp file
-				os.remove(temp_filename)
-
-				# good JP2
-				if type(codestream_check) == etpatch.Element:
-					return True
-
-				elif type(codestream_check) == None:
-					return False
-
-				else:
-					return False
+			print "checking %s, %s / %s" % (ds,i,len(jp2_ds_list))
 			
-			except:
-				# remove temp file
-				os.remove(temp_filename)
+			# check codesteram present
+			checks.append( self._checkJP2Codestream(ds) )
 
-				return False
+			# check aspect ratio
+			checks.append( self._checkJP2Orientation(ds) )
+
+			print "Final checks:", checks
+
+			# if regen on check fail
+		if regenJP2_on_fail:
+			self.regenJP2(regenIIIFManifest=True, target_ds=ds)
+
+		
+
+
 
 	def fixJP2(self):
 
@@ -849,6 +945,9 @@ class WSUDOR_GenObject(object):
 
 		if not self.checkJP2():
 			self.regenJP2()
+
+
+	
 
 
 	# regnerate derivative JP2s 
@@ -976,7 +1075,6 @@ class WSUDOR_GenObject(object):
 			print "could not remove from Loris image cache"
 
 		try:
-
 			# http
 			obj_dirs = glob.glob('%s/http/fedora:%s*' % (image_cache, self.pid))
 			print obj_dirs

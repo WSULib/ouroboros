@@ -169,7 +169,7 @@ def systemStatus():
 @login_required
 def cw(target, action):
 
-    if target == 'user':
+    if target == "celery-%s" % session['username']:
         # grab user
         user = models.User.query.filter_by(username=session['username']).first()
 

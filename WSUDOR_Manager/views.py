@@ -70,184 +70,184 @@ from fedoraHandles import fedora_handle
 @app.route("/")
 @login_required
 def index():
-    if "username" in session:
-        username = session['username']
-        return redirect("userPage")
-    else:
-        username = "User not set."
-        return render_template("index.html", username=username)
+	if "username" in session:
+		username = session['username']
+		return redirect("userPage")
+	else:
+		username = "User not set."
+		return render_template("index.html", username=username)
 
 
 @app.route("/about")
 @login_required
 def about():
 
-    return render_template("about.html")
+	return render_template("about.html")
 
 
 @app.route('/userPage')
 @login_required
 def userPage():
-    # set username in session
-    username = session['username']
+	# set username in session
+	username = session['username']
 
-    # info to render page
-    userData = {}
-    userData['username'] = username
+	# info to render page
+	userData = {}
+	userData['username'] = username
 
-    # get selected PIDs to show user
-    userData['selected_objects'] = len(jobs.getSelPIDs())
+	# get selected PIDs to show user
+	userData['selected_objects'] = len(jobs.getSelPIDs())
 
-    return render_template("userPage.html", userData=userData)
+	return render_template("userPage.html", userData=userData)
 
 
 @app.route('/systemStatus')
 @login_required
 def systemStatus():
 
-    #check important ports
-    imp_ports = [       
-        (localConfig.WSUDOR_MANAGER_PORT, "WSUDOR_Manager"),
-        (localConfig.WSUDOR_API_LISTENER_PORT, "WSUDOR_API"),       
-        (61616, "Fedora Messaging Service"),
-        (8080, "Tomcat"),       
-        (6379, "Redis"),
-        (3306, "MySQL")
-    ]
+	#check important ports
+	imp_ports = [       
+		(localConfig.WSUDOR_MANAGER_PORT, "WSUDOR_Manager"),
+		(localConfig.WSUDOR_API_LISTENER_PORT, "WSUDOR_API"),       
+		(61616, "Fedora Messaging Service"),
+		(8080, "Tomcat"),       
+		(6379, "Redis"),
+		(3306, "MySQL")
+	]
 
-    imp_ports_results = []
-    for port, desc in imp_ports:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        check = result = s.connect_ex(("localhost", port))
-        if check == 0:
-            msg = "active"
-        else:
-            msg = "inactive"
+	imp_ports_results = []
+	for port, desc in imp_ports:
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		check = result = s.connect_ex(("localhost", port))
+		if check == 0:
+			msg = "active"
+		else:
+			msg = "inactive"
 
-        imp_ports_results.append((str(port), desc, msg))
+		imp_ports_results.append((str(port), desc, msg))
 
 
-    # get celery worker information
-    sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-    sup_info = {}
+	# get celery worker information
+	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+	sup_info = {}
 
-    # ouroboros 
-    try:
-        ouroboros_info = json.dumps(sup_server.supervisor.getProcessInfo('Ouroboros'))
-    except:
-        ouroboros_info = False
+	# ouroboros 
+	try:
+		ouroboros_info = json.dumps(sup_server.supervisor.getProcessInfo('Ouroboros'))
+	except:
+		ouroboros_info = False
 
-    # user cw
-    try:
-        sup_info['celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
-    except:
-        sup_info['celery-%s' % session['username']] = False
+	# user cw
+	try:
+		sup_info['celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
+	except:
+		sup_info['celery-%s' % session['username']] = False
 
-    # generic cw
-    try:
-        sup_info['generic_worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-celery'))
-    except:
-        sup_info['generic_worker'] = False
+	# generic cw
+	try:
+		sup_info['generic_worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-celery'))
+	except:
+		sup_info['generic_worker'] = False
 
-    # rtail-server
-    try:
-        sup_info['rtail-server'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-server'))
-    except:
-        sup_info['rtail-server'] = False
+	# rtail-server
+	try:
+		sup_info['rtail-server'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-server'))
+	except:
+		sup_info['rtail-server'] = False
 
-    # user log streaming
-    try:
-        sup_info['rtail-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
-    except:
-        sup_info['rtail-celery-%s' % session['username']] = False
+	# user log streaming
+	try:
+		sup_info['rtail-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
+	except:
+		sup_info['rtail-celery-%s' % session['username']] = False
 
-    # ouroboros error streaming
-    try:
-        sup_info['rtail-ouroboros-err'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-ouroboros-err'))
-    except:
-        sup_info['rtail-ouroboros-err'] = False
+	# ouroboros error streaming
+	try:
+		sup_info['rtail-ouroboros-err'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-ouroboros-err'))
+	except:
+		sup_info['rtail-ouroboros-err'] = False
 
-    # celery-celery streaming
-    try:
-        sup_info['rtail-celery-celery'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-celery'))
-    except:
-        sup_info['rtail-celery-celery'] = False
+	# celery-celery streaming
+	try:
+		sup_info['rtail-celery-celery'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-celery'))
+	except:
+		sup_info['rtail-celery-celery'] = False
 
-    # render template
-    return render_template("systemStatus.html", imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)
+	# render template
+	return render_template("systemStatus.html", imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)
 
 
 @app.route('/systemStatus/cw/<target>/<action>')
 @login_required
 def cw(target, action):
 
-    if target == "celery-%s" % session['username']:
-        # grab user
-        user = models.User.query.filter_by(username=session['username']).first()
+	if target == "celery-%s" % session['username']:
+		# grab user
+		user = models.User.query.filter_by(username=session['username']).first()
 
-        # grab model
-        cw = models.CeleryWorker(user.username, user.password)
+		# grab model
+		cw = models.CeleryWorker(user.username, user.password)
 
-    elif target == 'rtail-celery-%s' % session['username']:
+	elif target == 'rtail-celery-%s' % session['username']:
 
-        # define the supervisor process
-        supervisor_process = '''[program:rtail-celery-%(username)s]
+		# define the supervisor process
+		supervisor_process = '''[program:rtail-celery-%(username)s]
 command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
 user = ouroboros
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true''' % {'username': session['username']}
-        cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], supervisor_process, "rtail")
+		cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], supervisor_process, "rtail")
 
-    elif target == 'rtail-server':
-        supervisor_process = '''[program:rtail-server]
+	elif target == 'rtail-server':
+		supervisor_process = '''[program:rtail-server]
 command=/usr/local/bin/rtail-server
 user = ouroboros
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true'''
-        cw = models.createSupervisorProcess('rtail-server', supervisor_process, "rtail", True)
+		cw = models.createSupervisorProcess('rtail-server', supervisor_process, "rtail", True)
 
-    elif target == 'rtail-ouroboros-err':
-        supervisor_process = '''[program:rtail-ouroboros-err]
+	elif target == 'rtail-ouroboros-err':
+		supervisor_process = '''[program:rtail-ouroboros-err]
 command=/bin/bash -c "tail -F /var/log/ouroboros.err.log | /usr/local/bin/rtail --id ouroboros-error"
 user = ouroboros
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true'''
-        cw = models.createSupervisorProcess('rtail-ouroboros-err', supervisor_process, "rtail")
+		cw = models.createSupervisorProcess('rtail-ouroboros-err', supervisor_process, "rtail")
 
-    elif target == 'rtail-celery-celery':
-        supervisor_process = '''[program:rtail-celery-celery]
+	elif target == 'rtail-celery-celery':
+		supervisor_process = '''[program:rtail-celery-celery]
 command=/bin/bash -c "tail -F /var/log/celery-celery.err.log | /usr/local/bin/rtail --id celery-celery"
 user = ouroboros
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true'''
-        cw = models.createSupervisorProcess('rtail-celery-celery', supervisor_process, "rtail")
+		cw = models.createSupervisorProcess('rtail-celery-celery', supervisor_process, "rtail")
 
 
-    else:
-        # grab model
-        cw = models.CeleryWorker("celery", False)
+	else:
+		# grab model
+		cw = models.CeleryWorker("celery", False)
 
-    # start
-    if action == 'start':
-        cw.start()
+	# start
+	if action == 'start':
+		cw.start()
 
-    # restart
-    if action == 'restart':
-        cw.restart()
+	# restart
+	if action == 'restart':
+		cw.restart()
 
-    # stop
-    if action == 'stop':
-        cw.stop()
+	# stop
+	if action == 'stop':
+		cw.stop()
 
-    return redirect("systemStatus")
+	return redirect("systemStatus")
 
 
 # @app.route('/systemStatus/restartOuroboros')
@@ -263,35 +263,35 @@ killasgroup=true'''
 @login_required
 def contentModels():
 
-    # WSUDOR_ContentTypes
-    wcts = [name for _, name, _ in pkgutil.iter_modules(['WSUDOR_ContentTypes'])]
-    print wcts
+	# WSUDOR_ContentTypes
+	wcts = [name for _, name, _ in pkgutil.iter_modules(['WSUDOR_ContentTypes'])]
+	print wcts
 
-    return render_template("contentModels.html", wcts=wcts)
+	return render_template("contentModels.html", wcts=wcts)
 
 
 @app.route('/MODSedit', methods=['GET', 'POST'])
 @login_required
 def MODSedit():
-    return render_template("MODSedit.html")
+	return render_template("MODSedit.html")
 
 
 @app.route('/datastreamManagement', methods=['GET', 'POST'])
 @login_required
 def datastreamManagement():
-    return render_template("datastreamManagement.html")
+	return render_template("datastreamManagement.html")
 
 
 @app.route('/objectManagement', methods=['GET', 'POST'])
 @login_required
 def objectManagement():
-    return render_template("objectManagement.html")
+	return render_template("objectManagement.html")
 
 
 @app.route('/WSUDORManagement', methods=['GET', 'POST'])
 @login_required
 def WSUDORManagement():
-    return render_template("WSUDORManagement.html")
+	return render_template("WSUDORManagement.html")
 
 # LOGIN
 #########################################################################################################
@@ -300,141 +300,141 @@ def WSUDORManagement():
 
 @app.before_request
 def before_request():
-    # This is executed before every request
-    g.user = current_user
+	# This is executed before every request
+	g.user = current_user
 
 @login_manager.user_loader
 def load_user(id):
-    """
-    Flask-Login user_loader callback.
-    The user_loader function asks this function to get a User Object or return
-    None based on the userid.
-    The userid was stored in the session environment by Flask-Login.
-    user_loader stores the returned User object in current_user during every
-    flask request.
-    """
+	"""
+	Flask-Login user_loader callback.
+	The user_loader function asks this function to get a User Object or return
+	None based on the userid.
+	The userid was stored in the session environment by Flask-Login.
+	user_loader stores the returned User object in current_user during every
+	flask request.
+	"""
 
-    user = User.query.get(int(id))
-    if user is not None:
-        user.id = session['user_id']
-        return user
-    else:
-        return None
+	user = User.query.get(int(id))
+	if user is not None:
+		user.id = session['user_id']
+		return user
+	else:
+		return None
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    
-    if request.method == 'GET':
-        return render_template('login.html')
+	
+	if request.method == 'GET':
+		return render_template('login.html')
 
-    url = "http://localhost:8080/fedora/user"
-    username = request.form['username']
-    password = request.form['password']
+	url = "http://localhost:8080/fedora/user"
+	username = request.form['username']
+	password = request.form['password']
 
-    #login to web service
-    s = requests.Session()
-    r = s.get(url, auth=HTTPBasicAuth(username, password))
+	#login to web service
+	s = requests.Session()
+	r = s.get(url, auth=HTTPBasicAuth(username, password))
 
-    if r.status_code is 200:
-        o = xmltodict.parse(r.content)
-        response = json.loads(json.dumps(o))
+	if r.status_code is 200:
+		o = xmltodict.parse(r.content)
+		response = json.loads(json.dumps(o))
 
-        # Begin to log them into the Ouroboros system
-        exists = db.session.query(db.exists().where(User.username == username)).scalar()
+		# Begin to log them into the Ouroboros system
+		exists = db.session.query(db.exists().where(User.username == username)).scalar()
 
-        if exists:
-            user = User.get(username)
-            login_user(user, remember=True)
+		if exists:
+			user = User.get(username)
+			login_user(user, remember=True)
 
-        else:
-            # Create user account
-            # get roles
-            role = {}
-            count = 0
-            dKey = ''
-            for each in response["user"]["attribute"]:
-                for v in each.itervalues():
-                    print v
-                    count = count + 1
-                    if count == 1:
-                        role[v] = ''
-                        dKey = v
-                    if count == 2:
-                        role[dKey] = v
-                        count = 0
+		else:
+			# Create user account
+			# get roles
+			role = {}
+			count = 0
+			dKey = ''
+			for each in response["user"]["attribute"]:
+				for v in each.itervalues():
+					print v
+					count = count + 1
+					if count == 1:
+						role[v] = ''
+						dKey = v
+					if count == 2:
+						role[dKey] = v
+						count = 0
 
-            roleList = ['role', 'Restrictions', 'fedoraRole']
-            for each in roleList:
-                value = role.get(each)
-                if value is None:
-                    role.update({each:None})
+			roleList = ['role', 'Restrictions', 'fedoraRole']
+			for each in roleList:
+				value = role.get(each)
+				if value is None:
+					role.update({each:None})
 
-            user = User(request.form['username'], request.form['password'], role['role'], role['Restrictions'], role['fedoraRole'])
-            db.session.add(user)
-            db.session.commit()
-            # Login
-            user = User.get(username)
+			user = User(request.form['username'], request.form['password'], role['role'], role['Restrictions'], role['fedoraRole'])
+			db.session.add(user)
+			db.session.commit()
+			# Login
+			user = User.get(username)
 
-        # Login to Fedora with eulfedora and set session variables
-        utilities.login(username, password)
-        session['JSESSIONID'] = s.cookies['JSESSIONID']
-        session['username'] = username
-        print session
-        user.id = session['user_id']
+		# Login to Fedora with eulfedora and set session variables
+		utilities.login(username, password)
+		session['JSESSIONID'] = s.cookies['JSESSIONID']
+		session['username'] = username
+		print session
+		user.id = session['user_id']
 
-        #############################################################################
-        # # deal with fedora_handle and celery
-        # utilities.initManage(username, password)
-        #############################################################################
-        
-        # Rtail
-        # Make sure rtail-server is running
-        try:
-            sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-            sup_info = {}
-            sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
-            if sup_info['rtail-server']['statename'] == "RUNNING":
+		#############################################################################
+		# # deal with fedora_handle and celery
+		# utilities.initManage(username, password)
+		#############################################################################
+		
+		# Rtail
+		# Make sure rtail-server is running
+		try:
+			sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+			sup_info = {}
+			sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
+			if sup_info['rtail-server']['statename'] == "RUNNING":
 
-                # Make sure to start the user's own log streaming
-                supervisor_name = 'rtail-celery-%s' % session['username']
-                supervisor_process = '''[program:rtail-celery-%(username)s]
+				# Make sure to start the user's own log streaming
+				supervisor_name = 'rtail-celery-%s' % session['username']
+				supervisor_process = '''[program:rtail-celery-%(username)s]
 command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
 user = ouroboros
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true''' % {'username':session['username']}
-                # create Log streamer for user
-                print "streaming activity log for %s celery worker " % session['username']
-                stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")
-                stream_cw.start()
-        except:
-            print "Rtail-server not running; therefore, not creating a log streamer for current user"
+				# create Log streamer for user
+				print "streaming activity log for %s celery worker " % session['username']
+				stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")
+				stream_cw.start()
+		except:
+			print "Rtail-server not running; therefore, not creating a log streamer for current user"
 
-        # Go to page
-        return redirect(request.args.get('next') or url_for('index'))
-    else:
-        return render_template('login.html')
+		# Go to page
+		return redirect(request.args.get('next') or url_for('index'))
+	else:
+		return render_template('login.html')
 
 
 @app.route('/logout')
 def logout():
 
-    # stop user-based celery worker
-    '''
-    Removed: thought being celery workers should continue even if Ouroboros goes down intentionally or unintentionally
-    '''
-    # cw = models.CeleryWorker(session['username'],False)
-    # cw.stop()
+	# stop user-based celery worker
+	'''
+	Removed: thought being celery workers should continue even if Ouroboros goes down intentionally or unintentionally
+	'''
+	# cw = models.CeleryWorker(session['username'],False)
+	# cw.stop()
 
-    # stop user-based celery log streaming
-    stream_cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], False, "rtail")
-    stream_cw.stop()
-    session["username"] = ""
-    logout_user()
+	# stop user-based celery log streaming
+	stream_cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], False, "rtail")
+	stream_cw.stop()
+	session["username"] = ""
+	logout_user()
 
-    return redirect(url_for('index'))
+	return redirect(url_for('index'))
 
 
 
@@ -880,47 +880,47 @@ def flushCeleryTasks():
 @login_required
 def pushJobPIDs(job_num,result):
 
-    print "creating workspace group of PIDs that were result: %s" % result
+	print "creating workspace group of PIDs that were result: %s" % result
 
-    # get username from session
-    username = session['username']
+	# get username from session
+	username = session['username']
 
-    # get parent object
-    job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
-    print "job celery task id:",job_SQL.celery_task_id
+	# get parent object
+	job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
+	print "job celery task id:",job_SQL.celery_task_id
 
-    # get celery parent
-    job_details = jobs.getTaskDetails(job_SQL.celery_task_id)   
-    print job_details
+	# get celery parent
+	job_details = jobs.getTaskDetails(job_SQL.celery_task_id)   
+	print job_details
 
-    # get tasks
-    PIDs = []
-    
-    # iterate through children, and retrieve PID from results
-    if job_details.children != None:
+	# get tasks
+	PIDs = []
+	
+	# iterate through children, and retrieve PID from results
+	if job_details.children != None:
 
-        # iterate through celery tasks
-        for child in job_details.children:
-            # async, celery status
-            task_result, PID = redisHandles.r_job_handle.get(child.task_id).split(",")
-            if task_result == result:
-                PIDs.append(PID)
+		# iterate through celery tasks
+		for child in job_details.children:
+			# async, celery status
+			task_result, PID = redisHandles.r_job_handle.get(child.task_id).split(",")
+			if task_result == result:
+				PIDs.append(PID)
 
-    print PIDs
+	print PIDs
 
-    print "adding to MySQL"
+	print "adding to MySQL"
 
-    # get PIDs group_name
-    group_name = str('%s_%s_%s' % (username,job_num,result))
+	# get PIDs group_name
+	group_name = str('%s_%s_%s' % (username,job_num,result))
 
-    # add PIDs to SQL
-    jobs.sendUserPIDs(username,PIDs,group_name)    
+	# add PIDs to SQL
+	jobs.sendUserPIDs(username,PIDs,group_name)    
 
-    # commit
-    db.session.commit()
-    
-    # redirect
-    return redirect("userWorkspace")
+	# commit
+	db.session.commit()
+	
+	# redirect
+	return redirect("userWorkspace")
 
 
 
@@ -1032,47 +1032,21 @@ def selObjsOverview():
 	username = session['username']  
 	PIDs = jobs.getSelPIDs()
 
-	# get objects size dictionary
-	'''
-	{
-		labels: ["January", "February", "March", "April", "May", "June", "July"],
-		datasets: [
-			{
-				label: "My First dataset",
-				fillColor: "rgba(220,220,220,0.5)",
-				strokeColor: "rgba(220,220,220,0.8)",
-				highlightFill: "rgba(220,220,220,0.75)",
-				highlightStroke: "rgba(220,220,220,1)",
-				data: [65, 59, 80, 81, 56, 55, 40]
-			},
-			{
-				label: "My Second dataset",
-				fillColor: "rgba(151,187,205,0.5)",
-				strokeColor: "rgba(151,187,205,0.8)",
-				highlightFill: "rgba(151,187,205,0.75)",
-				highlightStroke: "rgba(151,187,205,1)",
-				data: [28, 48, 40, 19, 86, 27, 90]
-			}
-		]
+
+	# Solr stats
+	stats = {}	
+	query = 'id:'+' OR id:'.join(PIDs)
+	query = query.replace("wayne:","wayne\:")
+	results = solr_handle.search(**{ "q":query, "fq":["obj_size_i:*"], "fl":"id obj_size_i", "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+	stats['solr'] = results.stats
+
+	# human stats
+	stats['human'] = {
+		'sum':utilities.sizeof_fmt(results.stats['obj_size_i']['sum'])
 	}
-	'''
-
-	# WSUDOR ContentType approach
-		# slow, but rich
-	# tup_list = []
-	# for each in PIDs:
-	#   obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(each)
-	#   tup_list.append( ( obj_handle.SolrDoc.asDictionary()['obj_size_i'], each ) )
-	
-	# print tup_list
-
-
-	# Solr based approach
-		# fast, not as rich
-	# results = solr_handle.search(**{ "q":"*:*", "fq":["obj_size_i:*","id:*RENCEN*"], "stats":"true", "stats.field":"obj_size_i", "rows":0 })
 
 	# pass the current PIDs to page as list 
-	return render_template("selObjsOverview.html",username=username, localConfig=localConfig)
+	return render_template("selObjsOverview.html", stats=stats)
 
 
 # Select / Deselect / Remove PIDs from user list

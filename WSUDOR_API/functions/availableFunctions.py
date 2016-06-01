@@ -23,6 +23,8 @@ from WSUDOR_API.fedoraHandles import fedora_handle
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities
+from WSUDOR_Manager import models
+from WSUDOR_Manager import db
 
 
 '''
@@ -1378,6 +1380,42 @@ def getUserInfo(getParams):
 # GENERAL / MISC / MIXED                                                                                                     #
 # --------------------------------------------------------------------------------------------------------------------#
 #######################################################################################################################
+
+def reportProb(getParams):
+	'''
+	This function accepts a PID as provided on the Digital Collections front-end and adds the object to a general holding list in Ouroboros
+
+	Returns Dictionary containing Boolean value
+	'''
+
+	try:
+		PID = getParams['PID'][0]
+		problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs")
+		db.session.add(problemPID)
+		db.session.commit()
+		jsonString = '{"msg":"True"}'
+	except:
+		jsonString = '{"msg":"False"}'
+
+	return jsonString
+
+def addProbNote(getParams):
+	'''
+	This function accepts a PID as provided on the Digital Collections front-end and adds a note to the notes field
+
+	Returns Dictionary containing Boolean value
+	'''
+
+	try:
+		PID = getParams['PID'][0]
+		problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs")
+		db.session.add(problemPID)
+		db.session.commit()
+		jsonString = '{"msg":"True"}'
+	except:
+		jsonString = '{"msg":"False"}'
+
+	return jsonString
 
 def objectLoci(getParams):
 	'''

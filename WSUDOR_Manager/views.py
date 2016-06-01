@@ -875,6 +875,55 @@ def flushCeleryTasks():
 	return render_template("flushCeleryTasks.html",msg=msg)
 
 
+# Push subset of job to workspace PID group
+@app.route("/pushJobPIDs/<job_num>/<result>", methods=['POST', 'GET'])
+@login_required
+def pushJobPIDs(job_num,result):
+
+    print "creating workspace group of PIDs that were result: %s" % result
+
+    # get username from session
+    username = session['username']
+
+    # get parent object
+    job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
+    print "job celery task id:",job_SQL.celery_task_id
+
+    # get celery parent
+    job_details = jobs.getTaskDetails(job_SQL.celery_task_id)   
+    print job_details
+
+    # get tasks
+    PIDs = []
+    
+    # iterate through children, and retrieve PID from results
+    if job_details.children != None:
+
+        # iterate through celery tasks
+        for child in job_details.children:
+            # async, celery status
+            task_result, PID = redisHandles.r_job_handle.get(child.task_id).split(",")
+            if task_result == result:
+                PIDs.append(PID)
+
+    print PIDs
+
+    print "adding to MySQL"
+
+    # get PIDs group_name
+    group_name = str('%s_%s_%s' % (username,job_num,result))
+
+    # add PIDs to SQL
+    jobs.sendUserPIDs(username,PIDs,group_name)    
+
+    # commit
+    db.session.commit()
+    
+    # redirect
+    return redirect("userWorkspace")
+
+
+
 # OBJECT MANAGEMENT
 ####################################################################################
 
@@ -1241,7 +1290,7 @@ def quickPID():
 	db.session.commit()
 	
 	# redirect
-	return redirect("userPage")
+	return redirect("objPreview/0")
 
 	
 # WSUDOR MANAGEMENT

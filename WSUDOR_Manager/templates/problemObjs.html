@@ -8,7 +8,7 @@
 {%for obj in problemObjs %}
 <div id="{{obj.PID}}" class="col-md-3 col-md-offset-1 panel">
 	<!-- <div class="col-md-2"> -->
-    	<span><a target="_blank" href="http://{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}"><img class="img-rounded" src="http://{{APP_HOST}}/fedora/objects/{{obj.PID}}/datastreams/THUMBNAIL/content"/></a></span>
+    	<span><a target="_blank" href="https://{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}"><img class="img-rounded" src="http://{{APP_HOST}}/fedora/objects/{{obj.PID}}/datastreams/THUMBNAIL/content"/></a></span>
     <!-- </div> -->
     <!-- <div class="col-md-1"> -->
     <table>
@@ -19,7 +19,7 @@
     		<td><b>Title:</b> {{obj.solr_package['dc_title']}}</td>
     	</tr>
     	<tr>
-    		<td><b>URL:</b> <a target="_blank" href="http://{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}">Link</a></td>
+    		<td><b>URL:</b> <a target="_blank" href="https://{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}">Link</a></td>
     	</tr>
 	<!-- </div> -->
 	<!-- <div class="col-md-1"> -->

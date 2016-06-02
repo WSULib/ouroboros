@@ -1408,8 +1408,9 @@ def addProbNote(getParams):
 
 	try:
 		PID = getParams['PID'][0]
-		problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs")
-		db.session.add(problemPID)
+		form_notes = getParams['notes'][0]
+		problemPID = models.user_pids.query.filter_by(PID=PID).order_by(models.user_pids.id.desc()).first()
+		problemPID.notes = form_notes
 		db.session.commit()
 		jsonString = '{"msg":"True"}'
 	except:

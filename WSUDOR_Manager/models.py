@@ -29,12 +29,14 @@ class user_pids(db.Model):
     username = db.Column(db.String(255))
     status = db.Column(db.Boolean(1))
     group_name = db.Column(db.String(255))
+    notes = db.Column(db.String(4096))
 
-    def __init__(self, PID, username, status, group_name):
+    def __init__(self, PID, username, status, group_name, notes=None):
         self.PID = PID
         self.username = username
         self.status = status
         self.group_name = group_name
+        self.notes = notes
 
     def __repr__(self):
         return '<PID %s, username %s>' % (self.PID, self.username)

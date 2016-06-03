@@ -3,10 +3,12 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import CeleryWorker
 from flask.ext.login import UserMixin
+from flask import session
 from datetime import datetime
 import sqlalchemy
 from json import JSONEncoder
 from flask import Response, jsonify
+import fileinput
 import xmlrpclib
 import os
 # from itsdangerous import URLSafeTimedSerializer
@@ -27,12 +29,14 @@ class user_pids(db.Model):
     username = db.Column(db.String(255))
     status = db.Column(db.Boolean(1))
     group_name = db.Column(db.String(255))
+    notes = db.Column(db.String(4096))
 
-    def __init__(self, PID, username, status, group_name):
+    def __init__(self, PID, username, status, group_name, notes=None):
         self.PID = PID
         self.username = username
         self.status = status
         self.group_name = group_name
+        self.notes = notes
 
     def __repr__(self):
         return '<PID %s, username %s>' % (self.PID, self.username)
@@ -402,11 +406,14 @@ class createSupervisorProcess(object):
 
     sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 
-    def __init__(self,supervisor_name,supervisor_process):
+    def __init__(self,supervisor_name,supervisor_process,group=False,restartGroup=False):
         print "instantiating self"
         self.supervisor_name = supervisor_name
-        self.filename = '/etc/supervisor/conf.d/'+supervisor_name+".conf"
+        self.path = '/etc/supervisor/conf.d/'
+        self.filename = self.path+supervisor_name+".conf"
         self.supervisor_process = supervisor_process
+        self.group = group
+        self.restartGroup = restartGroup
 
     def _writeConfFile(self):
         print "adding conf file"
@@ -425,6 +432,7 @@ class createSupervisorProcess(object):
     def _removeConfFile(self):
         print "remove conf file"
         if os.path.exists(self.filename):
+            # remove conf file
             return os.remove(self.filename)
         else:
             print "could not find conf file, skipping"
@@ -432,7 +440,7 @@ class createSupervisorProcess(object):
 
 
     def _startSupervisorProcess(self):
-        print "adding proccessGroup from supervisor"
+        print "adding process to supervisor"
         try:
             self.sup_server.supervisor.reloadConfig()
             self.sup_server.supervisor.addProcessGroup(self.supervisor_name)
@@ -440,47 +448,68 @@ class createSupervisorProcess(object):
             return False
 
 
-    def _restartSupervisorProcess(self):
+    def _stopSupervisorProcess(self):
+        print "stopping proccess from supervisor"
         try:
             self.sup_server.supervisor.stopProcess(self.supervisor_name)
-        except:
-            print "could not stop process"
-        try:
-            self.sup_server.supervisor.startProcess(self.supervisor_name)
-        except:
-            print "could not start process"
-
-
-    def _stopSupervisorProcess(self):
-        print "stopping proccessGroup from supervisor"
-        try:
-            process_group = self.supervisor_name
-            self.sup_server.supervisor.stopProcess(process_group)
-            self.sup_server.supervisor.removeProcessGroup(process_group)
+            self.sup_server.supervisor.removeProcessGroup(self.supervisor_name)
         except:
             return False
 
 
     def _removeSupervisorProcess(self):
-        print "manually removing proccessGroup from supervisor"
+        print "manually removing proccess from supervisor"
         try:
-            process_group = self.supervisor_name
-            self.sup_server.supervisor.removeProcessGroup(process_group)
+            self.sup_server.supervisor.removeProcessGroup(self.supervisor_name)
         except:
             return False
 
+    def _setGroup(self, group):
+        print "setting group"
+        try:
+            if not group:
+                # Set group to its default value
+                group = (item for item in self.sup_server.supervisor.getAllProcessInfo() if item['name'] == self.supervisor_name).next()
+                group = group['group']
+            else:
+                # Store this specific group into the current session
+                session[group] = []
+                session[group].append(self.supervisor_name)
+                print session[group]
+            self.group = group
+        except:
+            return False
+
+    def _removeFromGroup(self):
+        try:
+            session[self.group].pop(self.supervisor_name)
+        except:
+            print "Process not found in group"
+
+
+    def _restartGroup(self):
+        print "restarting process group"
+        for each in session[self.group]:
+            self.sup_server.supervisor.stopProcessGroup(each)
+            self.sup_server.supervisor.startProcessGroup(each)
+
 
     def start(self):
+        self._setGroup(self.group)
         self._writeConfFile()
         self._startSupervisorProcess()
 
 
     def restart(self):
-        self.stop()
-        self.start()
+        if self.restartGroup:
+            self._restartGroup()
+        else:
+            self.stop()
+            self.start()
 
 
     def stop(self):
+        # self._removeFromGroup()
         self._removeConfFile()
         stop_result = self._stopSupervisorProcess()
         if stop_result == False:

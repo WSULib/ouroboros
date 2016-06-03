@@ -1,0 +1,31 @@
+{% include 'header.html' %}
+<div class="row">
+	<div class="col-md-12">
+
+		<h2>Check JP2</h2>
+		<p>This utility will iterate through all the JP2 datastreams for an object and check the integrity.  If JP2 fails any selected tests, it will be regenerated.</p>
+		
+		<form action="/{{APP_PREFIX}}/fireTask/obj_loop/checkJP2_worker" method="POST">
+
+			<!-- check codestream -->
+			<div class="form-group">
+				<div class="checkbox">
+					<label>
+						<input name="codestream" type="checkbox"> Check for codestream in JP2 XML with jpylyzer?
+					</label>
+				</div>
+			</div>
+
+			<div class="form-group">
+				<div class="checkbox">
+					<label>
+						<input name="orientation" type="checkbox"> Check if JP2 orientation matches the original file's orientation?
+					</label>
+				</div>
+			</div>
+			
+			<input type="submit" value="Check JP2s!"/>
+		</form>
+
+	</div>
+</div>

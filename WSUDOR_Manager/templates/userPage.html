@@ -1,37 +1,47 @@
 {% include 'header.html' %}
 <!-- User Page -->
 
-<h2>Welcome to WSUDOR Manager, {{userData.username}}!</h2>
-<ul>		
-	<li><h3>Object Selection & Workspace</h3></li>
-	<p>Currently selected objects: <strong>{{userData.selected_objects}}</strong></p>
-	<ul>		
-		<li><a href="/{{APP_PREFIX}}/PIDSolr">Find Objects</a></li>
-		<li><a href="/{{APP_PREFIX}}/userWorkspace">Select Objects</a></li>
-		<li><a href="/{{APP_PREFIX}}/selObjsOverview">Selected Objects Overview</a></li>
-	</ul>
+<div class="row">
+	<div class="col-md-12">
+		<h2>Welcome to WSUDOR Manager, {{userData.username}}!</h2>
+	</div>
+</div>
 
-	<li><h3>Tasks</h3></li>
-	<ul>		
-		<li><a href="/{{APP_PREFIX}}/contentModels">Content Types</a></li>
-		<li><a href="/{{APP_PREFIX}}/objectManagement">Object Management</a></li>
-		<li><a href="/{{APP_PREFIX}}/datastreamManagement">Datastream Management</a></li>
-		<li><a href="/{{APP_PREFIX}}/MODSedit">MODS Management</a></li>
-		<li><a href="/{{APP_PREFIX}}/tasks/editRELS">RDF / RELS-EXT Modeling</a></li>		
-		<!-- <li><a href="/tasks/checksum" style="color:orange;">Checksum Objects</a></li> -->
-		<li><a href="/{{APP_PREFIX}}/tasks/manageOAI">Manage OAI Feed</a></li>
-		<li><a href="/{{APP_PREFIX}}/WSUDORManagement">WSUDOR Management</a></li>
-		<li><a href="/{{APP_PREFIX}}/genericMethod">Run Generic WSUDOR Object Method</a></li>
-	</ul>	
-	
-	<li><h3>Jobs</h3></li>
-	<ul>
-		<li><a href="/{{APP_PREFIX}}/userJobs">Currently Running Jobs</a></li>
-		<li><a href="/{{APP_PREFIX}}/userAllJobs">All Jobs</a></li>
-		<li><a href="/{{APP_PREFIX}}/flushPIDLock">Release all Objects from "PID Lock"</a></li>
-		<li><a href="/{{APP_PREFIX}}/flushCeleryTasks">Flush Jobs (clears Celery tasks in Redis DB)</a></li>
-	</ul>
+<div class="row">
+	<div class="col-md-12">
+		<ul>		
+			<li><h3>Object Selection & Workspace</h3></li>
+			<p>Currently selected objects: <strong>{{userData.selected_objects}}</strong></p>
+			<ul>		
+				<li><a href="/{{APP_PREFIX}}/PIDSolr">Find Objects</a></li>
+				<li><a href="/{{APP_PREFIX}}/userWorkspace">Select Objects</a></li>
+				<li><a href="/{{APP_PREFIX}}/selObjsOverview">Selected Objects Overview</a></li>
+			</ul>
 
-</ul>
+			<li><h3>Tasks</h3></li>
+			<ul>		
+				<li><a href="/{{APP_PREFIX}}/contentModels">Content Types</a></li>
+				<li><a href="/{{APP_PREFIX}}/objectManagement">Object Management</a></li>
+				<li><a href="/{{APP_PREFIX}}/datastreamManagement">Datastream Management</a></li>
+				<li><a href="/{{APP_PREFIX}}/MODSedit">MODS Management</a></li>
+				<li><a href="/{{APP_PREFIX}}/tasks/editRELS">RDF / RELS-EXT Modeling</a></li>		
+				<!-- <li><a href="/tasks/checksum" style="color:orange;">Checksum Objects</a></li> -->
+				<li><a href="/{{APP_PREFIX}}/tasks/manageOAI">Manage OAI Feed</a></li>
+				<li><a href="/{{APP_PREFIX}}/WSUDORManagement">WSUDOR Management</a></li>
+				<li><a href="/{{APP_PREFIX}}/genericMethod">Run Generic WSUDOR Object Method</a></li>
+			</ul>	
+			
+			<li><h3>Jobs</h3></li>
+			<ul>
+				<li><a href="/{{APP_PREFIX}}/userJobs">Currently Running Jobs</a></li>
+				<li><a href="/{{APP_PREFIX}}/userAllJobs">All Jobs</a></li>
+				<li><a href="/{{APP_PREFIX}}/flushPIDLock">Release all Objects from "PID Lock"</a></li>
+				<li><a href="/{{APP_PREFIX}}/flushCeleryTasks">Flush Jobs (clears Celery tasks in Redis DB)</a></li>
+			</ul>
+
+		</ul>
+	</div>
+</div>
+
 
 {% include 'footer.html' %}

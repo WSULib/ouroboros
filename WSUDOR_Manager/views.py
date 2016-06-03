@@ -156,10 +156,22 @@ def systemStatus():
 		sup_info['rtail-server'] = False
 
 	# user log streaming
-	# try:
-	#     sup_info['log-streaming-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
-	# except:
-	#     sup_info['log-streaming-celery-%s' % session['username']] = False
+	try:
+		sup_info['rtail-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
+	except:
+		sup_info['rtail-celery-%s' % session['username']] = False
+
+	# ouroboros error streaming
+	try:
+		sup_info['rtail-ouroboros-err'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-ouroboros-err'))
+	except:
+		sup_info['rtail-ouroboros-err'] = False
+
+	# celery-celery streaming
+	try:
+		sup_info['rtail-celery-celery'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-celery'))
+	except:
+		sup_info['rtail-celery-celery'] = False
 
 	# render template
 	return render_template("systemStatus.html", imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)
@@ -169,23 +181,26 @@ def systemStatus():
 @login_required
 def cw(target, action):
 
-	if target == 'user':
+
+	if target == "celery-%s" % session['username']:
 		# grab user
 		user = models.User.query.filter_by(username=session['username']).first()
-
 		# grab model
 		cw = models.CeleryWorker(user.username, user.password)
 
-	elif target == 'stream_cw':
+
+	elif target == 'rtail-celery-%s' % session['username']:
+
+		# define the supervisor process
 		supervisor_process = '''[program:rtail-celery-%(username)s]
-command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s --mute"
+command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
 user = ouroboros
 autostart=true
 autorestart=true
 stopasgroup=true
-killasgroup=true''' % {'username': username}
-		user = models.User.query.filter_by(username=session['username']).first()
-		cw = models.createSupervisorProcess('rtail-celery-%s' % user, supervisor_process)
+
+killasgroup=true''' % {'username': session['username']}
+		cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], supervisor_process, "rtail")
 
 	elif target == 'rtail-server':
 		supervisor_process = '''[program:rtail-server]
@@ -195,7 +210,28 @@ autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true'''
-		cw = models.createSupervisorProcess('rtail-server', supervisor_process)
+
+		cw = models.createSupervisorProcess('rtail-server', supervisor_process, "rtail", True)
+
+	elif target == 'rtail-ouroboros-err':
+		supervisor_process = '''[program:rtail-ouroboros-err]
+command=/bin/bash -c "tail -F /var/log/ouroboros.err.log | /usr/local/bin/rtail --id ouroboros-error"
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true'''
+		cw = models.createSupervisorProcess('rtail-ouroboros-err', supervisor_process, "rtail")
+
+	elif target == 'rtail-celery-celery':
+		supervisor_process = '''[program:rtail-celery-celery]
+command=/bin/bash -c "tail -F /var/log/celery-celery.err.log | /usr/local/bin/rtail --id celery-celery"
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true'''
+		cw = models.createSupervisorProcess('rtail-celery-celery', supervisor_process, "rtail")
 
 	else:
 		# grab model
@@ -266,8 +302,10 @@ def WSUDORManagement():
 
 @app.before_request
 def before_request():
+
 	# This is executed before every request
 	g.user = current_user
+	session['reportedObjs'] = int(models.user_pids.query.filter_by(username="problemBot").count())
 
 @login_manager.user_loader
 def load_user(id):
@@ -361,18 +399,19 @@ def login():
 			sup_info = {}
 			sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
 			if sup_info['rtail-server']['statename'] == "RUNNING":
-			# Make sure to start the user's own log streaming
-				supervisor_name = 'rtail-celery-%s' % username
+
+				# Make sure to start the user's own log streaming
+				supervisor_name = 'rtail-celery-%s' % session['username']
 				supervisor_process = '''[program:rtail-celery-%(username)s]
-	command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s --mute"
-	user = ouroboros
-	autostart=true
-	autorestart=true
-	stopasgroup=true
-	killasgroup=true''' % {'username':username}
+command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true''' % {'username':session['username']}
 				# create Log streamer for user
-				print "streaming activity log for %s celery worker " % username
-				stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process)
+				print "streaming activity log for %s celery worker " % session['username']
+				stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")
 				stream_cw.start()
 		except:
 			print "Rtail-server not running; therefore, not creating a log streamer for current user"
@@ -394,9 +433,8 @@ def logout():
 	# cw.stop()
 
 	# stop user-based celery log streaming
-	stream_cw = models.createSupervisorProcess('rtail-celery-%s' % username, False)
+	stream_cw = models.createSupervisorProcess('rtail-celery-%s' % session['username'], False, "rtail")
 	stream_cw.stop()
-	
 	session["username"] = ""
 	logout_user()
 
@@ -841,6 +879,55 @@ def flushCeleryTasks():
 	return render_template("flushCeleryTasks.html",msg=msg)
 
 
+# Push subset of job to workspace PID group
+@app.route("/pushJobPIDs/<job_num>/<result>", methods=['POST', 'GET'])
+@login_required
+def pushJobPIDs(job_num,result):
+
+	print "creating workspace group of PIDs that were result: %s" % result
+
+	# get username from session
+	username = session['username']
+
+	# get parent object
+	job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
+	print "job celery task id:",job_SQL.celery_task_id
+
+	# get celery parent
+	job_details = jobs.getTaskDetails(job_SQL.celery_task_id)   
+	print job_details
+
+	# get tasks
+	PIDs = []
+	
+	# iterate through children, and retrieve PID from results
+	if job_details.children != None:
+
+		# iterate through celery tasks
+		for child in job_details.children:
+			# async, celery status
+			task_result, PID = redisHandles.r_job_handle.get(child.task_id).split(",")
+			if task_result == result:
+				PIDs.append(PID)
+
+	print PIDs
+
+	print "adding to MySQL"
+
+	# get PIDs group_name
+	group_name = str('%s_%s_%s' % (username,job_num,result))
+
+	# add PIDs to SQL
+	jobs.sendUserPIDs(username,PIDs,group_name)    
+
+	# commit
+	db.session.commit()
+	
+	# redirect
+	return redirect("userWorkspace")
+
+
+
 # OBJECT MANAGEMENT
 ####################################################################################
 
@@ -949,47 +1036,21 @@ def selObjsOverview():
 	username = session['username']  
 	PIDs = jobs.getSelPIDs()
 
-	# get objects size dictionary
-	'''
-	{
-		labels: ["January", "February", "March", "April", "May", "June", "July"],
-		datasets: [
-			{
-				label: "My First dataset",
-				fillColor: "rgba(220,220,220,0.5)",
-				strokeColor: "rgba(220,220,220,0.8)",
-				highlightFill: "rgba(220,220,220,0.75)",
-				highlightStroke: "rgba(220,220,220,1)",
-				data: [65, 59, 80, 81, 56, 55, 40]
-			},
-			{
-				label: "My Second dataset",
-				fillColor: "rgba(151,187,205,0.5)",
-				strokeColor: "rgba(151,187,205,0.8)",
-				highlightFill: "rgba(151,187,205,0.75)",
-				highlightStroke: "rgba(151,187,205,1)",
-				data: [28, 48, 40, 19, 86, 27, 90]
-			}
-		]
+
+	# Solr stats
+	stats = {}  
+	query = 'id:'+' OR id:'.join(PIDs)
+	query = query.replace("wayne:","wayne\:")
+	results = solr_handle.search(**{ "q":query, "fq":["obj_size_i:*"], "fl":"id obj_size_i", "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+	stats['solr'] = results.stats
+
+	# human stats
+	stats['human'] = {
+		'sum':utilities.sizeof_fmt(results.stats['obj_size_i']['sum'])
 	}
-	'''
-
-	# WSUDOR ContentType approach
-		# slow, but rich
-	# tup_list = []
-	# for each in PIDs:
-	#   obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(each)
-	#   tup_list.append( ( obj_handle.SolrDoc.asDictionary()['obj_size_i'], each ) )
-	
-	# print tup_list
-
-
-	# Solr based approach
-		# fast, not as rich
-	# results = solr_handle.search(**{ "q":"*:*", "fq":["obj_size_i:*","id:*RENCEN*"], "stats":"true", "stats.field":"obj_size_i", "rows":0 })
 
 	# pass the current PIDs to page as list 
-	return render_template("selObjsOverview.html",username=username, localConfig=localConfig)
+	return render_template("selObjsOverview.html", stats=stats)
 
 
 # Select / Deselect / Remove PIDs from user list
@@ -1150,6 +1211,7 @@ def PIDSolr():
 # PID check for user
 @app.route("/updatePIDsfromSolr/<update_type>", methods=['POST', 'GET'])
 def updatePIDsfromSolr(update_type):    
+
 	# get username from session
 	username = session['username']  
 	print "Sending PIDs to",username
@@ -1172,6 +1234,67 @@ def updatePIDsfromSolr(update_type):
 		print "...complete."
 
 	return "Update Complete."
+
+
+# PID check for user
+@app.route("/quickPID", methods=['POST', 'GET'])
+@login_required
+def quickPID():
+
+	# get username from session
+	username = session['username']
+
+	PID = request.args.get('pid')
+	print "quick adding",PID
+
+	# add PID to MySQL
+	PIDs = [PID]
+
+	# deselect all PIDs
+	db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': False})
+
+	# get PIDs group_name
+	group_name = 'boutique'
+
+	# add PIDs to SQL
+	jobs.sendUserPIDs(username,PIDs,group_name)
+
+	# get PID with query
+	PID_handle = models.user_pids.query.filter_by(PID=PID,group_name='boutique').first()
+	
+	# select
+	PID_handle.status = True
+
+	# commit
+	db.session.commit()
+	
+	# redirect
+	return redirect("objPreview/0")
+
+# Retrieve all user-reported problem Objects
+@app.route("/problemObjs", methods=['POST', 'GET'])
+@login_required
+def problemObjs():
+
+	problemObjs = models.user_pids.query.filter_by(username="problemBot").all()
+	saDict = {}
+	saList = []
+	for each in problemObjs:
+		saDict = each.__dict__
+		# General Metadata
+		solr_params = {'q':utilities.escapeSolrArg(str(saDict['PID'])), 'rows':1}
+		solr_results = solr_handle.search(**solr_params)
+		if solr_results.total_results == 0:
+			return "Selected objects don't appear to exist."
+		solr_package = solr_results.documents[0]
+		saDict['solr_package'] = solr_package
+
+		# rehydrate the unicode string that holds the form data into a dictionary
+		if isinstance(saDict['notes'], unicode):
+			saDict['notes'] = json.loads(saDict['notes'])
+		saList.append(saDict.copy())
+
+	return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST)
 
 	
 # WSUDOR MANAGEMENT

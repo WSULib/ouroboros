@@ -23,6 +23,8 @@ from WSUDOR_API.fedoraHandles import fedora_handle
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities
+from WSUDOR_Manager import models
+from WSUDOR_Manager import db
 
 
 '''
@@ -305,24 +307,18 @@ def solrTranslationHash(args):
 # --------------------------------------------------------------------------------------------------------------------#
 #######################################################################################################################
 
-# return Fedora MODS datastream
+# get object state
 def getObjectXML(getParams):	
-	baseURL = "http://localhost/fedora/objects/%s/objectXML" % (getParams['PID'][0])
-	r = requests.get(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD))			
-	xmlString = r.text
+	o = fedora_handle.get_object(getParams['PID'][0])
 
 	#check if valid PID
-	if xmlString.startswith("Object not found in low-level storage:"):
+	if o.exists == False:
 		outputDict = {"object_status" : 'Absent' }
 	else:
-		#convert XML to JSON with "xmltodict"
-		xmlDict = xmltodict.parse(xmlString)	
-		objectStatus = xmlDict['foxml:digitalObject']['foxml:objectProperties']['foxml:property'][0]['@VALUE']
-		outputDict = {"object_status" : objectStatus }
+		outputDict = {"object_status" : o.state }
 
 	output = json.dumps(outputDict)
 	return output
-
 
 # gets children for single PID
 def isMemberOf(getParams):
@@ -1384,6 +1380,43 @@ def getUserInfo(getParams):
 # GENERAL / MISC / MIXED                                                                                                     #
 # --------------------------------------------------------------------------------------------------------------------#
 #######################################################################################################################
+
+def reportProb(getParams):
+	'''
+	This function accepts a PID as provided on the Digital Collections front-end and adds the object to a general holding list in Ouroboros
+
+	Returns Dictionary containing Boolean value
+	'''
+
+	try:
+		PID = getParams['PID'][0]
+		problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs")
+		db.session.add(problemPID)
+		db.session.commit()
+		jsonString = '{"msg":"True"}'
+	except:
+		jsonString = '{"msg":"False"}'
+
+	return jsonString
+
+def addProbNote(getParams):
+	'''
+	This function accepts a PID as provided on the Digital Collections front-end and adds a note to the notes field
+
+	Returns Dictionary containing Boolean value
+	'''
+
+	try:
+		PID = getParams['PID'][0]
+		form_notes = getParams['notes'][0]
+		problemPID = models.user_pids.query.filter_by(PID=PID).order_by(models.user_pids.id.desc()).first()
+		problemPID.notes = form_notes
+		db.session.commit()
+		jsonString = '{"msg":"True"}'
+	except:
+		jsonString = '{"msg":"False"}'
+
+	return jsonString
 
 def objectLoci(getParams):
 	'''

@@ -1,5 +1,16 @@
 {% include 'header.html' %}
 
+<style type="text/css">
+	.task_results_box {
+		overflow-y:scroll;
+		max-height:500px;
+		background-color:rgba(224,224,224,.5);
+		border-radius: 8px;
+		padding-top:20px;
+		padding-bottom:20px;		
+	}
+</style>
+
 <div class="row">
 	<div class="col-md-12">
 		<h1>Job Details: # {{job_num}}</h1>
@@ -13,37 +24,53 @@
 	</div>
 </div>
 
-{% if tasks_package %}
-	<h2 style="color:green;">Success!</h2>
-	<ul>
-		{% for task in tasks_package.SUCCESS %}
-			<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}} </a></li>
-		{% endfor %}
-	</ul>
+<div class="row">
+	<div class="col-md-3">
 
-	<h2 style="color:orange;">Pending...</h2>
-	<ul>
-		{% for task in tasks_package.PENDING %}
-			<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
-		{% endfor %}
-	</ul>
+		{% if tasks_package %}
 
-	<h2 style="color:orange;">Retry...</h2>
-	<ul>
-		{% for task in tasks_package.RETRY %}
-			<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
-		{% endfor %}
-	</ul>
+			{% if tasks_package.SUCCESS %}
+				<h2 style="color:green;">Success! <a class="btn btn-success" href="/{{APP_PREFIX}}/pushJobPIDs/{{job_num}}/SUCCESS">Create Workspace Group from PIDs</a></h2>
+				<ul class="task_results_box">
+					{% for task in tasks_package.SUCCESS %}
+						<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}} </a></li>
+					{% endfor %}
+				</ul>
+			{% endif %}
 
-	<h2 style="color:red;">Failure.</h2>
-	<ul>
-		{% for task in tasks_package.FAILURE %}
-			<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
-		{% endfor %}
-	</ul>
-{% else %}
-	<p>All tasks were pending, nothing to report.</p>
-{% endif %}
+			{% if tasks_package.PENDING %}
+			<h2 style="color:orange;">Pending... <a class="btn btn-warning" href="/{{APP_PREFIX}}/pushJobPIDs/{{job_num}}/PENDING">Create Workspace Group from PIDs</a></h2>
+				<ul class="task_results_box">
+					{% for task in tasks_package.PENDING %}
+						<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+
+			{% if tasks_package.RETRY %}
+				<h2 style="color:orange;">Retry... <a class="btn btn-warning" href="/{{APP_PREFIX}}/pushJobPIDs/{{job_num}}/RETRY">Create Workspace Group from PIDs</a></h2>
+				<ul class="task_results_box">
+					{% for task in tasks_package.RETRY %}
+						<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+
+			{% if tasks_package.FAILURE %}
+				<h2 style="color:red;">Failure. <a class="btn btn-danger" href="/{{APP_PREFIX}}/pushJobPIDs/{{job_num}}/FAILURE">Create Workspace Group from PIDs</a></h2>	
+				<ul class="task_results_box">
+					{% for task in tasks_package.FAILURE %}
+						<li><a href="/{{APP_PREFIX}}/taskDetails/{{task[0]}}/{{job_num}}">{{task[0]}} - {{task[1]}}</a></li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+
+		{% else %}
+			<p>All tasks were pending or failed to fire, nothing to report.</p>
+		{% endif %}
+
+	</div>
+</div>
 
 
 

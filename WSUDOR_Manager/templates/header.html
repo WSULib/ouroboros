@@ -39,7 +39,57 @@
     <!--dynatables-->
     <script type="text/javascript" src="{{ url_for('static',filename='dynatables/jquery.dynatable.js')}}"></script>	
     <link rel="stylesheet" href="{{ url_for('static',filename='dynatables/jquery.dynatable.css')}}">
-
+    <style>
+    .inbox {
+    	margin-left: 20px;
+    }
+.user_issues_box {
+width: 35px; height: 34px;
+position: relative;
+background: #fff;
+border: 1px solid #bbb;
+-webkit-border-radius: 3px;
+-moz-border-radius: 3px;
+-ms-border-radius: 3px;
+-o-border-radius: 3px;
+border-radius: 3px;
+padding-left: 20px;
+margin-top: -4px;
+}
+.user_issues_box:after,
+.user_issues_box:before {
+width: 0; height: 0;
+position: absolute;
+top: 100%;
+border: solid transparent;
+pointer-events: none;
+content: " ";
+}
+.user_issues_box:after {
+left: 50%;
+border-top-color: #fff;
+border-width: 3px;
+margin-left: -3px;
+}
+.user_issues_box:before {
+left: 50%;
+border-top-color: #aaa;
+border-width: 4px;
+margin-left: -4px;
+}
+.user_issues_box #problem_objs {
+width: 100%; height: auto;
+position: absolute;
+top: 0px; left: 0px;
+font-family: "Helvetica Neue", helvetica, arial, sans-serif;
+font-size: 16px; line-height: 34px;
+letter-spacing: 0;
+white-space: nowrap;
+color: #333;
+text-align: center;
+-webkit-font-smoothing: subpixel-antialiased;
+}
+    </style>
 </head>
 
 <body>
@@ -69,6 +119,25 @@
 			<!-- <li class="divider"></li> -->
 			<li><a href="/logs" target="_blank">Logs Viewer</a></li>
 			<!-- <li class="divider"></li> -->
+			<li>
+				<form style="margin-left:10px; margin-top:10px;" class="form-inline" role="form" method="GET" action="/{{APP_PREFIX}}/quickPID" enctype="multipart/form-data">
+					<!-- <div class="col-md-7"> -->
+						<div class="form-group">
+							<input class="form-control" type="text" name="pid" placeholder="enter pid here"></input>
+						</div>	
+						<div class="form-group">
+							<input type="submit" class="btn btn-success" value="QuickPid">
+						</div>						
+					<!-- </div> -->
+					
+				</form>
+			</li>
+			<li>
+			<div class="inbox">
+				</div>
+    			<a href="/{{APP_PREFIX}}/problemObjs"><div class="user_issues_box"><span id="problem_objs">{{ session['reportedObjs'] }}</span></div></a>
+  			</li>
+
 
 		</ul>
 	</div> <!-- collapse navbar-collapse -->

@@ -1,0 +1,42 @@
+{% include 'header.html' %}
+
+
+<div class="row">
+<div class="col-md-12 col-md-offset-5 panel"><h3>User-Reported Problem Objects</h3></div>
+</div>
+<div class="row">
+{%for obj in problemObjs %}
+<div id="{{obj.PID}}" class="col-md-3 col-md-offset-1 panel">
+	<!-- <div class="col-md-2"> -->
+    	<span><a target="_blank" href="https://{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}"><img class="img-rounded" src="http://{{APP_HOST}}/fedora/objects/{{obj.PID}}/datastreams/THUMBNAIL/content"/></a></span>
+    <!-- </div> -->
+    <!-- <div class="col-md-1"> -->
+    <table>
+    	<tr>
+    		<td><b>PID:</b> {{obj.PID}}</td>
+    	</tr>
+    	<tr>
+    		<td><b>Title:</b> {{obj.solr_package['dc_title']}}</td>
+    	</tr>
+    	<tr>
+    		<td><b>URL:</b> <a target="_blank" href="https://{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}">Link</a></td>
+    	</tr>
+	<!-- </div> -->
+	<!-- <div class="col-md-1"> -->
+		<tr>
+			<td><b>Notes:</b> 
+		{% if obj.notes is not none %}
+			name: {{obj.notes['name']}}
+			email: {{obj.notes['email']}}
+			message: {{obj.notes['message']}}
+		{% else %}
+			NONE
+		{% endif %}
+			</td>
+		</tr>
+</table>
+	<!-- </div> -->
+</div>
+{% endfor %}
+</div>
+{% include 'footer.html' %}

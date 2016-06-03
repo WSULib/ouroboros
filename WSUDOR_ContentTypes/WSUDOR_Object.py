@@ -553,123 +553,123 @@ class WSUDOR_GenObject(object):
 		return True
 
 
-	def exportBag(self, job_package=False, returnTargetDir=False, preserveRelationships=True):
+	# def exportBag(self, job_package=False, returnTargetDir=False, preserveRelationships=True):
 
-		'''
-		Target Example:
-		.
-		├── bag-info.txt
-		├── bagit.txt
-		├── data
-		│   ├── datastreams
-		│   │   ├── roots.jpg
-		│   │   └── trunk.jpg
-		│   ├── MODS.xml
-		│   └── objMeta.json
-		├── manifest-md5.txt
-		└── tagmanifest-md5.txt		
-		'''
+	# 	'''
+	# 	Target Example:
+	# 	.
+	# 	├── bag-info.txt
+	# 	├── bagit.txt
+	# 	├── data
+	# 	│   ├── datastreams
+	# 	│   │   ├── roots.jpg
+	# 	│   │   └── trunk.jpg
+	# 	│   ├── MODS.xml
+	# 	│   └── objMeta.json
+	# 	├── manifest-md5.txt
+	# 	└── tagmanifest-md5.txt		
+	# 	'''
 		
-		# get PID
-		PID = self.pid
+	# 	# get PID
+	# 	PID = self.pid
 
-		# create temp dir structure
-		working_dir = "/tmp/Ouroboros/export_bags"
-		# create if doesn't exist
-		if not os.path.exists("/tmp/Ouroboros/export_bags"):
-			os.mkdir("/tmp/Ouroboros/export_bags")
+	# 	# create temp dir structure
+	# 	working_dir = "/tmp/Ouroboros/export_bags"
+	# 	# create if doesn't exist
+	# 	if not os.path.exists("/tmp/Ouroboros/export_bags"):
+	# 		os.mkdir("/tmp/Ouroboros/export_bags")
 
-		temp_dir = working_dir + "/" + str(uuid.uuid4())
-		time.sleep(.25)
-		os.system("mkdir %s" % (temp_dir))
-		time.sleep(.25)
-		os.system("mkdir %s/data" % (temp_dir))
-		time.sleep(.25)
-		os.system("mkdir %s/data/datastreams" % (temp_dir))
+	# 	temp_dir = working_dir + "/" + str(uuid.uuid4())
+	# 	time.sleep(.25)
+	# 	os.system("mkdir %s" % (temp_dir))
+	# 	time.sleep(.25)
+	# 	os.system("mkdir %s/data" % (temp_dir))
+	# 	time.sleep(.25)
+	# 	os.system("mkdir %s/data/datastreams" % (temp_dir))
 
-		# move bagit files to temp dir, and unpack
-		bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
-		bagitIO = StringIO.StringIO(bagit_files)
-		tar_handle = tarfile.open(fileobj=bagitIO)
-		tar_handle.extractall(path=temp_dir)		
+	# 	# move bagit files to temp dir, and unpack
+	# 	bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
+	# 	bagitIO = StringIO.StringIO(bagit_files)
+	# 	tar_handle = tarfile.open(fileobj=bagitIO)
+	# 	tar_handle.extractall(path=temp_dir)		
 
-		# export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
-		def writeDS(write_tuple):
-			ds_id=write_tuple[0]
-			print "WORKING ON",ds_id
+	# 	# export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
+	# 	def writeDS(write_tuple):
+	# 		ds_id=write_tuple[0]
+	# 		print "WORKING ON",ds_id
 
-			ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
+	# 		ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
 
-			# skip if empty (might have been removed / condensed, as case with PDFs)
-			if ds_handle.content != None:
+	# 		# skip if empty (might have been removed / condensed, as case with PDFs)
+	# 		if ds_handle.content != None:
 
-				# XML ds model
-				if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
-					print "FIRING XML WRITER"
-					with open(write_tuple[1],'w') as fhand:
-						fhand.write(ds_handle.content.serialize())
+	# 			# XML ds model
+	# 			if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
+	# 				print "FIRING XML WRITER"
+	# 				with open(write_tuple[1],'w') as fhand:
+	# 					fhand.write(ds_handle.content.serialize())
 
-				# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
-				'''
-				Why is this not writing tiffs?
-				'''
-				else:
-					print "FIRING GENERIC WRITER"
-					with open(write_tuple[1],'wb') as fhand:
-						for chunk in ds_handle.get_chunked_content():
-							fhand.write(chunk)
+	# 			# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
+	# 			'''
+	# 			Why is this not writing tiffs?
+	# 			'''
+	# 			else:
+	# 				print "FIRING GENERIC WRITER"
+	# 				with open(write_tuple[1],'wb') as fhand:
+	# 					for chunk in ds_handle.get_chunked_content():
+	# 						fhand.write(chunk)
 
-			else:
-				print "Content was NONE for",ds_id,"- skipping..."
-
-
-		# write original datastreams
-		for ds in self.objMeta['datastreams']:
-			print "writing %s" % ds
-			writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
+	# 		else:
+	# 			print "Content was NONE for",ds_id,"- skipping..."
 
 
-		# include RELS
-		if preserveRelationships == True:
-			print "preserving current relationships and writing to RELS-EXT and RELS-INT"
-			for rels_ds in ['RELS-EXT','RELS-INT']:
-				print "writing %s" % rels_ds
-				writeDS((rels_ds,"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
+	# 	# write original datastreams
+	# 	for ds in self.objMeta['datastreams']:
+	# 		print "writing %s" % ds
+	# 		writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
 
-		# write MODS and objMeta files
-		simple = [
-			("MODS","%s/data/MODS.xml" % (temp_dir)),
-			("OBJMETA","%s/data/objMeta.json" % (temp_dir))
-		]
-		for ds in simple:
-			writeDS(ds)
+	# 	# include RELS
+	# 	if preserveRelationships == True:
+	# 		print "preserving current relationships and writing to RELS-EXT and RELS-INT"
+	# 		for rels_ds in ['RELS-EXT','RELS-INT']:
+	# 			print "writing %s" % rels_ds
+	# 			writeDS((rels_ds,"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
-		# tarball it up
-		named_dir = self.pid.replace(":","-")
-		os.system("mv %s %s/%s" % (temp_dir, working_dir, named_dir))
-		orig_dir = os.getcwd()
-		os.chdir(working_dir)
-		os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
-		os.system("rm -r %s/%s" % (working_dir, named_dir))
 
-		# move to web accessible location, with username as folder
-		if job_package != False:
-			username = job_package['username']
-		else:
-			username = "consoleUser"
-		target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
-		if os.path.exists(target_dir) == False:
-			os.system("mkdir %s" % (target_dir))
-		os.system("mv %s.tar %s" % (named_dir,target_dir))
+	# 	# write MODS and objMeta files
+	# 	simple = [
+	# 		("MODS","%s/data/MODS.xml" % (temp_dir)),
+	# 		("OBJMETA","%s/data/objMeta.json" % (temp_dir))
+	# 	]
+	# 	for ds in simple:
+	# 		writeDS(ds)
 
-		# jump back to original working dir
-		os.chdir(orig_dir)
+	# 	# tarball it up
+	# 	named_dir = self.pid.replace(":","-")
+	# 	os.system("mv %s %s/%s" % (temp_dir, working_dir, named_dir))
+	# 	orig_dir = os.getcwd()
+	# 	os.chdir(working_dir)
+	# 	os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
+	# 	os.system("rm -r %s/%s" % (working_dir, named_dir))
 
-		if returnTargetDir == True:
-			return "%s/%s.tar" % (target_dir,named_dir)
-		else:
-			return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, username, named_dir)
+	# 	# move to web accessible location, with username as folder
+	# 	if job_package != False:
+	# 		username = job_package['username']
+	# 	else:
+	# 		username = "consoleUser"
+	# 	target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
+	# 	if os.path.exists(target_dir) == False:
+	# 		os.system("mkdir %s" % (target_dir))
+	# 	os.system("mv %s.tar %s" % (named_dir,target_dir))
+
+	# 	# jump back to original working dir
+	# 	os.chdir(orig_dir)
+
+	# 	if returnTargetDir == True:
+	# 		return "%s/%s.tar" % (target_dir,named_dir)
+	# 	else:
+	# 		return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, username, named_dir)
 
 
 	# # reingest bag

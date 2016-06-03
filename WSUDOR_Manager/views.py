@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # python modules
 import time
 import json
@@ -1291,6 +1292,41 @@ def problemObjs():
         saList.append(saDict.copy())
 
     return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST)
+
+
+# Retrieve all user-reported problem Objects
+@app.route("/claimObj", methods=['POST', 'GET'])
+@login_required
+def claimObj():
+
+    orig_obj = request.form['pid']
+    obj, num = orig_obj.split('-')
+    num = int(num)
+
+    problemObjs = models.user_pids.query.filter_by(PID=obj).all()
+    for certain_obj in problemObjs[num:num+1]:
+        models.user_pids.username = session['username']
+        db.session.commit()
+
+    return "True"
+
+
+# Retrieve all user-reported problem Objects
+@app.route("/removeObj", methods=['POST', 'GET'])
+@login_required
+def removeObj():
+
+    orig_obj = request.form['pid']
+    obj, num = orig_obj.split('-')
+    num = int(num)
+
+    problemObjs = models.user_pids.query.filter_by(PID=obj).all()
+    for certain_obj in problemObjs[num:num+1]:
+        models.user_pids.query.filter(models.user_pids.id == certain_obj.id).delete()
+        db.session.commit()
+    
+    return "True"
+
 
     
 # WSUDOR MANAGEMENT

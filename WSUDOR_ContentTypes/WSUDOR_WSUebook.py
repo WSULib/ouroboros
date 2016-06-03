@@ -510,6 +510,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	'''
 
 	# create Book Object (e.g. emory:b5hnv)
+	def _createVirtCollection(self):
+
+		'''
+		Target Datastreams:
+			- DC
+				- text/xml
+			RELS-EXT
+				- application/rdf+xml
+		'''
+		
+		print "generating virtual Collection object"
+
+		virtual_collection_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualBook)		
+		virtual_collection_handle.create(self)
+
+
+	# create Book Object (e.g. emory:b5hnv)
 	def _createVirtBook(self):
 
 		'''
@@ -579,9 +596,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	def createReaduxVirtualObjects(self):
 
-		self._createVirtBook()
-		self._createVirtVolume()
-		self._createVirtPages()
+		# try:
+			self._createVirtBook()
+			self._createVirtVolume()
+			self._createVirtPages()
+		# except:
+		# 	print "rolling back"
 
 
 	def purgeReaduxVirtualObjects(self):

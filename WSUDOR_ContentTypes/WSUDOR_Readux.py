@@ -37,6 +37,85 @@ wsudor = Namespace(rdflib.URIRef('http://digital.library.wayne.edu/fedora/object
 
 
 # Virtual Readux Book Object
+class WSUDOR_Readux_VirtualCollection(DigitalObject):
+
+	target_datastreams = {
+		"DC" : {
+			"mimetype":"text/xml",
+			"label":"Dublin Core"
+		},		
+		"RELS-EXT" : {
+			"mimetype":"application/rdf+xml",
+			"label":"RELS-EXT"
+		}
+	}
+
+	def create(self, wsudor_collection):
+		
+		'''
+		Create Readux virtual Collection object based on WSUDOR_WSUebook
+		'''
+
+		# open WSUDOR object
+		wsudor_collection = WSUDOR_ContentTypes.WSUDOR_Object(wsudor_collection.pid)
+
+		# PID
+		self.pid = wsudor_collection.pid + "_Readux_VirtualCollection"
+
+		# init
+		print "Initializing %s" % (self.pid)
+		self.save()
+
+		# Dublin Core
+		self.dc.content = wsudor_collection.ohandle.dc.content
+		self.dc.save()
+
+		# write POLICY datastream
+		# NOTE: 'E' management type required, not 'R'
+		policy_suffix = "wayne:WSUDORSecurity-permit-apia-unrestricted"
+		policy_handle = eulfedora.models.DatastreamObject(self,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
+		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
+		policy_handle.label = "POLICY"
+		policy_handle.save()
+
+		# label
+		self.label = wsudor_collection.ohandle.label
+
+		# Build RELS-EXT
+
+		# bind namespaces
+		self.rels_ext.content.bind('eul-repomgmt',emory)
+		self.rels_ext.content.bind('wsudor',wsudor)
+
+		object_relationships = [
+			{
+				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
+				"object": rdflib.term.URIRef("info:fedora/emory-control:Collection-1.0")
+			},
+			{
+				"predicate": wsudor.isVirtual,
+				"object": rdflib.term.Literal("True")
+			},
+			{
+				"predicate": wsudor.isVirtualFor,
+				"object": rdflib.term.URIRef("info:fedora/%s" % wsudor_collection.pid)
+			},
+			{
+				"predicate": wsudor.hasSecurityPolicy,
+				"object": rdflib.term.URIRef("info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted")
+			}
+		]
+
+		for r in object_relationships:
+			self.rels_ext.content.add((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))
+
+		self.rels_ext.save()
+
+		# save new object
+		self.save()
+
+
+# Virtual Readux Book Object
 class WSUDOR_Readux_VirtualBook(DigitalObject):
 
 	target_datastreams = {
@@ -83,6 +162,14 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		# label
 		self.label = wsudor_book.ohandle.label
 
+		# determine single parent collection 
+		parent_collection = [ o for s,p,o in wsudor_book.ohandle.rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') and o != rdflib.term.URIRef(u'info:fedora/wayne:collectionWSUebooks') ]
+		parent_obj = fedora_handle.get_object(parent_collection[0])
+
+		# fire creation of Virtual Collection		
+		virtual_collection_handle = fedora_handle.get_object(type=WSUDOR_Readux_VirtualCollection)
+		virtual_collection_handle.create(parent_obj)
+
 		# Build RELS-EXT
 
 		# bind namespaces
@@ -96,7 +183,7 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 			},
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isMemberOfCollection"),
-				"object": rdflib.term.URIRef("info:fedora/wayne:collectionWSUebooks")
+				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualCollection" % (parent_obj.pid))
 			},
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#hasConstituent"),

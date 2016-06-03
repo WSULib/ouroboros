@@ -12,6 +12,7 @@ import sys
 import re
 from bs4 import BeautifulSoup
 import requests
+import rdflib
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -510,23 +511,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	'''
 
 	# create Book Object (e.g. emory:b5hnv)
-	def _createVirtCollection(self):
-
-		'''
-		Target Datastreams:
-			- DC
-				- text/xml
-			RELS-EXT
-				- application/rdf+xml
-		'''
-		
-		print "generating virtual Collection object"
-
-		virtual_collection_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualBook)		
-		virtual_collection_handle.create(self)
-
-
-	# create Book Object (e.g. emory:b5hnv)
 	def _createVirtBook(self):
 
 		'''
@@ -596,12 +580,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	def createReaduxVirtualObjects(self):
 
-		# try:
-			self._createVirtBook()
-			self._createVirtVolume()
-			self._createVirtPages()
-		# except:
-		# 	print "rolling back"
+		self._createVirtBook()
+		self._createVirtVolume()
+		self._createVirtPages()
+	
 
 
 	def purgeReaduxVirtualObjects(self):
@@ -626,6 +608,14 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for obj in sparql_response:
 			print "Indexing object: %s" % obj['virtobj']
 			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
+
+		# index associated virtual collections
+		# determine single parent collection 
+		parent_collection = [ o for s,p,o in self.ohandle.rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') and o != rdflib.term.URIRef(u'info:fedora/wayne:collectionWSUebooks') ]
+		parent_obj = fedora_handle.get_object(parent_collection[0])
+
+		# fire creation of Virtual Collection		
+		print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/index" % (parent_obj.pid) ).content
 
 		return True
 

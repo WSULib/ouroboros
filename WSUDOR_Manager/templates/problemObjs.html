@@ -39,6 +39,7 @@ $(document).ready(function () {
 {% set counter = 0 -%}
 {% set pid = '' %}
 {%for obj in problemObjs %}
+
 {% with prefix, pid = obj.PID.split(':') %}
 
 <div id="{{pid}}-{{counter + loop.index0}}" class="col-md-3 col-md-offset-1 panel">
@@ -61,12 +62,14 @@ $(document).ready(function () {
 
     	</span></tr>
     	<!-- Metadata -->
+
     	<tr>
     		<td><b>PID:</b> {{obj.PID}}</td>
     	</tr>
     	<tr>
     		<td><b>Title:</b> {{obj.solr_package['dc_title']}}</td>
     	</tr>
+
 
         <!-- Notes -->
 		<tr>

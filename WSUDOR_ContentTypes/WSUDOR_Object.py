@@ -553,7 +553,7 @@ class WSUDOR_GenObject(object):
 		return True
 
 
-	def exportBag(self, job_package=False, returnTargetDir=False, includeRELS=False):
+	def exportBag(self, job_package=False, returnTargetDir=False, preserveRelationships=True):
 
 		'''
 		Target Example:
@@ -568,14 +568,6 @@ class WSUDOR_GenObject(object):
 		│   └── objMeta.json
 		├── manifest-md5.txt
 		└── tagmanifest-md5.txt		
-
-		WORK TO BE DONE:
-		There needs to be two pathways for export:
-			1) Object was ingested as bag.
-				- recreate bag structure, rehydrate BAGIT metadata
-			2) Object was created virtuall
-				- generate bag structure?  export bits and pieces, then run bagit on dir?
-
 		'''
 		
 		# get PID
@@ -612,16 +604,20 @@ class WSUDOR_GenObject(object):
 			if ds_handle.content != None:
 
 				# XML ds model
-				if isinstance(ds_handle,eulfedora.models.XmlDatastreamObject):
+				if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
 					print "FIRING XML WRITER"
 					with open(write_tuple[1],'w') as fhand:
 						fhand.write(ds_handle.content.serialize())
 
 				# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
+				'''
+				Why is this not writing tiffs?
+				'''
 				else:
 					print "FIRING GENERIC WRITER"
 					with open(write_tuple[1],'wb') as fhand:
-						fhand.write(ds_handle.content)
+						for chunk in ds_handle.get_chunked_content():
+							fhand.write(chunk)
 
 			else:
 				print "Content was NONE for",ds_id,"- skipping..."
@@ -629,13 +625,16 @@ class WSUDOR_GenObject(object):
 
 		# write original datastreams
 		for ds in self.objMeta['datastreams']:
+			print "writing %s" % ds
 			writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
 
 		# include RELS
-		if includeRELS == True:
-			for ds in ['RELS-EXT','RELS-INT']:
-				writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
+		if preserveRelationships == True:
+			print "preserving current relationships and writing to RELS-EXT and RELS-INT"
+			for rels_ds in ['RELS-EXT','RELS-INT']:
+				print "writing %s" % rels_ds
+				writeDS((rels_ds,"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
 
 		# write MODS and objMeta files
@@ -673,31 +672,37 @@ class WSUDOR_GenObject(object):
 			return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, username, named_dir)
 
 
-	# reingest bag
-	def reingestBag(self, removeExportTar = False):
+	# # reingest bag
+	# def reingestBag(self, removeExportTar=False, preserveRelationships=True):
 		
-		# get PID
-		PID = self.pid
+	# 	# get PID
+	# 	PID = self.pid
 
-		print "Roundrip Ingesting:",PID
+	# 	print "Roundrip Ingesting:",PID
 
-		# export bag, returning the file structure location of tar file
-		export_tar = self.exportBag(returnTargetDir=True)
-		print "Location of export tar file:",export_tar
+	# 	# export bag, returning the file structure location of tar file
+	# 	export_tar = self.exportBag(returnTargetDir=True, preserveRelationships=preserveRelationships)
+	# 	print "Location of export tar file:",export_tar
 
-		# purge self
-		fedora_handle.purge_object(PID)
+	# 	# open bag
+	# 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_tar, object_type='bag')
 
-		# reingest exported tar file
-		actions.bagIngest.ingestBag(actions.bagIngest.payloadExtractor(export_tar,'single'))
+	# 	# purge self
+	# 	if bag_handle != False:
+	# 		fedora_handle.purge_object(PID)
+	# 	else:
+	# 		print "exported object doesn't look good, aborting purge"
 
-		# delete exported tar
-		if removeExportTar == True:
-			print "Removing export tar..."
-			os.remove(export_tar)
+	# 	# reingest exported tar file
+	# 	bag_handle.ingestBag()
 
-		# return 
-		return PID,"Reingested."
+	# 	# delete exported tar
+	# 	if removeExportTar == True:
+	# 		print "Removing export tar..."
+	# 		os.remove(export_tar)
+
+	# 	# return 
+	# 	return PID,"Reingested."
 
 
 

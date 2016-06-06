@@ -1304,9 +1304,16 @@ def claimObj():
     num = int(num)
 
     problemObjs = models.user_pids.query.filter_by(PID=obj).all()
-    for certain_obj in problemObjs[num:num+1]:
-        models.user_pids.username = session['username']
-        db.session.commit()
+    if len(problemObjs) != 1:
+        for certain_obj in problemObjs[num:num+1]:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            obj.username = session['username']
+            db.session.commit()
+    else:
+        for certain_obj in problemObjs:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            obj.username = session['username']
+            db.session.commit()
 
     return "True"
 
@@ -1321,9 +1328,16 @@ def removeObj():
     num = int(num)
 
     problemObjs = models.user_pids.query.filter_by(PID=obj).all()
-    for certain_obj in problemObjs[num:num+1]:
-        models.user_pids.query.filter(models.user_pids.id == certain_obj.id).delete()
-        db.session.commit()
+    if len(problemObjs) != 1:
+        for certain_obj in problemObjs[num:num+1]:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            db.session.delete(obj)
+            db.session.commit()
+    else:
+        for certain_obj in problemObjs:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            db.session.delete(obj)
+            db.session.commit()
     
     return "True"
 

@@ -20,7 +20,7 @@ $(document).ready(function () {
                 url: "/{{APP_PREFIX}}/"+action,
                 type: "POST",
                 data:{"pid":"wayne:"+pid}
-            }).done(function(response) { $("#"+pid).fadeToggle("slow", "linear"); console.log(response); });
+            }).done(function(response) { $("#"+pid).fadeToggle("slow", "linear"); location.reload(); });
 
             });
 

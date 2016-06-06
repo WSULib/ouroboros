@@ -609,12 +609,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Indexing object: %s" % obj['virtobj']
 			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
 
-		# index associated virtual collections
-		# determine single parent collection 
+		# index associated virtual collection
 		parent_collection = [ o for s,p,o in self.ohandle.rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') and o != rdflib.term.URIRef(u'info:fedora/wayne:collectionWSUebooks') ]
 		parent_obj = fedora_handle.get_object(parent_collection[0])
-
-		# fire creation of Virtual Collection		
 		print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/index" % (parent_obj.pid) ).content
 
 		return True

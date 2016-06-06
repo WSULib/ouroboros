@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # python modules
 import time
 import json
@@ -1276,27 +1277,75 @@ def quickPID():
 @login_required
 def problemObjs():
 
-	problemObjs = models.user_pids.query.filter_by(username="problemBot").all()
-	saDict = {}
-	saList = []
-	for each in problemObjs:
-		saDict = each.__dict__
-		# General Metadata
-		solr_params = {'q':utilities.escapeSolrArg(str(saDict['PID'])), 'rows':1}
-		solr_results = solr_handle.search(**solr_params)
-		if solr_results.total_results == 0:
-			return "Selected objects don't appear to exist."
-		solr_package = solr_results.documents[0]
-		saDict['solr_package'] = solr_package
+    problemObjs = models.user_pids.query.filter_by(username="problemBot").all()
+    saDict = {}
+    saList = []
+    for each in problemObjs:
+        saDict = each.__dict__
+        # General Metadata
+        solr_params = {'q':utilities.escapeSolrArg(str(saDict['PID'])), 'rows':1}
+        solr_results = solr_handle.search(**solr_params)
+        if solr_results.total_results == 0:
+            return "Selected objects don't appear to exist."
+        solr_package = solr_results.documents[0]
+        saDict['solr_package'] = solr_package
 
-		# rehydrate the unicode string that holds the form data into a dictionary
-		if isinstance(saDict['notes'], unicode):
-			saDict['notes'] = json.loads(saDict['notes'])
-		saList.append(saDict.copy())
+        # rehydrate the unicode string that holds the form data into a dictionary
+        if isinstance(saDict['notes'], unicode):
+            saDict['notes'] = json.loads(saDict['notes'])
+        saList.append(saDict.copy())
 
-	return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST)
+    return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST)
 
-	
+
+# Retrieve all user-reported problem Objects
+@app.route("/claimObj", methods=['POST', 'GET'])
+@login_required
+def claimObj():
+
+    orig_obj = request.form['pid']
+    obj, num = orig_obj.split('-')
+    num = int(num)
+
+    problemObjs = models.user_pids.query.filter_by(PID=obj).all()
+    if len(problemObjs) != 1:
+        for certain_obj in problemObjs[num:num+1]:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            obj.username = session['username']
+            db.session.commit()
+    else:
+        for certain_obj in problemObjs:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            obj.username = session['username']
+            db.session.commit()
+
+    return "True"
+
+
+# Retrieve all user-reported problem Objects
+@app.route("/removeObj", methods=['POST', 'GET'])
+@login_required
+def removeObj():
+
+    orig_obj = request.form['pid']
+    obj, num = orig_obj.split('-')
+    num = int(num)
+
+    problemObjs = models.user_pids.query.filter_by(PID=obj).all()
+    if len(problemObjs) != 1:
+        for certain_obj in problemObjs[num:num+1]:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            db.session.delete(obj)
+            db.session.commit()
+    else:
+        for certain_obj in problemObjs:
+            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
+            db.session.delete(obj)
+            db.session.commit()
+    
+    return "True"
+
+    
 # WSUDOR MANAGEMENT
 ####################################################################################
 

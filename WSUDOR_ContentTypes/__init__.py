@@ -13,3 +13,4 @@ from WSUDOR_Container import WSUDOR_Container
 from WSUDOR_Readux import WSUDOR_Readux_VirtualBook
 from WSUDOR_Readux import WSUDOR_Readux_VirtualVolume
 from WSUDOR_Readux import WSUDOR_Readux_VirtualPage
+from WSUDOR_Readux import WSUDOR_Readux_VirtualCollection

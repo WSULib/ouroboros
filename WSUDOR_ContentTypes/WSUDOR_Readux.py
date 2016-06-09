@@ -167,11 +167,11 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		parent_obj = fedora_handle.get_object(parent_collection[0])
 
 		# fire creation of Virtual Collection
-		virtual_collection_handle = fedora_handle.get_object(type=WSUDOR_Readux_VirtualCollection)
-		try:
-			virtual_collection_handle.create(parent_obj)
-		except:
-			print "Virtual Collection could not be created..."
+		# virtual_collection_handle = fedora_handle.get_object(type=WSUDOR_Readux_VirtualCollection)
+		# try:
+		# 	virtual_collection_handle.create(parent_obj)
+		# except:
+		# 	print "Virtual Collection could not be created..."
 
 		# Build RELS-EXT
 
@@ -333,7 +333,7 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 
 		# PDF
 		print "Writing full-text PDF"
-		pdf_handle = eulfedora.models.DatastreamObject(self, "PDF", "Fulltext PDF for item", mimetype="application/pdf", control_group='E')
+		pdf_handle = eulfedora.models.DatastreamObject(self, "PDF", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
 		pdf_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/PDF_FULL/content" % (wsudor_book.pid) 
 		pdf_handle.label = "Fulltext PDF for item"
 		pdf_handle.save()

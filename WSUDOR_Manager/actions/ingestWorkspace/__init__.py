@@ -286,13 +286,21 @@ def createJob_factory(job_package):
 		
 		# for each section of METS, break into chunks
 		METSroot = etree.fromstring(ingest_metadata)
+		ns = METSroot.nsmap
 		
 		# grab stucture map
 		sm = METSroot.find('{http://www.loc.gov/METS/}structMap')
 		collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
 		
-		# get sm_parts through, ignoring comments
-		sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
+		# get sm_parts through, ignoring comments (OLD)
+		# sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
+		# sm_index = { element.attrib['DMDID']:element for element in sm_parts }
+
+		# new - xpath, all DMDID sections regardless of level
+		'''
+		Will need to understand parent moving forward (might be good to include anyhow)
+		'''
+		sm_parts = collection_level_div.xpath('.//mets:div[@DMDID]', namespaces=ns)
 		sm_index = { element.attrib['DMDID']:element for element in sm_parts }
 
 		# get dmd parts
@@ -447,9 +455,6 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		# set type				
 		job_package['object_type'] = fs.type
 
-		# attempt to fire worker
-		# try:
-			
 		# get DMDID
 		job_package['DMDID'] = None
 		job_package['object_title'] = fs.label

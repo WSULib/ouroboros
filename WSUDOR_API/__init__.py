@@ -51,3 +51,4 @@ cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 import views
 import iiif_manifest
 import imageServer
+import bitStream

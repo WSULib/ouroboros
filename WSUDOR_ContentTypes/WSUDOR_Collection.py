@@ -9,6 +9,7 @@ import time
 import traceback
 import sys
 import time
+import requests
 
 # celery
 from WSUDOR_Manager import celery
@@ -315,6 +316,95 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# redisHandles.r_iiif.set(self.pid,manifest.toString())
 		return manifest.toString()
+
+
+	#############################################################################
+	# associated Readux style virtual objects
+	#############################################################################
+
+	'''
+	Notes 
+
+	Setting up Book via Readux models (works from Django shell `python manage.py shell`):
+	b = books.models.Book('wayne:FooBar_vBook')
+	b.pid = 'wayne:FooBar_vBook'
+
+	But then immdiately get affordances of readux models:
+	In [13]: b.get_absolute_url()
+	Out[13]: u'/books/wayne:FooBar_vBook/'
+
+	'''
+
+	# create Book Object (e.g. emory:b5hnv)
+	def _createVirtCollection(self):
+
+		'''
+		Target Datastreams:
+			- DC
+				- text/xml			
+			MARCXML
+				- text/xml
+			RELS-EXT
+				- application/rdf+xml
+		'''
+		
+		print "generating virtual ScannedBook object"
+
+		virtual_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualCollection)
+		virtual_book_handle.create(self)
+
+
+	def createReaduxVirtualObjects(self):
+
+		self._createVirtCollection()
+	
+
+
+	def purgeReaduxVirtualObjects(self):
+
+		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
+
+		for obj in sparql_response:
+			print "Purging virtual object: %s" % obj['virtobj']
+			fedora_handle.purge_object( obj['virtobj'].split("info:fedora/")[-1] )
+
+		return True
+
+
+	def indexReaduxVirtualObjects(self,action='index'):
+
+		'''
+		NOTE: will need to wait here for risearch to index
+		'''
+
+		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
+
+		for obj in sparql_response:
+			print "Indexing object: %s" % obj['virtobj']
+			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
+		
+		return True
+
+
+	def regenReaduxVirtualObjects(self):
+
+		self.purgeReaduxVirtualObjects()
+
+		time.sleep(1)
+
+		self.createReaduxVirtualObjects()
+		
+		print "waiting for risearch to catch up..."
+		while True:
+			sparql_count = fedora_handle.risearch.sparql_count('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
+			if sparql_count < 1:
+				time.sleep(.5)
+				continue
+			else:
+				print 'proxy objects indexed in risearch, continuing'
+				break
+
+		self.indexReaduxVirtualObjects(action='index')
 		
 
 		

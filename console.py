@@ -49,4 +49,6 @@ def tableWipe():
 	print "recreating..."
 	db.create_all()
 
-
+# logs
+def tailUserCelery(user):
+	os.system("tail -f /var/log/celery-%s.err.log" % user)

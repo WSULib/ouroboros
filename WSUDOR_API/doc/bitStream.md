@@ -1,6 +1,6 @@
 # bitStream
 
-bitStream is a routing proxy to backend services such as Fedora, Loris, Solr, etc.
+bitStream is a flask proxy to Fedora datastreams, allowing for more fine grained access and restrictions.
 
 ## Fedora Datastreams
 bitStream can be used to access Fedora datastreams when given an object PID and datastream ID.  Some datastreams are open to the public, so-called "unrestricted" datastreams, while other require a key or token to acccess.

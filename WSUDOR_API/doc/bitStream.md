@@ -36,3 +36,6 @@ Example:<br>
 `http://192.168.42.4/WSUAPI/bitStream/wayne:vmc10/POLICY?token=7a1f4033-e556-4740-8c6e-75cbbbe194c3`
 
 
+## Loris Proxy
+
+

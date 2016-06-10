@@ -52,3 +52,4 @@ import views
 import iiif_manifest
 import imageServer
 import bitStream
+import lorisProxy

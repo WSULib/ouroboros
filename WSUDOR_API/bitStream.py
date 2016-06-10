@@ -33,6 +33,9 @@ Gist is that loris is now at /loris_local, and /loris reroutes to /WSUAPI/bitStr
 @WSUDOR_API_app.route("/%s/bitStream/<PID>/<DS>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def bitStream(PID,DS):
 
+	# stored in redis
+	unique_id = hashlib.md5(PID+DS).hexdigest()
+
 	try:
 		
 		# get object
@@ -46,6 +49,7 @@ def bitStream(PID,DS):
 		# datastream does not exist
 		if not obj_ds_handle.exists:
 			return msg_and_code("datastream does not exist", 404)
+
 			
 		# blocked datastream
 		if DS not in localConfig.UNBLOCKED_DATASTREAMS:
@@ -54,29 +58,36 @@ def bitStream(PID,DS):
 			token = request.args.get('token', False)
 			print {"key":key,"token":token}
 
+
 			# if key match, and token request, return token
 			if key == localConfig.BITSTREAM_KEY and token == 'request':
 				
 				# create unique token with hash, PID, and datastream
-				token = hashlib.md5(localConfig.BITSTREAM_SALT + PID + DS).hexdigest()
+				# token = hashlib.md5(localConfig.BITSTREAM_SALT + PID + DS).hexdigest()
+				token = str(uuid.uuid4()) # random token
 				print "setting token: %s" % token
-				redisHandles.r_catchall.set(token,True)
+				redisHandles.r_catchall.set(token, unique_id)
 				return msg_and_code({"token":token},200)
+
 
 			# if key match, no token, return ds
 			if key == localConfig.BITSTREAM_KEY and not token:
 				return return_ds(obj_ds_handle)
 
-			# if key match, bad token, return error
-			if key == localConfig.BITSTREAM_KEY and not redisHandles.r_catchall.get(token):
-				return msg_and_code('invalid token provided, remove if providing key',401)
 
-			# if both match
-			if key == localConfig.BITSTREAM_KEY and redisHandles.r_catchall.get(token):
+			# if key match, but no token stored, return error
+			if key == localConfig.BITSTREAM_KEY and not redisHandles.r_catchall.get(token):
+				return msg_and_code('invalid token provided, remove if providing key as well',401)
+
+
+			# if key, and stored token, and PID/DS associated with token
+			if key == localConfig.BITSTREAM_KEY and redisHandles.r_catchall.get(token) == unique_id:
 				return return_ds(obj_ds_handle)
+
 
 			if key and key != localConfig.BITSTREAM_KEY:
 				return msg_and_code('incorrect key',401)
+
 			
 			if not key and token:
 				'''
@@ -85,12 +96,12 @@ def bitStream(PID,DS):
 						OR, keep and remove after certain time?
 					if not, return error
 				'''
-				if redisHandles.r_catchall.get(token):
-					print 'token verified, removing: %s' % token
+				if redisHandles.r_catchall.get(token) == unique_id:
+					print 'token verified for obj/ds, removing token: %s' % token
 					redisHandles.r_catchall.delete(token)
-					return return_ds(obj_ds_handle)
+					return return_ds(obj_ds_handle)				 
 				else:
-					return msg_and_code("token not found",401)
+					return msg_and_code("token not found or does not match object and datastream",401)
 
 			# all else, no keys or tokens, indicated datastream is blocked
 			return msg_and_code("datastream is blocked", 403)

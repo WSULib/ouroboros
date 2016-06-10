@@ -17,6 +17,53 @@ import hashlib
 from contextlib import closing
 
 
+'''
+Proxy for Loris allowing for eventual valves and fine-grained control over 
+bitstreams returned.
+
+Requires following in localConfig:
+
+	LORIS_API_ENDPOINT = "http://localhost/loris_local/"
+	LORIS_STREAM_CHUNK_SIZE = 1024
+
+
+Requires the following in Apache:
+
+	-- Reverse proxy for /loris to /WSUAPI/lorisProxy --
+		# lorisProxy
+	    ProxyPass /loris http://localhost/WSUAPI/lorisProxy
+	    ProxyPassReverse /loris http://localhost/WSUAPI/lorisProxy
+
+	-- LORIS WSGI --
+		# LORIS-http
+	    ExpiresActive On
+	    ExpiresDefault "access plus 5184000 seconds"
+
+	    AllowEncodedSlashes On
+
+	    SetEnvIf Request_URI ^/loris loris
+	    CustomLog /var/log/loris-access.log combined env=loris
+
+	    WSGIDaemonProcess loris2 user=USERNAME_HERE group=GROUP_CHANGE umask=0002 processes=10 threads=15 maximum-requests=1000
+	    WSGIScriptAlias /loris_local /opt/loris2/loris2.wsgi
+	    WSGIProcessGroup loris2
+
+	    <Location /loris_local>
+
+	        # required for Loris
+	        Header unset Access-Control-Allow-Origin
+	        Require all granted
+
+	        RewriteCond %{REMOTE_HOST} !^::1$
+	        RewriteCond %{HTTP_HOST} !=localhost
+	        RewriteCond %{REMOTE_ADDR} !^(127\.0\.0\.1)$
+	        RewriteRule ^(.*)$ - [R=403]
+
+	    </Location>
+
+'''
+
+
 class IIIFImageClient(object):
 	'''Simple IIIF Image API client for generating IIIF image urls
 	in an object-oriented, pythonic fashion.  Can be extended,
@@ -128,7 +175,7 @@ class IIIFImageClient(object):
 
 
 # Loris Info
-@WSUDOR_API_app.route("/%s/bitStream/loris/<image_id>/info.json" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/%s/lorisProxy/<image_id>/info.json" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def loris_info(image_id):
 
 	# instantiate IIIFImageClient
@@ -146,7 +193,7 @@ def loris_info(image_id):
 IIIF Image API
 {scheme}://{server}{/prefix}/{identifier}/{region}/{size}/{rotation}/{quality}.{format}
 '''
-@WSUDOR_API_app.route("/%s/bitStream/loris/<image_id>/<region>/<size>/<rotation>/<quality>.<format>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/%s/lorisProxy/<image_id>/<region>/<size>/<rotation>/<quality>.<format>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def loris_image(image_id,region,size,rotation,quality,format):
 
 	# instantiate IIIFImageClient

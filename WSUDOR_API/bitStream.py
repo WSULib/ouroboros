@@ -6,12 +6,14 @@ from flask import request, redirect, Response, jsonify, stream_with_context
 
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
-from WSUDOR_Manager import fedora_handle
+from WSUDOR_Manager import fedora_handle, redisHandles
 
 from eulfedora.models import DatastreamObject, XmlDatastreamObject
 
 import requests
 import json
+import uuid
+import hashlib
 from contextlib import closing
 
 
@@ -37,23 +39,68 @@ def bitStream(PID,DS):
 		obj_handle = fedora_handle.get_object(PID)
 		# object does not exist
 		if not obj_handle.exists:
-			return return_error("object does not exist", 404)
+			return msg_and_code("object does not exist", 404)
 
 		# get datastream
 		obj_ds_handle = obj_handle.getDatastreamObject(DS)
 		# datastream does not exist
 		if not obj_ds_handle.exists:
-			return return_error("datastream does not exist", 404)
+			return msg_and_code("datastream does not exist", 404)
 			
-		# both exist, and unblocked
+		# blocked datastream
 		if DS not in localConfig.UNBLOCKED_DATASTREAMS:
-			return return_error("datastream is blocked", 403)
+
+			key = request.args.get('key', '')
+			token = request.args.get('token', False)
+			print {"key":key,"token":token}
+
+			# if key match, and token request, return token
+			if key == localConfig.BITSTREAM_KEY and token == 'request':
+				
+				# create unique token with hash, PID, and datastream
+				token = hashlib.md5(localConfig.BITSTREAM_SALT + PID + DS).hexdigest()
+				print "setting token: %s" % token
+				redisHandles.r_catchall.set(token,True)
+				return msg_and_code({"token":token},200)
+
+			# if key match, no token, return ds
+			if key == localConfig.BITSTREAM_KEY and not token:
+				return return_ds(obj_ds_handle)
+
+			# if key match, bad token, return error
+			if key == localConfig.BITSTREAM_KEY and not redisHandles.r_catchall.get(token):
+				return msg_and_code('invalid token provided, remove if providing key',401)
+
+			# if both match
+			if key == localConfig.BITSTREAM_KEY and redisHandles.r_catchall.get(token):
+				return return_ds(obj_ds_handle)
+
+			if key and key != localConfig.BITSTREAM_KEY:
+				return msg_and_code('incorrect key',401)
+			
+			if not key and token:
+				'''
+				check if token is key in redis 
+					if so, delete key and return ds
+						OR, keep and remove after certain time?
+					if not, return error
+				'''
+				if redisHandles.r_catchall.get(token):
+					print 'token verified, removing: %s' % token
+					redisHandles.r_catchall.delete(token)
+					return return_ds(obj_ds_handle)
+				else:
+					return msg_and_code("token not found",401)
+
+			# all else, no keys or tokens, indicated datastream is blocked
+			return msg_and_code("datastream is blocked", 403)
 
 		# if made this far, stream response
-		return Response(stream_ds(obj_ds_handle), mimetype=obj_ds_handle.mimetype)
-
-	except:
-		return return_error('bitStream failed',500)
+		return return_ds(obj_ds_handle)
+		
+	except Exception, e:
+		print e
+		return msg_and_code('bitStream failed',500)
 
 
 # Loris Info
@@ -62,7 +109,6 @@ def loris_info(id):
 
 	r = requests.get("http://localhost/loris_local/%s/info.json" % (id)).json()
 	return jsonify(r)
-
 
 
 # Loris Image API
@@ -88,10 +134,14 @@ def loris_image(id,region,size,rotation,quality,format):
 
 
 # helpers
-def return_error(msg,status_code):
-		response = jsonify({"msg":msg})
-		response.status_code = status_code
-		return response
+def msg_and_code(msg,status_code):
+	response = jsonify({"response":msg})
+	response.status_code = status_code
+	return response
+
+
+def return_ds(obj_ds_handle):
+	return Response(stream_ds(obj_ds_handle), mimetype=obj_ds_handle.mimetype)
 
 
 # chunked, generator

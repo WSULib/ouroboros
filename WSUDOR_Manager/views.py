@@ -386,7 +386,7 @@ def login():
 		session['JSESSIONID'] = s.cookies['JSESSIONID']
 		session['username'] = username
 		print session
-		user.id = session['user_id']
+		#user.id = session['user_id']
 
 		#############################################################################
 		# # deal with fedora_handle and celery

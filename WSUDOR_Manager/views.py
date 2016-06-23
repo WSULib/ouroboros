@@ -1307,18 +1307,28 @@ def claimObj():
     obj, num = orig_obj.split('-')
     num = int(num)
 
-    problemObjs = models.user_pids.query.filter_by(PID=obj).all()
-    if len(problemObjs) != 1:
-        for certain_obj in problemObjs[num:num+1]:
-            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
-            obj.username = session['username']
-            db.session.commit()
-    else:
-        for certain_obj in problemObjs:
-            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
-            obj.username = session['username']
-            db.session.commit()
+    problemObjs = models.user_pids.query.filter_by(PID=obj).filter_by(username="problemBot").filter_by(id=num).all()
+    for certain_obj in problemObjs:
+        certain_obj.username = session['username']
+        db.session.commit()
 
+    return "True"
+
+
+# Retrieve all user-reported problem Objects
+@app.route("/removeObj", methods=['POST', 'GET'])
+@login_required
+def removeObj():
+
+    orig_obj = request.form['pid']
+    obj, num = orig_obj.split('-')
+    num = int(num)
+
+    problemObjs = models.user_pids.query.filter_by(PID=obj).filter_by(username="problemBot").filter_by(id=num).all()
+    for certain_obj in problemObjs:
+        db.session.delete(certain_obj)
+        db.session.commit()
+    
     return "True"
 
 

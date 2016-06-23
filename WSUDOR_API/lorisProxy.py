@@ -196,6 +196,10 @@ IIIF Image API
 @WSUDOR_API_app.route("/%s/lorisProxy/<image_id>/<region>/<size>/<rotation>/<quality>.<format>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def loris_image(image_id,region,size,rotation,quality,format):
 
+	# parse pid and datastream from image_id
+	pid = image_id.split("fedora:")[1].split("|")[0]
+	ds = image_id.split("fedora:")[1].split("|")[1]
+
 	# instantiate IIIFImageClient
 	ic = IIIFImageClient(
 		api_endpoint=localConfig.LORIS_API_ENDPOINT,
@@ -207,18 +211,47 @@ def loris_image(image_id,region,size,rotation,quality,format):
 		format=format
 	)
 
+	# run restrictions
+	for func in restrictions:
+		if "THUMBNAIL" not in ds:
+			ic = func(pid,ds,ic)
+	
 	# debug url
 	image_url = str(ic)
-	print image_url
 	r = requests.get(str(ic), stream=True)
 
 	# stream_with_context
 	# http://flask.pocoo.org/snippets/118/
-	return Response(r.iter_content(chunk_size=1024), content_type=r.headers['Content-Type'])
+	return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
 
 
 
+# ACCESS RESTRICTIONS
 
+'''
+where 'ic' is an IIIFImageClient object, passed to, and returned by, the function
+CONSIDER MOVING ALL TO A RESTRICT CLASS
+'''
+
+def downsizeReutherImage(pid,ds,ic):
+
+	'''
+	If pid is Reuther image, downsize downloadable image to x700 pixels on long or short side
+	'''
+
+	if ":vmc" in pid:
+
+		print "downsizing from %s to !700,700 for Reuther" % (ic.image_options['size'])
+		ic = ic.size(width=700, height=700, exact=True)
+
+	return ic
+	
+
+
+# list of restriction functions to run
+restrictions = [
+	downsizeReutherImage
+]
 
 
 

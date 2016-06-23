@@ -1331,30 +1331,6 @@ def removeObj():
     
     return "True"
 
-
-# Retrieve all user-reported problem Objects
-@app.route("/removeObj", methods=['POST', 'GET'])
-@login_required
-def removeObj():
-
-    orig_obj = request.form['pid']
-    obj, num = orig_obj.split('-')
-    num = int(num)
-
-    problemObjs = models.user_pids.query.filter_by(PID=obj).all()
-    if len(problemObjs) != 1:
-        for certain_obj in problemObjs[num:num+1]:
-            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
-            db.session.delete(obj)
-            db.session.commit()
-    else:
-        for certain_obj in problemObjs:
-            obj = models.user_pids.query.filter_by(id=certain_obj.id).first()
-            db.session.delete(obj)
-            db.session.commit()
-    
-    return "True"
-
     
 # WSUDOR MANAGEMENT
 ####################################################################################

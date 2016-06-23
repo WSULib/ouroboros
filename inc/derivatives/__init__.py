@@ -24,6 +24,7 @@ KDU_LIB_DIR = "/usr/local/lib"
 FORTY_EIGHT_BITS = "16 16 16"
 THIRTY_TWO_BITS = "8 8 8 8"
 TWENTY_FOUR_BITS = "8 8 8"
+SIXTEEN_BITS = "16"
 EIGHT_BITS = "8"
 ONE_BIT = "1"
 
@@ -158,6 +159,8 @@ class JP2DerivativeMaker(object):
 			cmd = cmd + " " + KDU_RECIPES[KDU_RECIPE_KEY+'_color']
 		elif inBitsPerSample == TWENTY_FOUR_BITS:
 			cmd = cmd + " " + KDU_RECIPES[KDU_RECIPE_KEY+'_color']
+		elif inBitsPerSample == SIXTEEN_BITS:
+			cmd = cmd + " " + KDU_RECIPES[KDU_RECIPE_KEY+'_gray']
 		elif inBitsPerSample == EIGHT_BITS:
 			cmd = cmd + " " + KDU_RECIPES[KDU_RECIPE_KEY+'_gray']
 		elif inBitsPerSample == ONE_BIT:

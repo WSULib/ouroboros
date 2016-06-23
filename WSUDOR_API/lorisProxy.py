@@ -15,6 +15,7 @@ import json
 import uuid
 import hashlib
 from contextlib import closing
+import rdflib
 
 
 '''
@@ -62,6 +63,10 @@ Requires the following in Apache:
 	    </Location>
 
 '''
+
+###################
+# MODEL
+###################
 
 
 class IIIFImageClient(object):
@@ -173,8 +178,91 @@ class IIIFImageClient(object):
 		img.image_options['format'] = image_format
 		return img
 
+	# methods to derive API info
 
-# Loris Info
+	def derive_size(self):
+		
+		'''
+		Return dictionary of parsed size request		
+		'''
+
+		# return dictionary
+		size_d = {
+			'full': False,
+			'w': None,
+			'h': None,
+			'exact': False,
+			'pct': False,
+		}
+
+		size = self.image_options['size']
+
+		# full?
+		if size == 'full':
+			size_d['full'] = True
+			# return immediately
+			return size_d
+
+		# percent?
+		if "pct" in size:
+			size_d['pct'] = int(size.split(":")[1])
+			return size_d
+
+		# exact?
+		if size.startswith('!'):
+			size_d['exact'] = True
+			size = size[1:]
+
+		# split width and height
+		w,h = size.split(",")
+		if w != '':
+			size_d['w'] = int(w)
+		if h != '':
+			size_d['h'] = int(h)
+
+		return size_d
+
+
+	def derive_region(self):
+		
+		'''
+		Return dictionary of parsed region request		
+		'''
+
+		# return dictionary
+		region_d = {
+			'full': False,
+			'x': None,
+			'y': None,
+			'w': None,
+			'h': None,
+			'pct': False
+		}
+
+		region = self.image_options['region']
+
+		# full?
+		if region == 'full':
+			region_d['full'] = True
+			# return immediately
+			return region_d
+
+		# percent?
+		if "pct" in region:
+			region_d['pct'] = True
+			region = region.split("pct:")[1]
+
+		# split to dictionary
+		region_d['x'],region_d['y'],region_d['w'],region_d['h'] = region.split(",")
+
+		return region_d
+
+		
+###################
+# ROUTES
+###################
+
+# Loris Info 
 @WSUDOR_API_app.route("/%s/lorisProxy/<image_id>/info.json" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def loris_info(image_id):
 
@@ -225,32 +313,68 @@ def loris_image(image_id,region,size,rotation,quality,format):
 	return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
 
 
-
+###################
 # ACCESS RESTRICTIONS
+###################
 
 '''
 where 'ic' is an IIIFImageClient object, passed to, and returned by, the function
 CONSIDER MOVING ALL TO A RESTRICT CLASS
 '''
 
-def downsizeReutherImage(pid,ds,ic):
+def downsizeImage(pid,ds,ic):
 
 	'''
-	If pid is Reuther image, downsize downloadable image to x700 pixels on long or short side
+	If collection is flagged for downsizing, downsize downloadable image to target size pixels on long or short side
+	see: http://iiif.io/api/image/2.0/#size
 	'''
 
-	if ":vmc" in pid:
+	# options
+	target_resolution = 700	
+	restricted_collections = [
+		'wayne:collectionvmc',
+		'wayne:collectionUniversityBuildings'
+	]
 
-		print "downsizing from %s to !700,700 for Reuther" % (ic.image_options['size'])
-		ic = ic.size(width=700, height=700, exact=True)
+	restricted_status = False
+	collections = [ o for s,p,o in fedora_handle.get_object(pid).rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') ]
+	for c in collections:
+		if c.split("info:fedora/")[1] in restricted_collections:
+			restricted_status = True
+			break
+
+	if restricted_status:
+
+		downsize = False
+
+		# derive size request
+		size_d = ic.derive_size()
+
+		# full requested
+		if size_d['full']:
+			downsize = True
+
+		# percent requested
+		# retrieve info.json and see if percent would exceed size restrictions
+		r = requests.get(ic.info()).json()
+		if ((r['width'] * float(size_d['pct']) / 100) >= target_resolution) or ((r['height'] * float(size_d['pct']) / 100) >= target_resolution):
+			downsize = True
+
+		# specific size requested
+		if size_d['w'] >= target_resolution or size_d['h'] >= target_resolution:
+			downsize = True
+
+		# downsize if triggered
+		if downsize:
+			print "downsizing from %s to !%s,%s for Reuther" % (ic.image_options['size'], target_resolution, target_resolution)
+			ic = ic.size(width=target_resolution, height=target_resolution, exact=True)
 
 	return ic
-	
 
 
 # list of restriction functions to run
 restrictions = [
-	downsizeReutherImage
+	downsizeImage
 ]
 
 

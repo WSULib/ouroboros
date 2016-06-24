@@ -306,6 +306,7 @@ def loris_image(image_id,region,size,rotation,quality,format):
 	
 	# debug url
 	image_url = str(ic)
+	print image_url
 	r = requests.get(str(ic), stream=True)
 
 	# stream_with_context

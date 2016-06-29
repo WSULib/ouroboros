@@ -36,13 +36,11 @@ $(document).ready(function () {
 
 </script>
 <div class="row">
-{% set counter = 0 -%}
-{% set pid = '' %}
 {%for obj in problemObjs %}
 
 {% with prefix, pid = obj.PID.split(':') %}
 
-<div id="{{pid}}-{{counter + loop.index0}}" class="col-md-3 col-md-offset-1 panel">
+<div id="{{pid}}-{{obj.id}}" class="col-md-3 col-md-offset-1 panel">
 
     <table class="table table-striped table-bordered table-hover table-condensed">
     	<!-- Image -->
@@ -87,7 +85,6 @@ $(document).ready(function () {
 	<!-- </div> -->
 </div>
 {% endwith %}
-{% set counter = counter + group|length %}
 {% endfor %}
 </div>
 {% include 'footer.html' %}

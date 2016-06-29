@@ -211,7 +211,7 @@ class SingleObjectMethods(object):
 	####################################################################################
 
 	def playlist_comprehension(self, getParams):
-		# return JSON object of audio objectc PLAYLIST datastream
+		# return JSON object of audio object PLAYLIST datastream
 		
 		if self.obj_handle.content_type in ["WSUDOR_Audio"]:
 			
@@ -222,15 +222,7 @@ class SingleObjectMethods(object):
 			# add symlink URLs
 			for each in playlist_handle:
 
-				#MP3 symlink
-				mp3_symlink = makeSymLink( self.PID, (each['ds_id']+"_MP3") )
-				mp3_symlink_URL = "http://%s/symLinks/" % (localConfig.APP_HOST)+mp3_symlink['symlink'].split("/")[-1]
-				each['streaming_mp3'] = mp3_symlink_URL
-
-				#original DS symlink
-				original_symlink = makeSymLink( self.PID, each['ds_id'] )
-				original_symlink_URL = "http://%s/symLinks/" % (localConfig.APP_HOST)+original_symlink['symlink'].split("/")[-1]
-				each['streaming_original'] = original_symlink_URL
+				each['streaming_mp3'] = each['mp3']
 
 			return ("playlist",playlist_handle)
 

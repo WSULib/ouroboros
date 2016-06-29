@@ -161,8 +161,8 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				# if no 'order' key, or not integer (e.g. None), assign incrementing number
 				if 'order' not in ds.keys() or not isinstance( ds['order'], int ):
-					print "Could not find valid 'order' key for datastream dictionary, assigning",len(self.objMeta['datastreams']) + count
-					ds['order'] = len(self.objMeta['datastreams']) + count
+					print "Could not find valid 'order' key for datastream dictionary, assigning", count
+					ds['order'] = count
 					# bump ds counter
 					count += 1
 
@@ -229,14 +229,29 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write PLAYLIST datastream with playlist_list
 			print "Generating PLAYLIST datastream"
 			for ds in playlist_list:
-				ds['thumbnail'] = "http://%s/fedora/objects/{pid}/datastreams/%s_THUMBNAIL/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
-				ds['preview'] = "http://%s/fedora/objects/{pid}/datastreams/%s_PREVIEW/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
-				ds['mp3'] = "http://%s/fedora/objects/{pid}/datastreams/%s_MP3/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+				ds['thumbnail'] = "http://%s/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+				ds['preview'] = "http://%s/fedora/objects/%s/datastreams/%s_PREVIEW/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+				ds['mp3'] = "http://%s/fedora/objects/%s/datastreams/%s_MP3/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
 
 			playlist_handle = eulfedora.models.DatastreamObject(self.ohandle,"PLAYLIST", "PLAYLIST", mimetype="application/json", control_group="M")
 			playlist_handle.content = json.dumps( sorted(playlist_list, key=lambda k: k['order']) )
 			playlist_handle.label = "PLAYLIST"
 			playlist_handle.save()
+
+
+			# -------------------------------------- RELS-INT ---------------------------------------#
+
+			# add to RELS-INT
+			fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/%s' % (self.ohandle.pid))
+			fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_THUMBNAIL' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
+			fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_PREVIEW' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
+			
+
+			# if order present, get order and write relationship. 
+			if 'order' in ds:
+				fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid,ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isOrder', ds['order'], isLiteral=True)
+
+				# -------------------------------------- RELS-INT ---------------------------------------#
 
 
 			# write generic thumbnail and preview for object
@@ -256,10 +271,8 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 		# exception handling
-		except Exception,e:
-			print traceback.format_exc()
-			print "Image Ingest Error:",e
-			return False
+		except:
+			raise Exception(traceback.format_exc())
 
 
 

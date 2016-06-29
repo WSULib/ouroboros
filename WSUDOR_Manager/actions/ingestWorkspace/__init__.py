@@ -653,6 +653,7 @@ def createBag_worker(job_package):
 			"MODS_ns" : ns
 		}
 	except:
+		MODS_handle = False
 		print "could not load MODS as etree element"
 
 	# if not purging bags, and previous bag_path already found, skip

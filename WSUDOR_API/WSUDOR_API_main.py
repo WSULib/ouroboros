@@ -35,20 +35,40 @@ def WSUDOR_API_main(getParams):
 	# ITERATE THROUGH FUNCTION LIST 	
 	def runFunctions():	
 		
-		# get functions get parameters		
-		funcs = getParams['functions[]']		
+		# run debug mode
+		if 'debug' in getParams and getParams['debug'][0] == 'true':
+			# get functions get parameters		
+			funcs = getParams['functions[]']		
 
-		for func in funcs:		
-			if func in globals():
-				funcName = globals()[func]				
-				print "running",func			
-				try:
+			for func in funcs:		
+				if func in globals():
+					funcName = globals()[func]				
+					print "running",func			
 					JSONdict[funcName.__name__] = funcName(getParams) #passes *all* GET params from mainRouter()
-				except Exception,e:
-					traceback.print_exc(file=sys.stdout)
-					JSONdict[funcName.__name__] = '{{"status":%s}}' % (json.dumps(str(e)))
-			else:
-				print "Function not found"
+				else:
+					print "Function not found"
+
+		elif 'debug' in getParams and getParams['debug'][0] != 'true':
+			JSONdict['debug'] = json.dumps(str("unrecognized value"))
+
+		# normal mode
+		else:
+			# get functions get parameters		
+			funcs = getParams['functions[]']		
+
+			for func in funcs:		
+				if func in globals():
+					funcName = globals()[func]				
+					print "running",func			
+					try:
+						JSONdict[funcName.__name__] = funcName(getParams) #passes *all* GET params from mainRouter()
+					except Exception,e:
+						traceback.print_exc(file=sys.stdout)
+						JSONdict[funcName.__name__] = '{{"status":%s}}' % (json.dumps(str(e)))
+				else:
+					print "Function not found"
+
+
 
 
 	# JSON RETURN	

@@ -173,7 +173,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 					# writing FILE datastream
 					rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="R")
-					rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+					rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s/content" % (self.ohandle.pid, ds['ds_id'])
 					rep_handle.label = "FILE"
 					rep_handle.save()
 
@@ -220,7 +220,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				# write generic thumbnail for what should be SINGLE file per object
 				for gen_type in ['THUMBNAIL']:
 					rep_handle = eulfedora.models.DatastreamObject(self.ohandle, gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-					rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
+					rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s_%s/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
 					rep_handle.label = gen_type
 					rep_handle.save()
 

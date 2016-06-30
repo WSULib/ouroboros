@@ -56,10 +56,13 @@ def MODSexport_export():
 			Little bit of complexity here:
 			For this kind of MODS in & out, we need the current PID associated with the file on the way out.
 			Writing this to the <mods:extension> field, creating if not present.
+
+			Update: This will be forced.  Without the PID, records will not be associated.  Critical for reingest.
 			'''
 
 			# does <PID> element already exist?
 			PID_check = ds_handle.content.node.xpath('//mods:extension/PID',namespaces=ds_handle.content.node.nsmap)
+
 			# if not, continue with checks
 			if len(PID_check) == 0:
 
@@ -70,7 +73,7 @@ def MODSexport_export():
 				if len(extension_check) == 0:
 					#serialize and replace
 					MODS_content = ds_handle.content.serialize()				
-					MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><PID>{PID}</PID></mods:extension></mods:mods>".format(PID=PID))
+					MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><PID>%s</PID></mods:extension></mods:mods>" % PID)
 				
 				# <mods:extension> present, but no PID subelement, create
 				else:
@@ -79,10 +82,39 @@ def MODSexport_export():
 					#serialize
 					MODS_content = ds_handle.content.serialize()
 
-			# skip <PID> element creation, just serialize
+			# overwrite with PID
 			else:
+				PID_element = PID_check[0]
+				PID_element.text = PID
+				#serialize
 				MODS_content = ds_handle.content.serialize()
 
+
+			# # OLD
+			# # if not, continue with checks
+			# if len(PID_check) == 0:
+
+			# 	# check for <mods:extension>, if not present add
+			# 	extension_check = ds_handle.content.node.xpath('//mods:extension',namespaces=ds_handle.content.node.nsmap)
+				
+			# 	# if absent, create with <PID> subelement
+			# 	if len(extension_check) == 0:
+			# 		#serialize and replace
+			# 		MODS_content = ds_handle.content.serialize()				
+			# 		MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><PID>%s</PID></mods:extension></mods:mods>" % PID)
+				
+			# 	# <mods:extension> present, but no PID subelement, create
+			# 	else:
+			# 		PID_elem = etree.SubElement(extension_check[0],"PID")
+			# 		PID_elem.text = PID
+			# 		#serialize
+			# 		MODS_content = ds_handle.content.serialize()
+
+			# # skip <PID> element creation, just serialize
+			# else:
+			# 	MODS_content = ds_handle.content.serialize()
+
+			
 			# write to file
 			outfile.write(MODS_content)
 

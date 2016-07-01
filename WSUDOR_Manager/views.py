@@ -629,9 +629,13 @@ def userJobs():
 			job_assign_count = 0
 		
 		# get completed tasks
-		job_complete_count = redisHandles.r_job_handle.get("job_%s_complete_count" % (job_num))
+		job_complete_count = redisHandles.r_job_handle.get("job_%s_complete_count" % (job_num))		
 		if job_complete_count == None:          
 			job_complete_count = 0
+
+		# DEBUG
+		# print job
+		# print job_est_count, job_assign_count, job_complete_count
 
 		# compute percentage complete               
 		if all([job_complete_count,job_est_count]) != None and all([job_complete_count,job_est_count]) > 0:

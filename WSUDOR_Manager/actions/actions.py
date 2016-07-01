@@ -150,9 +150,8 @@ class postTask(Task):
 			print "Cleaning up for custom_loop task"
 			redisHandles.r_job_handle.set(task_id, status)
 
-		# increments completed tasks
-		if status == "SUCCESS":
-			jobs.jobUpdateCompletedCount(job_num)
+		# increments completed tasks		
+		jobs.jobUpdateCompletedCount(job_num)
 
 
 

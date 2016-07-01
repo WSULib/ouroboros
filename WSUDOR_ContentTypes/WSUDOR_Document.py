@@ -172,7 +172,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				if ds['mimetype'] == "application/pdf":
 
 					# writing FILE datastream
-					rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="R")
+					rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="E")
 					rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s/content" % (self.ohandle.pid, ds['ds_id'])
 					rep_handle.label = "FILE"
 					rep_handle.save()

@@ -1136,7 +1136,7 @@ class WSUDOR_GenObject(object):
 
 
 	# method to send object to remote repository
-	def sendObject(self, dest_repo, export_context='migrate', overwrite=False, show_progress=False, refresh_remote=True):
+	def sendObject(self, dest_repo, export_context='migrate', overwrite=False, show_progress=False, refresh_remote=True, omit_checksums=False):
 
 		'''
 		dest_repo = string key from localConfig for remote repositories credentials
@@ -1159,7 +1159,8 @@ class WSUDOR_GenObject(object):
 			dest_repo_handle,
 			export_context=export_context,
 			overwrite=overwrite,
-			show_progress=show_progress)
+			show_progress=show_progress,
+			omit_checksums=omit_checksums)
 
 		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
 		if type(dest_repo) == str or type(dest_repo) == unicode:

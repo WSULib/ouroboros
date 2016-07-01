@@ -1177,6 +1177,136 @@ class WSUDOR_GenObject(object):
 
 
 
+	# enrich metadata from METS file
+	def enrichMODSFromMETS(self, METS_handle, DMDID_prefix="UP00", auto_commit=True):
+
+		'''
+		1) read <mods:extension>/<orig_filename>
+		2) look for DMDID_prefix + orig_filename
+		3) if found, grab MODS from METS
+		4) update object MODS
+		5) recreate <mods:extension>/<orig_filename> if lost
+		'''
+
+		ipytho
+
+		# METS root
+		METS_root = METS_handle.getroot()
+
+		# MODS handle
+		MODS_handle = self.ohandle.getDatastreamObject('MODS')
+
+		# 1) read <mods:extension>/<orig_filename>
+		orig_filename = MODS_handle.content.node.xpath('//mods:extension/orig_filename', namespaces=METS_root.nsmap)
+		print orig_filename #DEBUG
+		if len(orig_filename) == 1:
+			orig_filename = orig_filename[0].text
+		elif len(orig_filename) > 1:
+			print "multiple orig_filename elements found, aborting"
+			return False
+		elif len(orig_filename) == 0:
+			print "no orig_filename elements found, aborting"
+			return False
+		else:
+			print "could not determine orig_filename"
+			return False
+
+		'''
+		Need to determine if orig_filename ends with file extension, which we would strip
+		or is other.
+
+		Probably safe to assume that file extensions are not *entirely* numbers, which the following
+		checks for.		
+		'''
+
+		# check if orig_filename contains file extension, if so, strip
+		full_orig_filename = orig_filename
+		parts = orig_filename.split('.')
+		try:
+			int(parts[-1])
+			file_ext_present = False
+			print "assuming NOT file extension - keeping orig_filename"
+		except:
+			file_ext_present = True
+			print "assuming file extension present - stripping"
+			orig_filename = ".".join(parts[:-1])
+
+
+		# 2) look for DMDID_prefix + orig_filename
+		dmd = METS_root.xpath('//mets:dmdSec[@ID="%s%s"]' % (DMDID_prefix, orig_filename), namespaces=METS_root.nsmap)
+		print dmd #DEBUG
+		if len(dmd) == 1:
+			print "one DMD section found!"
+		elif len(dmd) > 1:
+			print "multiple DMD sections found, aborting"
+			return False
+		elif len(dmd) == 0:
+			print "no DMD sections found, aborting"
+			return False
+
+
+		# 3) if found, grab MODS from METS
+		enriched_MODS = dmd[0].xpath('.//mods:mods',namespaces=METS_root.nsmap)
+		print enriched_MODS # DEBUG
+		if len(enriched_MODS) == 1:
+			print "MODS found"
+		elif len(enriched_MODS) > 1:
+			print "multiple MODS found, aborting"
+			return False
+		elif len(enriched_MODS) == 0:
+			print "no MODS found, aborting"
+			return False
+
+
+		# 4) update object MODS
+		MODS_handle.content = etree.tostring(enriched_MODS[0])
+		MODS_handle.save()		
+
+
+		# 5) recreate <mods:extension>/<orig_filename> if lost (taken from MODS export)
+		print "ensuring that <orig_filename> endures"
+		
+		# reinit MODS and ohandle
+		self.ohandle = fedora_handle.get_object(self.pid)
+		MODS_handle = self.ohandle.getDatastreamObject('MODS')
+
+		# does <PID> element already exist?
+		orig_filename = MODS_handle.content.node.xpath('//mods:extension/orig_filename', namespaces=MODS_handle.content.node.nsmap)
+
+		# if not, continue with checks
+		if len(orig_filename) == 0:
+
+			# check for <mods:extension>, if not present add
+			extension_check = MODS_handle.content.node.xpath('//mods:extension', namespaces=MODS_handle.content.node.nsmap)
+			
+			# if absent, create with <PID> subelement
+			if len(extension_check) == 0:
+				#serialize and replace
+				MODS_content = MODS_handle.content.serialize()		
+				# drop original full filename back in here		
+				MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><orig_filename>%s</orig_filename></mods:extension></mods:mods>" % full_orig_filename)
+			
+			# <mods:extension> present, but no PID subelement, create
+			else:
+				orig_filename_elem = etree.SubElement(extension_check[0],"orig_filename")
+				orig_filename_elem.text = full_orig_filename
+				#serialize
+				MODS_content = MODS_handle.content.serialize()
+
+		# overwrite with PID
+		else:
+			orig_filename_elem = orig_filename[0]
+			orig_filename_elem.text = full_orig_filename
+
+			#serialize
+			MODS_content = MODS_handle.content.serialize()
+
+		# finall, write content back to MODS
+		MODS_handle.content = MODS_content
+		MODS_handle.save()
+
+
+
 	################################################################
 	# Consider moving
 	################################################################

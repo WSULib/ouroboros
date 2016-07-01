@@ -330,7 +330,7 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 		if form_data['collection_identifier'] != '':
 			j.collection_identifier = form_data['collection_identifier'].split(":")[-1].split("collection")[-1]
 		else:
-			j.collection_identifier = "Loose"
+			j.collection_identifier = "Undefined"
 		j._commit()
 
 	# set collection identifier in job_package
@@ -418,7 +418,7 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 	if form_data['collection_identifier'] != '':
 		j.collection_identifier = form_data['collection_identifier'].split(":")[-1].split("collection")[-1]
 	else:
-		j.collection_identifier = "Loose"
+		j.collection_identifier = "Undefined"
 	j._commit()
 
 	# set collection identifier in job_package
@@ -469,12 +469,15 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		# Note: Remove <mods:extension><PID>, as PID is not known at this point.
 		raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
-<mods:titleInfo>
-<mods:title>%s</mods:title>
-</mods:titleInfo>
-<mods:identifier type="local">%s</mods:identifier>
+	<mods:titleInfo>
+	<mods:title>%s</mods:title>
+	</mods:titleInfo>
+	<mods:identifier type="local">%s</mods:identifier>
+	<mods:extension>
+		<orig_filename>%s</orig_filename>
+	</mods:extension>
 </mods:mods>
-			''' % (fs.label, fs.file_uuid, fs.file_uuid)
+			''' % (fs.label, fs.file_uuid, fs.label)
 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
 		fhand = open(temp_filename,'w')
 		fhand.write(raw_MODS)

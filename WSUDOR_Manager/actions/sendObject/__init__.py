@@ -42,7 +42,12 @@ def sendObject_worker(job_package):
 	else:
 		refresh_remote = False
 
+	# omit checksums
+	if 'omit_checksums' in job_package['form_data']:
+		omit_checksums = True
+	else:
+		omit_checksums = False
 
 	# send object with object method
-	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, export_context=export_context)
+	obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, omit_checksums=omit_checksums, export_context=export_context)
 	

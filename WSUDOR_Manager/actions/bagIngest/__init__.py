@@ -198,6 +198,12 @@ def bagIngest_worker(job_package):
 		else:
 			refresh_remote = False
 
+		# omit checksums
+		if 'omit_checksums' in job_package['form_data']:
+			omit_checksums = True
+		else:
+			omit_checksums = False
+
 		# ingest bag
 		try:
 			ingest_bag = bag_handle.ingestBag()
@@ -209,7 +215,7 @@ def bagIngest_worker(job_package):
 
 		# Use object method
 		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_handle.pid)
-		obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, export_context=export_context)	
+		obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, export_context=export_context, omit_checksums=omit_checksums)	
 
 		# delete local object
 		print "finally, removing object"

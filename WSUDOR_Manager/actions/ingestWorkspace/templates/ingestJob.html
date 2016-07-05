@@ -116,9 +116,16 @@
 					<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection"></input>
 				</div>
 				<div class="form-group">
+					<div class="checkbox">
+						<label>
+							<input name="skip_binary_index" type="checkbox"> Skip binary file indexing (<strong>helpful for very large directories</strong>)?
+						</label>
+					</div>
+				</div>
+				<div class="form-group">
 					<label class="control-label">Object ID's to create bags:</label>
 					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
-				</div>
+				</div>				
 				<div class="form-group">
 					<div class="checkbox">
 						<label>

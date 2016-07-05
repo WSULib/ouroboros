@@ -120,8 +120,6 @@ def write_manifest(d):
 		lines = []
 		
 		# iterate through files, gen hash
-
-
 		fhand.writelines([line+"\n" for line in lines])
 
 
@@ -134,8 +132,6 @@ def write_tagmanifest(d):
 		lines = []
 		
 		# iterate through tags, gen hash
-		
-
 		fhand.writelines([line+"\n" for line in lines])
 
 

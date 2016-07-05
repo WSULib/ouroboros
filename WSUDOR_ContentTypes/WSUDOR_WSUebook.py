@@ -200,7 +200,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write generic thumbnail and preview
 			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/jpeg", control_group="M")
-			rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'])
+			rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'])
 			rep_handle.label = "THUMBNAIL"
 			rep_handle.save()
 

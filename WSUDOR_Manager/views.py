@@ -1407,7 +1407,7 @@ def collectionsOverview():
 	riquery = fedora_handle.risearch.get_subjects(predicate="info:fedora/fedora-system:def/relations-external#hasContentModel", object="info:fedora/CM:Collection")
 	collections = list(riquery)
 
-	# assemble sizes
+	# assemble sizes for collections
 	object_package['coll_size_dict'] = {}
 	for collection in collections:
 		print "Working on",collection
@@ -1420,6 +1420,24 @@ def collectionsOverview():
 
 	# print object_package['coll_size_dict']
 	object_package['coll_size_dict'] = json.dumps(object_package['coll_size_dict'])
+
+
+	# assemble sizes for content models (cm)
+	cms = [name.split("_")[-1] for _, name, _ in pkgutil.iter_modules(['WSUDOR_ContentTypes'])]
+
+	object_package['cm_size_dict'] = {}
+	for cm in cms:
+		print "Working on",cm
+		cm = "info:fedora/CM:%s" % cm
+		results = solr_handle.search(**{ "q":"rels_hasContentModel:"+cm.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
+		print results.stats
+
+		if results != None and results.total_results > 0 and results.stats['obj_size_i'] != None:           
+			collection_obj_sum = results.stats['obj_size_i']['sum']                 
+			object_package['cm_size_dict'][cm] = (collection_obj_sum,utilities.sizeof_fmt(collection_obj_sum),results.total_results)
+
+	# print object_package['cm_size_dict']
+	object_package['cm_size_dict'] = json.dumps(object_package['cm_size_dict'])
 		
 	return render_template("collectionsOverview.html", object_package=object_package)
 

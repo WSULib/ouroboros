@@ -128,7 +128,7 @@ var options = {
     </div>
 
     <div class="col-md-12">
-    	<h3>Collection Size to Object Count Radar</h3>
+    	<h3>Collection Size to Object Count</h3>
     	<div id="count">         
             <canvas id="radar_chart" width="800" height="500"></canvas>
             <script type="text/javascript">
@@ -217,6 +217,234 @@ var options = {
 				    datasetFill : true   
 
 				}             
+
+                // This will get the first returned node in the jQuery collection.              
+                var myBarChart = new Chart(ctx).Radar(data,radar_options);
+            </script>
+        </div>
+    </div>
+
+</div>
+
+
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>Content Type Overview</h2>
+    </div>
+</div>
+
+<script type="text/javascript">
+// prepare data
+var raw_cm_data = JSON.parse('{{ object_package.cm_size_dict|safe }}');
+
+// loop through
+cm_labels = [];
+cm_values = [];
+cm_counts = [];
+
+for (var key in raw_cm_data) {
+  
+  var value = raw_cm_data[key][0];
+  var value_human = raw_cm_data[key][1];
+  var count = raw_cm_data[key][2];
+
+  // skip datastreams with 0 size, and "total_size" key
+  if ( raw_cm_data.hasOwnProperty(key) && key != "total_size" && value > 0 ) {                    
+
+    // push collection to labels
+    cm_labels.push(key);
+
+    // push value to values array
+    cm_values.push(value)
+
+    // push count to count array
+    cm_counts.push(count)
+  }               
+}
+
+console.log(cm_labels,cm_values,cm_counts);
+
+var options = {
+    //Boolean - Whether the scale should start at zero, or an order of magnitude down from the lowest value
+    scaleBeginAtZero : true,
+
+    //Boolean - Whether grid lines are shown across the chart
+    scaleShowGridLines : true,
+
+    //String - Colour of the grid lines
+    scaleGridLineColor : "rgba(0,0,0,.05)",
+
+    //Number - Width of the grid lines
+    scaleGridLineWidth : 1,
+
+    //Boolean - Whether to show horizontal lines (except X axis)
+    scaleShowHorizontalLines: true,
+
+    //Boolean - Whether to show vertical lines (except Y axis)
+    scaleShowVerticalLines: true,
+
+    //Boolean - If there is a stroke on each bar
+    barShowStroke : true,
+
+    //Number - Pixel width of the bar stroke
+    barStrokeWidth : 2,
+
+    //Number - Spacing between each of the X value sets
+    barValueSpacing : 5,
+
+    //Number - Spacing between data sets within X values
+    barDatasetSpacing : 1
+}
+</script>
+
+<div class="row">
+    <div class="col-md-12">
+        <h3>Content Type Total Size</h3>
+        <div id="cm_size">         
+            <canvas id="cm_size_chart" width="800" height="500"></canvas>
+            <script type="text/javascript">
+                // Get context with jQuery - using jQuery's .get() method.
+                var ctx = $("#cm_size_chart").get(0).getContext("2d");
+
+                data = {
+                    labels: cm_labels,
+                    datasets: [
+                        {
+                            label:"Content Type Total Size",
+                            fillColor: "rgba(151,187,205,0.5)",
+                            strokeColor: "rgba(151,187,205,0.8)",
+                            highlightFill: "rgba(151,187,205,0.75)",
+                            highlightStroke: "rgba(151,187,205,1)",
+                            data:cm_values
+                        }                       
+                    ]                                       
+                };                
+
+                // This will get the first returned node in the jQuery collection.              
+                var myBarChart = new Chart(ctx).Bar(data,options);
+            </script>
+        </div>        
+    </div>
+
+    <div class="col-md-12">
+        <h3>Content Type Count</h3>
+        <div id="cm_count">         
+            <canvas id="cm_count_chart" width="800" height="500"></canvas>
+            <script type="text/javascript">
+                // Get context with jQuery - using jQuery's .get() method.
+                var ctx = $("#cm_count_chart").get(0).getContext("2d");                
+
+                data = {
+                    labels: cm_labels,
+                    datasets: [
+                        {
+                            label:"Collection Object Counts",
+                            fillColor: "rgba(220,220,220,0.5)",
+                            strokeColor: "rgba(220,220,220,0.8)",
+                            highlightFill: "rgba(220,220,220,0.75)",
+                            highlightStroke: "rgba(220,220,220,1)",
+                            data:cm_counts
+                        }                       
+                    ]                                       
+                };               
+
+                // This will get the first returned node in the jQuery collection.              
+                var myBarChart = new Chart(ctx).Bar(data,options);
+            </script>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <h3>Content Type Size to Object Count</h3>
+        <div id="cm_radar">         
+            <canvas id="cm_radar_chart" width="800" height="500"></canvas>
+            <script type="text/javascript">
+                // Get context with jQuery - using jQuery's .get() method.
+                var ctx = $("#cm_radar_chart").get(0).getContext("2d");        
+
+                // calibrate data size for object counts
+                // 20,000,000 seems to be the golden ratio
+                cm_cal_values = []
+                for (var i = 0; i < cm_values.length; i++){
+                    cm_cal_values.push( cm_values[i] / 20000000 )
+                }       
+
+                data = {
+                    labels: cm_labels,
+                    datasets: [
+                        {
+                            label:"Collection Total Size",
+                            fillColor: "rgba(151,187,205,0.5)",
+                            strokeColor: "rgba(151,187,205,0.8)",
+                            highlightFill: "rgba(151,187,205,0.75)",
+                            highlightStroke: "rgba(151,187,205,1)",
+                            data:cm_cal_values
+                        },
+                        {
+                            label:"Collection Object Counts",
+                            fillColor: "rgba(110,110,110,0.3)",
+                            strokeColor: "rgba(110,110,110,0.8)",
+                            highlightFill: "rgba(110,110,110,0.75)",
+                            highlightStroke: "rgba(110,110,110,1)",
+                            data:cm_counts
+                        }                       
+                    ]                                       
+                };  
+
+                var radar_options = {
+                    //Boolean - Whether to show lines for each scale point
+                    scaleShowLine : true,
+
+                    //Boolean - Whether we show the angle lines out of the radar
+                    angleShowLineOut : true,
+
+                    //Boolean - Whether to show labels on the scale
+                    scaleShowLabels : false,
+
+                    // Boolean - Whether the scale should begin at zero
+                    scaleBeginAtZero : true,
+
+                    //String - Colour of the angle line
+                    angleLineColor : "rgba(0,0,0,.1)",
+
+                    //Number - Pixel width of the angle line
+                    angleLineWidth : 1,
+
+                    //String - Point label font declaration
+                    pointLabelFontFamily : "'Arial'",
+
+                    //String - Point label font weight
+                    pointLabelFontStyle : "normal",
+
+                    //Number - Point label font size in pixels
+                    pointLabelFontSize : 10,
+
+                    //String - Point label font colour
+                    pointLabelFontColor : "#666",
+
+                    //Boolean - Whether to show a dot for each point
+                    pointDot : true,
+
+                    //Number - Radius of each point dot in pixels
+                    pointDotRadius : 3,
+
+                    //Number - Pixel width of point dot stroke
+                    pointDotStrokeWidth : 1,
+
+                    //Number - amount extra to add to the radius to cater for hit detection outside the drawn point
+                    pointHitDetectionRadius : 20,
+
+                    //Boolean - Whether to show a stroke for datasets
+                    datasetStroke : true,
+
+                    //Number - Pixel width of dataset stroke
+                    datasetStrokeWidth : 2,
+
+                    //Boolean - Whether to fill the dataset with a colour
+                    datasetFill : true   
+
+                }             
 
                 // This will get the first returned node in the jQuery collection.              
                 var myBarChart = new Chart(ctx).Radar(data,radar_options);

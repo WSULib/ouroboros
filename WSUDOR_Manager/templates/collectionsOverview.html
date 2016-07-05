@@ -30,10 +30,10 @@ for (var key in raw_data) {
    	labels.push(key);
 
    	// push value to values array
-   	values.push(value)
+   	values.push(value / 1000000000);
 
    	// push count to count array
-   	counts.push(count)
+   	counts.push(count);
   }               
 }
 
@@ -241,6 +241,7 @@ var raw_cm_data = JSON.parse('{{ object_package.cm_size_dict|safe }}');
 // loop through
 cm_labels = [];
 cm_values = [];
+cm_values_human = [];
 cm_counts = [];
 
 for (var key in raw_cm_data) {
@@ -256,14 +257,15 @@ for (var key in raw_cm_data) {
     cm_labels.push(key);
 
     // push value to values array
-    cm_values.push(value)
+    cm_values.push(value / 1000000000)
+
+    // push value to values_human array
+    cm_values_human.push(value_human)
 
     // push count to count array
     cm_counts.push(count)
   }               
 }
-
-console.log(cm_labels,cm_values,cm_counts);
 
 var options = {
     //Boolean - Whether the scale should start at zero, or an order of magnitude down from the lowest value

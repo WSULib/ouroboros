@@ -218,19 +218,18 @@ class SingleObjectMethods(object):
 			# get JSON from PLAYLIST datastream
 			ds_handle = self.obj_handle.ohandle.getDatastreamObject("PLAYLIST")
 			playlist_handle = json.loads(ds_handle.content)
-
 			# add symlink URLs
 			for each in playlist_handle:
-
-				each['streaming_mp3'] = each['mp3']
+				each['preview'] = PUBLIC_HOST+"/loris/fedora:"+self.PID+"|"+each['ds_id']+"_PREVIEW/full/full/0/default.jpg"
+				each['thumbnail'] = PUBLIC_HOST+"/loris/fedora:"+self.PID+"|"+each['ds_id']+"_THUMBNAIL/full/full/0/default.jpg"
+				each['streaming_mp3'] = PUBLIC_HOST+"/WSUAPI/bitStream/"+self.PID+"/"+each['ds_id']+"_MP3"
+				each['mp3'] = PUBLIC_HOST+"/WSUAPI/bitStream/"+self.PID+"/"+each['ds_id']+"_MP3"
 
 			return ("playlist",playlist_handle)
 
 		else:
 			return ("playlist",False)
 	
-
-
 # function package for singleObject view
 # mapping can be found here: https://docs.google.com/spreadsheets/d/1YyOKj1DwmsLDTAU-FsZJUndcPZFGfVn-zdTlyNJrs2Q/edit#gid=0
 def singleObjectPackage(getParams):		

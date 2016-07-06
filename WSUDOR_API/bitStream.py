@@ -169,7 +169,11 @@ class BitStream(object):
 					self.msg = "problem with token"
 					self.status_code = 500
 					return False
-
+			
+			# if it's an MP3
+			elif "_MP3" in self.DS:
+				return True
+			
 			# all else, no keys or tokens, indicated datastream is blocked
 			else:
 				self.msg = "datastream is blocked"

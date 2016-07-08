@@ -64,6 +64,9 @@ from solrHandles import solr_handle
 # Fedora
 from fedoraHandles import fedora_handle
 
+# regex
+import re
+
 # GENERAL
 #########################################################################################################
 
@@ -1335,6 +1338,26 @@ def removeObj():
     
     return "True"
 
+# Create index of all routes to send as JSON to whoever requests
+@app.route("/routeIndexer", methods=['POST', 'GET'])
+def routeIndexer():
+	initial = [rule.rule for rule in app.url_map.iter_rules() if rule.endpoint !='static']
+
+	pattern = re.compile(r'^\/*<[^<]*$')
+	secondary = []
+	for each in initial:
+		match = re.search(pattern, each)
+		if not match:
+			secondary.append(each)
+
+	pattern = re.compile(r'^\/[^\/]*$')
+	endpoints = []
+	for each in secondary:
+		match = re.search(pattern, each)
+		if match:
+			endpoints.append(each[1:])
+
+	return json.dumps(list(set(endpoints)))
     
 # WSUDOR MANAGEMENT
 ####################################################################################

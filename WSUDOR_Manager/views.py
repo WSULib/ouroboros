@@ -1352,12 +1352,18 @@ def routeIndexer():
 
 	pattern = re.compile(r'^\/[^\/]*$')
 	endpoints = []
+	pagesDict = {}
 	for each in secondary:
 		match = re.search(pattern, each)
 		if match:
-			endpoints.append(each[1:])
+			if each[1:] is "":
+				pagesDict["label"] = "Home"
+			else:
+				pagesDict["label"] = each[1:]
+			pagesDict["url"] = APP_HOST + "/" + APP_PREFIX + each
+			endpoints.append(pagesDict.copy())
 
-	return json.dumps(list(set(endpoints)))
+	return json.dumps(list(endpoints))
     
 # WSUDOR MANAGEMENT
 ####################################################################################

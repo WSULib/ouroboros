@@ -11,12 +11,26 @@ $(function() {
   $(".autocomplete").autocomplete({
     source: availablePages
   }).data("ui-autocomplete")._renderItem = function (ul, item) {
-    console.log(item);
     return $("<li></li>")
         .data("item.autocomplete", item)
-        .append('<div><button><a class="ac-item-a" href="' + item.label + '" target="_blank">' + item.label + '</a></button></div>')
+        .append('<div><button><a class="ac-item-a" href="//' + item.url + '" target="_blank">' + item.label + '</a></button></div>')
         .appendTo(ul);
+
 };
+
+$(".page_searcher").keypress(function(e) {
+  if(e.which == 13) {
+    console.log("yeppers");
+  $(".autocomplete").autocomplete({
+        source: availablePages
+      }).data("ui-autocomplete")._renderItem = function (ul, item) {
+    return $("<li></li>")
+        .data("item.autocomplete", item)
+        .append('<div><button><a class="ac-item-a" href="//' + item.url + '" target="_blank">' + item.label + '</a></button></div>')
+        .appendTo(ul);
+      }
+  } //enter key
+}) //keypress
 
 
 });

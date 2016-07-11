@@ -38,6 +38,8 @@ Miscellaneous
 Page searcher is an effort to make the many pages of Ouroboros more easily found. Instead of clicking through numerous levels of links, you can search for the name of the page in a search box. Found in the header, this box is powered by an ajax call that asks /routeIndexer for a curated list of urls. This data is then stored in HTML5 local storage to cut down on extraneous queries. Note: adding a new page/route will require you to clear local storage object to update search box.
 
 #### **Delete local storage search index**
-```localStorage.removeItem("pageSearch");```
+```
+localStorage.removeItem("pageSearch");
+```
 
 Found under ```routeIndexer()``` in [views.py](WSUDOR_Manager/views.py), the searcher indexer is powered by ```app.url_map``` which is an automatically created index of all routes specified in the Flask app. After retrieval, the route index is curated and pushed as JSON back to ajax, where it is parsed and displayed.

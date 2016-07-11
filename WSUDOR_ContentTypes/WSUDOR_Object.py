@@ -1029,12 +1029,30 @@ class WSUDOR_GenObject(object):
 	def removeObjFromLorisCache(self):
 		
 		'''
-		Method to remove remenants of object from Loris cache.
-		Uses /etc/loris2/lors2.conf file for determining cache location.
-
-		NEED TO ADDRESS PERMISSION ISSUES
+		For image datastream in object ds_list, run removeDatastreamFromLorisCache()
 		'''
+		removed = []
 
+		for ds in self.ohandle.ds_list:
+			if self.removeDatastreamFromLorisCache(ds):
+				removed.append(ds)
+
+		print "Cleared:",removed
+		
+		return removed
+
+
+
+	# remove from Loris cache
+	def removeDatastreamFromLorisCache(self, ds):
+
+		'''
+		As we now use Varnish for caching tiles and client<->Loris requests,
+		we cannot ascertain as well the file path of the Loris<->Fedora cache.
+
+		Now, requires datastream to purge from cache.
+		'''
+		
 		print "Removing object from Loris caches..."
 
 		# read config file for Loris
@@ -1048,59 +1066,25 @@ class WSUDOR_GenObject(object):
 			image_cache = image_cache[:-1]
 		print image_cache
 
-		# remove traces of object via PID from image cache
-
-		# get obj_dirs
-		obj_dirs = glob.glob('%s/fedora:%s*' % (image_cache, self.pid))
-
-		# get obj + ds
-		instances = [ instance.split(image_cache+"/")[-1] for instance in obj_dirs  ]
+		# craft ident
+		ident = "fedora:%s|%s" % (self.pid, ds)
 
 		# clear from fedora resolver cache
-		try:
-			for ident in instances:
-				print "removing instance: %s" % ident
-				file_structure = ''
-				ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
-				file_structure_list = [ident_hash[0:2]] + [ident_hash[i:i+3] for i in range(2, len(ident_hash), 3)]
-				for piece in file_structure_list:
-					file_structure = os.path.join(file_structure, piece)
-					final_file_structure = "%s/fedora/wayne/%s" % ( image_cache, file_structure )
-				print "removing dir: %s" % final_file_structure
-				shutil.rmtree(final_file_structure)
+		try:			
+			print "removing instance: %s" % ident
+			file_structure = ''
+			ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
+			file_structure_list = [ident_hash[0:2]] + [ident_hash[i:i+3] for i in range(2, len(ident_hash), 3)]
+			for piece in file_structure_list:
+				file_structure = os.path.join(file_structure, piece)
+				final_file_structure = "%s/fedora/wayne/%s" % ( image_cache, file_structure )
+			print "removing dir: %s" % final_file_structure
+			shutil.rmtree(final_file_structure)
+			return True
 		except:
 			print "could not remove from fedora resolver cache"
+			return False
 
-		# clear root
-		try:
-			print obj_dirs
-			for obj_dir in obj_dirs:
-				print "Removing directory: %s" % obj_dir
-				shutil.rmtree(obj_dir)
-			print "removed from Loris image cache"
-		except:
-			print "could not remove from Loris image cache"
-
-		try:
-			# http
-			obj_dirs = glob.glob('%s/http/fedora:%s*' % (image_cache, self.pid))
-			print obj_dirs
-			for obj_dir in obj_dirs:
-				print "Removing directory: %s" % obj_dir
-				shutil.rmtree(obj_dir)
-
-			# https
-			obj_dirs = glob.glob('%s/https/fedora:%s*' % (image_cache, self.pid))
-			print obj_dirs
-			for obj_dir in obj_dirs:
-				print "Removing directory: %s" % obj_dir
-				shutil.rmtree(obj_dir)
-
-			print "remove from Loris info cache"
-		except:
-			print "could not remove from Loris info cache"
-
-		return True
 
 
 	# refresh object

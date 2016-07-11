@@ -92,7 +92,7 @@ text-align: center;
 -webkit-font-smoothing: subpixel-antialiased;
 }
 
-.page_searcher {
+.search_div {
 	display: block;
 	padding-top: 10px;
 	padding-left: 10px;
@@ -100,7 +100,7 @@ text-align: center;
 
 .ui-autocomplete {
     position: absolute;
-    z-index: 1000;
+    z-index: 10000;
     cursor: default;
     padding: 0;
     margin-top: 2px;
@@ -173,7 +173,7 @@ text-align: center;
     			<a href="/{{APP_PREFIX}}/problemObjs"><div class="user_issues_box"><span id="problem_objs">{{ session['reportedObjs'] }}</span></div></a>
   			</li>
   			<li>
-				<div class="form-group ui-widget">
+				<div class="form-group ui-widget search_div">
 				   <input class="form-control page_searcher autocomplete" placeholder="Search for Page" />
 				</div>
   			</li>

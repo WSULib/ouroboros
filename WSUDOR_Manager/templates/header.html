@@ -14,6 +14,7 @@
 	<script type="text/javascript" src="{{ url_for('static',filename='form_validation.js')}}"></script>	
 	<script type="text/javascript" src="{{ url_for('static',filename='createManifest.js')}}"></script>	
 	<script type="text/javascript" src="{{ url_for('static',filename='problemObjs.js')}}"></script>	
+	<script type="text/javascript" src="{{ url_for('static',filename='header.js')}}"></script>	
 	<!-- Bootstrap CDN -->
 	<!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="{{ url_for('static',filename='bootstrap.min.css')}}">
@@ -90,6 +91,39 @@ color: #333;
 text-align: center;
 -webkit-font-smoothing: subpixel-antialiased;
 }
+
+.search_div {
+	display: block;
+	padding-top: 10px;
+	padding-left: 10px;
+}
+
+.ui-autocomplete {
+    position: absolute;
+    z-index: 10000;
+    cursor: default;
+    padding: 0;
+    margin-top: 2px;
+    list-style: none;
+    background-color: #ffffff;
+    border: 1px solid #ccc
+    -webkit-border-radius: 5px;
+       -moz-border-radius: 5px;
+            border-radius: 5px;
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+       -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+.ui-autocomplete > li {
+  padding: 3px 20px;
+}
+.ui-autocomplete > li.ui-state-focus {
+  background-color: #DDD;
+}
+.ui-helper-hidden-accessible {
+  display: none;
+}
+
     </style>
 </head>
 
@@ -137,6 +171,11 @@ text-align: center;
 			<div class="inbox">
 				</div>
     			<a href="/{{APP_PREFIX}}/problemObjs"><div class="user_issues_box"><span id="problem_objs">{{ session['reportedObjs'] }}</span></div></a>
+  			</li>
+  			<li>
+				<div class="form-group ui-widget search_div">
+				   <input class="form-control page_searcher autocomplete" placeholder="Search for Page" />
+				</div>
   			</li>
 
 

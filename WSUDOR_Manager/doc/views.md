@@ -3,11 +3,11 @@ Views
 Handles all the routing of requests through WSUDOR_Manager flask app. When using web interface, requires login to use (handled by the ```@login_required``` decorator).  Redirects you to ```/userPage``` when successfully authenticated.
 
 Major sub-sections
-```/contentModels```
-```MODSedit```
-```/datastreamManagement```
-```/objectManagement```
-```/WSUDORManagement```
+- /contentModels
+- /MODSedit
+- /datastreamManagement
+- /objectManagement
+- /WSUDORManagement
 
 /contentModels
 ---------------------

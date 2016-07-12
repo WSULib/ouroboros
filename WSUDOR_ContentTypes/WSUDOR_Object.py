@@ -790,7 +790,7 @@ class WSUDOR_GenObject(object):
 				j.cleanupTempFiles() # cleanup
 
 				# remove from Loris cache
-				self.removeObjFromLorisCache()			
+				self.removeObjFromCache()			
 
 			else:
 				# cleanup
@@ -954,9 +954,6 @@ class WSUDOR_GenObject(object):
 			self.regenJP2()
 
 
-	
-
-
 	# regnerate derivative JP2s 
 	def regen_objMeta(self):
 		'''
@@ -1025,26 +1022,48 @@ class WSUDOR_GenObject(object):
 		objMeta_handle.save()
 
 
+	# remove object from Loris, Varnish, and other caches
+	def removeObjFromCache(self):
+
+		results = {}
+
+		# IMAGES
+		# remove from Loris
+		results['loris'] = self._removeObjFromLorisCache()
+
+		# remove from Varnish
+		results['varnish'] = self._removeObjFromVarnishCache()
+
+		# return results dictionary
+		return results
+
+
+	# ban image from varnish cache
+	def _removeObjFromVarnishCache(self):
+
+		return os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % self.pid)
+
+
 	# remove from Loris cache
-	def removeObjFromLorisCache(self):
+	def _removeObjFromLorisCache(self):
 		
 		'''
-		For image datastream in object ds_list, run removeDatastreamFromLorisCache()
+		For image datastream in object ds_list, run _removeDatastreamFromLorisCache()
 		'''
 		removed = []
 
 		for ds in self.ohandle.ds_list:
-			if self.removeDatastreamFromLorisCache(ds):
+			if self._removeDatastreamFromLorisCache(ds):
 				removed.append(ds)
 
-		print "Cleared:",removed
-		
+		print "Cleared from Loris cache:",removed
+
 		return removed
 
 
 
 	# remove from Loris cache
-	def removeDatastreamFromLorisCache(self, ds):
+	def _removeDatastreamFromLorisCache(self, ds):
 
 		'''
 		As we now use Varnish for caching tiles and client<->Loris requests,
@@ -1111,7 +1130,7 @@ class WSUDOR_GenObject(object):
 			self.update_objSizeDict()
 
 			# remove object from Loris cache
-			self.removeObjFromLorisCache()			
+			self.removeObjFromCache()			
 
 			return True
 			

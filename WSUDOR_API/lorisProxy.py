@@ -170,6 +170,13 @@ class IIIFImageClient(object):
 		img.image_options['size'] = size
 		return img
 
+	def rotation(self, rotation, mirrored=False):
+		img = self.get_copy()
+		img.image_options['rotation'] = rotation
+		if mirrored:
+			img.image_options['rotation'] = '!%s' % img.image_options['rotation']
+		return img
+
 	def format(self, image_format):
 		'Set output image format'
 		if image_format not in self.allowed_formats:
@@ -221,6 +228,27 @@ class IIIFImageClient(object):
 			size_d['h'] = int(h)
 
 		return size_d
+
+
+	def derive_rotation(self):
+		'''
+		Return dictionary of parsed rotation request
+		'''
+
+		rotation_d = {
+			'degrees': None,
+			'mirrored': False
+		}
+
+		rotation = self.image_options['rotation']
+
+		if rotation.startswith('!'):
+			rotation_d['mirrored'] = True
+			rotation = rotation[1:]
+
+		rotation_d['degrees'] = int(rotation)
+
+		return rotation_d
 
 
 	def derive_region(self):
@@ -303,6 +331,10 @@ def loris_image(image_id,region,size,rotation,quality,format):
 	for func in restrictions:
 		if "THUMBNAIL" not in ds:
 			ic = func(pid,ds,ic)
+
+	# run improvements
+	for func in improvements:
+		ic = func(pid,ds,ic)
 	
 	# debug url
 	image_url = str(ic)
@@ -315,7 +347,7 @@ def loris_image(image_id,region,size,rotation,quality,format):
 
 
 ###################
-# ACCESS RESTRICTIONS
+# RESTRICT
 ###################
 
 '''
@@ -328,6 +360,10 @@ def downsizeImage(pid,ds,ic):
 	'''
 	If collection is flagged for downsizing, downsize downloadable image to target size pixels on long or short side
 	see: http://iiif.io/api/image/2.0/#size
+
+	Improvements:
+	We should pull target resolution size from colletion object
+	Or policy?
 	'''
 
 	# options
@@ -373,12 +409,77 @@ def downsizeImage(pid,ds,ic):
 	return ic
 
 
+
+
+
 # list of restriction functions to run
 restrictions = [
 	downsizeImage
 ]
 
 
+###################
+# IMPROVEMENTS
+###################
+
+def checkRotation(pid,ds,ic):
+
+	'''
+	Check metadata for known rotational changes
+	'''
+	
+	# check for rotation relationships
+	try:
+		rotation_string = fedora_handle.risearch.get_objects('info:fedora/%s/%s' % (pid, ds), 'info:fedora/fedora-system:def/relations-internal#needsRotation').next()
+		print "Rotating: %s" % rotation_string
+	except StopIteration:
+		return ic
+	
+	# apply to ic
+	# try:
+
+	rotation_d = ic.derive_rotation()
+	print rotation_d
+
+	# pop '!' for mirrored, allow to mirrors to cancel (see elif)
+	if rotation_string.startswith('!') and rotation_d['mirrored'] == False:
+		rotation_string = rotation_string[1:]
+		mirrored = True
+	elif rotation_string.startswith('!') and rotation_d['mirrored'] == True:
+		rotation_string = rotation_string[1:]
+		mirrored = False
+	if rotation_d['mirrored'] == True:
+		mirrored = True
+	else:
+		mirrored = False
+
+	# adjust rotation_string
+	if rotation_string == '':
+		rotation_int = 0
+	else:
+		try:
+			rotation_int = int(rotation_string)
+		except:
+			print "could not glean int from rotation string, defaulting to 0"
+			rotation_int = 0
+
+	# adjust final rotation (if > 360)
+	
+
+	# add degrees of rotation from object metadata and mirrored status
+	ic = ic.rotation( final_rotation, mirrored=mirrored ) 
+	return ic
+
+	# except:
+	# 	print "problem with rotation, aborting"
+	# 	return ic
+
+
+
+# list of restriction functions to run
+improvements = [
+	checkRotation
+]
 
 
 

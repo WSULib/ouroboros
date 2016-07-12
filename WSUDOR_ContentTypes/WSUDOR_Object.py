@@ -1027,7 +1027,6 @@ class WSUDOR_GenObject(object):
 
 		results = {}
 
-		# IMAGES
 		# remove from Loris
 		results['loris'] = self._removeObjFromLorisCache()
 
@@ -1047,9 +1046,6 @@ class WSUDOR_GenObject(object):
 	# remove from Loris cache
 	def _removeObjFromLorisCache(self):
 		
-		'''
-		For image datastream in object ds_list, run _removeDatastreamFromLorisCache()
-		'''
 		removed = []
 
 		for ds in self.ohandle.ds_list:

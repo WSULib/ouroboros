@@ -426,6 +426,7 @@ def checkRotation(pid,ds,ic):
 
 	'''
 	Check metadata for known rotational changes
+	Note: Breaks Mirador
 	'''
 	
 	# check for rotation relationships
@@ -448,7 +449,7 @@ def checkRotation(pid,ds,ic):
 		elif rotation_string.startswith('!') and rotation_d['mirrored'] == True:
 			rotation_string = rotation_string[1:]
 			mirrored = False
-		if rotation_d['mirrored'] == True:
+		elif rotation_d['mirrored'] == True:
 			mirrored = True
 		else:
 			mirrored = False
@@ -479,7 +480,7 @@ def checkRotation(pid,ds,ic):
 
 # list of restriction functions to run
 improvements = [
-	checkRotation
+	# checkRotation #breaks Mirado functionality, but might have place for direct downloads
 ]
 
 

@@ -32,35 +32,35 @@ Requires the following in Apache:
 
 	-- Reverse proxy for /loris to /WSUAPI/lorisProxy --
 		# lorisProxy
-	    ProxyPass /loris http://localhost/WSUAPI/lorisProxy
-	    ProxyPassReverse /loris http://localhost/WSUAPI/lorisProxy
+		ProxyPass /loris http://localhost/WSUAPI/lorisProxy
+		ProxyPassReverse /loris http://localhost/WSUAPI/lorisProxy
 
 	-- LORIS WSGI --
 		# LORIS-http
-	    ExpiresActive On
-	    ExpiresDefault "access plus 5184000 seconds"
+		ExpiresActive On
+		ExpiresDefault "access plus 5184000 seconds"
 
-	    AllowEncodedSlashes On
+		AllowEncodedSlashes On
 
-	    SetEnvIf Request_URI ^/loris loris
-	    CustomLog /var/log/loris-access.log combined env=loris
+		SetEnvIf Request_URI ^/loris loris
+		CustomLog /var/log/loris-access.log combined env=loris
 
-	    WSGIDaemonProcess loris2 user=USERNAME_HERE group=GROUP_CHANGE umask=0002 processes=10 threads=15 maximum-requests=1000
-	    WSGIScriptAlias /loris_local /opt/loris2/loris2.wsgi
-	    WSGIProcessGroup loris2
+		WSGIDaemonProcess loris2 user=USERNAME_HERE group=GROUP_CHANGE umask=0002 processes=10 threads=15 maximum-requests=1000
+		WSGIScriptAlias /loris_local /opt/loris2/loris2.wsgi
+		WSGIProcessGroup loris2
 
-	    <Location /loris_local>
+		<Location /loris_local>
 
-	        # required for Loris
-	        Header unset Access-Control-Allow-Origin
-	        Require all granted
+			# required for Loris
+			Header unset Access-Control-Allow-Origin
+			Require all granted
 
-	        RewriteCond %{REMOTE_HOST} !^::1$
-	        RewriteCond %{HTTP_HOST} !=localhost
-	        RewriteCond %{REMOTE_ADDR} !^(127\.0\.0\.1)$
-	        RewriteRule ^(.*)$ - [R=403]
+			RewriteCond %{REMOTE_HOST} !^::1$
+			RewriteCond %{HTTP_HOST} !=localhost
+			RewriteCond %{REMOTE_ADDR} !^(127\.0\.0\.1)$
+			RewriteRule ^(.*)$ - [R=403]
 
-	    </Location>
+		</Location>
 
 '''
 
@@ -436,50 +436,69 @@ def checkRotation(pid,ds,ic):
 		return ic
 	
 	# apply to ic
-	# try:
+	try:
 
-	rotation_d = ic.derive_rotation()
-	print rotation_d
+		rotation_d = ic.derive_rotation()
+		print rotation_d
 
-	# pop '!' for mirrored, allow to mirrors to cancel (see elif)
-	if rotation_string.startswith('!') and rotation_d['mirrored'] == False:
-		rotation_string = rotation_string[1:]
-		mirrored = True
-	elif rotation_string.startswith('!') and rotation_d['mirrored'] == True:
-		rotation_string = rotation_string[1:]
-		mirrored = False
-	if rotation_d['mirrored'] == True:
-		mirrored = True
-	else:
-		mirrored = False
+		# pop '!' for mirrored, allow to mirrors to cancel (see elif)
+		if rotation_string.startswith('!') and rotation_d['mirrored'] == False:
+			rotation_string = rotation_string[1:]
+			mirrored = True
+		elif rotation_string.startswith('!') and rotation_d['mirrored'] == True:
+			rotation_string = rotation_string[1:]
+			mirrored = False
+		if rotation_d['mirrored'] == True:
+			mirrored = True
+		else:
+			mirrored = False
 
-	# adjust rotation_string
-	if rotation_string == '':
-		rotation_int = 0
-	else:
-		try:
-			rotation_int = int(rotation_string)
-		except:
-			print "could not glean int from rotation string, defaulting to 0"
+		# adjust rotation_string
+		if rotation_string == '':
 			rotation_int = 0
+		else:
+			try:
+				rotation_int = int(rotation_string)
+			except:
+				print "could not glean int from rotation string, defaulting to 0"
+				rotation_int = 0
 
-	# adjust final rotation (if > 360)
-	
+		# adjust final rotation (if > 360)
+		adjusted_rotation = rotation_d['degrees'] + rotation_int
 
-	# add degrees of rotation from object metadata and mirrored status
-	ic = ic.rotation( final_rotation, mirrored=mirrored ) 
-	return ic
+		final_rotation = _pareRotation(adjusted_rotation)
 
-	# except:
-	# 	print "problem with rotation, aborting"
-	# 	return ic
+		# add degrees of rotation from object metadata and mirrored status
+		ic = ic.rotation(final_rotation, mirrored=mirrored) 
+		return ic
 
+	except:
+		print "problem with rotation, aborting"
+		return ic
 
 
 # list of restriction functions to run
 improvements = [
 	checkRotation
 ]
+
+
+###################
+# UTILITIES
+###################
+
+# returns expected results
+def _pareRotation(degs):
+	if degs < 360:			
+		print "returning %s" % degs		
+		return degs
+	else:
+		return _pareRotation(degs - 360)
+
+
+
+
+
 
 
 

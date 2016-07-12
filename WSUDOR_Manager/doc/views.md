@@ -18,11 +18,11 @@ Links to list of all current and some future objects models accepted in Fedora/O
 Series of MODS editing abilities. MODS is the primary descriptive datastream for our Fedora objects; Dublin Core (DC) -- required by Fedora -- can be derived from MODS here, as well.
 
  - Batch import/export
-	 - [```/tasks/MODSexport```](WSUDOR_Manager/actions/MODSexport)
+	 - [```/tasks/MODSexport```](../actions/MODSexport)
  - Find and replace MODS
- 	 - [```/tasks/editDSRegex```](WSUDOR_Manager/actions/editDSRegex)
+ 	 - [```/tasks/editDSRegex```](../actions/editDSRegex)
  - Derive Dublin Core
-	 - [```/tasks/DCfromMODS```](WSUDOR_Manager/actions/DCfromMODS)
+	 - [```/tasks/DCfromMODS```](../actions/DCfromMODS)
 
 /objectManagement
 ------------------------
@@ -42,4 +42,4 @@ Page searcher is an effort to make the many pages of Ouroboros more easily found
 localStorage.removeItem("pageSearch");
 ```
 
-Found under ```routeIndexer()``` in [views.py](WSUDOR_Manager/views.py), the searcher indexer is powered by ```app.url_map``` which is an automatically created index of all routes specified in the Flask app. After retrieval, the route index is curated and pushed as JSON back to ajax, where it is parsed and displayed.
+Found under ```routeIndexer()``` in [views.py](../views.py), the searcher indexer is powered by ```app.url_map``` which is an automatically created index of all routes specified in the Flask app. After retrieval, the route index is curated and pushed as JSON back to ajax, where it is parsed and displayed.

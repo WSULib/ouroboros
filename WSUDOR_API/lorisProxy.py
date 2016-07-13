@@ -68,7 +68,10 @@ Requires the following in Apache:
 # MODEL
 ###################
 
-
+'''
+Pulled directly from, then extended, Emory's Readux project:
+https://github.com/emory-libraries/readux/blob/master/readux/books/iiif.py
+'''
 class IIIFImageClient(object):
 	'''Simple IIIF Image API client for generating IIIF image urls
 	in an object-oriented, pythonic fashion.  Can be extended,

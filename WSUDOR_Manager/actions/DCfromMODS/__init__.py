@@ -48,7 +48,10 @@ def DCfromMODS_single(PID):
 	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 	xslt_tree = etree.parse(XSLhand)
 	transform = etree.XSLT(xslt_tree)
-	DC = transform(XMLroot)		
+	DC = transform(XMLroot)
+
+	# 2.5) scrub duplicate, identical elements from DC
+	DC = utilities.delDuplicateElements(DC)		
 
 	# 3) save to DC datastream
 	DS_handle = ohandle.getDatastreamObject("DC")
@@ -56,7 +59,6 @@ def DCfromMODS_single(PID):
 	derive_results = DS_handle.save()
 	print "DCfromMODS result:",derive_results
 	return derive_results
-	
 
 
 def DCfromMODS_worker(job_package):
@@ -74,7 +76,10 @@ def DCfromMODS_worker(job_package):
 	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 	xslt_tree = etree.parse(XSLhand)
 	transform = etree.XSLT(xslt_tree)
-	DC = transform(XMLroot)		
+	DC = transform(XMLroot)
+
+	# 2.5) scrub duplicate, identical elements from DC
+	DC = utilities.delDuplicateElements(DC)		
 
 	# 3) save to DC datastream
 	DS_handle = ohandle.getDatastreamObject("DC")
@@ -82,5 +87,7 @@ def DCfromMODS_worker(job_package):
 	derive_results = DS_handle.save()
 	print "DCfromMODS result:",derive_results
 	return derive_results
+
+
 
 

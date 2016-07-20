@@ -9,6 +9,7 @@ import pickle
 from functools import wraps
 import mimetypes
 import xmlrpclib
+from lxml import etree
 
 
 from localConfig import *
@@ -96,6 +97,22 @@ def sizeof_fmt(num, suffix='B'):
 						return "%3.1f%s%s" % (num, unit, suffix)
 				num /= 1024.0
 		return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+# remove duplicate elements from flat XML
+def delDuplicateElements(XML):
+	print "running XML element DUPE check"
+	# Use a `set` to keep track of "visited" elements with good lookup time.
+	seen = set()
+	# The iter method does a recursive traversal
+	for el in XML.iter('*'):		
+		if (el.tag, el.text) in seen:
+			print "removing duplicate XML tag: %s / %s" % (el.tag, el.text)
+			el.getparent().remove(el)
+		else:
+			seen.add((el.tag,el.text))
+
+	return XML
 
 
 

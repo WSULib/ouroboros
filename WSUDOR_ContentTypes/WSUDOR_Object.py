@@ -470,7 +470,7 @@ class WSUDOR_GenObject(object):
 			final_save = self.ohandle.save()
 			
 			# finish generic ingest
-			return self.finishIngest()
+			return self.finishIngest(indexObject=indexObject)
 
 
 		# exception handling
@@ -538,6 +538,9 @@ class WSUDOR_GenObject(object):
 			print "RUNNING ContentType methods..."
 			for func in contentTypeMethods:
 				func()
+
+		else:
+			print "skipping index of object"
 
 		# CLEANUP
 		# delete temp_payload, might be dir or symlink
@@ -1322,7 +1325,10 @@ class WSUDOR_GenObject(object):
 		XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
 		xslt_tree = etree.parse(XSLhand)
 		transform = etree.XSLT(xslt_tree)
-		DC = transform(XMLroot)		
+		DC = transform(XMLroot)
+
+		# 2.5) scrub duplicate, identical elements from DC
+		DC = utilities.delDuplicateElements(DC)
 
 		# 3) save to DC datastream
 		DS_handle = self.ohandle.getDatastreamObject("DC")
@@ -1330,6 +1336,9 @@ class WSUDOR_GenObject(object):
 		derive_results = DS_handle.save()
 		print "DCfromMODS result:",derive_results
 		return derive_results
+
+
+	
 
 
 

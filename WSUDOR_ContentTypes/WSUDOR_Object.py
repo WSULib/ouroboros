@@ -276,9 +276,11 @@ class WSUDOR_GenObject(object):
 	def MODS_XML(self):
 		return self.ohandle.getDatastreamObject('MODS').content.serialize()
 
+
 	@helpers.LazyProperty
 	def MODS_dict(self):
 		return xmltodict.parse(self.MODS_XML)
+
 
 	@helpers.LazyProperty
 	def MODS_Solr_flat(self):
@@ -290,14 +292,17 @@ class WSUDOR_GenObject(object):
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
 	
+
 	#DC metadata
 	@helpers.LazyProperty
 	def DC_XML(self):
 		return self.ohandle.getDatastreamObject('DC').content.serialize()
 
+
 	@helpers.LazyProperty
 	def DC_dict(self):
 		return xmltodict.parse(self.DC_XML)
+
 
 	@helpers.LazyProperty
 	def DC_Solr_flat(self):
@@ -308,6 +313,7 @@ class WSUDOR_GenObject(object):
 		XMLroot = etree.fromstring(self.DC_XML)
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
+
 
 	#RELS-EXT and RELS-INT metadata
 	@helpers.LazyProperty
@@ -322,6 +328,7 @@ class WSUDOR_GenObject(object):
 		XMLroot = etree.fromstring(raw_xml)
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
+
 
 	@helpers.LazyProperty
 	def RELS_INT_Solr_flat(self):

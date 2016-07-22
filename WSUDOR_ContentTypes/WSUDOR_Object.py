@@ -348,6 +348,12 @@ class WSUDOR_GenObject(object):
 	def SolrSearchDoc(self):
 		return models.SolrSearchDoc(self.pid)
 
+	
+	# return IIIF maniest
+	@helpers.LazyProperty
+	def iiif_manifest(self):
+		return json.loads(redisHandles.r_iiif.get(self.pid))
+
 
 	@helpers.LazyProperty
 	def objSizeDict(self):

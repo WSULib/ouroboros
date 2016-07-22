@@ -171,29 +171,36 @@ def createPageObj(wobj, page_num, page_dict):
 	policy_handle.label = "POLICY"
 	policy_handle.save()
 
-	# anticipated datastreams
-	anticipated_ds = [
-		"IMAGE_%d",
-		"IMAGE_%d_JP2",
-		"IMAGE_%d_THUMBNAIL",
-		"HTML_%d",
-		"ALTOXML_%d",
+	# generic datastreams
+	generic_ds = [
+		"IMAGE",
+		"JP2",
+		"THUMBNAIL",
+		"HTML",
+		"ALTOXML",
 	]
-	# add page_num
-	anticipated_ds = [ds % page_num for ds in anticipated_ds]
+
+	# generic hash of target ids
+	target_ids = {
+		'IMAGE':'IMAGE_%d' % page_num,
+		'JP2':'IMAGE_%d_JP2' % page_num,
+		'THUMBNAIL':'IMAGE_%d_THUMBNAIL' % page_num,
+		'HTML':'HTML_%d' % page_num,
+		'ALTOXML':'ALTOXML_%d' % page_num
+	}
 
 	# write datastreams from objMeta
-	for ds in anticipated_ds:
+	for ds in generic_ds:
 
 		# open source datastream
-		sds = wobj.ohandle.getDatastreamObject(ds)
+		sds = wobj.ohandle.getDatastreamObject(target_ids[ds])
 
 		print "---> working on", sds.label
 
 		# write objMeta as datastream
-		nds = eulfedora.models.FileDatastreamObject(nobj, sds.id, sds.label, mimetype=sds.mimetype, control_group='M')
-		nds.label = sds.label
-		nds.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s/content" % (wobj.pid, sds.id)
+		nds = eulfedora.models.FileDatastreamObject(nobj, ds, ds, mimetype=sds.mimetype, control_group='M')
+		nds.label = ds
+		nds.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s/content" % (wobj.pid, sds.id )
 		nds.save()
 
 	# write RDF relationships
@@ -219,15 +226,19 @@ def replaceSourceObj(wobj, tobj):
 		FOXML = re.sub(r'<foxml:contentDigest.+?/>', '', FOXML)
 
 	# purge old object
+	print "purging old book object..."
 	fedora_handle.purge_object(wobj.pid)
 
 	# ingest new object
+	print "ingesting new book object..."
 	nwobj = fedora_handle.ingest(FOXML)
 
 	# purge temporary object
+	print "purging temporary book object"
 	fedora_handle.purge_object(tobj.pid)
 
 	# cleanup
+	print "cleaning up..."
 	if os.path.exists(FOXML_filename):
 		os.remove(FOXML_filename)
 

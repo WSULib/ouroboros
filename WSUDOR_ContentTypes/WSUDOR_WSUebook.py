@@ -13,6 +13,7 @@ import re
 from bs4 import BeautifulSoup
 import requests
 import rdflib
+from collections import defaultdict
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -429,22 +430,24 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		seq = manifest.sequence(label="default sequence")
 
 		# get component parts		
-		image_list = [ds for ds in self.ohandle.ds_list if ds.endswith('JP2')]
-		image_list.sort(key=natural_sort_key)
-		print image_list
+		'''
+		Read objMeta, get page numers, systematically create
+		This could be improved. By using RDF, we can ensure things link up.		
+		'''
+		pages = defaultdict(list)
+		for ds in self.objMeta['datastreams']:
+			pages[int(ds['order'])].append(ds)
 
 		# iterate through component parts
-		for image in image_list:
+		for page in pages:
 			
-			print "adding",image
+			print "adding #",page
 			
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
-			fedora_http_ident = "fedora:%s|%s" % (self.pid,image)
-			# fedora_http_ident = "%s|%s" % (self.pid,image) #loris_dev
-
+			fedora_http_ident = "fedora:%s_Page_%d|JP2" % (self.pid, page)
 
 			# Create a canvas with uri slug of page-1, and label of Page 1
-			cvs = seq.canvas(ident=fedora_http_ident, label=image)
+			cvs = seq.canvas(ident=fedora_http_ident, label="Page %d" % page)
 
 			# Create an annotation on the Canvas
 			anno = cvs.annotation()
@@ -467,26 +470,50 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	def indexPageText(self):
+
 		'''
 		When copying objects between repositories, indexing of pages is skipped.
 		This function can be run to repeat that process.
 		'''
 
-		for count, ds in enumerate(self.objMeta['datastreams']):
-				print "Working on page %i / %i" % (count,len(self.objMeta['datastreams']))								
-				if ds['ds_id'].startswith('HTML') and not ds['ds_id'].endswith('FULL'):
+		# # OLD
+		# for count, ds in enumerate(self.objMeta['datastreams']):
+		# 	print "Working on page %i / %i" % (count,len(self.objMeta['datastreams']))								
+		# 	if ds['ds_id'].startswith('HTML') and not ds['ds_id'].endswith('FULL'):
 
-					# index in Solr bookreader core
-					data = {
-						"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
-						"literal.ItemID" : self.objMeta['identifier'],
-						"literal.page_num" : ds['order'],
-						"fmap.content" : "OCR_text",
-						"commit" : "false"
-					}
-					ds_handle = self.ohandle.getDatastreamObject(ds['ds_id'])
-					files = {'file': ds_handle.content}
-					r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
+		# 		# index in Solr bookreader core
+		# 		data = {
+		# 			"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
+		# 			"literal.ItemID" : self.objMeta['identifier'],
+		# 			"literal.page_num" : ds['order'],
+		# 			"fmap.content" : "OCR_text",
+		# 			"commit" : "false"
+		# 		}
+		# 		ds_handle = self.ohandle.getDatastreamObject(ds['ds_id'])
+		# 		files = {'file': ds_handle.content}
+		# 		r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
+
+		# NEW
+		pages = defaultdict(list)
+		for ds in self.objMeta['datastreams']:
+			pages[int(ds['order'])].append(ds)
+
+		for page in pages:
+			print "Working on page %d / %d" % (page,len(pages))
+
+			# index in Solr bookreader core
+			data = {
+				"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+str(page),
+				"literal.ItemID" : self.objMeta['identifier'],
+				"literal.page_num" : page,
+				"fmap.content" : "OCR_text",
+				"commit" : "false"
+			}
+			ds_handle = fedora_handle.get_object("%s_Page_%d" % (self.pid, page)).getDatastreamObject("HTML")
+			files = {'file': ds_handle.content}
+			r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
+
+
 
 		# commit
 		print solr_bookreader_handle.commit()

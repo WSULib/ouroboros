@@ -5,7 +5,6 @@ import os
 import json
 import StringIO
 import requests
-from collections import defaultdict
 import time
 import re
 
@@ -27,17 +26,12 @@ def ebook_v3_conversion(pid):
 	# open book
 	wobj = w(pid)
 
-	# create grouped index of pages from objMeta
-	pages = defaultdict(list)
-	for ds in wobj.objMeta['datastreams']:
-		pages[int(ds['order'])].append(ds)
-	
 	# create book object (consider wrapping in try / except for rollover here)
 	tobj = createBookObj(wobj)
 
 	# create page objects
-	for k in pages:
-		createPageObj(wobj, k, pages[k])
+	for k in wobj.pages_from_objMeta:
+		createPageObj(wobj, k, wobj.pages_from_objMeta[k])
 
 	# purge original object, and create new
 	replaceSourceObj(wobj, tobj)
@@ -232,6 +226,10 @@ def replaceSourceObj(wobj, tobj):
 	# ingest new object
 	print "ingesting new book object..."
 	nwobj = fedora_handle.ingest(FOXML)
+
+	# index new object
+	nwobj = w(wobj.pid)
+	nwobj.indexToSolr()
 
 	# purge temporary object
 	print "purging temporary book object"

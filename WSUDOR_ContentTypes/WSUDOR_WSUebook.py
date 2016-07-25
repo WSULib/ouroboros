@@ -13,7 +13,7 @@ import re
 from bs4 import BeautifulSoup
 import requests
 import rdflib
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -78,6 +78,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# pages from objMeta class
 	@helpers.LazyProperty
 	def pages_from_objMeta(self):
+
+		'''
+		Returns dictionary with order as key, list of assocated datastreams as val
+		'''
+
 		pages = defaultdict(list)
 		for ds in self.objMeta['datastreams']:
 			pages[int(ds['order'])].append(ds)
@@ -87,17 +92,15 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# pages from constituent objects
 	@helpers.LazyProperty
 	def pages_from_rels(self):
-		
-		# get constituent objs
-		constituent_objects = fedora_handle.risearch.spo_search(None,'info:fedora/fedora-system:def/relations-external#isConstituentOf', 'info:fedora/%s' % self.pid)
-		
-		'''
-		sort, return
-		'''
 
-		# temp
+		'''
+		Returns OrderedDict with pageOrder as key, digital obj as val
+		'''
+		
+		# get ordered, constituent objs
+		sparql_response = fedora_handle.risearch.sparql_query('select $page $pageOrder WHERE {{ $page <info:fedora/fedora-system:def/relations-external#isConstituentOf> <info:fedora/%s> .$page <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder> $pageOrder . }} ORDER BY ASC($pageOrder)' % (self.pid))
+		constituent_objects = OrderedDict((int(page['pageOrder']), fedora_handle.get_object(page['page'])) for page in sparql_response)
 		return constituent_objects
-
 
 
 	# perform ingestTest
@@ -454,25 +457,18 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# start anonymous sequence
 		seq = manifest.sequence(label="default sequence")
 
-		# get component parts		
-		'''
-		Read objMeta, get page numers, systematically create
-		This could be improved. By using RDF, we can ensure things link up.		
-		'''
-		pages = defaultdict(list)
-		for ds in self.objMeta['datastreams']:
-			pages[int(ds['order'])].append(ds)
-
-		# iterate through component parts
-		for page in pages:
+		# write constituent pages
+		for page in self.pages_from_rels:
 			
-			print "adding #",page
+			# open wsudor handle
+			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page])
+			print "Working on:",page_handle.ohandle.label
 			
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
-			fedora_http_ident = "fedora:%s_Page_%d|JP2" % (self.pid, page)
+			fedora_http_ident = "fedora:%s_Page_%d|JP2" % (self.pid, page_handle.order)
 
 			# Create a canvas with uri slug of page-1, and label of Page 1
-			cvs = seq.canvas(ident=fedora_http_ident, label="Page %d" % page)
+			cvs = seq.canvas(ident=fedora_http_ident, label=page_handle.ohandle.label)
 
 			# Create an annotation on the Canvas
 			anno = cvs.annotation()
@@ -493,7 +489,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return manifest.toString()
 
 
-
 	def indexPageText(self):
 
 		'''
@@ -501,12 +496,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		This function can be run to repeat that process.
 		'''
 
-		pages = defaultdict(list)
-		for ds in self.objMeta['datastreams']:
-			pages[int(ds['order'])].append(ds)
-
-		for page in pages:
-			print "Working on page %d / %d" % (page,len(pages))
+		for page in self.pages_from_rels:
+			print "Working on page %d / %d" % (page, len(self.pages_from_rels))
 
 			# index in Solr bookreader core
 			data = {
@@ -519,8 +510,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			ds_handle = fedora_handle.get_object("%s_Page_%d" % (self.pid, page)).getDatastreamObject("HTML")
 			files = {'file': ds_handle.content}
 			r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
-
-
 
 		# commit
 		print solr_bookreader_handle.commit()

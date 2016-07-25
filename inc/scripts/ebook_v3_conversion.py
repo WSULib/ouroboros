@@ -267,7 +267,7 @@ def rollback(pid, rollback_type):
 
 	print "rolled back v3 conversion for %s, writing to log" % pid
 	with open('/tmp/Ouroboros/ebook_v3_conversion.log','a') as fhand:
-		fhand.write("%s - %s failed at %s" % (datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'), pid, rollback_type))
+		fhand.write("\n%s - %s failed at %s" % (datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'), pid, rollback_type))
 	
 	# book failed, rollback and return
 	if rollback_type == 'book':

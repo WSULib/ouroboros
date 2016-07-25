@@ -75,6 +75,31 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.html_concat = ''
 
 
+	# pages from objMeta class
+	@helpers.LazyProperty
+	def pages_from_objMeta(self):
+		pages = defaultdict(list)
+		for ds in self.objMeta['datastreams']:
+			pages[int(ds['order'])].append(ds)
+		return pages
+
+
+	# pages from constituent objects
+	@helpers.LazyProperty
+	def pages_from_rels(self):
+		
+		# get constituent objs
+		constituent_objects = fedora_handle.risearch.spo_search(None,'info:fedora/fedora-system:def/relations-external#isConstituentOf', 'info:fedora/%s' % self.pid)
+		
+		'''
+		sort, return
+		'''
+
+		# temp
+		return constituent_objects
+
+
+
 	# perform ingestTest
 	def validIngestBag(self):
 
@@ -476,24 +501,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		This function can be run to repeat that process.
 		'''
 
-		# # OLD
-		# for count, ds in enumerate(self.objMeta['datastreams']):
-		# 	print "Working on page %i / %i" % (count,len(self.objMeta['datastreams']))								
-		# 	if ds['ds_id'].startswith('HTML') and not ds['ds_id'].endswith('FULL'):
-
-		# 		# index in Solr bookreader core
-		# 		data = {
-		# 			"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+ds['order'],
-		# 			"literal.ItemID" : self.objMeta['identifier'],
-		# 			"literal.page_num" : ds['order'],
-		# 			"fmap.content" : "OCR_text",
-		# 			"commit" : "false"
-		# 		}
-		# 		ds_handle = self.ohandle.getDatastreamObject(ds['ds_id'])
-		# 		files = {'file': ds_handle.content}
-		# 		r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
-
-		# NEW
 		pages = defaultdict(list)
 		for ds in self.objMeta['datastreams']:
 			pages[int(ds['order'])].append(ds)

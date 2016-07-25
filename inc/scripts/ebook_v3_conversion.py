@@ -221,6 +221,9 @@ def createPageObj(wobj, page_num, page_dict):
 # shuffle book objects
 def replaceSourceObj(wobj, tobj):
 
+	# export old book object with airlock
+	os.system('python /opt/eulfedora/scripts/repo-cp --config /home/ouroboros/.repocpcfg --export-format archive --omit-checksums local /tmp/Ouroboros/airlock_hold %s' % (wobj.pid))
+
 	# export new book object with airlock
 	os.system('python /opt/eulfedora/scripts/repo-cp --config /home/ouroboros/.repocpcfg --export-format archive --omit-checksums local /tmp/Ouroboros/airlock %s' % (tobj.pid))
 
@@ -261,22 +264,23 @@ def replaceSourceObj(wobj, tobj):
 
 
 def rollback(pid, rollback_type):
+
+	print "rolled back v3 conversion for %s, writing to log" % pid
+	with open('/tmp/Ouroboros/ebook_v3_conversion.log','a') as fhand:
+		fhand.write("%s - %s failed at %s" % (datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'), pid, rollback_type))
 	
 	# book failed, rollback and return
 	if rollback_type == 'book':
 		print "rolling back from bad book ingest"
 		# delete temp book
-		tpid = "wayne:_%s" % wobj.pid.split(":")[1]
+		tpid = "wayne:_%s" % pid.split(":")[1]
 		try:
 			fedora_handle.purge_object(tpid)
 			print "temp book found, purged"
 		except:
 			print "temp book not found, skipping rollback purge"
 		
-		# report
-		print "rolled back v3 conversion for %s, writing to log" % pid
-		with open('/tmp/Ouroboros/ebook_v3_conversion.log','a') as fhand:
-			fhand.write("%s - %s failed at %s" % (datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'), pid, rollback_type))
+		# finally, return
 		return False
 
 	# pages failed, rollback, then run book rollback

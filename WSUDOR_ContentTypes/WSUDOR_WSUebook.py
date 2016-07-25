@@ -85,7 +85,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		pages = defaultdict(list)
 		for ds in self.objMeta['datastreams']:
-			pages[int(ds['order'])].append(ds)
+			try:
+				pages[int(ds['order'])].append(ds)
+			except:
+				print "Presented with 'order' attribute that was not integer, skipping..."
 		return pages
 
 
@@ -656,8 +659,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.indexReaduxVirtualObjects(action='index')
 
 
-
-
+	
 # helpers
 '''
 This might be where we can fix the gray TIFFs

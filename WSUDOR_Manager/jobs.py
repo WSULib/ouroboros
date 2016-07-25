@@ -126,18 +126,12 @@ def removeUserPIDs(username,PIDs):
 Improvement for getSelPIDs() and genPIDlet() - creator generator that suffices both?
 '''
 
-def getSelPIDs():
-	username = session['username']
+def getSelPIDs(username=False):
+	if not username:
+		username = session['username']
 	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
 	PIDlist = [PID.PID for PID in userSelectedPIDs]
 	return PIDlist
-
-
-def getSelPIDs_noFlask(username):
-	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
-	PIDlist = [PID.PID for PID in userSelectedPIDs]
-	return PIDlist
-
 
 # function to create small object with current, previous, and next PIDs for views
 def genPIDlet(cursor):

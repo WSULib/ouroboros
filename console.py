@@ -61,4 +61,8 @@ def getRemoteObject(repo, PID, index=True):
 	return eulfedora.syncutil.sync_object(fedoraHandles.remoteRepo(repo).get_object(PID), fedora_handle, show_progress=False, export_context='archive')
 	if index:
 		obj = w(PID)
+		print "waiting momentarily for object to finish ingesting..."
+		time.sleep(3)
 		obj.objectRefresh()
+
+

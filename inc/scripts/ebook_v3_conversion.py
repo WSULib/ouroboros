@@ -7,6 +7,7 @@ import StringIO
 import requests
 import time
 import re
+import datetime
 
 from WSUDOR_Manager import *
 
@@ -27,15 +28,26 @@ def ebook_v3_conversion(pid):
 	wobj = w(pid)
 
 	# create book object (consider wrapping in try / except for rollover here)
-	tobj = createBookObj(wobj)
+	try:
+		tobj = createBookObj(wobj)
+	except:
+		print "Failed to create book object - rolling back and aborting"
+		rollback(pid, 'book')
 
 	# create page objects
-	for k in wobj.pages_from_objMeta:
-		createPageObj(wobj, k, wobj.pages_from_objMeta[k])
+	try:
+		for k in wobj.pages_from_objMeta:
+			createPageObj(wobj, k, wobj.pages_from_objMeta[k])		
+	except:
+		print "Failed to create page objects - rolling back and aborting"
+		rollback(pid, 'pages')
 
 	# purge original object, and create new
-	replaceSourceObj(wobj, tobj)
-
+	try:
+		replaceSourceObj(wobj, tobj)
+	except:
+		print "Failed to replace source book - rolling back and aborting"
+		rollback(pid, 'replace')
 
 	# report
 	etime = time.time()
@@ -210,14 +222,16 @@ def createPageObj(wobj, page_num, page_dict):
 def replaceSourceObj(wobj, tobj):
 
 	# export new book object with airlock
-	os.system('python /opt/eulfedora/scripts/repo-cp --config /home/ouroboros/.repocpcfg --export-format archive --omit-checksums local /tmp/Ouroboros/ %s' % (tobj.pid))
+	os.system('python /opt/eulfedora/scripts/repo-cp --config /home/ouroboros/.repocpcfg --export-format archive --omit-checksums local /tmp/Ouroboros/airlock %s' % (tobj.pid))
 
 	# write FOXML, replace PID, omit checksums
-	FOXML_filename = '/tmp/Ouroboros/%s.xml' % tobj.pid
+	FOXML_filename = '/tmp/Ouroboros/airlock/%s.xml' % tobj.pid
 	with open(FOXML_filename ,'r') as fhand:
 		FOXML = fhand.read()
 		FOXML = FOXML.replace(tobj.pid, wobj.pid)
 		FOXML = re.sub(r'<foxml:contentDigest.+?/>', '', FOXML)
+	with open(FOXML_filename ,'w') as fhand:
+		fhand.write(FOXML)
 
 	# purge old object
 	print "purging old book object..."
@@ -225,7 +239,8 @@ def replaceSourceObj(wobj, tobj):
 
 	# ingest new object
 	print "ingesting new book object..."
-	nwobj = fedora_handle.ingest(FOXML)
+	# import new book object with airlock
+	os.system('python /opt/eulfedora/scripts/repo-cp --config /home/ouroboros/.repocpcfg --export-format archive --omit-checksums /tmp/Ouroboros/airlock local')
 
 	# index new object
 	nwobj = w(wobj.pid)
@@ -238,14 +253,51 @@ def replaceSourceObj(wobj, tobj):
 	# cleanup
 	print "cleaning up..."
 	if os.path.exists(FOXML_filename):
+		print "removing",FOXML_filename
 		os.remove(FOXML_filename)
 
 	return nwobj
 	
 
 
-def rollback():
-	pass
+def rollback(pid, rollback_type):
+	
+	# book failed, rollback and return
+	if rollback_type == 'book':
+		print "rolling back from bad book ingest"
+		# delete temp book
+		tpid = "wayne:_%s" % wobj.pid.split(":")[1]
+		try:
+			fedora_handle.purge_object(tpid)
+			print "temp book found, purged"
+		except:
+			print "temp book not found, skipping rollback purge"
+		
+		# report
+		print "rolled back v3 conversion for %s, writing to log" % pid
+		with open('/tmp/Ouroboros/ebook_v3_conversion.log','a') as fhand:
+			fhand.write("%s - %s failed at %s" % (datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'), pid, rollback_type))
+		return False
+
+	# pages failed, rollback, then run book rollback
+	if rollback_type == 'pages':
+		print "rolling back from bad pages ingest"
+
+		# find page objects
+		pages = fedora_handle.find_objects("%s_Page_*" % pid)
+		for page in pages:
+			fedora_handle.purge_object(page)
+
+		# recurse to run book
+		rollback(pid, 'book')
+
+	# fail near end, roll back all
+	if rollback_type == 'replace':
+		print "rolling back from bad source replace ingest"
+
+		# rollback pages (which calls book)
+		rollback(pid, 'pages')
+
 
 
 

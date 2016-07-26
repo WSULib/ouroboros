@@ -11,7 +11,7 @@ from stompest.async.listener import SubscriptionListener
 from stompest.config import StompConfig
 from stompest.protocol import StompSpec
 import json
-import logging 
+import logging
 
 # for Ouroboros pid management
 import os
@@ -31,15 +31,15 @@ from WSUDOR_API import WSUDOR_API_app
 
 # Ouroboros pidfile ##############################################################
 # function to create/remove Ouroboros pidfile
-def pidfileCreate():	
+def pidfileCreate():
 	print "Creating pidfile"
-	
+
 	with open("/var/run/ouroboros/%s.pid" % (APP_NAME),"w") as fhand:
 		fhand.write(str(os.getpid()))
 	ouroboros_pidlock = lockfile.LockFile("/var/run/ouroboros/%s.pid" % (APP_NAME))
-	ouroboros_pidlock.acquire()			
+	ouroboros_pidlock.acquire()
 	return ouroboros_pidlock
-	
+
 def pidfileRemove():
 	print "Removing pidfile"
 	ouroboros_pidlock.release()
@@ -55,7 +55,7 @@ def shutdown():
 	print "removing generic celery tasks from supervisor"
 	celery_conf_files = os.listdir('/etc/supervisor/conf.d')
 	for conf in celery_conf_files:
-		if conf == "celery-celery.conf":	
+		if conf == "celery-celery.conf":
 			process_group = conf.split(".conf")[0]
 			print "stopping celery worker: %s" % process_group
 			sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
@@ -72,7 +72,7 @@ class mainRouter:
 
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
-Prod: Connected to JSM Messaging service on :FEDCONSUMER_PORT (usually 61616), 
+Prod: Connected to JSM Messaging service on :FEDCONSUMER_PORT (usually 61616),
 routes 'fedEvents' to fedoraConsumer()
 Dev: Disabled
 '''
@@ -96,8 +96,8 @@ class fedoraConsumerWorker(object):
 		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
 
 	def consume(self, client, frame):
-		#send to clearkRouter           
-		worker = mainRouter()        
+		#send to clearkRouter
+		worker = mainRouter()
 		worker.fedoraConsumer(msg=frame.body)
 
 
@@ -127,35 +127,35 @@ if __name__ == '__main__':
 	# WSUDOR_API
 	if WSUDOR_API_FIRE == True:
 		print "Starting WSUDOR_API_app..."
-		reactor.listenTCP( WSUDOR_API_LISTENER_PORT, WSUDOR_API_site )	
-	
+		reactor.listenTCP( WSUDOR_API_LISTENER_PORT, WSUDOR_API_site )
+
 	# fedConsumer
 	if FEDCONSUMER_FIRE == True:
 		print "Starting JSM listener..."
 		fedoraConsumerWorker().run()
 
 
-	print '''               
-                ::+:/`              
-         :----:+ssoo+:.`           
-      `-:+sssossysoooooo+/-`       
-    `:oysyo++ooooo+////+ooss+-`    
-   :ssyy/-`   `..     ..:/+osso:   
- `/ssyo:                 `-+:oss+` 
- +sso+:                    `//sss+ 
+	print '''
+                ::+:/`
+         :----:+ssoo+:.`
+      `-:+sssossysoooooo+/-`
+    `:oysyo++ooooo+////+ooss+-`
+   :ssyy/-`   `..     ..:/+osso:
+ `/ssyo:                 `-+:oss+`
+ +sso+:                    `//sss+
 .sssoo`                     `o+sss:
 /syso+                    `-`+ooss+
 ssyoo+                    ../oossss
 osso+o.                  `+//ooysoo
 :ysyo+o.                  `/++osos:
 `+ssssoo:`   ``.-` .-    `-ooosss+`
- `ossso///-.--:.``::. `.:+ooossso` 
-  `+sossyo++o++::///:/+ooossoss+`  
-    -ossssss+oo+sossoosossssso-    
-      ./osssssysyysssssssso/.      
-         `-:++sosyssyyo+:.   
+ `ossso///-.--:.``::. `.:+ooossso`
+  `+sossyo++o++::///:/+ooossoss+`
+    -ossssss+oo+sossoosossssso-
+      ./osssssysyysssssssso/.
+         `-:++sosyssyyo+:.
 
   <-- Ouroboros says hissss -->
 	'''
-	
+
 	reactor.run()

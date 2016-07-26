@@ -37,15 +37,15 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	Fedora_ContentType = "CM:WSUebookPage"
 
 	def __init__(self, object_type=False, content_type=False, payload=False,orig_payload=False):
-		
+
 		# run __init__ from parent class
 		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
 
-		
+
 	# page order
 	@helpers.LazyProperty
 	def order(self):
-			
+
 		# get ordered, constituent objs
 		sparql_response = fedora_handle.risearch.sparql_query('select $pageOrder WHERE {{ <info:fedora/%s> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder> $pageOrder . }}' % (self.pid))
 		return int(sparql_response.next()['pageOrder'])

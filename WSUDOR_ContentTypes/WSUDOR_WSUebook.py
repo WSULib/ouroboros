@@ -132,265 +132,140 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return results_dict
 
 
-# 	# ingest
-# 	def ingestBag(self,indexObject=True):
-#
-# 		#----------------- GENERIC INGEST PROCEDURES, CAN BE FOLDED INTO WSUDOR_Object -----------------#
-#
-# 		if self.object_type != "bag":
-# 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
-#
-#
-# 		# attempt to ingest bag / object
-# 		try:
-#
-# 			self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
-# 			self.ohandle.save()
-#
-# 			# set base properties of object
-# 			self.ohandle.label = self.objMeta['label']
-#
-# 			# write POLICY datastream
-# 			# NOTE: 'E' management type required, not 'R'
-# 			print "Using policy:",self.objMeta['policy']
-# 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
-# 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
-# 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
-# 			policy_handle.label = "POLICY"
-# 			policy_handle.save()
-#
-# 			# write objMeta as datastream
-# 			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
-# 			objMeta_handle.label = "Ingest Bag Object Metadata"
-# 			file_path = self.Bag.path + "/data/objMeta.json"
-# 			objMeta_handle.content = open(file_path)
-# 			objMeta_handle.save()
-#
-# 			# -------------------------------------- RELS-EXT ---------------------------------------#
-#
-# 			# write explicit RELS-EXT relationships
-# 			for relationship in self.objMeta['object_relationships']:
-# 				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
-# 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
-#
-# 			# writes derived RELS-EXT
-# 			# isRepresentedBy
-# 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
-#
-# 			# hasContentModel
-# 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
-# 			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
-# 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
-#
-# 			# -------------------------------------- RELS-EXT ---------------------------------------#
-#
-# 			# write MODS datastream if MODS.xml exists
-# 			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
-# 				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
-# 				MODS_handle.label = "MODS descriptive metadata"
-# 				file_path = self.Bag.path + "/data/MODS.xml"
-# 				MODS_handle.content = open(file_path)
-# 				MODS_handle.save()
-#
-# 			else:
-# 				# write generic MODS datastream
-# 				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
-# 				MODS_handle.label = "MODS descriptive metadata"
-#
-# 				raw_MODS = '''
-# <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
-#   <mods:titleInfo>
-#     <mods:title>%s</mods:title>
-#   </mods:titleInfo>
-#   <mods:identifier type="local">%s</mods:identifier>
-#   <mods:extension>
-#     <PID>%s</PID>
-#   </mods:extension>
-# </mods:mods>
-# 				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
-# 				print raw_MODS
-# 				MODS_handle.content = raw_MODS
-# 				MODS_handle.save()
-#
-# 			# create derivatives and write datastreams by using processing functions defined below
-# 			# concat variables
-# 			html_concat =''
-# 			for count, ds in enumerate(self.objMeta['datastreams']):
-# 				print "Working on document %i / %i" % (count,len(self.objMeta['datastreams']))
-# 				# # ---------- DEBUG REMOVE ----------
-# 				# if int(ds['order']) < 3:
-# 				# # ---------- DEBUG REMOVE ----------
-# 				if ds['ds_id'].startswith('IMAGE'):
-# 					self.processImage(ds)
-# 				if ds['ds_id'].startswith('HTML'):
-# 					self.processHTML(ds)
-# 				if ds['ds_id'].startswith('ALTOXML'):
-# 					self.processALTOXML(ds)
-#
-# 			# write generic thumbnail and preview
-# 			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/jpeg", control_group="M")
-# 			rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'])
-# 			rep_handle.label = "THUMBNAIL"
-# 			rep_handle.save()
-#
-# 			# generate full HTML, text, and PDF
-# 			# HTML (based on concatenated HTML from self.html_concat)
-# 			if "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-# 				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
-# 				html_full_handle.label = "Full HTML for item"
-# 				html_full_handle.content = self.html_concat.encode('utf-8')
-# 				html_full_handle.save()
-#
-# 			# PDF - create PDF on disk and upload
-# 			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-# 				self.processPDF()
-#
-# 			# save and commit object before finishIngest()
-# 			final_save = self.ohandle.save()
-#
-# 			# finish generic ingest
-# 			# may pass methods here that will run in finishIngest()
-# 			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[self.indexPageText])
-#
-# 		# exception handling
-# 		except Exception,e:
-# 			print traceback.format_exc()
-# 			print "Ingest Error:",e
-# 			return False
-#
-#
-# 	# --- Define processors for components (image, html, pdf, ALTO xml) ---------------------------------------#
-#
-# 	def processPDF(self, process_type='ingest', pdf_dir=None):
-#
-# 		# expecting pdf_dir if process_type != 'ingest'
-# 		if process_type == 'ingest':
-# 			obj_dir = self.Bag.path+"/data/datastreams"
-# 		else:
-# 			obj_dir = pdf_dir
-#
-# 		print "writing full-text PDF"
-# 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
-# 		os.system("pdftk %s/*.pdf cat output %s verbose" % (obj_dir, temp_filename))
-# 		pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
-# 		pdf_full_handle.label = "Fulltext PDF for item"
-# 		pdf_full_handle.content = open(temp_filename).read()
-#
-# 		# remove pdf
-# 		os.remove(temp_filename)
-#
-# 		return pdf_full_handle.save()
-#
-#
-# 	def processImage(self, ds):
-#
-# 		print "Processing derivative"
-# 		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-# 		print "Looking for:",file_path
-#
-# 		# original
-# 		orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s" % (ds['ds_id']), ds['label'], mimetype=ds['mimetype'], control_group='M')
-# 		orig_handle.label = ds['label']
-# 		orig_handle.content = open(file_path)
-# 		orig_handle.save()
-#
-# 		# make thumb
-# 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
-# 		im = Image.open(file_path)
-# 		width, height = im.size
-# 		max_width = 200
-# 		max_height = 200
-# 		# run through filter
-# 		im = imMode(im)
-# 		im.thumbnail((max_width, max_height), Image.ANTIALIAS)
-# 		im.save(temp_filename,'JPEG')
-# 		thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group='M')
-# 		thumb_handle.label = "%s_THUMBNAIL" % (ds['label'])
-# 		thumb_handle.content = open(temp_filename)
-# 		thumb_handle.save()
-# 		os.system('rm %s' % (temp_filename))
-#
-# 		# make JP2 with derivative class
-# 		jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_JP2" % (ds['ds_id']), "%s_JP2" % (ds['label']), mimetype="image/jp2", control_group='M')
-# 		jp2_handle.label = "%s_JP2" % (ds['label'])
-# 		j = JP2DerivativeMaker(inObj=self)
-# 		j.inPath = file_path
-# 		print "making JP2 with",j.inPath,"to",j.outPath
-# 		makeJP2result = j.makeJP2()
-# 		# if fail, try again by uncompressing original temp file
-# 		if makeJP2result == False:
-# 			print "trying again with uncompressed original"
-# 			j.uncompressOriginal()
-# 			makeJP2result = j.makeJP2()
-#
-# 		# last resort, pause, try again
-# 		if makeJP2result == False:
-# 			time.sleep(3)
-# 			makeJP2result = j.makeJP2()
-#
-# 		# write new JP2 datastream
-# 		if makeJP2result:
-# 			with open(j.outPath) as fhand:
-# 				jp2_handle.content = fhand.read()
-# 			print "Result for",ds,jp2_handle.save()
-# 			# cleanup
-# 			j.cleanupTempFiles()
-#
-# 		else:
-# 			# cleanup
-# 			j.cleanupTempFiles()
-# 			raise Exception("Could not regen JP2")
-#
-#
-# 		# -------------------------------------- RELS-INT ---------------------------------------#
-#
-# 		# add to RELS-INT
-# 		fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPartOf','info:fedora/%s' % (self.ohandle.pid))
-# 		fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_THUMBNAIL' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isThumbnailOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
-# 		fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_JP2' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isJP2Of','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
-#
-# 		# if order present, get order and write relationship.
-# 		if 'order' in ds:
-# 			fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isOrder', ds['order'], isLiteral=True)
-#
-#
-# 	def processHTML(self, ds):
-# 		print "Processing HTML"
-# 		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-# 		print "Looking for:",file_path
-# 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
-# 		generic_handle.label = ds['label']
-# 		generic_handle.content = open(file_path)
-# 		generic_handle.save()
-#
-# 		if ds['ds_id'] != "HTML_FULL":
-# 			# add HTML to self.html_concat
-# 			fhand = open(file_path)
-# 			html_parsed = BeautifulSoup(fhand)
-# 			print "HTML document parsed..."
-# 			#sets div with page_ID
-# 			self.html_concat = self.html_concat + '<div id="page_ID_%s" class="html_page">' % (ds['order'])
-# 			#Set in try / except block, as some HTML documents contain no elements within <body> tag
-# 			try:
-# 				for block in html_parsed.body:
-# 					self.html_concat = self.html_concat + unicode(block)
-# 			except:
-# 				print "<body> tag is empty, skipping. Adding page_ID anyway."
-#
-# 			#closes page_ID / div
-# 			self.html_concat = self.html_concat + "</div>"
-# 			fhand.close()
+	# ingest
+	def ingestBag(self,indexObject=True):
+
+		if self.object_type != "bag":
+			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
+
+		# attempt to ingest bag / object
+		try:
+
+			self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
+			self.ohandle.save()
+
+			# set base properties of object
+			self.ohandle.label = self.objMeta['label']
+
+			# write POLICY datastream
+			# NOTE: 'E' management type required, not 'R'
+			print "Using policy:",self.objMeta['policy']
+			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
+			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
+			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
+			policy_handle.label = "POLICY"
+			policy_handle.save()
+
+			# write objMeta as datastream
+			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+			objMeta_handle.label = "Ingest Bag Object Metadata"
+			file_path = self.Bag.path + "/data/objMeta.json"
+			objMeta_handle.content = open(file_path)
+			objMeta_handle.save()
+
+			# write explicit RELS-EXT relationships
+			for relationship in self.objMeta['object_relationships']:
+				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
+
+			# writes derived RELS-EXT
+			# isRepresentedBy
+			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+
+			# hasContentModel
+			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
+			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
+			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
+
+			# write MODS datastream if MODS.xml exists
+			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+				file_path = self.Bag.path + "/data/MODS.xml"
+				MODS_handle.content = open(file_path)
+				MODS_handle.save()
+
+			else:
+				# write generic MODS datastream
+				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+				MODS_handle.label = "MODS descriptive metadata"
+
+				raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+  <mods:titleInfo>
+    <mods:title>%s</mods:title>
+  </mods:titleInfo>
+  <mods:identifier type="local">%s</mods:identifier>
+  <mods:extension>
+    <PID>%s</PID>
+  </mods:extension>
+</mods:mods>
+				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
+				print raw_MODS
+				MODS_handle.content = raw_MODS
+				MODS_handle.save()
 
 
+			########################################################################################################
+			# iterate through pages and create page objects
+			for page_num in self.pages_from_objMeta:
 
-	def processALTOXML(self, ds):
-		print "Processing ALTO XML"
-		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-		print "Looking for:",file_path
-		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
-		generic_handle.label = ds['label']
-		generic_handle.content = open(file_path)
-		generic_handle.save()
+				page_dict = self.pages_from_objMeta[page_num]
+				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+				page_obj.ingest(self, page_num)
+			########################################################################################################
+
+
+			# write generic thumbnail and preview
+			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/jpeg", control_group="M")
+			rep_handle.ds_location = "http://localhost/fedora/objects/%s_Page_%s/datastreams/THUMBNAIL/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'].split("_")[-1])
+			rep_handle.label = "THUMBNAIL"
+			rep_handle.save()
+
+			# HTML (based on concatenated HTML from self.html_concat)
+			if "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
+				html_full_handle.label = "Full HTML for item"
+				html_full_handle.content = self.html_concat.encode('utf-8')
+				html_full_handle.save()
+
+			# PDF - create PDF on disk and upload
+			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+				self.processPDF()
+
+			# save and commit object before finishIngest()
+			final_save = self.ohandle.save()
+
+			# finish generic ingest
+			# may pass methods here that will run in finishIngest()
+			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[self.indexPageText])
+
+		# exception handling
+		except Exception,e:
+			print traceback.format_exc()
+			print "Ingest Error:",e
+			return False
+
+
+	def processPDF(self, process_type='ingest', pdf_dir=None):
+
+		# expecting pdf_dir if process_type != 'ingest'
+		if process_type == 'ingest':
+			obj_dir = self.Bag.path+"/data/datastreams"
+		else:
+			obj_dir = pdf_dir
+
+		print "writing full-text PDF"
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
+		os.system("pdftk %s/*.pdf cat output %s verbose" % (obj_dir, temp_filename))
+		pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
+		pdf_full_handle.label = "Fulltext PDF for item"
+		pdf_full_handle.content = open(temp_filename).read()
+
+		# remove pdf
+		os.remove(temp_filename)
+
+		return pdf_full_handle.save()
 
 
 	# ingest image type
@@ -639,20 +514,20 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 
-# helpers
-'''
-This might be where we can fix the gray TIFFs
-'''
-def imMode(im):
-	# check for 16-bit tiffs
-	print "Image mode:",im.mode
-	if im.mode in ['I;16','I;16B']:
-		print "I;16 tiff detected, converting..."
-		im.mode = 'I'
-		im = im.point(lambda i:i*(1./256)).convert('L')
-	# else if not RGB, convert
-	elif im.mode != "RGB" :
-		print "Converting to RGB"
-		im = im.convert("RGB")
+# # helpers
+# '''
+# This might be where we can fix the gray TIFFs
+# '''
+# def imMode(im):
+# 	# check for 16-bit tiffs
+# 	print "Image mode:",im.mode
+# 	if im.mode in ['I;16','I;16B']:
+# 		print "I;16 tiff detected, converting..."
+# 		im.mode = 'I'
+# 		im = im.point(lambda i:i*(1./256)).convert('L')
+# 	# else if not RGB, convert
+# 	elif im.mode != "RGB" :
+# 		print "Converting to RGB"
+# 		im = im.convert("RGB")
 
-	return im
+# 	return im

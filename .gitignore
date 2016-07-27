@@ -3,3 +3,5 @@ localConfig.py
 *.out
 *.pyc
 eulfedora/
+.DS_Store
+._DS_Store

@@ -217,12 +217,16 @@ def bagIngest_worker(job_package):
 		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_handle.pid)
 		obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, export_context=export_context, omit_checksums=omit_checksums)	
 
-		# delete local object
+		# delete local object (and constituent objects)
+		print "purging Constituents if present"
+		if getattr(obj_handle, 'purgeConstituents', None):
+			obj_handle.purgeConstituents()
+
 		print "finally, removing object"
-		fedora_handle.purge_object(bag_handle.pid)
+		fedora_handle.purge_object(obj_handle.pid)
 
 		# remove from Solr	
-		solr_handle.delete_by_key(bag_handle.pid)
+		solr_handle.delete_by_key(obj_handle.pid)
 
 		# fire ingestWorkspace callback if checked
 		if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:

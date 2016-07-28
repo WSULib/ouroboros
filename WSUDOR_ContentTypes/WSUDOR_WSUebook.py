@@ -247,6 +247,18 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			return False
 
 
+	# method to purge main book object and children pages
+	def purgeConstituents(self):
+
+		# purge children
+		for page in self.pages_from_rels:
+			page = self.pages_from_rels[page]
+			print "purging:",page.label
+			fedora_handle.purge_object(page)
+
+		return True
+
+
 	def processPDF(self, process_type='ingest', pdf_dir=None):
 
 		# expecting pdf_dir if process_type != 'ingest'
@@ -271,24 +283,18 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# ingest image type
 	def genIIIFManifest(self, on_demand=False):
 
-		# run singleObjectPackage
 		'''
-		A bit of a hack here: creating getParams{} with pid as list[] as expected by singleObjectPackage(),
-		simulates normal WSUDOR_API use of singleObjectPackage()
-		'''
-		getParams = {}
-		getParams['PID'] = [self.pid]
+		Currently generates IIIF manifest with one sequence, handful of canvases for each image.
 
-		# run singleObjectPackage() from API
-		if on_demand == True:
-			getParams['on_demand'] = True
-			single_json = json.loads(singleObjectPackage(getParams))
-		else:
-			single_json = json.loads(singleObjectPackage(getParams))
+		Next step: add annotationList as datastream at page object
+		'''
+
+		# get solr_doc
+		solr_doc = self.SolrDoc.asDictionary()
 
 		# create root mani obj
 		try:
-			manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
+			manifest = iiif_manifest_factory_instance.manifest( label=solr_doc['mods_title_ms'][0] )
 		except:
 			manifest = iiif_manifest_factory_instance.manifest( label="Unknown Title" )
 		manifest.viewingDirection = "left-to-right"
@@ -299,15 +305,15 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		NOTE: solr items are stored here as strings so they won't evaluate
 		'''
 		preferred_fields = [
-			("Title", "single_json['objectSolrDoc']['mods_title_ms'][0]"),
-			("Description", "single_json['objectSolrDoc']['mods_abstract_ms'][0]"),
-			("Year", "single_json['objectSolrDoc']['mods_key_date_year'][0]"),
-			("Item URL", "\"<a href='%s'>%s</a>\" % (single_json['objectSolrDoc']['mods_location_url_ms'][0],single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
-			("Original", "single_json['objectSolrDoc']['mods_otherFormat_note_ms'][0]")
+			("Title", "solr_doc['mods_title_ms'][0]"),
+			("Description", "solr_doc['mods_abstract_ms'][0]"),
+			("Year", "solr_doc['mods_key_date_year'][0]"),
+			("Item URL", "\"<a href='%s'>%s</a>\" % (solr_doc['mods_location_url_ms'][0],solr_doc['mods_location_url_ms'][0])"),
+			("Original", "solr_doc['mods_otherFormat_note_ms'][0]")
 		]
 		for field_set in preferred_fields:
 			try:
-				manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
+				manifest.set_metadata({ field_set[0] : eval(field_set[1]) })
 			except:
 				print "Could Not Set Metadata Field, Skipping",field_set[0]
 
@@ -317,32 +323,60 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# write constituent pages
 		for page in self.pages_from_rels:
 
+			'''
+			Consider writing otherContent resources here
+				- full-text HTML, ALTOXML, etc.
+			'''
+
 			# open wsudor handle
 			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page])
 			print "Working on:",page_handle.ohandle.label
 
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
-			fedora_http_ident = "fedora:%s_Page_%d|JP2" % (self.pid, page_handle.order)
+			fedora_http_ident = "fedora:%s|JP2" % (page_handle.pid)
 
-			# Create a canvas with uri slug of page-1, and label of Page 1
+			# Instantiate canvas under sequence
 			cvs = seq.canvas(ident=fedora_http_ident, label=page_handle.ohandle.label)
 
 			# Create an annotation on the Canvas
 			anno = cvs.annotation()
 
-			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
+			# Add Image Annotation
 			img = anno.image(fedora_http_ident, iiif=True)
-
-			# OR if you have a IIIF service:
+			img.id = fedora_http_ident
 			img.set_hw_from_iiif()
-
+			
+			# set canvas dimensions
 			cvs.height = img.height
 			cvs.width = img.width
 
+			# create annotationsList for page object			
+			annol = cvs.annotationList("%s" % (page_handle.pid))
+			
+			# create annotations for HTML and ALTOXML content
+			# e.g. http://192.168.42.5/WSUAPI/bitStream/wayne:Granvill1872b2158414x_Page_7/ALTOXML?key=SHORT_BUT_SECURE_KEY
+			# HTML
+			anno = annol.annotation()			
+			anno.text(ident="https://%s/WSUAPI/bitStream/%s/HTML" % (localConfig.APP_HOST, page_handle.pid), format="text/html")
+			# ALTOXML
+			anno = annol.annotation()			
+			anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
 
-		# insert into Redis and return JSON string
-		print "Inserting manifest for",self.pid,"into Redis..."
-		redisHandles.r_iiif.set(self.pid,manifest.toString())
+			# push annotationList to page object
+			print "Inserting annotation list for",page_handle.pid,"as object datastream..."
+			ds_handle = eulfedora.models.DatastreamObject(page_handle.ohandle, "IIIF_ANNOLIST", "IIIF_ANNOLIST", mimetype="application/json", control_group="M")
+			ds_handle.label = "IIIF_ANNOLIST"
+			ds_handle.content = annol.toString()
+			ds_handle.save()
+
+
+		# create datastream with IIIF manifest and return JSON string
+		print "Inserting manifest for",self.pid,"as object datastream..."
+		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "IIIF_MANIFEST", "IIIF_MANIFEST", mimetype="application/json", control_group="M")
+		ds_handle.label = "IIIF_MANIFEST"
+		ds_handle.content = manifest.toString()
+		ds_handle.save()
+
 		return manifest.toString()
 
 
@@ -514,20 +548,4 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 
-# # helpers
-# '''
-# This might be where we can fix the gray TIFFs
-# '''
-# def imMode(im):
-# 	# check for 16-bit tiffs
-# 	print "Image mode:",im.mode
-# 	if im.mode in ['I;16','I;16B']:
-# 		print "I;16 tiff detected, converting..."
-# 		im.mode = 'I'
-# 		im = im.point(lambda i:i*(1./256)).convert('L')
-# 	# else if not RGB, convert
-# 	elif im.mode != "RGB" :
-# 		print "Converting to RGB"
-# 		im = im.convert("RGB")
 
-# 	return im

@@ -10,6 +10,7 @@ import datetime
 from lxml import etree
 from flask import Blueprint, render_template, redirect, abort, request, session
 
+import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.jobs import getSelPIDs
 from WSUDOR_Manager import utilities
@@ -38,20 +39,26 @@ def confirm():
 def purgeObject_worker(job_package):	
 
 	form_data = job_package['form_data']
-	PID = job_package['PID']
+	pid = job_package['PID']
+
+	# get obj_handle
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
 
 	# check object state
-	obj_handle = fedora_handle.get_object(PID)
-	print obj_handle.state
-	if obj_handle.state != "D":
+	print obj_handle.ohandle.state
+	if obj_handle.ohandle.state != "D":
 		return "Skipping, object state not 'Deleted (D)'"
+
+	print "purging Constituents if present"
+	if getattr(obj_handle, 'purgeConstituents', None):
+		obj_handle.purgeConstituents()
 	
 	# else, purge object from Fedora (object will be pulled via Messenging service)
-	result = fedora_handle.purge_object(PID)
-	return "%s purge result: %s" % (PID, result)
+	result = fedora_handle.purge_object(obj_handle.pid)
+	return "%s purge result: %s" % (obj_handle.pid, result)
 
 	# remove from Solr
-	solr_handle.delete_by_key(PID)
+	solr_handle.delete_by_key(obj_handle.pid)
 
 
 

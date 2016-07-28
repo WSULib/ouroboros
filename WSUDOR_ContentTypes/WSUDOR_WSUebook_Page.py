@@ -67,7 +67,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# using parent book, get datastreams from objMeta
 		page_dict = self.book_obj.pages_from_objMeta[page_num]
-		print page_dict
 
 		# new pid
 		npid = "wayne:%s_Page_%s" % (self.book_obj.pid.split(":")[1], page_num)
@@ -110,7 +109,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# write RDF relationships
 		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")
-		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isConstituentOf", "info:fedora/%s" % self.ohandle.pid)
+		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isConstituentOf", "info:fedora/%s" % self.book_obj.ohandle.pid)
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder", page_num)
 
 		# save page object
@@ -210,10 +209,15 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print "Processing ALTO XML"
 		file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
 		print "Looking for:",file_path
-		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
-		generic_handle.label = ds['label']
+		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'ALTOXML', 'ALTOXML', mimetype=ds['mimetype'], control_group='M')
+		generic_handle.label = 'ALTOXML'
 		generic_handle.content = open(file_path)
 		generic_handle.save()
+
+
+	'''
+	Consider methods / attributes for JP2, THUMBNAIL, ETC.
+	'''
 
 
 # helpers

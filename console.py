@@ -1,5 +1,6 @@
 print "importing WSUDOR_Manager"
 from WSUDOR_Manager import *
+from WSUDOR_Manager import jobs
 
 # python
 import os

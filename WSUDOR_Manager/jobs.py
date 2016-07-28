@@ -7,8 +7,7 @@ import time
 # proj
 import models
 from redisHandles import *
-from WSUDOR_Manager import db
-from WSUDOR_Manager import celery
+from WSUDOR_Manager import db, celery, models
 from flask import session
 
 # Job Management
@@ -173,6 +172,10 @@ def genPIDlet(cursor):
 	return PIDlet
 	
 
+# function to get PIDs from ingest workspace job
+def getIWPIDs(job_num):
+
+	return models.ingest_workspace_object.query.filter_by(job=models.ingest_workspace_job.query.filter_by(id=job_num).first())
 
 
 

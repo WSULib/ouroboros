@@ -321,7 +321,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		seq = manifest.sequence(label="default sequence")
 
 		# write constituent pages
-		for page in self.pages_from_rels:
+		for page_num in self.pages_from_rels:
 
 			'''
 			Consider writing otherContent resources here
@@ -329,7 +329,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			'''
 
 			# open wsudor handle
-			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page])
+			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
 			print "Working on:",page_handle.ohandle.label
 
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
@@ -481,16 +481,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print "generating virtual ScannedPage object"
 
 
-		# get pages
-		sparql_response = fedora_handle.risearch.sparql_query('select $primary_image $order WHERE {{ $primary_image <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s> . $primary_image <info:fedora/fedora-system:def/relations-internal#isOrder> $order . }} ORDER BY ASC($order)' % (self.pid))
+		# OLD
+		# # get pages
+		# sparql_response = fedora_handle.risearch.sparql_query('select $primary_image $order WHERE {{ $primary_image <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s> . $primary_image <info:fedora/fedora-system:def/relations-internal#isOrder> $order . }} ORDER BY ASC($order)' % (self.pid))
 
-		for page in sparql_response:
+		# for page in sparql_response:
 
-			print page
+		# 	print page
 
+		# 	virtual_page_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualPage)
+		# 	virtual_page_handle.create(self,page)
+
+		# NEW
+		for page_num in self.pages_from_rels:
+
+			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
 			virtual_page_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualPage)
-			virtual_page_handle.create(self,page)
-
+			virtual_page_handle.create(self, page_num, page_handle)
 
 	def createReaduxVirtualObjects(self):
 
@@ -517,11 +524,15 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		NOTE: will need to wait here for risearch to index
 		'''
 
+		# index in Solr
 		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 
 		for obj in sparql_response:
 			print "Indexing object: %s" % obj['virtobj']
 			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
+
+		# generate TEI
+		os.system('python /opt/readux/manage.py add_pagetei -u %s_Readux_VirtualVolume' % self.pid)
 
 		return True
 
@@ -545,6 +556,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				break
 
 		self.indexReaduxVirtualObjects(action='index')
+
+
+
 
 
 

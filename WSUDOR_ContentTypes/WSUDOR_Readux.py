@@ -382,7 +382,7 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		- alto XML
 	'''
 
-	def create(self, wsudor_book, page):
+	def create(self, wsudor_book, page_num, page_handle):
 		
 		'''
 		Create Readux virtual Volume object based on WSUDOR_WSUebook
@@ -390,7 +390,7 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 
 		# PID
 		pid_prefix = wsudor_book.pid
-		self.pid = pid_prefix + "_Readux_VirtualPage_%s" % (page['order'])
+		self.pid = pid_prefix + "_Readux_VirtualPage_%s" % (page_num)
 
 		# init
 		print "Initializing %s" % (self.pid)
@@ -398,7 +398,7 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 
 		# Dublin Core
 		'''
-		Will need to write this a bit more carefull - including the PID of this new object!
+		Will need to write this a bit more carefully - including the PID of this new object!
 		'''
 
 		# write POLICY datastream
@@ -409,10 +409,9 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 		policy_handle.label = "POLICY"
 		policy_handle.save()
-
 		
 		# label
-		self.label = "%s / %s" % (wsudor_book.ohandle.label,page['order'])
+		self.label = "%s / %s" % (wsudor_book.ohandle.label,page_num)
 
 		# Build RELS-EXT
 		self.rels_ext.content.bind('eul-repomgmt',emory)
@@ -429,7 +428,7 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 			},
 			{
 				"predicate": emory.pageOrder,
-				"object": rdflib.term.Literal(page['order'], datatype=rdflib.term.URIRef(u'http://www.w3.org/2001/XMLSchema#int'))
+				"object": rdflib.term.Literal(page_num, datatype=rdflib.term.URIRef(u'http://www.w3.org/2001/XMLSchema#int'))
 			},						
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isConstituentOf"),
@@ -454,32 +453,19 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 
 		self.rels_ext.save()
 
-
-		# Content Type Unique
-		###############################################################
-
 		# source-image
 		print "Linking Image"
-		source_image_handle = eulfedora.models.DatastreamObject(self,"source-image", "source-image", mimetype="image/jp2", control_group="E")
-		source_image_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/IMAGE_%s_JP2/content" % (wsudor_book.pid, page['order'])
+		source_image_handle = eulfedora.models.DatastreamObject(self, "source-image", "source-image", mimetype="image/jp2", control_group="E")
+		source_image_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/JP2/content" % (page_handle.pid)
 		source_image_handle.label = "source-image"
 		source_image_handle.save()
 
 		# text
 		print "Writing 'text' datastream, aka 'alto'"
 		alto_handle = eulfedora.models.DatastreamObject(self, "text", "text", mimetype="text/xml", control_group='M')
-		alto_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/ALTOXML_%s/content" % (wsudor_book.pid, page['order'])
+		alto_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/ALTOXML/content" % (page_handle.pid)
 		alto_handle.label = "text"
 		alto_handle.save()
-
-		# tei
-		# print "Writing 'tei' datastream"
-		# tei_handle = eulfedora.models.DatastreamObject(self, "tei", "tei", mimetype="text/xml", control_group='M')
-		# tei_handle.label = "tei"
-		# tei_handle.content = "</empty>"
-		# tei_handle.save()
-
-		###############################################################
 
 		# save new object
 		self.save()

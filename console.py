@@ -59,11 +59,25 @@ def tailUserCelery(user):
 
 # function to grab single object from remote repository
 def getRemoteObject(repo, PID, index=True):
-	return eulfedora.syncutil.sync_object(fedoraHandles.remoteRepo(repo).get_object(PID), fedora_handle, show_progress=False, export_context='archive')
-	if index:
-		obj = w(PID)
-		print "waiting momentarily for object to finish ingesting..."
-		time.sleep(3)
-		obj.objectRefresh()
+	
+	sync_list = [PID]
+	
+	# remote repo
+	rr = fedoraHandles.remoteRepo(repo)
+	
+	# check if remote object has constituent parts
+	constituents = rr.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
+	print len(constituents)
+	if len(constituents) > 0:
+		for constituent in constituents:
+			# add to sync list
+			print "adding %s to sync list" % constituent[0]
+			sync_list.append(constituent[0])
+			
+	# sync objects 
+	for i,pid in enumerate(sync_list):
+		print "retrieving %s, %d/%d..." % (pid,i,len(sync_list))
+		print eulfedora.syncutil.sync_object(rr.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
+	
 
 

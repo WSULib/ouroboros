@@ -314,7 +314,7 @@ IIIF Image API
 '''
 @WSUDOR_API_app.route("/%s/lorisProxy/<image_id>/<region>/<size>/<rotation>/<quality>.<format>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def loris_image(image_id,region,size,rotation,quality,format):
-
+	
 	# parse pid and datastream from image_id
 	pid = image_id.split("fedora:")[1].split("|")[0]
 	ds = image_id.split("fedora:")[1].split("|")[1]
@@ -498,14 +498,3 @@ def _pareRotation(degs):
 		return degs
 	else:
 		return _pareRotation(degs - 360)
-
-
-
-
-
-
-
-
-
-
-

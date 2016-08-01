@@ -25,7 +25,7 @@ from collections import deque
 import struct
 from PIL import Image
 
-# library for working with LOC BagIt standard 
+# library for working with LOC BagIt standard
 import bagit
 
 # celery
@@ -57,14 +57,14 @@ from jpylyzer import etpatch
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
 def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 
-	'''	
+	'''
 	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
 	'''
 
 	try:
 		# Future WSUDOR object, BagIt object
 		if object_type == "bag":
-			
+
 			# prepare new working dir & recall original
 			working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
 			print "object_type is bag, creating working dir at", working_dir
@@ -76,11 +76,11 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 			# set 'working_dir' to new location in /tmp/Ouroboros
 			'''
 			if os.path.isdir(payload):
-				print "directory detected, symlinking"				
+				print "directory detected, symlinking"
 				# shutil.copytree(payload,working_dir)
 				os.symlink(payload, working_dir)
 
-							
+
 			# tar file or gz
 			elif payload.endswith(('.tar','.gz')):
 				print "tar / gz detected, decompressing"
@@ -97,7 +97,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 			if len(os.listdir(working_dir)) == 1 and os.path.isdir("/".join((working_dir, os.listdir(working_dir)[0]))):
 				print "we got a sub-dir"
 				payload = "/".join((working_dir,os.listdir(working_dir)[0]))
-			else:				
+			else:
 				payload = working_dir
 			print "payload is:",payload
 
@@ -108,7 +108,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 			# only need content_type
 			content_type = objMeta['content_type']
 
-		
+
 		# Active, WSUDOR object
 		if object_type == "WSUDOR":
 
@@ -119,10 +119,10 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 			if payload.exists == False:
 				print "Object does not exist, cannot instantiate as WSUDOR type object."
 				return False
-			
+
 			# GET WSUDOR_X object content_model
 			'''
-			This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off 
+			This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off
 			to use, "Image".  Then, we append that to "WSUDOR_" to get ContentTypes such as "WSUDOR_Image", or "WSUDOR_Collection", etc.
 			'''
 			try:
@@ -142,7 +142,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 				content_type = "WSUDOR_"+str(content_type)
 
 			# fallback, grab straight from OBJMETA datastream / only fires for v2 objects
-			except:				
+			except:
 				if "OBJMETA" in payload.ds_list:
 					print "Race conditions detected, grabbing content_type from objMeta"
 					objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
@@ -154,12 +154,12 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 		print traceback.format_exc()
 		print e
 		return False
-	
-	# need check if valid subclass of WSUDOR_GenObject	
+
+	# need check if valid subclass of WSUDOR_GenObject
 	try:
-		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload, orig_payload = orig_payload)	
+		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload, orig_payload = orig_payload)
 	except:
-		print "Could not find appropriate ContentType, returning False."		
+		print "Could not find appropriate ContentType, returning False."
 		return False
 
 
@@ -168,7 +168,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 class WSUDOR_GenObject(object):
 
 	'''
-	This class represents an object already present, or destined, for Ouroboros.  
+	This class represents an object already present, or destined, for Ouroboros.
 	"object_type" is required for discerning between the two.
 
 	object_type = 'WSUDOR'
@@ -176,7 +176,7 @@ class WSUDOR_GenObject(object):
 
 	object_type = 'bag'
 		- object is present outside of WSUDOR, actions include primarily ingest and validation
-	'''	
+	'''
 
 	# init
 	############################################################################################################
@@ -190,7 +190,7 @@ class WSUDOR_GenObject(object):
 						"id":"THUMBNAIL",
 						"purpose":"Thumbnail of image",
 						"mimetype":"image/jpeg"
-					},								
+					},
 					{
 						"id":"MODS",
 						"purpose":"Descriptive MODS",
@@ -209,14 +209,14 @@ class WSUDOR_GenObject(object):
 				],
 				"external_relationships":[
 					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
-					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy"					
+					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy"
 				]
-			}		
+			}
 		}
 		self.orig_payload = orig_payload
-		
+
 		# WSUDOR or BagIt archive for the object returned
-		try:			
+		try:
 
 			# Future WSUDOR object, BagIt object
 			if object_type == "bag":
@@ -237,9 +237,9 @@ class WSUDOR_GenObject(object):
 				self.ohandle = None
 
 				# BagIt methods
-				self.Bag = bagit.Bag(payload)	
-				self.temp_payload = self.Bag.path		
-				
+				self.Bag = bagit.Bag(payload)
+				self.temp_payload = self.Bag.path
+
 
 			# Active, WSUDOR object
 			if object_type == "WSUDOR":
@@ -256,7 +256,7 @@ class WSUDOR_GenObject(object):
 				self.ohandle = payload
 				# only fires for v2 objects
 				if "OBJMETA" in self.ohandle.ds_list:
-					self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)			
+					self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
 
 
 		except Exception,e:
@@ -270,7 +270,7 @@ class WSUDOR_GenObject(object):
 	'''
 	These properties use helpers.LazyProperty decorator, to avoid loading them if not called.
 	'''
-	
+
 	# MODS metadata
 	@helpers.LazyProperty
 	def MODS_XML(self):
@@ -285,13 +285,13 @@ class WSUDOR_GenObject(object):
 	@helpers.LazyProperty
 	def MODS_Solr_flat(self):
 		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/MODS_extract.xsl','r')		
+		XSLhand = open('inc/xsl/MODS_extract.xsl','r')
 		xslt_tree = etree.parse(XSLhand)
 		transform = etree.XSLT(xslt_tree)
 		XMLroot = etree.fromstring(self.MODS_XML)
 		SolrXML = transform(XMLroot)
 		return xmltodict.parse(str(SolrXML))
-	
+
 
 	#DC metadata
 	@helpers.LazyProperty
@@ -307,7 +307,7 @@ class WSUDOR_GenObject(object):
 	@helpers.LazyProperty
 	def DC_Solr_flat(self):
 		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/DC_extract.xsl','r')		
+		XSLhand = open('inc/xsl/DC_extract.xsl','r')
 		xslt_tree = etree.parse(XSLhand)
 		transform = etree.XSLT(xslt_tree)
 		XMLroot = etree.fromstring(self.DC_XML)
@@ -319,7 +319,7 @@ class WSUDOR_GenObject(object):
 	@helpers.LazyProperty
 	def RELS_EXT_Solr_flat(self):
 		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
+		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
 		xslt_tree = etree.parse(XSLhand)
 		transform = etree.XSLT(xslt_tree)
 		# raw, unmodified RDF
@@ -333,7 +333,7 @@ class WSUDOR_GenObject(object):
 	@helpers.LazyProperty
 	def RELS_INT_Solr_flat(self):
 		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')		
+		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
 		xslt_tree = etree.parse(XSLhand)
 		transform = etree.XSLT(xslt_tree)
 		# raw, unmodified RDF
@@ -355,7 +355,7 @@ class WSUDOR_GenObject(object):
 	def SolrSearchDoc(self):
 		return models.SolrSearchDoc(self.pid)
 
-	
+
 	# return IIIF maniest
 	@helpers.LazyProperty
 	def iiif_manifest(self):
@@ -375,7 +375,7 @@ class WSUDOR_GenObject(object):
 
 		# check Redis for object size dictionary
 		r_response = redisHandles.r_catchall.get(self.pid)
-		if r_response != None:
+		if r_response != None and not update:
 			print "object size dictionary located and retrieved from Redis"
 			return ast.literal_eval(r_response)
 
@@ -397,9 +397,9 @@ class WSUDOR_GenObject(object):
 			# store in Redis
 			redisHandles.r_catchall.set(self.pid, size_dict)
 
-			# return 
-			return size_dict			
-			
+			# return
+			return size_dict
+
 
 	def update_objSizeDict(self):
 
@@ -409,7 +409,7 @@ class WSUDOR_GenObject(object):
 
 		print "regenerating and returning"
 		return self.objSizeDict
-		
+
 
 
 
@@ -418,7 +418,7 @@ class WSUDOR_GenObject(object):
 	# generic, simple ingest
 	def ingestBag(self, indexObject=True):
 		if self.object_type != "bag":
-			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")		
+			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
 
 		# ingest Volume object
 		try:
@@ -442,12 +442,12 @@ class WSUDOR_GenObject(object):
 			objMeta_handle.content = json.dumps(self.objMeta)
 			objMeta_handle.save()
 
-			# write explicit RELS-EXT relationships			
+			# write explicit RELS-EXT relationships
 			for relationship in self.objMeta['object_relationships']:
 				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
-					
-			# writes derived RELS-EXT			
+
+			# writes derived RELS-EXT
 			content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
@@ -476,12 +476,12 @@ class WSUDOR_GenObject(object):
 </mods:mods>
 				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
 				print raw_MODS
-				MODS_handle.content = raw_MODS		
-				MODS_handle.save()		
+				MODS_handle.content = raw_MODS
+				MODS_handle.save()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
-			
+
 			# finish generic ingest
 			return self.finishIngest(indexObject=indexObject)
 
@@ -510,7 +510,7 @@ class WSUDOR_GenObject(object):
 		bag_meta_handle.label = "BagIt Metadata Tarball"
 		bag_meta_handle.content = open(temp_filename)
 		bag_meta_handle.save()
-		os.system('rm %s' % (temp_filename))		
+		os.system('rm %s' % (temp_filename))
 
 		# derive Dublin Core from MODS, update DC datastream
 		self.DCfromMODS()
@@ -526,7 +526,7 @@ class WSUDOR_GenObject(object):
 			# affiliate with collection set
 			try:
 				collections = self.previewSolrDict()['rels_isMemberOfCollection']
-				for collection in collections:			
+				for collection in collections:
 					print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
 			except:
 				print "could not affiliate with collection"
@@ -583,9 +583,9 @@ class WSUDOR_GenObject(object):
 	# 	│   ├── MODS.xml
 	# 	│   └── objMeta.json
 	# 	├── manifest-md5.txt
-	# 	└── tagmanifest-md5.txt		
+	# 	└── tagmanifest-md5.txt
 	# 	'''
-		
+
 	# 	# get PID
 	# 	PID = self.pid
 
@@ -607,7 +607,7 @@ class WSUDOR_GenObject(object):
 	# 	bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
 	# 	bagitIO = StringIO.StringIO(bagit_files)
 	# 	tar_handle = tarfile.open(fileobj=bagitIO)
-	# 	tar_handle.extractall(path=temp_dir)		
+	# 	tar_handle.extractall(path=temp_dir)
 
 	# 	# export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
 	# 	def writeDS(write_tuple):
@@ -690,7 +690,7 @@ class WSUDOR_GenObject(object):
 
 	# # reingest bag
 	# def reingestBag(self, removeExportTar=False, preserveRelationships=True):
-		
+
 	# 	# get PID
 	# 	PID = self.pid
 
@@ -717,7 +717,7 @@ class WSUDOR_GenObject(object):
 	# 		print "Removing export tar..."
 	# 		os.remove(export_tar)
 
-	# 	# return 
+	# 	# return
 	# 	return PID,"Reingested."
 
 
@@ -743,24 +743,24 @@ class WSUDOR_GenObject(object):
 
 
 
-	# regnerate derivative JP2s 
+	# regnerate derivative JP2s
 	def regenJP2(self, regenIIIFManifest=False, target_ds=None):
 		'''
 		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
 		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
-		
+
 		A lot are failing because the TIFFS are compressed, are PNG files.  We need a secondary attempt
 		that converts to uncompressed TIFF first.
 		'''
 
-		# iterate through datastreams and look for JP2s	
+		# iterate through datastreams and look for JP2s
 		if target_ds is None:
-			jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]	
+			jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
 		else:
 			jp2_ds_list = [target_ds]
 
 		for i,ds in enumerate(jp2_ds_list):
-			
+
 			print "converting %s, %s / %s" % (ds,str(i),str(len(jp2_ds_list)))
 
 			# init JP2DerivativeMaker
@@ -769,12 +769,12 @@ class WSUDOR_GenObject(object):
 			# jp2 handle
 			jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
 
-			# get original ds_handle 
+			# get original ds_handle
 			orig = ds.split("_JP2")[0]
 			try:
 				orig_ds_handle = self.ohandle.getDatastreamObject(orig)
 			except:
-				print "could not find original for",orig					
+				print "could not find original for",orig
 
 			# write temp original and set as inPath
 			j.inPath = j.writeTempOrig(orig_ds_handle)
@@ -796,17 +796,17 @@ class WSUDOR_GenObject(object):
 
 			# write new JP2 datastream
 			if makeJP2result:
-				
+
 				with open(j.outPath) as fhand:
 					jp2_ds_handle.content = fhand.read()
 				print "Result for",ds,jp2_ds_handle.save()
-				
+
 				# cleanup
 				os.remove(j.inPath) # input
 				j.cleanupTempFiles() # cleanup
 
 				# remove from Loris cache
-				self.removeObjFromCache()			
+				self.removeObjFromCache()
 
 			else:
 				# cleanup
@@ -923,9 +923,9 @@ class WSUDOR_GenObject(object):
 
 
 
-	# regnerate derivative JP2s 
+	# regnerate derivative JP2s
 	def checkJP2(self, regenJP2_on_fail=False, tests=['all']):
-		
+
 		'''
 		Function to check health and integrity of JP2s for object
 		Uses jpylyzer library
@@ -933,13 +933,13 @@ class WSUDOR_GenObject(object):
 
 		checks = []
 
-		# iterate through datastreams and look for JP2s	
-		jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]	
-		
+		# iterate through datastreams and look for JP2s
+		jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
+
 		for i,ds in enumerate(jp2_ds_list):
 
 			print "checking %s, %s / %s" % (ds,i,len(jp2_ds_list))
-			
+
 			# check codesteram present
 			if 'all' in tests or 'codestream' in tests:
 				checks.append( self._checkJP2Codestream(ds) )
@@ -954,7 +954,7 @@ class WSUDOR_GenObject(object):
 		if regenJP2_on_fail and False in checks:
 			self.regenJP2(regenIIIFManifest=True, target_ds=ds)
 
-		
+
 
 
 
@@ -970,13 +970,13 @@ class WSUDOR_GenObject(object):
 			self.regenJP2()
 
 
-	# regnerate derivative JP2s 
+	# regnerate derivative JP2s
 	def regen_objMeta(self):
 		'''
 		Function to regen objMeta.  When we decided to let the bag info stored in Fedora not validate,
 		opened up the door for editing the objMeta file if things change.
 
-		Add non-derivative datastreams to objMeta, remove objMeta datastreams that no longer exist		
+		Add non-derivative datastreams to objMeta, remove objMeta datastreams that no longer exist
 		'''
 
 		# get list of current datastreams, sans known derivatives
@@ -1030,11 +1030,11 @@ class WSUDOR_GenObject(object):
 		self.objMeta['datastreams'] = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] not in prunable_datastreams ]
 
 		# resulting objMeta datastreams
-		print "Resulting objMeta datastreams",self.objMeta['datastreams']	
+		print "Resulting objMeta datastreams",self.objMeta['datastreams']
 
 		# write current objMeta to fedora datastream
 		objMeta_handle = self.ohandle.getDatastreamObject('OBJMETA')
-		objMeta_handle.content = json.dumps(self.objMeta)		
+		objMeta_handle.content = json.dumps(self.objMeta)
 		objMeta_handle.save()
 
 
@@ -1061,7 +1061,7 @@ class WSUDOR_GenObject(object):
 
 	# remove from Loris cache
 	def _removeObjFromLorisCache(self):
-		
+
 		removed = []
 
 		for ds in self.ohandle.ds_list:
@@ -1083,7 +1083,7 @@ class WSUDOR_GenObject(object):
 
 		Now, requires datastream to purge from cache.
 		'''
-		
+
 		print "Removing object from Loris caches..."
 
 		# read config file for Loris
@@ -1101,7 +1101,7 @@ class WSUDOR_GenObject(object):
 		ident = "fedora:%s|%s" % (self.pid, ds)
 
 		# clear from fedora resolver cache
-		try:			
+		try:
 			print "removing instance: %s" % ident
 			file_structure = ''
 			ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
@@ -1142,10 +1142,10 @@ class WSUDOR_GenObject(object):
 			self.update_objSizeDict()
 
 			# remove object from Loris cache
-			self.removeObjFromCache()			
+			self.removeObjFromCache()
 
 			return True
-			
+
 		except:
 			return False
 
@@ -1231,7 +1231,7 @@ class WSUDOR_GenObject(object):
 		or is other.
 
 		Probably safe to assume that file extensions are not *entirely* numbers, which the following
-		checks for.		
+		checks for.
 		'''
 
 		# check if orig_filename contains file extension, if so, strip
@@ -1275,12 +1275,12 @@ class WSUDOR_GenObject(object):
 
 		# 4) update object MODS
 		MODS_handle.content = etree.tostring(enriched_MODS[0])
-		MODS_handle.save()		
+		MODS_handle.save()
 
 
 		# 5) recreate <mods:extension>/<orig_filename> if lost (taken from MODS export)
 		print "ensuring that <orig_filename> endures"
-		
+
 		# reinit MODS and ohandle
 		self.ohandle = fedora_handle.get_object(self.pid)
 		MODS_handle = self.ohandle.getDatastreamObject('MODS')
@@ -1293,14 +1293,14 @@ class WSUDOR_GenObject(object):
 
 			# check for <mods:extension>, if not present add
 			extension_check = MODS_handle.content.node.xpath('//mods:extension', namespaces=MODS_handle.content.node.nsmap)
-			
+
 			# if absent, create with <PID> subelement
 			if len(extension_check) == 0:
 				#serialize and replace
-				MODS_content = MODS_handle.content.serialize()		
-				# drop original full filename back in here		
+				MODS_content = MODS_handle.content.serialize()
+				# drop original full filename back in here
 				MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><orig_filename>%s</orig_filename></mods:extension></mods:mods>" % full_orig_filename)
-			
+
 			# <mods:extension> present, but no PID subelement, create
 			else:
 				orig_filename_elem = etree.SubElement(extension_check[0],"orig_filename")
@@ -1327,15 +1327,15 @@ class WSUDOR_GenObject(object):
 	################################################################
 	# derive DC from MODS
 	def DCfromMODS(self):
-		
-		# 1) retrieve MODS		
-		MODS_handle = self.ohandle.getDatastreamObject('MODS')		
+
+		# 1) retrieve MODS
+		MODS_handle = self.ohandle.getDatastreamObject('MODS')
 		XMLroot = etree.fromstring(MODS_handle.content.serialize())
 
 		# 2) transform downloaded MODS to DC with LOC stylesheet
 		print "XSLT Transforming: %s" % (self.pid)
 		# Saxon transformation
-		XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
+		XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')
 		xslt_tree = etree.parse(XSLhand)
 		transform = etree.XSLT(xslt_tree)
 		DC = transform(XMLroot)
@@ -1349,12 +1349,3 @@ class WSUDOR_GenObject(object):
 		derive_results = DS_handle.save()
 		print "DCfromMODS result:",derive_results
 		return derive_results
-
-
-	
-
-
-
-	
-
-

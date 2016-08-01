@@ -285,8 +285,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		'''
 		Currently generates IIIF manifest with one sequence, handful of canvases for each image.
-
-		Next step: add annotationList as datastream at page object
 		'''
 
 		# get solr_doc
@@ -345,21 +343,21 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			img = anno.image(fedora_http_ident, iiif=True)
 			img.id = fedora_http_ident
 			img.set_hw_from_iiif()
-			
+
 			# set canvas dimensions
 			cvs.height = img.height
 			cvs.width = img.width
 
-			# create annotationsList for page object			
+			# create annotationsList for page object
 			annol = cvs.annotationList("%s" % (page_handle.pid))
-			
+
 			# create annotations for HTML and ALTOXML content
 			# e.g. http://192.168.42.5/WSUAPI/bitStream/wayne:Granvill1872b2158414x_Page_7/ALTOXML?key=SHORT_BUT_SECURE_KEY
 			# HTML
-			anno = annol.annotation()			
+			anno = annol.annotation()
 			anno.text(ident="https://%s/WSUAPI/bitStream/%s/HTML" % (localConfig.APP_HOST, page_handle.pid), format="text/html")
 			# ALTOXML
-			anno = annol.annotation()			
+			anno = annol.annotation()
 			anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
 
 			# push annotationList to page object
@@ -556,10 +554,3 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				break
 
 		self.indexReaduxVirtualObjects(action='index')
-
-
-
-
-
-
-

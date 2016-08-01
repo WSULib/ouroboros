@@ -11,7 +11,7 @@ from flask import render_template, request, session, redirect, make_response, Re
 from WSUDOR_API import cache
 from WSUDOR_API import WSUDOR_API_app
 import WSUDOR_ContentTypes
-from WSUDOR_Manager import redisHandles
+from WSUDOR_Manager import redisHandles, fedora_handle
 from functions.packagedFunctions import singleObjectPackage
 
 
@@ -25,7 +25,7 @@ def skipCache():
 
 # object manifest
 @WSUDOR_API_app.route("/%s/<identifier>" % (localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
-def iiif_manifest(identifier):		
+def iiif_manifest(identifier):
 
 	'''
 	While using fedora 3.x, we'll be sending the PID as the identifier
@@ -40,7 +40,7 @@ def iiif_manifest(identifier):
 		response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
 		response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
 		response.headers['Access-Control-Max-Age'] = 2520
-		response.headers["Content-Type"] = "application/json"		
+		response.headers["Content-Type"] = "application/json"
 		response.headers['X-Powered-By'] = 'ShoppingHorse'
 		response.headers['Connection'] = 'Close'
 		return response
@@ -52,8 +52,8 @@ def iiif_manifest(identifier):
 
 # annotation list
 @WSUDOR_API_app.route("/%s/list/<identifier>.json" % (localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
-def iiif_annotation_list(identifier):		
-	
+def iiif_annotation_list(identifier):
+
 	getParams = {each:request.values.getlist(each) for each in request.values}
 
 	try:
@@ -63,7 +63,7 @@ def iiif_annotation_list(identifier):
 		response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
 		response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
 		response.headers['Access-Control-Max-Age'] = 2520
-		response.headers["Content-Type"] = "application/json"		
+		response.headers["Content-Type"] = "application/json"
 		response.headers['X-Powered-By'] = 'ShoppingHorse'
 		response.headers['Connection'] = 'Close'
 		return response
@@ -71,7 +71,7 @@ def iiif_annotation_list(identifier):
 	except Exception,e:
 		print "WSUDOR_API iiif_annotation_list call unsuccessful.  Error:",str(e)
 		return '{"WSUDOR_APIstatus":"WSUDOR_API iiif_annotation_list call unsuccessful.","WSUDOR_APIstatus iiif_annotation_list message":%s}' % (json.dumps(str(e)))
-		
+
 
 @cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def retrieveManifest(identifier,getParams,request):
@@ -79,34 +79,29 @@ def retrieveManifest(identifier,getParams,request):
 	'''
 	genIIIFManifest() is a function built-in to each content-type.
 	In an effort to reduce how many times these manifests are generated, this function now tries
-	to retreive from stored datastream first.  If not there, runs object method to generate, 
+	to retreive from stored datastream first.  If not there, runs object method to generate,
 	then tries again.
 	'''
-	
-	# check for IIIF manifest datastream
-	obj = WSUDOR_ContentTypes.WSUDOR_Object(identifier)	
-	if 'IIIF_MANIFEST' in obj.ohandle.ds_list:
+
+	# check for IIIF manifest datastream	
+	ohandle = fedora_handle.get_object(identifier)
+	if 'IIIF_MANIFEST' in ohandle.ds_list:
 		print "manifest located and retrieved from Redis"
-		return obj.ohandle.getDatastreamObject('IIIF_MANIFEST').content
+		return ohandle.getDatastreamObject('IIIF_MANIFEST').content
 	else:
-		print "generating manifest, storing in redis, returning"
+		print "generating manifest, storing as datastream, returning"
+		obj = WSUDOR_ContentTypes.WSUDOR_Object(identifier)
 		# fire content-type defined manifest generation
 		return obj.genIIIFManifest()
-	
+
 
 @cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def retrieveAnnotationList(identifier):
 
 	# check for IIIF manifest datastream
-	obj = WSUDOR_ContentTypes.WSUDOR_Object(identifier)	
+	obj = WSUDOR_ContentTypes.WSUDOR_Object(identifier)
 	if 'IIIF_ANNOLIST' in obj.ohandle.ds_list:
 		print "annotation list located and retrieved"
 		return obj.ohandle.getDatastreamObject('IIIF_ANNOLIST').content
 	else:
 		print "could not find annotation list for %s" % identifier
-
-
-
-
-
-

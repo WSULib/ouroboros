@@ -12,7 +12,7 @@ import traceback
 import sys
 import ast
 
-# library for working with LOC BagIt standard 
+# library for working with LOC BagIt standard
 import bagit
 
 # celery
@@ -47,10 +47,10 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	Fedora_ContentType = "CM:Image"
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
-		
+
 		# run __init__ from parent class
 		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
-		
+
 		# Add WSUDOR_Image struct_requirements to WSUDOR_Object instance struct_requirements
 		self.struct_requirements['WSUDOR_Image'] = {
 			"datastreams":[
@@ -89,7 +89,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			report_failure(("isRepresentedBy_check","%s is not in %s" % (self.objMeta['isRepresentedBy'], ds_ids)))
 
 
-		# check that content_type is a valid ContentType				
+		# check that content_type is a valid ContentType
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
 
@@ -106,8 +106,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 		# attempt to ingest bag / object
-		try:		
-			
+		try:
+
 			self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
 			self.ohandle.save()
 
@@ -125,22 +125,22 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write objMeta as datastream
 			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
-			objMeta_handle.label = "Ingest Bag Object Metadata"			
+			objMeta_handle.label = "Ingest Bag Object Metadata"
 			file_path = self.Bag.path + "/data/objMeta.json"
 			objMeta_handle.content = open(file_path)
 			objMeta_handle.save()
 
 			# -------------------------------------- RELS-EXT ---------------------------------------#
 
-			# write explicit RELS-EXT relationships			
+			# write explicit RELS-EXT relationships
 			for relationship in self.objMeta['object_relationships']:
 				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
-			
-			# writes derived RELS-EXT			
+
+			# writes derived RELS-EXT
 			# isRepresentedBy
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
-			
+
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
 			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
@@ -173,14 +173,14 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 </mods:mods>
 				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
 				print raw_MODS
-				MODS_handle.content = raw_MODS		
+				MODS_handle.content = raw_MODS
 				MODS_handle.save()
 
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
 
-				if "skip_processing" not in ds:		
-					print "Processing derivative"		
+				if "skip_processing" not in ds:
+					print "Processing derivative"
 					file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
 					print "Looking for:",file_path
 
@@ -193,7 +193,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					# make access
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
 					im = Image.open(file_path)
-					
+
 					# run through filter
 					im = imMode(im)
 
@@ -203,12 +203,12 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					preview_handle.content = open(temp_filename)
 					preview_handle.save()
 					os.system('rm %s' % (temp_filename))
-					
-					# make thumb			
+
+					# make thumb
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
 					im = Image.open(file_path)
 					width, height = im.size
-					max_width = 200	
+					max_width = 200
 					max_height = 200
 
 					# run through filter
@@ -226,9 +226,9 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
 					im = Image.open(file_path)
 					width, height = im.size
-					max_width = 1280	
+					max_width = 1280
 					max_height = 960
-					
+
 					# run through filter
 					im = imMode(im)
 
@@ -240,11 +240,11 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					preview_handle.save()
 					os.system('rm %s' % (temp_filename))
 
-					# make JP2 with derivative class	
+					# make JP2 with derivative class
 					jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_JP2" % (ds['ds_id']), "%s_JPS" % (ds['label']), mimetype="image/jp2", control_group='M')
-					jp2_handle.label = "%s_JPS" % (ds['label'])	
+					jp2_handle.label = "%s_JPS" % (ds['label'])
 					j = JP2DerivativeMaker(inObj=self)
-					j.inPath = file_path 
+					j.inPath = file_path
 					print "making JP2 with",j.inPath,"to",j.outPath
 					makeJP2result = j.makeJP2()
 
@@ -275,7 +275,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 							jp2_handle.content = fhand.read()
 						print "Result for",ds,jp2_handle.save()
 						# cleanup
-						j.cleanupTempFiles()					
+						j.cleanupTempFiles()
 
 					else:
 						# cleanup
@@ -291,13 +291,13 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_PREVIEW' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isPreviewOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
 					fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s_ACCESS' % (self.ohandle.pid, ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isAccessOf','info:fedora/%s/%s' % (self.ohandle.pid, ds['ds_id']))
 
-					# if order present, get order and write relationship. 
+					# if order present, get order and write relationship.
 					if 'order' in ds:
 						fedora_handle.api.addRelationship(self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid,ds['ds_id']),'info:fedora/fedora-system:def/relations-internal#isOrder', ds['order'], isLiteral=True)
 
 					# -------------------------------------- RELS-INT ---------------------------------------#
 
-				
+
 				# else, skip processing and write straight 1:1 datastream
 				else:
 					print "Skipping derivative processing"
@@ -327,14 +327,14 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			final_save = self.ohandle.save()
 
 			# finish generic ingest
-			# may pass methods here that will run in finishIngest() 
+			# may pass methods here that will run in finishIngest()
 			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[])
 
 
 		# exception handling
 		except:
 			raise Exception(traceback.format_exc())
-			
+
 
 
 
@@ -355,8 +355,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			single_json = json.loads(singleObjectPackage(getParams))
 		else:
 			single_json = json.loads(singleObjectPackage(getParams))
-			
-			
+
 		# create root mani obj
 		try:
 			manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
@@ -381,13 +380,13 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
 			except:
 				print "Could Not Set Metadata Field, Skipping",field_set[0]
-	
+
 		# start anonymous sequence
 		seq = manifest.sequence(label="default sequence")
 
 		# iterate through component parts
-		for image in single_json['parts_imageDict']['sorted']:			
-			
+		for image in single_json['parts_imageDict']['sorted']:
+
 			# generate obj|ds identifier as defined in loris TemplateHTTP extension
 			fedora_http_ident = "fedora:%s|%s" % (self.pid,image['jp2'])
 			# fedora_http_ident = "%s|%s" % (self.pid,image['jp2']) #loris_dev
@@ -407,17 +406,20 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			cvs.height = img.height
 			cvs.width = img.width
 
+		# create datastream with IIIF manifest and return JSON string
+		print "Inserting manifest for",self.pid,"as object datastream..."
+		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "IIIF_MANIFEST", "IIIF_MANIFEST", mimetype="application/json", control_group="M")
+		ds_handle.label = "IIIF_MANIFEST"
+		ds_handle.content = manifest.toString()
+		ds_handle.save()
 
-		# insert into Redis and return JSON string
-		print "Inserting manifest for",self.pid,"into Redis..."
-		redisHandles.r_iiif.set(self.pid,manifest.toString())
-		return manifest.toString()	
+		return manifest.toString()
 
 
 # helpers
 def imMode(im):
 	# check for 16-bit tiffs
-	print "Image mode:",im.mode				
+	print "Image mode:",im.mode
 	if im.mode in ['I;16','I;16B']:
 		print "I;16 tiff detected, converting..."
 		im.mode = 'I'
@@ -428,26 +430,3 @@ def imMode(im):
 		im = im.convert("RGB")
 
 	return im
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

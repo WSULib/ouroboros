@@ -283,7 +283,7 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 			},
 			{
 				"predicate": emory.hasPrimaryImage,
-				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualPage_1" % (pid_prefix))
+				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualPage_%d" % (pid_prefix, wsudor_book.pages_from_rels.items()[0][0]))
 			},			
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isConstituentOf"),

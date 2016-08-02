@@ -55,8 +55,6 @@ def tailUserCelery(user):
 	os.system("tail -f /var/log/celery-%s.err.log" % user)
 
 
-# Ouroverse
-
 # function to grab single object from remote repository
 def getRemoteObject(repo, PID, index=True, skip_constituents=False):
 	
@@ -79,6 +77,30 @@ def getRemoteObject(repo, PID, index=True, skip_constituents=False):
 	for i,pid in enumerate(sync_list):
 		print "retrieving %s, %d/%d..." % (pid,i,len(sync_list))
 		print eulfedora.syncutil.sync_object(rr.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
+	
+	
+# function to clone object datastream by datastream
+def cloneRemoteObject(repo, PID):
+	pass
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 
 

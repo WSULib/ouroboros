@@ -166,13 +166,6 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		parent_collection = [ o for s,p,o in wsudor_book.ohandle.rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') and o != rdflib.term.URIRef(u'info:fedora/wayne:collectionWSUebooks') ]
 		parent_obj = fedora_handle.get_object(parent_collection[0])
 
-		# fire creation of Virtual Collection
-		# virtual_collection_handle = fedora_handle.get_object(type=WSUDOR_Readux_VirtualCollection)
-		# try:
-		# 	virtual_collection_handle.create(parent_obj)
-		# except:
-		# 	print "Virtual Collection could not be created..."
-
 		# Build RELS-EXT
 
 		# bind namespaces

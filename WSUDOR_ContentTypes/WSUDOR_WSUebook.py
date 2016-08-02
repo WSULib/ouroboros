@@ -43,8 +43,8 @@ from inc.derivatives import JP2DerivativeMaker
 
 # helper function for natural sorting
 def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
-    return [int(text) if text.isdigit() else text.lower()
-            for text in re.split(_nsre, s)]
+	return [int(text) if text.isdigit() else text.lower()
+			for text in re.split(_nsre, s)]
 
 
 class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -193,11 +193,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
-    <mods:title>%s</mods:title>
+	<mods:title>%s</mods:title>
   </mods:titleInfo>
   <mods:identifier type="local">%s</mods:identifier>
   <mods:extension>
-    <PID>%s</PID>
+	<PID>%s</PID>
   </mods:extension>
 </mods:mods>
 				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
@@ -478,31 +478,18 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 		print "generating virtual ScannedPage object"
 
-
-		# OLD
-		# # get pages
-		# sparql_response = fedora_handle.risearch.sparql_query('select $primary_image $order WHERE {{ $primary_image <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s> . $primary_image <info:fedora/fedora-system:def/relations-internal#isOrder> $order . }} ORDER BY ASC($order)' % (self.pid))
-
-		# for page in sparql_response:
-
-		# 	print page
-
-		# 	virtual_page_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualPage)
-		# 	virtual_page_handle.create(self,page)
-
-		# NEW
 		for page_num in self.pages_from_rels:
 
 			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
 			virtual_page_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualPage)
 			virtual_page_handle.create(self, page_num, page_handle)
 
+
 	def createReaduxVirtualObjects(self):
 
 		self._createVirtBook()
 		self._createVirtVolume()
 		self._createVirtPages()
-
 
 
 	def purgeReaduxVirtualObjects(self):
@@ -516,7 +503,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return True
 
 
-	def indexReaduxVirtualObjects(self,action='index'):
+	def indexReaduxVirtualObjects(self, action='index'):
 
 		'''
 		NOTE: will need to wait here for risearch to index
@@ -534,7 +521,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		return True
 
-
+		
 	def regenReaduxVirtualObjects(self):
 
 		self.purgeReaduxVirtualObjects()
@@ -554,3 +541,20 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				break
 
 		self.indexReaduxVirtualObjects(action='index')
+
+		
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+

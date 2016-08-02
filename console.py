@@ -58,7 +58,7 @@ def tailUserCelery(user):
 # Ouroverse
 
 # function to grab single object from remote repository
-def getRemoteObject(repo, PID, index=True):
+def getRemoteObject(repo, PID, index=True, skip_constituents=False):
 	
 	sync_list = [PID]
 	
@@ -66,13 +66,14 @@ def getRemoteObject(repo, PID, index=True):
 	rr = fedoraHandles.remoteRepo(repo)
 	
 	# check if remote object has constituent parts
-	constituents = rr.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
-	print len(constituents)
-	if len(constituents) > 0:
-		for constituent in constituents:
-			# add to sync list
-			print "adding %s to sync list" % constituent[0]
-			sync_list.append(constituent[0])
+	if not skip_constituents:
+		constituents = rr.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
+		print len(constituents)
+		if len(constituents) > 0:
+			for constituent in constituents:
+				# add to sync list
+				print "adding %s to sync list" % constituent[0]
+				sync_list.append(constituent[0])
 			
 	# sync objects 
 	for i,pid in enumerate(sync_list):

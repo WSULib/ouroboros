@@ -213,6 +213,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		generic_handle.label = 'ALTOXML'
 		generic_handle.content = open(file_path)
 		generic_handle.save()
+		
 
 
 	'''
@@ -240,6 +241,9 @@ def imMode(im):
 
 
 
+
+
+		
 
 
 

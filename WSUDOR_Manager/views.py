@@ -766,7 +766,11 @@ def userAllJobs():
 def jobDetails(job_num):
 
 	# get number of estimate tasks
-	job_task_num = int(redisHandles.r_job_handle.get("job_%s_est_count" % (job_num)))
+	job_est_count = redisHandles.r_job_handle.get("job_%s_est_count" % (job_num))
+	if job_est_count:
+		job_task_num = int(job_est_count)
+	elif job_est_count == None:
+		job_task_num = 0
 
 	# get parent object
 	job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()

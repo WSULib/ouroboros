@@ -61,11 +61,11 @@ def getRemoteObject(repo, PID, index=True, skip_constituents=False):
 	sync_list = [PID]
 	
 	# remote repo
-	rr = fedoraHandles.remoteRepo(repo)
+	dest_repo_handle = fedoraHandles.remoteRepo(repo)
 	
 	# check if remote object has constituent parts
 	if not skip_constituents:
-		constituents = rr.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
+		constituents = dest_repo_handle.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
 		print len(constituents)
 		if len(constituents) > 0:
 			for constituent in constituents:
@@ -76,7 +76,7 @@ def getRemoteObject(repo, PID, index=True, skip_constituents=False):
 	# sync objects 
 	for i,pid in enumerate(sync_list):
 		print "retrieving %s, %d/%d..." % (pid,i,len(sync_list))
-		print eulfedora.syncutil.sync_object(rr.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
+		print eulfedora.syncutil.sync_object(dest_repo_handle.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
 	
 	
 # function to clone object datastream by datastream

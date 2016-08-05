@@ -1151,7 +1151,7 @@ class WSUDOR_GenObject(object):
 
 
 	# method to send object to remote repository
-	def sendObject(self, dest_repo, export_context='migrate', overwrite=False, show_progress=False, refresh_remote=True, omit_checksums=False):
+	def sendObject(self, dest_repo, export_context='archive', overwrite=False, show_progress=False, refresh_remote=True, omit_checksums=True, skip_constituents=False, refresh_remote_constituents=False):
 
 		'''
 		dest_repo = string key from localConfig for remote repositories credentials
@@ -1166,27 +1166,62 @@ class WSUDOR_GenObject(object):
 		else:
 			print "destination eulfedora not found, try again"
 			return False
+			
+		# generate list of objects to send
+		'''
+		This is important if objects have constituent objects, need to send them too
+		'''
+		
+		# init list
+		sync_list = [self.pid]
+		
+		# if not skipping constituents, check for them
+		if not skip_constituents:
+			constituents = fedora_handle.risearch.spo_search(None, "fedora-rels-ext:isConstituentOf", "info:fedora/%s" % self.pid)
+			if len(constituents) > 0:
+				for constituent in constituents:
+					# add to sync list
+					print "adding %s to sync list" % constituent[0]
+					sync_list.append(constituent[0].split("/")[-1])
+					
+		# iterate and send
+		for i,pid in enumerate(sync_list):
+			print "sending %s, %d/%d..." % (pid, i+1, len(sync_list))
 
-		# use syncutil
-		print "sending object..."
-		result = syncutil.sync_object(
-			self.ohandle,
-			dest_repo_handle,
-			export_context=export_context,
-			overwrite=overwrite,
-			show_progress=show_progress,
-			omit_checksums=omit_checksums)
-
+			# use syncutil
+			result = syncutil.sync_object(
+				fedora_handle.get_object(pid),
+				dest_repo_handle,
+				export_context=export_context,
+				overwrite=overwrite,
+				show_progress=show_progress,
+				omit_checksums=omit_checksums)
+				
+		# refresh remote objects
 		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
 		if type(dest_repo) == str or type(dest_repo) == unicode:
-			if refresh_remote:
-				print "refreshing remote object in remote repository"
+			
+			# indexing both
+			if refresh_remote and refresh_remote_constituents:
+				for i,pid in enumerate(sync_list):
+					print "refreshing remote object in remote repository %s, %d/%d..." % (pid, i+1, len(sync_list))
+					refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], pid)
+					print refresh_remote_url
+					r = requests.get( refresh_remote_url )
+					print r.content
+			
+			# index self pid only
+			elif refresh_remote and not refresh_remote_constituents:
+				print "refreshing remote object in remote repository %s, 1/1..." % (self.pid)
 				refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
 				print refresh_remote_url
 				r = requests.get( refresh_remote_url )
 				print r.content
+				
 			else:
 				print "skipping remote refresh"
+				
+		# cannot refresh
 		else:
 			print "Cannot refresh remote.  It is likely you passed an Eulfedora Repository object.  To refresh remote, please provide string of remote repository that aligns with localConfig"
 

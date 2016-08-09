@@ -214,16 +214,23 @@ def createPageObj(wobj, page_num, page_dict):
 	# write datastreams from objMeta
 	for ds in generic_ds:
 
-		# open source datastream
-		sds = wobj.ohandle.getDatastreamObject(target_ids[ds])
+		try:
 
-		print "---> working on", sds.label
+			# open source datastream
+			sds = wobj.ohandle.getDatastreamObject(target_ids[ds])
 
-		# write objMeta as datastream
-		nds = eulfedora.models.FileDatastreamObject(nobj, ds, ds, mimetype=sds.mimetype, control_group='M')
-		nds.label = ds
-		nds.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s/content" % (wobj.pid, sds.id )
-		nds.save()
+			print "---> working on", sds.label
+
+			# write objMeta as datastream
+			nds = eulfedora.models.FileDatastreamObject(nobj, ds, ds, mimetype=sds.mimetype, control_group='M')
+			nds.label = ds
+			nds.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s/content" % (wobj.pid, sds.id )
+			nds.save()
+
+		except Exception,e:
+
+			print e
+			print "could not recreate %s" % ds
 
 	# write RDF relationships
 	nobj.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")

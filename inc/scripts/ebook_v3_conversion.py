@@ -21,6 +21,12 @@ w = WSUDOR_ContentTypes.WSUDOR_Object
 import eulfedora
 
 
+'''
+Identify v2s
+v2s = list( set([book['book'] for book in fedora_handle.risearch.sparql_query('SELECT DISTINCT ?book WHERE {{ ?book <fedora-rels-ext:hasContentModel> <info:fedora/CM:WSUebook> . }}')]) - set([book['book'] for book in fedora_handle.risearch.sparql_query('SELECT DISTINCT ?book WHERE {{ ?book <fedora-rels-ext:hasContentModel> <info:fedora/CM:WSUebook> . ?page <fedora-rels-ext:isConstituentOf> ?book }}')]))
+'''
+
+
 def ebook_v3_conversion(pid):
 
 	stime = time.time()
@@ -46,7 +52,8 @@ def ebook_v3_conversion(pid):
 	# create page objects
 	try:
 		for k in wobj.pages_from_objMeta:
-			createPageObj(wobj, k, wobj.pages_from_objMeta[k])		
+			if '000' not in str(k): #skip absurd datastream numbers from objMeta (artifact of long-ago ingest)
+				createPageObj(wobj, k, wobj.pages_from_objMeta[k])		
 	except:
 		traceback.print_exc()
 		return rollback(pid, 'pages')

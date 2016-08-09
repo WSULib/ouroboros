@@ -53,6 +53,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	label = "WSUeBook"
 	description = "The WSUDOR_WSUebook content type models most print (but some born digital) resources we have created digital components for each page.  This includes a page image, ALTO XML with information about the location of words on the page, a thumbnail, a PDF (with embedded text), and HTML that semi-closely matches the original formatting (suitable for flowing text).  These objects are best viewed with our eTextReader."
 	Fedora_ContentType = "CM:WSUebook"
+	version = 3
 
 	def __init__(self, object_type=False, content_type=False, payload=False,orig_payload=False):
 
@@ -386,19 +387,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 
 		for page in self.pages_from_rels:
-			print "Working on page %d / %d" % (page, len(self.pages_from_rels))
 
-			# index in Solr bookreader core
-			data = {
-				"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+str(page),
-				"literal.ItemID" : self.objMeta['identifier'],
-				"literal.page_num" : page,
-				"fmap.content" : "OCR_text",
-				"commit" : "false"
-			}
-			ds_handle = fedora_handle.get_object("%s_Page_%d" % (self.pid, page)).getDatastreamObject("HTML")
-			files = {'file': ds_handle.content}
-			r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
+			try:
+				print "Working on page %d / %d" % (page, len(self.pages_from_rels))
+
+				# index in Solr bookreader core
+				data = {
+					"literal.id" : self.objMeta['identifier']+"_OCR_HTML_"+str(page),
+					"literal.ItemID" : self.objMeta['identifier'],
+					"literal.page_num" : page,
+					"fmap.content" : "OCR_text",
+					"commit" : "false"
+				}
+				ds_handle = fedora_handle.get_object("%s_Page_%d" % (self.pid, page)).getDatastreamObject("HTML")
+				files = {'file': ds_handle.content}
+				r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
+			except:
+				raise Exception("Could not index page %d" % page)
 
 		# commit
 		print solr_bookreader_handle.commit()

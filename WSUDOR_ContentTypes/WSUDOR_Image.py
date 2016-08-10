@@ -41,10 +41,9 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
 	label = "Image"
-
 	description = "The Image Content Type contains original / master images, with derivatives for online viewing."
-
 	Fedora_ContentType = "CM:Image"
+	version = 2
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 

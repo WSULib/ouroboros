@@ -33,10 +33,9 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
 	label = "Document"
-
 	description = "This ContentType applies to what we commonly think of as 'documents', including PDFs, Word docs, Open Office, etc.  The intent is to create a representative thumbnail for this item, and a derivative, access PDF."
-
 	Fedora_ContentType = "CM:Document"
+	version = 1
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 		

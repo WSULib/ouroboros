@@ -33,10 +33,9 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
 	label = "Container"
-
 	description = "Generic container object for hierarchical (usually mixed, archival) materials."
-
 	Fedora_ContentType = "CM:Container"
+	version = 1
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 		

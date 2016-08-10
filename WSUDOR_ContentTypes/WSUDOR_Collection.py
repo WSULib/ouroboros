@@ -40,10 +40,9 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
 	label = "Collection"
-
 	description = "Content Type for Collection Objects."
-
 	Fedora_ContentType = "CM:Collection"
+	version = 1
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 		

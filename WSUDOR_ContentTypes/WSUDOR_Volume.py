@@ -31,10 +31,9 @@ class WSUDOR_Volume(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
 	label = "Volume"
-
 	description = "Content Type for Volume Objects."
-
 	Fedora_ContentType = "CM:Volume"
+	version = 1
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
 		

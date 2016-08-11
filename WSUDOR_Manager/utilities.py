@@ -196,9 +196,10 @@ mime_CM_hash = {
 }
 
 
-
-
-
+# CUSTOM EXCEPTIONS
+class IngestError(Exception):
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
 
 
 

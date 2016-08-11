@@ -129,7 +129,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
 
-		# finally, return verdict
+		# check for tif, html, xml, and pdf files
+		for page in self.pages_from_objMeta:
+			if len(self.pages_from_objMeta[page]) < 4:
+				report_failure(("Missing derivative filetypes","Page %d" % (page)))
+
+		# finally, return verdict		
 		return results_dict
 
 
@@ -232,7 +237,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# PDF - create PDF on disk and upload
 			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				self.processPDF()
+				try:
+					self.processPDF()
+				except:					
+					raise utilities.IngestError("Could not generate full-text pdf")
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()

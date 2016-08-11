@@ -518,6 +518,13 @@ class WSUDOR_GenObject(object):
 		# Write isWSUDORObject RELS-EXT relationship
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
 
+		# if gen_manifest set, generate IIIF Manifest
+		if gen_manifest == True:
+			try:
+				self.genIIIFManifest(on_demand=True)
+			except:
+				print "failed on generating IIIF manifest"
+
 		# the following methods are not needed when objects are "passing through"
 		if indexObject:
 			# generate OAI identifier
@@ -536,13 +543,6 @@ class WSUDOR_GenObject(object):
 				self.indexToSolr()
 			else:
 				print "Skipping Solr Index"
-
-			# if gen_manifest set, generate IIIF Manifest
-			try:
-				if gen_manifest == True:
-					self.genIIIFManifest(on_demand=True)
-			except:
-				print "failed on generating IIIF manifest"
 
 			# index object size
 			self.update_objSizeDict()

@@ -91,6 +91,26 @@
 	</div>
 </div>
 
+<!-- bag validation results -->
+<div class="row">
+	<a name="bag_tree"></a>
+	<div class="col-md-12 well trunc">
+		<h3>Bag Validation</h3>
+		<pre><code class="highlight" id="bag_validation"></code></pre>
+		<script type="text/javascript">			
+			var db_content = '{{o.bag_validation_dict|safe}}';
+			if (db_content == "None") {
+				$("#bag_validation").html("False");	
+			}
+			else {
+				var structMap_JSON = JSON.parse(db_content);
+				var str = JSON.stringify(structMap_JSON, null, 2);
+				$("#bag_validation").html(str);
+			}
+		</script>		
+	</div>
+</div>
+
 
 {% include 'footer.html' %}
 

@@ -174,7 +174,7 @@ def objectDetails(job_id,ingest_id):
 		bag_tree = False	
 
 	# render
-	return render_template("objectDetails.html",o=o,bag_tree=bag_tree)
+	return render_template("objectDetails.html", o=o, bag_tree=bag_tree)
 
 
 
@@ -203,7 +203,6 @@ def jobjson(job_id):
 		else:
 			return "<span style='color:red;'>False</span>"
 
-
 	def existsReturnValue(input):
 		if input != None and input != "0":
 			return input
@@ -215,7 +214,17 @@ def jobjson(job_id):
 			return "<span style='color:green;'>True</span>"
 		else:
 			return "<span style='color:red;'>False</span>"
-	
+
+	def bag_validation(input):
+		if input == None:
+			return "<span style='color:orange;'>None</span>"
+		else:
+			bag_validation_dict = json.loads(input)
+			if bag_validation_dict['verdict']:
+				return "<span style='color:green;'>Valid</span>"	
+			else:
+				return "<span style='color:red;'>Invalid</span>"	
+
 	# defining columns
 	columns = []	
 	columns.append(ColumnDT('ingest_id'))
@@ -226,6 +235,7 @@ def jobjson(job_id):
 	columns.append(ColumnDT('struct_map', filter=exists))
 	columns.append(ColumnDT('MODS', filter=exists))
 	columns.append(ColumnDT('bag_path'))
+	columns.append(ColumnDT('bag_validation_dict', filter=bag_validation))
 	columns.append(ColumnDT('objMeta', filter=exists))
 	columns.append(ColumnDT('ingested', filter=existsReturnValue))
 	columns.append(ColumnDT('repository'))
@@ -686,15 +696,19 @@ def createBag_worker(job_package):
 
 		bag_result = bag_class_worker.createBag()
 
-
 	# finish up with updated values from bag_class_worker
 
 	# write some data back to DB
 	if purge_bags == True:
 		# remove previously recorded and stored bag
 		os.system("rm -r %s" % o.bag_path)
+
 	# sets, or updates, the bag path
 	o.bag_path = bag_class_worker.obj_dir
+
+	# validate bag
+	obj = WSUDOR_ContentTypes.WSUDOR_Object(o.bag_path,object_type='bag')
+	o.bag_validation_dict = json.dumps(obj.validIngestBag())
 
 	# set objMeta
 	o.objMeta = bag_class_worker.objMeta_handle.toJSON()

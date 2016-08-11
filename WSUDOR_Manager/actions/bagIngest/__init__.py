@@ -177,8 +177,6 @@ def bagIngest_worker(job_package):
 	# push to remote
 	if 'push_remote' in job_package['form_data']:
 
-		print "*******PUSHING TO REMOTE REPOSITORY*********"
-
 		# get options
 		# set destination repo
 		dest_repo = job_package['form_data']['dest_repo']

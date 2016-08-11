@@ -206,6 +206,7 @@ def dump_datetime(value):
 
 
 class ingest_workspace_object(db.Model):
+    
     id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
     ingest_id = db.Column(db.Integer)
     created = db.Column(db.DateTime, default=datetime.now)
@@ -214,7 +215,7 @@ class ingest_workspace_object(db.Model):
     job = db.relationship('ingest_workspace_job', backref=db.backref('objects', lazy='dynamic'))
     # content fields
     MODS = db.Column(db.Text(4294967295)) 
-    objMeta = db.Column(db.Text(4294967295)) 
+    objMeta = db.Column(db.Text(4294967295))
     bag_binary = db.Column(db.Text(4294967295)) 
     bag_path = db.Column(db.String(4096))
     # derived metadata
@@ -226,6 +227,7 @@ class ingest_workspace_object(db.Model):
     object_type = db.Column(db.String(255))
     ingested = db.Column(db.String(255))
     repository = db.Column(db.String(255)) # eventually pull from localConfig.REPOSITORIES
+    bag_validation_dict = db.Column(db.Text(4294967295))
 
     # init with 'job' as ingest_workspace_job instance
     def __init__(self, job, object_title="Unknown", DMDID=None):        

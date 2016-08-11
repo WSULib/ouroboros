@@ -76,6 +76,7 @@
                     <th>struct_map</th>
                     <th>MODS</th>
                     <th>bag_path</th>
+                    <th>bag_validation_dict</th>                    
                     <th>objMeta</th>
                     <th>ingested</th>
                     <!-- <th>repository</th> -->
@@ -294,7 +295,10 @@
 	  $('#object_table tbody').on( 'click', 'button', function () {
 			var data = table.row( $(this).parents('tr') ).data();
 			console.log(data);						
-			window.location.href = "/{{APP_PREFIX}}/tasks/ingestWorkspace/objectDetails/{{j.id}}/"+data[0];
+			window.open(
+				'/{{APP_PREFIX}}/tasks/ingestWorkspace/objectDetails/{{j.id}}/'+data[0],
+				'_blank'
+			);
 		});
 		
 	});

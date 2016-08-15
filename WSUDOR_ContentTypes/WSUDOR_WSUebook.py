@@ -327,6 +327,21 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# start anonymous sequence
 		seq = manifest.sequence(label="default sequence")
 
+		print "waiting for risearch to catch up..."
+		count = 0
+		while True:
+			sparql_count = fedora_handle.risearch.sparql_count('select $page where  {{ $page <fedora-rels-ext:isConstituentOf> <info:fedora/%s> . }}' % (self.pid))
+			if sparql_count < 1:
+				if count < 20:
+					time.sleep(.5)
+					count += 1
+					continue
+				else:
+					print "waited long enough, aborting"
+			else:
+				print 'page objects indexed in risearch, continuing'
+				break
+
 		# write constituent pages
 		for page_num in self.pages_from_rels:
 
@@ -361,7 +376,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			annol = cvs.annotationList("%s" % (page_handle.pid))
 
 			# create annotations for HTML and ALTOXML content
-			# e.g. http://192.168.42.5/WSUAPI/bitStream/wayne:Granvill1872b2158414x_Page_7/ALTOXML?key=SHORT_BUT_SECURE_KEY
 			# HTML
 			anno = annol.annotation()
 			anno.text(ident="https://%s/WSUAPI/bitStream/%s/HTML" % (localConfig.APP_HOST, page_handle.pid), format="text/html")
@@ -370,6 +384,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
 
 			# push annotationList to page object
+			'''
+			Automatically updates / overwrites
+			'''
 			print "Inserting annotation list for",page_handle.pid,"as object datastream..."
 			ds_handle = eulfedora.models.DatastreamObject(page_handle.ohandle, "IIIF_ANNOLIST", "IIIF_ANNOLIST", mimetype="application/json", control_group="M")
 			ds_handle.label = "IIIF_ANNOLIST"

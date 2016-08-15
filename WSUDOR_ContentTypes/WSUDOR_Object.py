@@ -1135,14 +1135,14 @@ class WSUDOR_GenObject(object):
 			# index in Solr
 			self.indexToSolr()
 
+			# remove object from Loris cache
+			self.removeObjFromCache()
+
 			# generate IIIF manifest
 			self.genIIIFManifest()
 
 			# update object size in Solr
 			self.update_objSizeDict()
-
-			# remove object from Loris cache
-			self.removeObjFromCache()
 
 			return True
 
@@ -1151,7 +1151,15 @@ class WSUDOR_GenObject(object):
 
 
 	# method to send object to remote repository
-	def sendObject(self, dest_repo, export_context='archive', overwrite=False, show_progress=False, refresh_remote=True, omit_checksums=True, skip_constituents=False, refresh_remote_constituents=False):
+	def sendObject(self, 
+		dest_repo, 
+		export_context='archive', 
+		overwrite=False, 
+		show_progress=False, 
+		refresh_remote=True, 
+		omit_checksums=True, 
+		skip_constituents=False, 
+		refresh_remote_constituents=False):
 
 		'''
 		dest_repo = string key from localConfig for remote repositories credentials
@@ -1187,6 +1195,10 @@ class WSUDOR_GenObject(object):
 		# iterate and send
 		for i,pid in enumerate(sync_list):
 			print "sending %s, %d/%d..." % (pid, i+1, len(sync_list))
+
+			# remove IIIF manifest
+			print "removing IIIF Manifest before transfer"			
+			fedora_handle.api.purgeDatastream(self.ohandle,'IIIF_MANIFEST')
 
 			# use syncutil
 			result = syncutil.sync_object(

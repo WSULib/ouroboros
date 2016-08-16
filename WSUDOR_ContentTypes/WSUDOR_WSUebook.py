@@ -327,21 +327,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# start anonymous sequence
 		seq = manifest.sequence(label="default sequence")
 
-		# print "waiting for risearch to catch up..."
-		# count = 0
-		# while True:
-		# 	sparql_count = fedora_handle.risearch.sparql_count('select $page where  {{ $page <fedora-rels-ext:isConstituentOf> <info:fedora/%s> . }}' % (self.pid))
-		# 	if sparql_count < 1:
-		# 		if count < 20:
-		# 			time.sleep(.5)
-		# 			count += 1
-		# 			continue
-		# 		else:
-		# 			print "waited long enough, aborting"
-		# 	else:
-		# 		print 'page objects indexed in risearch, continuing'
-		# 		break
-
 		# write constituent pages
 		for page_num in self.pages_from_rels:
 

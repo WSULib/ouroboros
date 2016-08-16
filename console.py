@@ -83,7 +83,12 @@ def getRemoteObject(repo, PID, index=True, skip_constituents=False):
 def cloneRemoteObject(repo, PID):
 	pass
 	
-	
+
+def getIngestWorkspaceRows(job_num):
+	iwjob = models.ingest_workspace_job.query.filter_by(id=job_num).first()
+	iwrows = models.ingest_workspace_object.query.filter_by(job=iwjob)
+	print "returning tuple of (job_handle, job_rows)"
+	return (iwjob,iwrows)
 	
 	
 	

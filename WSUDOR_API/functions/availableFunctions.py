@@ -70,6 +70,7 @@ def solrSearch(getParams):
 ######################################################################################################################	
 	
 	'''
+	Primary Search.
 	Build dictionary for query to mysolr
 	'''
 
@@ -87,7 +88,11 @@ def solrSearch(getParams):
 
 	# QUERY	
 	if 'q' in getParams:
-		qd['q'] = getParams['q'][0]
+		q_string = getParams['q'][0]
+		# if 
+		if q_string.startswith('wayne:'):
+			q_string = q_string.replace(":","\:")
+		qd['q'] = q_string
 	else:		
 		qd['q'] = [""]
 

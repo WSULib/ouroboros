@@ -12,7 +12,7 @@ WTForms==1.0.5
 amqp==1.4.5
 argparse==1.2.1
 bagit==1.5.1
-beautifulsoup4==4.2.1
+beautifulsoup4==4.5.1
 celery==3.1.11
 coverage==3.7.1
 decorator==3.3.2

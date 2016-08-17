@@ -168,6 +168,7 @@ for k, v in opinionated_mimes.items():
 		# reversed here
 		mimetypes.types_map[v] = k
 
+
 # OPINIONATED MIMETYPES for CONTENT TYPES
 #########################################################################################################
 mime_CM_hash = {

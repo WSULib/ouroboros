@@ -215,7 +215,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			########################################################################################################
 			# iterate through pages and create page objects
 			for page_num in self.pages_from_objMeta:
-
 				page_dict = self.pages_from_objMeta[page_num]
 				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
 				page_obj.ingest(self, page_num)
@@ -296,6 +295,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		Currently generates IIIF manifest with one sequence, handful of canvases for each image.
 		'''
 
+		# DEBUG
+		print "pre re-instantiation:",len(self.pages_from_rels)
+		del self.pages_from_rels
+		print "post re-instantiation of ohandle:",len(self.pages_from_rels)
+		
+
 		# get solr_doc
 		solr_doc = self.SolrDoc.asDictionary()
 
@@ -328,12 +333,13 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		seq = manifest.sequence(label="default sequence")
 
 		# write constituent pages
-		for page_num in self.pages_from_rels:
-
-			'''
-			Consider writing otherContent resources here
-				- full-text HTML, ALTOXML, etc.
-			'''
+		'''
+		This is tricky.
+		When ingesting new objects, the rels-ext relationships are written at a slight delay.
+		As such, without waiting / confirming all relationships are indexed in risearch,
+		results in only subsets of the whole book getting added.
+		'''
+		for page_num in self.pages_from_rels:			
 
 			# open wsudor handle
 			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])

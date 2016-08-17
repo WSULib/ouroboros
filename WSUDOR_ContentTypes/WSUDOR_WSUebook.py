@@ -290,17 +290,25 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	def genIIIFManifest(self, on_demand=False, pages_source="objMeta"):
+	def genIIIFManifest(self, on_demand=False):
 
 		'''
 		Currently generates IIIF manifest with one sequence, handful of canvases for each image.
 		'''
 
-		# DEBUG
-		print "-------------------- pre re-instantiation:",len(self.pages_from_rels)
-		del self.pages_from_rels
-		self.ohandle = fedora_handle.get_object(self.pid)
-		print "-------------------- post re-instantiation of ohandle:",len(self.pages_from_rels)
+		# Wait until risearch catches up with constituent objects
+		print "waiting for risearch to catch up..."
+		stime = time.time()
+		ttime = 0
+		while ttime < 30 :
+			sparql_count = fedora_handle.risearch.sparql_count('select $page where  {{ $page <fedora-rels-ext:isConstituentOf> <info:fedora/%s> . }}' % (self.pid))
+			print sparql_count
+			if sparql_count < len(self.pages_from_objMeta):
+				time.sleep(.5)
+				continue
+			else:
+				print 'child objects in risearch, continuing'
+				break
 
 		# get solr_doc
 		solr_doc = self.SolrDoc.asDictionary()
@@ -341,58 +349,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		results in only subsets of the whole book getting added.
 		'''
 
-		# # self.pages_from_rels
-		# for page_num in self.pages_from_rels:			
-
-		# 	# open wsudor handle
-		# 	page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
-		# 	print "Working on:",page_handle.ohandle.label
-
-		# 	# generate obj|ds self.pid as defined in loris TemplateHTTP extension
-		# 	fedora_http_ident = "fedora:%s|JP2" % (page_handle.pid)
-
-		# 	# Instantiate canvas under sequence
-		# 	cvs = seq.canvas(ident=fedora_http_ident, label=page_handle.ohandle.label)
-
-		# 	# Create an annotation on the Canvas
-		# 	anno = cvs.annotation()
-
-		# 	# Add Image Annotation
-		# 	img = anno.image(fedora_http_ident, iiif=True)
-		# 	img.id = fedora_http_ident
-		# 	img.set_hw_from_iiif()
-
-		# 	# set canvas dimensions
-		# 	cvs.height = img.height
-		# 	cvs.width = img.width
-
-		# 	# create annotationsList for page object
-		# 	annol = cvs.annotationList("%s" % (page_handle.pid))
-
-		# 	# create annotations for HTML and ALTOXML content
-		# 	# HTML
-		# 	anno = annol.annotation()
-		# 	anno.text(ident="https://%s/WSUAPI/bitStream/%s/HTML" % (localConfig.APP_HOST, page_handle.pid), format="text/html")
-		# 	# ALTOXML
-		# 	anno = annol.annotation()
-		# 	anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
-
-		# 	# push annotationList to page object
-		# 	'''
-		# 	Automatically updates / overwrites
-		# 	'''
-		# 	print "Inserting annotation list for",page_handle.pid,"as object datastream..."
-		# 	ds_handle = eulfedora.models.DatastreamObject(page_handle.ohandle, "IIIF_ANNOLIST", "IIIF_ANNOLIST", mimetype="application/json", control_group="M")
-		# 	ds_handle.label = "IIIF_ANNOLIST"
-		# 	ds_handle.content = annol.toString()
-		# 	ds_handle.save()
-
-
-		# self.pages_from_objMeta
-		for page_num in self.pages_from_objMeta:			
+		# self.pages_from_rels
+		for page_num in self.pages_from_rels:			
 
 			# open wsudor handle
-			page_handle = WSUDOR_ContentTypes.WSUDOR_Object("%s_Page_%s" % (self.pid,page_num))
+			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
 			print "Working on:",page_handle.ohandle.label
 
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
@@ -433,7 +394,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			ds_handle.label = "IIIF_ANNOLIST"
 			ds_handle.content = annol.toString()
 			ds_handle.save()
-
 
 		# create datastream with IIIF manifest and return JSON string
 		print "Inserting manifest for",self.pid,"as object datastream..."

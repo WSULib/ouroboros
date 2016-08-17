@@ -583,11 +583,8 @@ def createBag_factory(job_package):
 	if form_data['files_location'] != '':
 
 		# if skip not checked
-		if 'skip_binary_index' in form_data and form_data['skip_binary_index'] == 'on':
-			print "skipping file index"
-
-		else:
-
+		if 'binary_index' in form_data and form_data['binary_index'] == 'on':
+			
 			j = models.ingest_workspace_job.query.filter_by(id=int(form_data['job_id'])).first()
 			print "adding file index for %s" % j.name
 			time.sleep(5)

@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 import requests
 import rdflib
 from collections import defaultdict, OrderedDict
+import logging
 
 # library for working with LOC BagIt standard
 import bagit
@@ -289,7 +290,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	def genIIIFManifest(self, on_demand=False):
+	def genIIIFManifest(self, on_demand=False, pages_source="objMeta"):
 
 		'''
 		Currently generates IIIF manifest with one sequence, handful of canvases for each image.
@@ -339,10 +340,59 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		As such, without waiting / confirming all relationships are indexed in risearch,
 		results in only subsets of the whole book getting added.
 		'''
-		for page_num in self.pages_from_rels:			
+
+		# # self.pages_from_rels
+		# for page_num in self.pages_from_rels:			
+
+		# 	# open wsudor handle
+		# 	page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
+		# 	print "Working on:",page_handle.ohandle.label
+
+		# 	# generate obj|ds self.pid as defined in loris TemplateHTTP extension
+		# 	fedora_http_ident = "fedora:%s|JP2" % (page_handle.pid)
+
+		# 	# Instantiate canvas under sequence
+		# 	cvs = seq.canvas(ident=fedora_http_ident, label=page_handle.ohandle.label)
+
+		# 	# Create an annotation on the Canvas
+		# 	anno = cvs.annotation()
+
+		# 	# Add Image Annotation
+		# 	img = anno.image(fedora_http_ident, iiif=True)
+		# 	img.id = fedora_http_ident
+		# 	img.set_hw_from_iiif()
+
+		# 	# set canvas dimensions
+		# 	cvs.height = img.height
+		# 	cvs.width = img.width
+
+		# 	# create annotationsList for page object
+		# 	annol = cvs.annotationList("%s" % (page_handle.pid))
+
+		# 	# create annotations for HTML and ALTOXML content
+		# 	# HTML
+		# 	anno = annol.annotation()
+		# 	anno.text(ident="https://%s/WSUAPI/bitStream/%s/HTML" % (localConfig.APP_HOST, page_handle.pid), format="text/html")
+		# 	# ALTOXML
+		# 	anno = annol.annotation()
+		# 	anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
+
+		# 	# push annotationList to page object
+		# 	'''
+		# 	Automatically updates / overwrites
+		# 	'''
+		# 	print "Inserting annotation list for",page_handle.pid,"as object datastream..."
+		# 	ds_handle = eulfedora.models.DatastreamObject(page_handle.ohandle, "IIIF_ANNOLIST", "IIIF_ANNOLIST", mimetype="application/json", control_group="M")
+		# 	ds_handle.label = "IIIF_ANNOLIST"
+		# 	ds_handle.content = annol.toString()
+		# 	ds_handle.save()
+
+
+		# self.pages_from_objMeta
+		for page_num in self.pages_from_objMeta:			
 
 			# open wsudor handle
-			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
+			page_handle = WSUDOR_ContentTypes.WSUDOR_Object("%s_Page_%s" % (self.pid,page_num))
 			print "Working on:",page_handle.ohandle.label
 
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension

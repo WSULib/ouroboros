@@ -1130,6 +1130,8 @@ class WSUDOR_GenObject(object):
 		- update object size in Solr --> self.update_objSizeDict()
 		- index in Solr --> self.indexToSolr()
 		'''
+		
+		print "-------------------- firing objectRefresh --------------------"
 
 		try:
 			# index in Solr

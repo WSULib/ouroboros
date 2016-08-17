@@ -39,6 +39,10 @@ app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
 from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback, checkObjectStatus_factory, checkObjectStatus_worker
 app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
 
+#aem
+from aem import aem
+app.register_blueprint(aem, url_prefix=tasks_URL_prefix)
+
 #createObjectIndex
 from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)

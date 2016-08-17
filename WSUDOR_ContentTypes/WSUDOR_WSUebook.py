@@ -296,10 +296,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 
 		# DEBUG
-		print "pre re-instantiation:",len(self.pages_from_rels)
+		print "-------------------- pre re-instantiation:",len(self.pages_from_rels)
 		del self.pages_from_rels
-		print "post re-instantiation of ohandle:",len(self.pages_from_rels)
-		
+		self.ohandle = fedora_handle.get_object(self.pid)
+		print "-------------------- post re-instantiation of ohandle:",len(self.pages_from_rels)
 
 		# get solr_doc
 		solr_doc = self.SolrDoc.asDictionary()

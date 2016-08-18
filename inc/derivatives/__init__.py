@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import tempfile
+
 class Derivative(object):
 
 	'''
@@ -9,3 +11,8 @@ class Derivative(object):
 
 	def __init__(self):
 		pass
+
+	def create_temp_file(self):
+		return tempfile.NamedTemporaryFile(prefix='ouroboros_', dir='/tmp/Ouroboros/')
+
+

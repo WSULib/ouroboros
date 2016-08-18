@@ -1,14 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from WSUDOR_Manager.inc.derivatives import Derivative
+# import os
+# import subprocess
+# from datetime import datetime
+# import uuid
 
-class Image(Derivative):
+from inc.derivatives import Derivative
+
+class ImageDerivative(Derivative):
 
 	'''
 	Extends Derivative to create image derivatives such as thumbnails and JPEG2000s.
 	'''
 
 	def __init__(self):
+		pass
+
+
+	def makeJP2(self):
 		pass
 
 
@@ -29,10 +38,7 @@ class Image(Derivative):
 # https://github.com/pulibrary/jp2_derivatives/blob/master/mkderiv.py.tmpl
 # '''
 
-# import os
-# import subprocess
-# from datetime import datetime
-# import uuid
+
 
 # KDU_RECIPE_KEY = '10_1' # '10_1','20_1','lossless'
 # IMAGEMAGICK_SIZE_KEY = 'full' # "full" or "3600"

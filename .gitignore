@@ -5,3 +5,4 @@ localConfig.py
 eulfedora/
 .DS_Store
 ._DS_Store
+.cache

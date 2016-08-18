@@ -208,6 +208,7 @@ def bagIngest_worker(job_package):
 			ingest_bag = bag_handle.ingestBag(indexObject=False)
 		except Exception, e:
 			raise Exception(e)
+			return False
 
 		# push to remote repo
 		print "sending object..."
@@ -246,6 +247,7 @@ def bagIngest_worker(job_package):
 			return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 		except Exception, e:
 			raise Exception(e)
+			return False
 
 
 

@@ -47,7 +47,7 @@ from WSUDOR_Manager import fedoraHandles
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
 
 # derivatives
-from inc.derivatives import JP2DerivativeMaker
+from inc import derivatives
 
 # jpylyzer
 from jpylyzer import jpylyzer

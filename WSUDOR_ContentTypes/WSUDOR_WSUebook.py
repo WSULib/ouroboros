@@ -39,7 +39,8 @@ import localConfig
 from inc.manifest_factory import iiif_manifest_factory_instance
 
 # derivatives
-from inc.derivatives import JP2DerivativeMaker
+# from inc.derivatives import JP2DerivativeMaker
+from inc import derivatives
 
 
 # helper function for natural sorting

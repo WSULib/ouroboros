@@ -32,7 +32,8 @@ from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 from inc.manifest_factory import iiif_manifest_factory_instance
 
 # derivatives
-from inc.derivatives import JP2DerivativeMaker
+# from inc.derivatives import JP2DerivativeMaker
+from inc import derivatives
 
 import localConfig
 

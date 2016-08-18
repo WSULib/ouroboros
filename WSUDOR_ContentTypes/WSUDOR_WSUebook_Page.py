@@ -26,7 +26,8 @@ from WSUDOR_Manager import redisHandles, helpers, utilities
 from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 
 # derivatives
-from inc.derivatives import JP2DerivativeMaker
+# from inc.derivatives import JP2DerivativeMaker
+from inc import derivatives
 
 # localconfig
 import localConfig

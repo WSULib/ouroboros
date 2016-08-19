@@ -26,6 +26,7 @@ import time
 import os
 import shutil
 import _mysql
+from subprocess import Popen, PIPE
 
 # eulfedora
 import eulfedora
@@ -331,9 +332,10 @@ def purgePROAI():
 
 	# purge disc cache
 	print "Delete cache"
-	# shutil.rmtree(PROAI_CACHE_LOCATION)
-	# os.system('rm -r %s/*' % (PROAI_CACHE_LOCATION))	
-	os.popen("sudo -S rm -r %s/*" % (PROAI_CACHE_LOCATION), 'w').write(USER_SUDO_PASSWORD)	
+	command = ['sudo','-S','rm','-r','%s/*' % PROAI_CACHE_LOCATION]
+	print command
+	p = Popen(command, stdin=PIPE, stderr=PIPE, universal_newlines=True)
+	sudo_prompt = p.communicate(USER_SUDO_PASSWORD + '\n')[1]
 
 	# truncate MySQL tables
 	con = _mysql.connect('localhost','WSUDOR_Manager','WSUDOR_Manager','proai')

@@ -207,7 +207,6 @@ class ImageDerivative(Derivative):
 		if self.jp2_space == 'sLUM':
 			cmd = cmd.replace("-jp2_space sRGB","-jp2_space sLUM")
 
-
 		logging.info("firing Kakadu")
 		logging.debug(cmd)
 

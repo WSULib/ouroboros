@@ -30,7 +30,7 @@
 				<td>{{PID}}</td>	
 				<td>set:{{PID}}</td>			
 				{% if isOAIHarvestable == 'True' %}				
-					<td><span style="color:green;">{{isOAIHarvestable}} / (<a target="_blank" href="http://{{APP_HOST}}:8080/oaiprovider/?verb=ListRecords&metadataPrefix=mods&set=set:{{PID}}">explore</a>)</span></td>
+					<td><span style="color:green;">{{isOAIHarvestable}} / (<a target="_blank" href="http://{{APP_HOST}}/oaiprovider/?verb=ListRecords&metadataPrefix=mods&set=set:{{PID}}">explore</a>)</span></td>
 				{% else %}
 					<td><span style="color:red;">{{isOAIHarvestable}}</span></td>
 				{% endif %}				

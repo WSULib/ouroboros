@@ -12,7 +12,12 @@ class Derivative(object):
 	def __init__(self):
 		pass
 
-	def create_temp_file(self):
-		return tempfile.NamedTemporaryFile(prefix='ouroboros_', dir='/tmp/Ouroboros/')
+	def create_temp_file(self, file_type='named', suffix=''):
+		
+		if file_type == 'memory':
+			return tempfile.SpooledTemporaryFile(max_size=(1024 * 1024 * 1024), prefix='ouroboros_', dir='/tmp/Ouroboros/')
+
+		else:
+			return tempfile.NamedTemporaryFile(prefix='ouroboros_', suffix=suffix, dir='/tmp/Ouroboros/', delete=True)
 
 

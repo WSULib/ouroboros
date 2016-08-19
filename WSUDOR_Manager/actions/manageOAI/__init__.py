@@ -88,7 +88,7 @@ def index():
 			overview['webapp_status'] = each[1]
 
 
-	# total items
+	# total items in queue
 	con.query('SELECT * FROM rcQueue')
 	q_results = con.store_result()
 	overview['queue_count'] = q_results.num_rows()
@@ -195,6 +195,7 @@ def objectRelated():
 
 	return render_template("manageOAI_objectRelated.html")
 
+
 # generate OAI identifiers for objects
 def manageOAI_genItemID_worker(job_package):
 	
@@ -207,6 +208,7 @@ def manageOAI_genItemID_worker(job_package):
 	
 	print obj_ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", OAI_identifier)
 	
+
 @manageOAI.route('/manageOAI/toggleSet/<PID>', methods=['POST', 'GET'])
 def manageOAI_toggleSet(PID):	
 
@@ -329,7 +331,9 @@ def purgePROAI():
 
 	# purge disc cache
 	print "Delete cache"
-	os.system('rm -r %s/*' % (PROAI_CACHE_LOCATION))	
+	# shutil.rmtree(PROAI_CACHE_LOCATION)
+	# os.system('rm -r %s/*' % (PROAI_CACHE_LOCATION))	
+	os.popen("sudo -S rm -r %s/*" % (PROAI_CACHE_LOCATION), 'w').write(USER_SUDO_PASSWORD)	
 
 	# truncate MySQL tables
 	con = _mysql.connect('localhost','WSUDOR_Manager','WSUDOR_Manager','proai')
@@ -342,11 +346,13 @@ def purgePROAI():
 	print "Starting PROAI"
 	tm.start(TOMCAT_PROAI_PATH)
 
-	return redirect("/tasks/manageOAI")
+	return redirect("/%s/tasks/manageOAI" % APP_PREFIX)
 
 
 # expose objects to DPLA OAI-PMH set
 def exposeToDPLA_worker(job_package):
+
+	print "adding to DPLAOAI set"
 
 	# get PID
 	PID = job_package['PID']		
@@ -358,6 +364,8 @@ def exposeToDPLA_worker(job_package):
 
 # remove objects to DPLA OAI-PMH set
 def removeFromDPLA_worker(job_package):
+
+	print "purging from DPLAOAI set"
 
 	# get PID
 	PID = job_package['PID']		

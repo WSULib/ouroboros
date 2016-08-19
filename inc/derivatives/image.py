@@ -133,6 +133,12 @@ class ImageDerivative(Derivative):
 
 		# next iteration to run
 		self.next_iteration = self.uncompressOriginal
+
+		# JP2 color space
+		self.jp2_space = None
+
+		# Bit per Sample
+		self.BPS = None
 		
 
 
@@ -153,8 +159,11 @@ class ImageDerivative(Derivative):
 		for line in proc.stderr:
 			print(line.rstrip() + " (" + self.input_handle + ")") 
 
-		logging.debug("BPS: %s" % response)			
-		return response
+		logging.debug("BPS: %s" % response)		
+		if not response:
+			return "Unknown"	
+		self.BPS = response
+		return self.BPS
 
 
 	# gen JP2 and return path of temp file or fhand_out
@@ -191,6 +200,13 @@ class ImageDerivative(Derivative):
 		else:
 			logging.warning("Could not find JP2 recipe for %s" + inBitsPerSample)
 			return False
+
+		# if color space as part of object, update kakadu command
+		if self.jp2_space == 'sRGB':
+			cmd = cmd.replace("-jp2_space sLUM","-jp2_space sRGB")
+		if self.jp2_space == 'sLUM':
+			cmd = cmd.replace("-jp2_space sRGB","-jp2_space sLUM")
+
 
 		logging.info("firing Kakadu")
 		logging.debug(cmd)
@@ -236,14 +252,28 @@ class ImageDerivative(Derivative):
 	def createTiffFromOriginal(self):
 		logging.debug("creating tiff from original image file")
 		new_input_handle = self.create_temp_file(file_type='named', suffix='.tif')
-		cmd = "convert -verbose %s +compress %s.tif" % (self.input_handle, new_input_handle.name)
+		cmd = "convert -verbose %s +compress %s" % (self.input_handle, new_input_handle.name)
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()
 		
 		# re-run makeJP2 with new input_data
 		self.input_handle = new_input_handle.name
+		self.next_iteration = self.newColorSpace
+		self.makeJP2()
+
+	def newColorSpace(self):
+		logging.debug("trying new jp2 color space for kakadu")
+		
+		if self.BPS in [ONE_BIT, EIGHT_BITS, SIXTEEN_BITS]:
+			self.jp2_space = 'sRGB'
+
+		# re-run makeJP2 with new input_data
 		self.next_iteration = None
 		self.makeJP2()
+
+
+
+
 
 
 

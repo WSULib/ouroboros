@@ -18,5 +18,5 @@ class Derivative(object):
 			return tempfile.SpooledTemporaryFile(max_size=(1024 * 1024 * 1024), prefix='ouroboros_', dir='/tmp/Ouroboros/')
 
 		else:
-			return tempfile.NamedTemporaryFile(prefix='ouroboros_', suffix=suffix, dir='/tmp/Ouroboros/', delete=True)
+			return tempfile.NamedTemporaryFile(prefix='ouroboros_', suffix=suffix, dir='/tmp/Ouroboros/', delete=False)
 

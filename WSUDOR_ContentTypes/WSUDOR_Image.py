@@ -240,47 +240,18 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					preview_handle.save()
 					os.system('rm %s' % (temp_filename))
 
-					# make JP2 with derivative class
+					# make JP2 with derivative module
 					jp2_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_JP2" % (ds['ds_id']), "%s_JPS" % (ds['label']), mimetype="image/jp2", control_group='M')
 					jp2_handle.label = "%s_JPS" % (ds['label'])
-					j = JP2DerivativeMaker(inObj=self)
-					j.inPath = file_path
-					print "making JP2 with",j.inPath,"to",j.outPath
-					makeJP2result = j.makeJP2()
-
-					# if fail, try again by uncompressing original temp file
-					if makeJP2result == False:
-						print "trying again with uncompressed original"
-						j.uncompressOriginal()
-						makeJP2result = j.makeJP2()
-
-					# if that fails, attempt to make tiff from original
-					if makeJP2result == False:
-						print "attempting to create tiff form origianl file format"
-						j.createTiffFromOriginal()
-						if os.path.exists(j.inPath+".tif"):
-							print "rewriting inPath file"
-							# change input path for new .tif extension
-							j.inPath = j.inPath+".tif"
-						makeJP2result = j.makeJP2()
-
-					# last resort, pause, try again
-					if makeJP2result == False:
-						time.sleep(3)
-						makeJP2result = j.makeJP2()
-
-					# write new JP2 datastream
-					if makeJP2result:
-						with open(j.outPath) as fhand:
+					jp2 = ImageDerivative(file_path)
+					jp2_result = jp2.makeJP2()
+					if jp2_result:
+						with open(jp2.output_handle.name) as fhand:
 							jp2_handle.content = fhand.read()
 						print "Result for",ds,jp2_handle.save()
-						# cleanup
-						j.cleanupTempFiles()
-
+						jp2.output_handle.unlink(jp2.output_handle.name)
 					else:
-						# cleanup
-						j.cleanupTempFiles()
-						raise Exception("Could not regen JP2")
+						raise Exception("Could not create JP2")
 
 					# -------------------------------------- RELS-INT ---------------------------------------#
 

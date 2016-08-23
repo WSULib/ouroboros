@@ -208,7 +208,7 @@ class ImageDerivative(Derivative):
 			cmd = cmd.replace("-jp2_space sRGB","-jp2_space sLUM")
 
 		logging.info("firing Kakadu")
-		logging.debug(cmd)
+		logging.info(cmd)
 
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()
@@ -229,10 +229,6 @@ class ImageDerivative(Derivative):
 				logging.info('out of input file tries...aborting')
 				return False
 		
-
-	'''
-	Work for tomm - test with files that are fixed by one of these....
-	'''
 
 
 	def uncompressOriginal(self):
@@ -260,6 +256,7 @@ class ImageDerivative(Derivative):
 		self.next_iteration = self.newColorSpace
 		self.makeJP2()
 
+
 	def newColorSpace(self):
 		logging.debug("trying new jp2 color space for kakadu")
 		
@@ -269,6 +266,9 @@ class ImageDerivative(Derivative):
 		# re-run makeJP2 with new input_data
 		self.next_iteration = None
 		self.makeJP2()
+
+
+
 
 
 

@@ -20,3 +20,26 @@ class Derivative(object):
 		else:
 			return tempfile.NamedTemporaryFile(prefix='ouroboros_', suffix=suffix, dir='/tmp/Ouroboros/', delete=False)
 
+
+	@classmethod
+	def write_temp_file(self, ds_handle, file_type='named', suffix='' ):
+
+		'''
+		expecting datastream "ds_handle" to write to temporary file
+
+		improvement: account for XML datastreams as well
+		'''
+
+		if file_type == 'memory':
+			f = tempfile.SpooledTemporaryFile(max_size=(1024 * 1024 * 1024), prefix='ouroboros_', dir='/tmp/Ouroboros/')
+
+		else:
+			f =  tempfile.NamedTemporaryFile(prefix='ouroboros_', suffix=suffix, dir='/tmp/Ouroboros/', delete=False)
+
+		# write ds_handle to temp file
+		f.write(ds_handle.content)
+		f.close()
+
+		# return f
+		return f
+

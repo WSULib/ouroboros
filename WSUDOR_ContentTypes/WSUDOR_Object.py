@@ -412,6 +412,18 @@ class WSUDOR_GenObject(object):
 		return self.objSizeDict
 
 
+	# constituent objects
+	@helpers.LazyProperty
+	def constituents(self):
+
+		'''
+		Returns OrderedDict with pageOrder as key, digital obj as val
+		'''
+
+		# get ordered, constituent objs
+		sparql_response = fedora_handle.risearch.sparql_query('select $constituent WHERE {{ $constituent <info:fedora/fedora-system:def/relations-external#isConstituentOf> <info:fedora/%s> . }}' % (self.pid))
+		constituent_objects = [ fedora_handle.get_object(obj['constituent']) for obj in sparql_response ]		
+		return constituent_objects
 
 
 	# WSUDOR_Object Methods
@@ -1040,26 +1052,34 @@ class WSUDOR_GenObject(object):
 	# ban image from varnish cache
 	def _removeObjFromVarnishCache(self):
 
-		return os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % self.pid)
+		# main pid
+		os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % self.pid)
+
+		# check constituents
+		if len(self.constituents) > 0:
+			for constituent in self.constituents:
+				os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % constituent.pid)
+
+		return  True
 
 
 	# remove from Loris cache
 	def _removeObjFromLorisCache(self):
 
-		removed = []
-
 		for ds in self.ohandle.ds_list:
-			if self._removeDatastreamFromLorisCache(ds):
-				removed.append(ds)
+			self._removeDatastreamFromLorisCache(self.pid, ds)
 
-		print "Cleared from Loris cache:",removed
+		# check constituents		
+		if len(self.constituents) > 0:
+			for constituent in self.constituents:
+				for ds in constituent.ds_list:
+					self._removeDatastreamFromLorisCache(constituent.pid, ds)
 
-		return removed
-
+		return True
 
 
 	# remove from Loris cache
-	def _removeDatastreamFromLorisCache(self, ds):
+	def _removeDatastreamFromLorisCache(self, pid, ds):
 
 		'''
 		As we now use Varnish for caching tiles and client<->Loris requests,
@@ -1079,10 +1099,9 @@ class WSUDOR_GenObject(object):
 		image_cache = config.get('img.ImageCache','cache_dp').replace("'","")
 		if image_cache.endswith('/'):
 			image_cache = image_cache[:-1]
-		print image_cache
 
 		# craft ident
-		ident = "fedora:%s|%s" % (self.pid, ds)
+		ident = "fedora:%s|%s" % (pid, ds)
 
 		# clear from fedora resolver cache
 		try:

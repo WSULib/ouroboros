@@ -11,6 +11,7 @@ import localConfig
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
 from bitStream import BitStream
+from lorisProxy import loris_image
 
 # general
 from flask import request, redirect, Response, jsonify, stream_with_context
@@ -32,13 +33,22 @@ def item(pid):
 @WSUDOR_API_app.route("/item/<pid>/thumbnail/", methods=['POST', 'GET'])
 def item_thumbnail(pid):
 
-	# generate URL
-	url = "http://localhost/loris/fedora:%s|THUMBNAIL/full/full/0/default.png" % (pid)	
-	r = requests.get(url, stream=True)
+	return loris_image(
+		image_id = 'fedora:%s|THUMBNAIL' % pid,
+		region = 'full',
+		size = 'full',
+		rotation = 0,
+		quality = 'default',
+		format = 'png'
+		)
 
-	# stream_with_context
-	# http://flask.pocoo.org/snippets/118/
-	return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
+	# # generate URL
+	# url = "http://localhost/loris/fedora:%s|THUMBNAIL/full/full/0/default.png" % (pid)	
+	# r = requests.get(url, stream=True)
+
+	# # stream_with_context
+	# # http://flask.pocoo.org/snippets/118/
+	# return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
 
 
 # Datastream Wrapper for bitStream

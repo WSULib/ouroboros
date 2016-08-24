@@ -12,6 +12,7 @@ class Derivative(object):
 	def __init__(self):
 		pass
 
+	@classmethod
 	def create_temp_file(self, file_type='named', suffix=''):
 		
 		if file_type == 'memory':
@@ -26,7 +27,6 @@ class Derivative(object):
 
 		'''
 		expecting datastream "ds_handle" to write to temporary file
-
 		improvement: account for XML datastreams as well
 		'''
 

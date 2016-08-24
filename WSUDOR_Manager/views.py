@@ -133,7 +133,10 @@ def systemStatus():
 
 	# get celery worker information
 	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-	sup_info = {}
+	sup_info = {
+		"celery":{},
+		"rtail":{}
+	}
 
 	# ouroboros
 	try:
@@ -143,39 +146,39 @@ def systemStatus():
 
 	# user cw
 	try:
-		sup_info['celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
+		sup_info['celery']['celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('celery-%s' % session['username']))
 	except:
-		sup_info['celery-%s' % session['username']] = False
+		sup_info['celery']['celery-%s' % session['username']] = False
 
 	# generic cw
 	try:
-		sup_info['generic_worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-celery'))
+		sup_info['celery']['generic_worker'] = json.dumps(sup_server.supervisor.getProcessInfo('celery-celery'))
 	except:
-		sup_info['generic_worker'] = False
+		sup_info['celery']['generic_worker'] = False
 
 	# rtail-server
 	try:
-		sup_info['rtail-server'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-server'))
+		sup_info['rtail']['rtail-server'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-server'))
 	except:
-		sup_info['rtail-server'] = False
+		sup_info['rtail']['rtail-server'] = False
 
 	# user log streaming
 	try:
-		sup_info['rtail-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
+		sup_info['rtail']['rtail-celery-%s' % session['username']] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-%s' % session['username']))
 	except:
-		sup_info['rtail-celery-%s' % session['username']] = False
+		sup_info['rtail']['rtail-celery-%s' % session['username']] = False
 
 	# ouroboros error streaming
 	try:
-		sup_info['rtail-ouroboros-err'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-ouroboros-err'))
+		sup_info['rtail']['rtail-ouroboros-err'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-ouroboros-err'))
 	except:
-		sup_info['rtail-ouroboros-err'] = False
+		sup_info['rtail']['rtail-ouroboros-err'] = False
 
 	# celery-celery streaming
 	try:
-		sup_info['rtail-celery-celery'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-celery'))
+		sup_info['rtail']['rtail-celery-celery'] = json.dumps(sup_server.supervisor.getProcessInfo('rtail-celery-celery'))
 	except:
-		sup_info['rtail-celery-celery'] = False
+		sup_info['rtail']['rtail-celery-celery'] = False
 
 	# render template
 	return render_template("systemStatus.html", imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)

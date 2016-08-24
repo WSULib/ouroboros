@@ -2,7 +2,6 @@
 
 from datetime import datetime
 import logging
-logging.basicConfig(level=logging.DEBUG)
 import os
 import subprocess
 import time
@@ -212,7 +211,9 @@ class ImageDerivative(Derivative):
 
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()
-			
+		
+		logging.info("output_handle name: %s" % self.output_handle.name)
+		logging.info("size of output_handle: %s" % os.path.getsize(self.output_handle.name))
 		if os.path.exists(self.output_handle.name) and os.path.getsize(self.output_handle.name) != 0:			
 			logging.info("Created: %s" % self.output_handle.name)
 			os.chmod(self.output_handle.name, 0644)
@@ -222,9 +223,9 @@ class ImageDerivative(Derivative):
 			logging.info("Failed to create: %s" % self.output_handle.name)
 			# retrying
 			if self.next_iteration:
-				logging.debug("trying next iteration...")
+				logging.info("trying next iteration...")
 				time.sleep(2)
-				self.next_iteration()
+				return self.next_iteration()
 			else:
 				logging.info('out of input file tries...aborting')
 				return False
@@ -232,7 +233,7 @@ class ImageDerivative(Derivative):
 
 
 	def uncompressOriginal(self):
-		logging.debug("Converting temp tiff to uncompressed")
+		logging.info("Converting temp tiff to uncompressed")
 		new_input_handle = self.create_temp_file(file_type='named', suffix='.tif')
 		cmd = "convert -verbose %s +compress %s" % (self.input_handle, new_input_handle.name)
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -241,11 +242,11 @@ class ImageDerivative(Derivative):
 		# re-run makeJP2 with new input_data
 		self.input_handle = new_input_handle.name
 		self.next_iteration = self.createTiffFromOriginal
-		self.makeJP2()
+		return self.makeJP2()
 
 
 	def createTiffFromOriginal(self):
-		logging.debug("creating tiff from original image file")
+		logging.info("creating tiff from original image file")
 		new_input_handle = self.create_temp_file(file_type='named', suffix='.tif')
 		cmd = "convert -verbose %s +compress %s" % (self.input_handle, new_input_handle.name)
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -254,18 +255,18 @@ class ImageDerivative(Derivative):
 		# re-run makeJP2 with new input_data
 		self.input_handle = new_input_handle.name
 		self.next_iteration = self.newColorSpace
-		self.makeJP2()
+		return self.makeJP2()
 
 
 	def newColorSpace(self):
-		logging.debug("trying new jp2 color space for kakadu")
+		logging.info("trying new jp2 color space for kakadu")
 		
 		if self.BPS in [ONE_BIT, EIGHT_BITS, SIXTEEN_BITS]:
 			self.jp2_space = 'sRGB'
 
 		# re-run makeJP2 with new input_data
 		self.next_iteration = None
-		self.makeJP2()
+		return self.makeJP2()
 
 
 

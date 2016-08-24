@@ -95,6 +95,17 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return pages
 
 
+	# MISSING pages from objMeta class
+	@helpers.LazyProperty
+	def missing_pages_from_objMeta(self):
+
+		'''
+		returns assumed missing pages based on numbering
+		'''
+		page_nums = self.pages_from_objMeta.keys()
+		return set(page_nums).symmetric_difference(xrange(page_nums[0], page_nums[-1] + 1))
+
+
 	# pages from constituent objects
 	@helpers.LazyProperty
 	def pages_from_rels(self):
@@ -214,12 +225,20 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				MODS_handle.save()
 
 
+			# PAGES
 			########################################################################################################
+
 			# iterate through pages and create page objects
 			for page_num in self.pages_from_objMeta:
 				page_dict = self.pages_from_objMeta[page_num]
 				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
 				page_obj.ingest(self, page_num)
+
+			# iterate through anticipated missing pages and create missing page objects
+			for page_num in self.missing_pages_from_objMeta:			
+				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+				page_obj.ingestMissingPage(self, page_num)
+
 			########################################################################################################
 
 

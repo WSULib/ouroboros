@@ -221,15 +221,15 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			fontsize = 1  # starting font size
 			# portion of image width you want text width to be
 			img_fraction = 0.50
-			font = ImageFont.truetype("/opt/ouroboros/WSUDOR_ContentTypes/assets/Roboto-Regular.ttf", fontsize)
+			font = ImageFont.truetype("WSUDOR_ContentTypes/assets/Roboto-Regular.ttf", fontsize)
 			while font.getsize(txt)[0] < img_fraction*im.size[0]:
 				# iterate until the text size is just larger than the criteria
 				fontsize += 1
-				font = ImageFont.truetype("/opt/ouroboros/WSUDOR_ContentTypes/assets/Roboto-Regular.ttf", fontsize)
+				font = ImageFont.truetype("WSUDOR_ContentTypes/assets/Roboto-Regular.ttf", fontsize)
 
 			# optionally de-increment to be sure it is less than criteria
 			fontsize -= 1
-			font = ImageFont.truetype("/opt/ouroboros/WSUDOR_ContentTypes/assets/Roboto-Regular.ttf", fontsize)
+			font = ImageFont.truetype("WSUDOR_ContentTypes/assets/Roboto-Regular.ttf", fontsize)
 			print 'final font size',fontsize
 
 			w, h = font.getsize(txt)

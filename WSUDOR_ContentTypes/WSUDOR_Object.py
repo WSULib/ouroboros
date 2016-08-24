@@ -359,8 +359,8 @@ class WSUDOR_GenObject(object):
 
 	# return IIIF maniest
 	@helpers.LazyProperty
-	def iiif_manifest(self):
-		return json.loads(redisHandles.r_iiif.get(self.pid))
+	def iiif_manifest(self, format='string'):		
+		return self.ohandle.getDatastreamObject('IIIF_MANIFEST').content
 
 
 	@helpers.LazyProperty

@@ -123,7 +123,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return self.ohandle.save()
 
 
-	def ingestMissingPage(self, book_obj, page_num):
+	def ingestMissingPage(self, book_obj, page_num, from_bag=True):
 
 		# set book_obj to self
 		self.book_obj = book_obj
@@ -157,7 +157,8 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		generic_handle.save()
 
 		print "Processing IMAGE placeholder"
-		self.processImage(None, exists=False, page_num=page_num)
+		# passes 'from_bag' param		
+		self.processImage(None, exists=False, page_num=page_num, from_bag=from_bag)
 
 		# write RDF relationships
 		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")
@@ -177,7 +178,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 
-	def processImage(self, ds, exists=True, page_num=None):
+	def processImage(self, ds, exists=True, page_num=None, from_bag=True):
 
 		if exists:
 			print "Processing derivative"
@@ -185,16 +186,26 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "Looking for:",file_path
 
 		if not exists:
-			# read first page in book for general size
-			first_page_dict = self.book_obj.pages_from_objMeta[self.book_obj.pages_from_objMeta.keys()[0]]
-			for ds in first_page_dict:
-				if ds['ds_id'].startswith('IMAGE'):
-					file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
-					print "looking for dimensions from this file:",file_path
-					with Image.open(file_path) as im:
-						width, height = im.size
-						self.faux_width, self.faux_height = im.size # save for use in ALTOXML
-						print "dimensions:",width,height
+
+			if from_bag:
+				# read first page in book for general size
+				first_page_dict = self.book_obj.pages_from_objMeta[self.book_obj.pages_from_objMeta.keys()[0]]
+				for ds in first_page_dict:
+					if ds['ds_id'].startswith('IMAGE'):
+						file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
+						print "looking for dimensions from this file:",file_path
+						with Image.open(file_path) as im:
+							width, height = im.size
+							self.faux_width, self.faux_height = im.size # save for use in ALTOXML
+							print "dimensions:",width,height
+
+			# get dimensions from iiif_manifest
+			if not from_bag:
+				im = json.loads(self.book_obj.iiif_manifest)
+				page_info = im['sequences'][0]['canvases'][0]
+				width, height = (page_info['width'],page_info['height'])
+				self.faux_width, self.faux_height = (page_info['width'],page_info['height']) # save for use in ALTOXML
+				print "dimensions:",width,height
 
 			# write temp file
 			missing_page_output_handle = Derivative.create_temp_file(suffix='.tif')
@@ -227,7 +238,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print "written to",file_path
 
 		# original
-		orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'IMAGE', 'IMAGE', mimetype=ds['mimetype'], control_group='M')
+		orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'IMAGE', 'IMAGE', mimetype='image/tiff', control_group='M')
 		orig_handle.label = "IMAGE"
 		orig_handle.content = open(file_path)
 		orig_handle.save()
@@ -260,6 +271,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			jp2.output_handle.unlink(jp2.output_handle.name)
 		else:
 			raise Exception("Could not create JP2")
+
+		# cleanup
+		missing_page_output_handle.unlink(missing_page_output_handle.name)
 
 		
 

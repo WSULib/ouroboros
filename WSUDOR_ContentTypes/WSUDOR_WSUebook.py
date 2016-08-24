@@ -235,9 +235,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				page_obj.ingest(self, page_num)
 
 			# iterate through anticipated missing pages and create missing page objects
-			for page_num in self.missing_pages_from_objMeta:			
-				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
-				page_obj.ingestMissingPage(self, page_num)
+			# for page_num in self.missing_pages_from_objMeta:			
+			# 	page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+			# 	page_obj.ingestMissingPage(self, page_num)
 
 			########################################################################################################
 
@@ -274,6 +274,18 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print traceback.format_exc()
 			print "Ingest Error:",e
 			return False
+
+
+	# create missing page objects
+	def genMissingPages(self, reindex=True):
+		
+		for page_num in self.missing_pages_from_objMeta:
+			print "Generating missing page: %s" % page_num
+			page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+			page_obj.ingestMissingPage(self, page_num, from_bag=False)
+
+		# reindex book
+		self.objectRefresh()
 
 
 	# method to purge main book object and children pages

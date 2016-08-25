@@ -1544,7 +1544,7 @@ def solrDoc(pid):
 def solrReaduxDoc(pid,action):
 
 	try:
-		r = requests.get('http://192.168.42.5:8000/indexdata/%s' % pid).json()
+		r = requests.get('%s/indexdata/%s' % (localConfig.READUX_BASE_URL, pid)).json()
 	except:
 		print "could not retrieve index data from readux, aborting"
 		return jsonify({"result":False})

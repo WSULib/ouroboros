@@ -27,6 +27,7 @@ import eulfedora
 
 # WSUDOR
 import WSUDOR_ContentTypes
+from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers, utilities
@@ -586,11 +587,19 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	def purgeReaduxVirtualObjects(self):
 
+		readux_solr_handle = solrHandles.onDemand('readux')
+
 		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 
 		for obj in sparql_response:
 			print "Purging virtual object: %s" % obj['virtobj']
 			fedora_handle.purge_object( obj['virtobj'].split("info:fedora/")[-1] )
+			print "Removing from Readux solr core..."
+			readux_solr_handle.delete_by_key(obj['virtobj'].split("info:fedora/")[-1], commit=False)
+
+		# commit solr purges
+		readux_solr_handle.commit()
+
 
 		return True
 

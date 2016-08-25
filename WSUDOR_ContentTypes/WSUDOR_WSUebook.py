@@ -103,7 +103,13 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		returns assumed missing pages based on numbering
 		'''
 		page_nums = self.pages_from_objMeta.keys()
-		return set(page_nums).symmetric_difference(xrange(page_nums[0], page_nums[-1] + 1))
+		missing_pages_set = set(page_nums).symmetric_difference(xrange(page_nums[0], page_nums[-1] + 1))
+
+		# add page 1 if not present
+		if not 1 in missing_pages_set:
+			missing_pages_set.add(1)
+
+		return missing_pages_set
 
 
 	# pages from constituent objects
@@ -118,6 +124,30 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		sparql_response = fedora_handle.risearch.sparql_query('select $page $pageOrder WHERE {{ $page <info:fedora/fedora-system:def/relations-external#isConstituentOf> <info:fedora/%s> .$page <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder> $pageOrder . }} ORDER BY ASC($pageOrder)' % (self.pid))
 		constituent_objects = OrderedDict((int(page['pageOrder']), fedora_handle.get_object(page['page'])) for page in sparql_response)
 		return constituent_objects
+
+
+	# MISSING pages from rels relationships
+	@helpers.LazyProperty
+	def missing_pages_from_rels(self):
+
+		'''
+		returns assumed missing pages based on numbering
+		'''
+		page_nums = self.pages_from_rels.keys()
+		missing_pages_set = set(page_nums).symmetric_difference(xrange(page_nums[0], page_nums[-1] + 1))
+
+		# add page 1 if not present
+		if not 1 in missing_pages_set:
+			missing_pages_set.add(1)
+
+		return missing_pages_set
+
+
+	# congruency between expected pages in objMeta and actual page objects created
+	@helpers.LazyProperty
+	def missing_expected_pages(self):
+
+		return set(self.missing_pages_from_rels) - set(self.missing_pages_from_objMeta)
 
 
 	# perform ingestTest
@@ -230,7 +260,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# iterate through pages and create page objects
 			for page_num in self.pages_from_objMeta:
-				page_dict = self.pages_from_objMeta[page_num]
 				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
 				page_obj.ingest(self, page_num)
 

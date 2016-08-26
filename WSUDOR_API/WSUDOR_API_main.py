@@ -100,10 +100,12 @@ def WSUDOR_API_main(getParams):
 
 		# if user is logged in and part of staff group, return sensitive information
 		user_auth = json.loads(JSONdict['user_auth'])
-		print "#########################################################"
 		print user_auth
 		if user_auth['hashMatch']:
-			JSONdict['bitStream'] = json.dumps({'key':localConfig.BITSTREAM_KEY})
+
+			# if user cleared for bitStream
+			if getParams['username'][0] in localConfig.BITSTREAM_CLEARED_USERNAMES:
+				JSONdict['bitStream'] = json.dumps({'key':localConfig.BITSTREAM_KEY})
 
 	# if functions declared
 	if 'functions[]' in getParams:

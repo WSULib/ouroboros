@@ -273,7 +273,8 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			raise Exception("Could not create JP2")
 
 		# cleanup
-		missing_page_output_handle.unlink(missing_page_output_handle.name)
+		if not exists:
+			missing_page_output_handle.unlink(missing_page_output_handle.name)
 
 		
 

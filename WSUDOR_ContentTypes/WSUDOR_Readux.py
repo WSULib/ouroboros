@@ -389,11 +389,6 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		print "Initializing %s" % (self.pid)
 		self.save()
 
-		# Dublin Core
-		'''
-		Will need to write this a bit more carefully - including the PID of this new object!
-		'''
-
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
 		print "Using policy:",wsudor_book.objMeta['policy']

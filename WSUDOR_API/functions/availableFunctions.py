@@ -1030,7 +1030,7 @@ def userSearch(getParams):
 	# make Solr Request, save to userDict
 	r = requests.get(baseURL)				
 	userDict = ast.literal_eval(r.text)
-	print userDict
+	# print userDict
 
 	# prepare dict to convert to JSON and return
 	userReturnDict = {}
@@ -1049,7 +1049,7 @@ def userSearch(getParams):
 		print "User account not found..."
 		userReturnDict['extant'] = False
 
-	print userReturnDict
+	# print userReturnDict
 	jsonString = json.dumps(userReturnDict)
 
 	return jsonString
@@ -1087,8 +1087,6 @@ def WSUDORuserAuth(getParams):
 	hashString = getParams['username'][0]+getParams['password'][0]+USER_ACCOUNT_SALT
 	clientHash = hashlib.sha256(hashString).hexdigest()
 
-	print 'Userdict:',userDict
-
 	if clientHash == userDict['response']['docs'][0]['user_hash'][0]:
 		print "WSUDOR credentials verified."
 		userReturnDict['WSUDORcheck'] = True
@@ -1111,12 +1109,12 @@ def cookieAuth(getParams):
 
 	# establish baseURL
 	baseURL = "http://localhost/solr4/users/select?"
-	# print "Params for cookieAuth"
+	print "running cookieAuth"
 	# print getParams
 
 	# check for clientHash
 	if 'clientHash' not in getParams:
-		print "account hasshes do NOT match."
+		print "clientHas not provided, aborting"
 		userReturnDict['hashMatch'] = False	
 		# print userReturnDict
 		jsonString = json.dumps(userReturnDict)	
@@ -1145,10 +1143,10 @@ def cookieAuth(getParams):
 
 	# check hash match
 	if getParams['clientHash'][0] == userDict['response']['docs'][0]['user_hash'][0]:
-		# print "account hashes match"
+		print "account hashes match"
 		userReturnDict['hashMatch'] = True
 	else:
-		# print "account hasshes do NOT match."
+		print "account hasshes do NOT match."
 		userReturnDict['hashMatch'] = False	
 
 	# print userReturnDict
@@ -1157,60 +1155,60 @@ def cookieAuth(getParams):
 	return jsonString
 
 
-# def createUserAccount(getParams):
-# # function to take jsonAddString, index in Solr, and return confirmation code
-# ######################################################################################################################	
+def createUserAccount(getParams):
+# function to take jsonAddString, index in Solr, and return confirmation code
+######################################################################################################################	
 
-# 	# print getParams
+	# print getParams
 
-# 	# create solrString to add doc
-# 	solrDict = {}
-# 	solrDict['id'] = getParams['id'][0]
-# 	solrDict['user_username'] = getParams['user_username'][0]
-# 	solrDict['user_displayName'] = getParams['user_displayName'][0]
-# 	# not currently storing passwords in solr...authenticating based on matching hash values for now
-# 	# solrDict['user_password'] = getParams['user_password'][0]
-# 	solrDict['user_WSU'] = getParams['user_WSU'][0]
-# 	# create hash of username and password	
-# 	hashString = solrDict['user_username']+getParams['user_password'][0]+USER_ACCOUNT_SALT
-# 	solrDict['user_hash'] = hashlib.sha256(hashString).hexdigest()
-# 	# print solrDict
+	# create solrString to add doc
+	solrDict = {}
+	solrDict['id'] = getParams['id'][0]
+	solrDict['user_username'] = getParams['user_username'][0]
+	solrDict['user_displayName'] = getParams['user_displayName'][0]
+	# not currently storing passwords in solr...authenticating based on matching hash values for now
+	# solrDict['user_password'] = getParams['user_password'][0]
+	solrDict['user_WSU'] = getParams['user_WSU'][0]
+	# create hash of username and password	
+	hashString = solrDict['user_username']+getParams['user_password'][0]+USER_ACCOUNT_SALT
+	solrDict['user_hash'] = hashlib.sha256(hashString).hexdigest()
+	# print solrDict
 
-# 	solrString = json.dumps(solrDict)
-# 	solrString = "["+solrString+"]"
-# 	# print solrString
+	solrString = json.dumps(solrDict)
+	solrString = "["+solrString+"]"
+	# print solrString
 
-# 	baseURL = "http://localhost/solr4/users/update/json?commit=true"
-# 	headersDict = {
-# 		"Content-type":"application/json"
-# 	}
+	baseURL = "http://localhost/solr4/users/update/json?commit=true"
+	headersDict = {
+		"Content-type":"application/json"
+	}
 
-# 	r = requests.post(baseURL, data=solrString, headers=headersDict)	
-# 	responseString = json.loads(r.text)
+	r = requests.post(baseURL, data=solrString, headers=headersDict)	
+	responseString = json.loads(r.text)
 
-# 	userReturnDict = {}
-# 	userReturnDict['clientHash'] = solrDict['user_hash']
-# 	userReturnDict['createResponse'] = responseString
+	userReturnDict = {}
+	userReturnDict['clientHash'] = solrDict['user_hash']
+	userReturnDict['createResponse'] = responseString
 
-# 	jsonString = json.dumps(userReturnDict)
+	jsonString = json.dumps(userReturnDict)
 
-# 	return jsonString
+	return jsonString
 
 
-# def addFavorite(getParams):
-# # function to take jsonAddString, index in Solr, and return confirmation code
-# ######################################################################################################################	
-# 	solrString = getParams['raw'][0]
-# 	# print solrString	
+def addFavorite(getParams):
+# function to take jsonAddString, index in Solr, and return confirmation code
+######################################################################################################################	
+	solrString = getParams['raw'][0]
+	# print solrString	
 
-# 	baseURL = "http://localhost/solr4/users/update/json?commit=true"
-# 	headersDict = {
-# 		"Content-type":"application/json"
-# 	}
+	baseURL = "http://localhost/solr4/users/update/json?commit=true"
+	headersDict = {
+		"Content-type":"application/json"
+	}
 
-# 	r = requests.post(baseURL, data=solrString, headers=headersDict)
-# 	jsonString = r.text
-# 	return jsonString
+	r = requests.post(baseURL, data=solrString, headers=headersDict)
+	jsonString = r.text
+	return jsonString
 
 
 '''
@@ -1247,87 +1245,89 @@ Need to convert sunburnt to mysolr here
 # 		returnDict['status'] = "Credentials don't match."
 # 		return json.dumps(returnDict)
 
+
 def authUser(getParams):
+	# try:
+
+	username=getParams['username'][0]
+	password=getParams['password'][0]
+
+	returnDict = {}
+
+	###############################################################
+	# get clientHash# 
 	try:
+		userDict = {}
+		baseURL = "http://localhost/solr4/users/select?"
+		
+		solrParams = {}
+		solrParams['q'] = 'id:'+username
+		solrParams["wt"] = "python"
+		# add all other parameters	
+		for k in solrParams:		
+			baseURL += (k+"="+str(solrParams[k])+"&")	
 
-		username=getParams['username'][0]
-		password=getParams['password'][0]
+		# make Solr Request, save to userDict
+		r = requests.get(baseURL)				
+		userDict = ast.literal_eval(r.text)
+		# print "Userdict:",userDict
+		# print "\n\n\n"
+		# print "FROM SOLR: Results of clientHash retrieval from LDAP authorization:"
+		# print userDict['response']['docs'][0]['user_hash'][0]			
+		# print "\n\n\n"
+		retrieved_clientHash = userDict['response']['docs'][0]['user_hash'][0]
+		returnDict['clientHash'] = retrieved_clientHash
+	except:
+		print "Could not retrieve user hash"
+	###############################################################
 
-		returnDict = {}
+	# set ldap location, protocol version, and referrals
+	l = ldap.initialize("ldaps://directory.wayne.edu:636")
+	l.protocol_version = ldap.VERSION3
+	l.set_option(ldap.OPT_REFERRALS, 0)
 
-		###############################################################
-		# get clientHash# 
+	submitted_username = username
+	username = "uid="+submitted_username+",ou=People,DC=wayne,DC=edu"
+	password = password
+	if password == "":
+		jsonString = '{"desc":"no password"}'			
+		return jsonString
+	else:	
 		try:
-			userDict = {}
-			baseURL = "http://localhost/solr4/users/select?"
-			
-			solrParams = {}
-			solrParams['q'] = 'id:'+username
-			solrParams["wt"] = "python"
-			# add all other parameters	
-			for k in solrParams:		
-				baseURL += (k+"="+str(solrParams[k])+"&")	
-
-			# make Solr Request, save to userDict
-			r = requests.get(baseURL)				
-			userDict = ast.literal_eval(r.text)
-			print "Userdict:",userDict
-			print "\n\n\n"
-			print "FROM SOLR: Results of clientHash retrieval from LDAP authorization:"
-			print userDict['response']['docs'][0]['user_hash'][0]			
-			print "\n\n\n"
-			retrieved_clientHash = userDict['response']['docs'][0]['user_hash'][0]
-			returnDict['clientHash'] = retrieved_clientHash
-		except:
-			print "Could not retrieve user hash"
-		###############################################################
-
-		# set ldap location, protocol version, and referrals
-		l = ldap.initialize("ldaps://directory.wayne.edu:636")
-		l.protocol_version = ldap.VERSION3
-		l.set_option(ldap.OPT_REFERRALS, 0)
-
-		submitted_username = username
-		username = "uid="+submitted_username+",ou=People,DC=wayne,DC=edu"
-		password = password
-		if password == "":
-			jsonString = '{"desc":"no password"}'			
-			return jsonString
-		else:	
-			try:
-				l.bind_s(username, password)	
-			except ldap.LDAPError, e:
-				jsonString = json.dumps(e.message)
-				return jsonString
-
-		# set baseDN, scope (SUBTREE searches searches for user and children), attributes
-		baseDN = "dc=wayne,dc=edu"
-		searchScope = ldap.SCOPE_SUBTREE
-		retrieveAttributes = ['firstDotLast','givenName','uid']
-		searchFilter = "uid="+submitted_username
-
-		# if works, correct credentials and successful
-		try:
-			ldap_result_id = l.search(baseDN, searchScope, searchFilter, retrieveAttributes)
-			result_set = list()
-			result_type, result_data = l.result(ldap_result_id)
-			for data in result_data:
-				if data[0]:
-					result_set.append(data)
-			# jsonString = json.dumps(result_set)
-			################################################
-			# Couching in dictionary
-			returnDict['LDAP_result_set'] = result_set			
-			jsonString = json.dumps(returnDict)
-			################################################
-			return jsonString
+			l.bind_s(username, password)	
 		except ldap.LDAPError, e:
 			jsonString = json.dumps(e.message)
 			return jsonString
 
-	except:
-		jsonString = '{"desc":"unsucessful"}'
+	# set baseDN, scope (SUBTREE searches searches for user and children), attributes
+	baseDN = "dc=wayne,dc=edu"
+	searchScope = ldap.SCOPE_SUBTREE
+	retrieveAttributes = ['firstDotLast','givenName','uid']
+	searchFilter = "uid="+submitted_username
+
+	# if works, correct credentials and successful
+	try:
+		ldap_result_id = l.search(baseDN, searchScope, searchFilter, retrieveAttributes)
+		result_set = list()
+		result_type, result_data = l.result(ldap_result_id)
+		for data in result_data:
+			if data[0]:
+				result_set.append(data)
+		# jsonString = json.dumps(result_set)
+		################################################
+		# Couching in dictionary
+		returnDict['LDAP_result_set'] = result_set			
+		jsonString = json.dumps(returnDict)
+		################################################
 		return jsonString
+	except ldap.LDAPError, e:
+		jsonString = json.dumps(e.message)
+		return jsonString
+
+	# except:
+	# 	jsonString = '{"desc":"unsucessful"}'
+	# 	return jsonString
+
 
 def getUserInfo(getParams):
 	# Lib / validUser cookie present, just need their name

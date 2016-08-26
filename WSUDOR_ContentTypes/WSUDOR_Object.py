@@ -426,6 +426,12 @@ class WSUDOR_GenObject(object):
 		return constituent_objects
 
 
+	# object triples
+	@helpers.LazyProperty
+	def rdf_triples(self):
+		return list(self.ohandle.rels_ext.content)
+
+
 	# WSUDOR_Object Methods
 	############################################################################################################
 	# generic, simple ingest

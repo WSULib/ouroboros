@@ -147,7 +147,27 @@ def downsizeImage(pid,ds,ic):
 	Or policy?
 	'''
 
-	# options
+	# ########################################################################################################################
+	# # Hardcoded Options
+	# ########################################################################################################################
+	
+	# target_resolution = 700	
+	# restricted_collections = [
+	# 	'wayne:collectionvmc',
+	# 	'wayne:collectionUniversityBuildings'
+	# ]
+
+	# restricted_status = False
+	# collections = [ o for s,p,o in fedora_handle.get_object(pid).rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') ]
+	# for c in collections:
+	# 	if c.split("info:fedora/")[1] in restricted_collections:
+	# 		restricted_status = True
+	# 		break
+
+	########################################################################################################################
+	# RDF based
+	########################################################################################################################
+
 	target_resolution = 700	
 	restricted_collections = [
 		'wayne:collectionvmc',
@@ -160,6 +180,8 @@ def downsizeImage(pid,ds,ic):
 		if c.split("info:fedora/")[1] in restricted_collections:
 			restricted_status = True
 			break
+
+	########################################################################################################################
 
 	if restricted_status:
 

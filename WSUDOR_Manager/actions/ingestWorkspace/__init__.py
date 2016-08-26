@@ -527,6 +527,7 @@ def createJob_worker(job_package):
 	else:
 		id_prefix = ''
 
+	# this may or may not be true - bag creation should update this...
 	derived_pid = 'wayne:%s%s' % (id_prefix,job_package['DMDID'])
 
 		# insert with SQLAlchemy Core

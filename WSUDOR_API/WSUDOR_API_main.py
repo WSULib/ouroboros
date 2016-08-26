@@ -63,9 +63,6 @@ def WSUDOR_API_main(getParams):
 				else:
 					print "Function not found"
 
-
-
-
 	# JSON RETURN	
 	# function to zip and return all JSON fragments to fedClerk
 	def JSONreturn():	
@@ -93,6 +90,20 @@ def WSUDOR_API_main(getParams):
 	# strip passwords from APIParams	
 	APIParamsJSON = json.dumps(APIParams)
 	JSONdict['APIParams'] = APIParamsJSON
+
+	# determine if user logged in
+	if 'active_user' in getParams:
+		
+		# check authentication with cookieAuth()
+		print "checking user auth..."
+		JSONdict['user_auth'] = cookieAuth(getParams)
+
+		# if user is logged in and part of staff group, return sensitive information
+		user_auth = json.loads(JSONdict['user_auth'])
+		print "#########################################################"
+		print user_auth
+		if user_auth['hashMatch']:
+			JSONdict['bitStream'] = json.dumps({'key':localConfig.BITSTREAM_KEY})
 
 	# if functions declared
 	if 'functions[]' in getParams:

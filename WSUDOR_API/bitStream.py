@@ -28,8 +28,7 @@ Accepts keys and tokens for access (see doc/bitStream.md)
 # BitStream model to handle bitStream requests
 class BitStream(object):
 
-
-	def __init__(self, request, PID, DS, key=None, token=None):
+	def __init__(self, PID, DS, key=None, token=None):
 
 		# object and datastream
 		self.PID = PID
@@ -37,8 +36,10 @@ class BitStream(object):
 		self.unique_id = hashlib.md5(PID+DS).hexdigest()		
 		
 		# auth, key, token access
-		self.key = request.args.get('key', False)
-		self.token = request.args.get('token', False)
+		# self.key = request.args.get('key', False)
+		# self.token = request.args.get('token', False)
+		self.key = key
+		self.token = token
 		self.return_token = None
 
 		# response params
@@ -127,7 +128,12 @@ class BitStream(object):
 						return_token = str(uuid.uuid4()) # random token
 						print "setting token: %s" % return_token
 						redisHandles.r_catchall.set(return_token, self.unique_id)
-						self.msg = {"token":return_token}
+						self.msg = {
+							"token":return_token,
+							"url":"https://%s/item/%s/bitStream/%s/?token=%s" % (localConfig.APP_HOST, self.PID, self.DS, return_token),
+							"object":self.PID,
+							"datastream":self.DS
+						}
 						self.status_code = 200
 						return False
 
@@ -181,14 +187,56 @@ class BitStream(object):
 				return False
 
 		# if made this far, stream response
+		self.msg = {
+			"token":None,
+			"url":"https://%s/item/%s/bitStream/%s/" % (localConfig.APP_HOST, self.PID, self.DS),
+			"object":self.PID,
+			"datastream":self.DS			
+		}
+		self.status_code = 200
 		return True
+
+
+	@classmethod
+	def genAllTokens(cls, PID, key):
+		
+		'''
+		This function generates bitStream tokens for ALL datastreams for an object
+		'''
+
+		# if key and key match
+		if key == localConfig.BITSTREAM_KEY:
+
+			print "generating all bitStream tokens..."
+
+			# return dict
+			response_dict = {}
+
+			# init object handle
+			obj_handle = fedora_handle.get_object(PID)
+
+			# generate tokens for each datastream using BitStream instance
+			for DS in obj_handle.ds_list:
+
+				bs = cls(PID, DS, key=key, token='request')
+				response_dict[DS] = {
+					"token":bs.msg['token'],
+					"url":bs.msg['url']
+				}
+
+			return response_dict
 
 
 # bitStream
 @WSUDOR_API_app.route("/%s/bitStream/<PID>/<DS>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 def bitStream(PID,DS):
 
-	bs = BitStream(request,PID,DS)
+	# extract key and token if present
+	key = request.args.get('key', False)
+	token = request.args.get('token', False)
+
+	# init BitStream
+	bs = BitStream(PID,DS,key=key,token=token)
 	return bs.stream()
 
 

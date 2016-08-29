@@ -61,7 +61,11 @@ def item_datastream(pid,datastream):
 	Passes along potential 'key' and 'token' GET parameters for bitStream
 	'''
 
-	bs = BitStream(request, pid , datastream)
+	# extract key and token if present
+	key = request.args.get('key', False)
+	token = request.args.get('token', False)
+
+	bs = BitStream(pid, datastream, key, token)
 	return bs.stream()
 
 

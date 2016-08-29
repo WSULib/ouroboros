@@ -10,6 +10,7 @@ import localConfig
 
 # WSUDOR_API modules
 from WSUDOR_API import cache
+from WSUDOR_API.bitStream import BitStream
 from functions.utils import *
 from functions.availableFunctions import *
 from functions.packagedFunctions import *
@@ -74,7 +75,8 @@ def WSUDOR_API_main(getParams):
 
 		# return JSON package
 		return JSONpackage	
-	
+
+
 
 	# EXECUTE	
 	JSONdict = {}	
@@ -98,14 +100,12 @@ def WSUDOR_API_main(getParams):
 		print "checking user auth..."
 		JSONdict['user_auth'] = cookieAuth(getParams)
 
-		# if user is logged in and part of staff group, return sensitive information
+		# if user is logged in and part of staff group, return bitStream download tokens
 		user_auth = json.loads(JSONdict['user_auth'])
-		print user_auth
-		if user_auth['hashMatch']:
+		if user_auth['hashMatch'] and getParams['username'][0] in localConfig.BITSTREAM_CLEARED_USERNAMES:
 
-			# if user cleared for bitStream
-			if getParams['username'][0] in localConfig.BITSTREAM_CLEARED_USERNAMES:
-				JSONdict['bitStream'] = json.dumps({'key':localConfig.BITSTREAM_KEY})
+			print "generating bitStream token dictionary"
+			JSONdict['bitStream'] = json.dumps(BitStream.genAllTokens(getParams['PID'][0], localConfig.BITSTREAM_KEY))
 
 	# if functions declared
 	if 'functions[]' in getParams:

@@ -61,16 +61,16 @@ $(document).ready(function () {
     	</span></tr>
     	<!-- Metadata -->
 
-    	<tr>
+    	<tr style="width: 25em; display: block; overflow: scroll; white-space: nowrap;">
     		<td><b>PID:</b> {{obj.PID}}</td>
     	</tr>
-    	<tr>
+    	<tr style="width: 25em; display: block; overflow: scroll; white-space: nowrap;">
     		<td><b>Title:</b> {{obj.solr_package['dc_title'][0]}}</td>
     	</tr>
 
 
         <!-- Notes -->
-		<tr>
+		<tr style="width: 25em; display: block; overflow: scroll; white-space: nowrap;">
 			<td><b>Notes:</b> 
 		{% if obj.notes is not none %}
 			name: {{obj.notes['name']}}

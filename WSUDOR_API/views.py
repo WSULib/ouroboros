@@ -30,20 +30,20 @@ def index():
 
 	getParams = {each:request.values.getlist(each) for each in request.values}
 
-	# try:
-	response = make_response(WSUDOR_API_main(getParams))
-	response.headers['Access-Control-Allow-Origin'] = '*'
-	response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
-	response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
-	response.headers['Access-Control-Max-Age'] = 2520
-	response.headers["Content-Type"] = "application/json"		
-	response.headers['X-Powered-By'] = "['ShoppingHorse','DumpsterTurkey']"
-	response.headers['Connection'] = 'Close'
-	return response
+	try:
+		response = make_response(WSUDOR_API_main(getParams))
+		response.headers['Access-Control-Allow-Origin'] = '*'
+		response.headers['Access-Control-Allow-Methods'] = 'GET, POST'
+		response.headers['Access-Control-Allow-Headers'] = 'x-prototype-version,x-requested-with'
+		response.headers['Access-Control-Max-Age'] = 2520
+		response.headers["Content-Type"] = "application/json"		
+		response.headers['X-Powered-By'] = "['ShoppingHorse','DumpsterTurkey']"
+		response.headers['Connection'] = 'Close'
+		return response
 
-	# except Exception,e:
-	# 	print "WSUDOR_API call unsuccessful.  Error:",str(e)
-	# 	return '{{"WSUDOR_APIstatus":"WSUDOR_API call unsuccessful.","WSUDOR_APIstatus message":%s}}' % (json.dumps(str(e)))
+	except Exception,e:
+		print "WSUDOR_API call unsuccessful.  Error:",str(e)
+		return '{"WSUDOR_API_status":"WSUDOR_API call unsuccessful.","WSUDOR_API_message":%s}' % (json.dumps(str(e)))
 	
 
 

@@ -20,6 +20,7 @@ from localConfig import *
 # modules from WSUDOR_Manager
 import WSUDOR_ContentTypes
 from WSUDOR_API.fedoraHandles import fedora_handle
+from WSUDOR_API.bitStream import BitStream
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities
@@ -1378,11 +1379,33 @@ def getUserInfo(getParams):
 	return jsonString
 
 
+def objBitStreamTokens(getParams):
+# function to accept a pid and bitStream key, and return bitStream tokenized URLs for download
+######################################################################################################################	
+	# check authentication with cookieAuth()
+	print "checking user auth..."
+	user_auth = cookieAuth(getParams)
+
+	# if user is logged in and part of staff group, return bitStream download tokens
+	user_auth = json.loads(user_auth)	
+	if user_auth['hashMatch'] and getParams['username'][0] in BITSTREAM_CLEARED_USERNAMES:
+
+		print "generating bitStream token dictionary"
+		return json.dumps(BitStream.genAllTokens(getParams['PID'][0], BITSTREAM_KEY))
+
+	else:
+
+		return json.dumps({
+			"status":False,
+			"msg":"user not authorized for bitStream tokenized URLs"	
+		})
+
+
 
 
 #######################################################################################################################
 # --------------------------------------------------------------------------------------------------------------------#
-# GENERAL / MISC / MIXED                                                                                                     #
+# GENERAL / MISC / MIXED                                                                                              #
 # --------------------------------------------------------------------------------------------------------------------#
 #######################################################################################################################
 

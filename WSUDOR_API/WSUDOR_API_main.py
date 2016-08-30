@@ -93,20 +93,6 @@ def WSUDOR_API_main(getParams):
 	APIParamsJSON = json.dumps(APIParams)
 	JSONdict['APIParams'] = APIParamsJSON
 
-	# determine if user logged in
-	if 'active_user' in getParams:
-		
-		# check authentication with cookieAuth()
-		print "checking user auth..."
-		JSONdict['user_auth'] = cookieAuth(getParams)
-
-		# if user is logged in and part of staff group, return bitStream download tokens
-		user_auth = json.loads(JSONdict['user_auth'])
-		if user_auth['hashMatch'] and getParams['username'][0] in localConfig.BITSTREAM_CLEARED_USERNAMES:
-
-			print "generating bitStream token dictionary"
-			JSONdict['bitStream'] = json.dumps(BitStream.genAllTokens(getParams['PID'][0], localConfig.BITSTREAM_KEY))
-
 	# if functions declared
 	if 'functions[]' in getParams:
 		#runs functions in functions[]		

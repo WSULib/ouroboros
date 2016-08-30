@@ -42,14 +42,6 @@ def item_thumbnail(pid):
 		format = 'png'
 		)
 
-	# # generate URL
-	# url = "http://localhost/loris/fedora:%s|THUMBNAIL/full/full/0/default.png" % (pid)	
-	# r = requests.get(url, stream=True)
-
-	# # stream_with_context
-	# # http://flask.pocoo.org/snippets/118/
-	# return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
-
 
 # Datastream Wrapper for bitStream
 @WSUDOR_API_app.route("/item/<pid>/bitStream/<datastream>", methods=['POST', 'GET'])

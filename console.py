@@ -5,6 +5,28 @@ from WSUDOR_Manager import jobs
 # python
 import os
 
+print '''
+                ::+:/`
+         :----:+ssoo+:.`
+      `-:+sssossysoooooo+/-`
+    `:oysyo++ooooo+////+ooss+-`
+   :ssyy/-`   `..     ..:/+osso:
+ `/ssyo:                 `-+:oss+`
+ +sso+:                    `//sss+
+.sssoo`                     `o+sss:
+/syso+                    `-`+ooss+
+ssyoo+                    ../oossss
+osso+o.                  `+//ooysoo
+:ysyo+o.                  `/++osos:
+`+ssssoo:`   ``.-` .-    `-ooosss+`
+ `ossso///-.--:.``::. `.:+ooossso`
+  `+sossyo++o++::///:/+ooossoss+`
+    -ossssss+oo+sossoosossssso-
+      ./osssssysyysssssssso/.
+         `-:++sosyssyyo+:.
+
+  <-- Ouroboros says hissss -->'''
+
 print "importing fedora handles"
 fedora_handle = fedoraHandles.fedora_handle
 from WSUDOR_Manager import fedoraHandles

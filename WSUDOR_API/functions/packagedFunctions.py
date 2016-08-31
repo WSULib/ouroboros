@@ -229,6 +229,18 @@ class SingleObjectMethods(object):
 
 		else:
 			return ("playlist",False)
+
+
+	####################################################################################
+	# WSUDOR Learning Objects
+	####################################################################################
+	def learning_objects(self, getParams):
+
+		# get collections
+		sparql_query = "select $lo_title $lo_uri from <#ri> where { $lo_uri <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/learningObjectFor> <fedora:%s> . $lo_uri <http://purl.org/dc/elements/1.1/title> $lo_title . }" % self.PID
+		learning_objects = list(fedora_handle.risearch.sparql_query(sparql_query))
+		return ("learning_objects",learning_objects)
+
 	
 # function package for singleObject view
 # mapping can be found here: https://docs.google.com/spreadsheets/d/1YyOKj1DwmsLDTAU-FsZJUndcPZFGfVn-zdTlyNJrs2Q/edit#gid=0

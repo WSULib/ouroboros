@@ -1,0 +1,106 @@
+{% include 'header.html' %}
+
+<style type="text/css">
+	.hidden_section{
+		display:none;
+	}
+</style>
+
+<div class="row">
+	<div class="col-md-6">
+		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Add Files</h2>
+		<h3>Currently working on: <a target="_blank" href="//{{APP_HOST}}/item/{{obj.ohandle.pid}}">{{obj.ohandle.label}}</a></h3>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/createLearningObj/{{obj.pid}}/addFile" enctype="multipart/form-data">
+			<div class="col-md-6">				
+
+				<!-- Label -->
+				<div class="form-group">
+					<label class="control-label">Label:</label>
+					<p>Human-readable label for file, keep it short.</p>
+					<input class="form-control" type="text" name="label" placeholder="e.g. Lesson Plan PDF">
+				</div>
+
+				<!-- Label -->
+				<div class="form-group">
+					<label class="control-label">Label:</label>
+					<p>Filename that will be saved, avoid spaces and special characters.</p>
+					<input class="form-control" type="text" name="filename" placeholder="e.g. lesson_plan.pdf">
+				</div>
+
+				<!-- Description -->
+				<div class="form-group">
+					<label class="control-label">Description / Abstract:</label>
+					<p>Description of file that will become part of the parent Learning Object.</p>
+					<textarea class="form-control" rows=5 name="description" placeholder="e.g. Lesson plan in PDF format."></textarea>
+				</div>
+
+				<!-- Date -->
+				<div class="form-group">
+					<label class="control-label">Date:</label>
+					<p>Meaningful date for this learning object, either when it was created or used.  Format should be <em>YYYY-MM-DD</em>.</p>
+					<input class="form-control" type="text" name="date" placeholder="e.g. 2016-05-02">
+				</div>
+
+				<!-- Content Model -->
+				<div class="form-group">
+					<label class="control-label" for="dest_repo">Content Type:</label> 
+					<select class="form-control input-sm" id="dest_repo" name="CM">
+						{% for CM in CMs %}
+							<option value="{{CM}}">WSUDOR_{{CM}}</option>
+						{% endfor %}
+					</select> 
+				</div>
+
+				<!-- File Section -->
+				<div class="form-group">
+				{{ form.dataType.label(class="control-label") }} {{ form.dataType(class="form-control dataType input-sm") }} 
+				</div>
+				<div class="form-group dataTypes" id="dsLocation" style="display:none;">
+					{{ form.dsLocation.label(class="control-label") }} {{ form.dsLocation(class="form-control input-sm") }}
+				</div>				
+				<div class="form-group dataTypes" id="upload" style="display:none;">
+					{{ form.upload.label(class="control-label") }} {{ form.upload }}
+				</div>	
+
+				<!-- HIDDEN SECTIONS -->
+
+				<div class="form-group hidden_section">
+					<div class="checkbox">
+						<label>
+							<input name="bagify" type="checkbox"> Bagify bag after creation?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group hidden_section">
+					<div class="checkbox">
+						<label>
+							<input name="ingest" type="checkbox"> Ingest and delete bag after creation?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group purge">
+					<div class="checkbox">
+						<label>
+							<input name="purge" type="checkbox"> Purge Learning Object if already exists?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group">					
+					<input type="submit" class="btn btn-success" value="Next">
+				</div>
+
+			</div>
+
+		</form>
+	</div>
+</div>
+
+{% include 'footer.html' %}

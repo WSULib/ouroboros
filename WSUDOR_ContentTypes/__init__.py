@@ -9,6 +9,7 @@ from WSUDOR_ContentModel import WSUDOR_ContentModel
 from WSUDOR_Volume import WSUDOR_Volume
 from WSUDOR_Document import WSUDOR_Document
 from WSUDOR_Container import WSUDOR_Container
+from WSUDOR_LearningObject import WSUDOR_LearningObject
 
 # Readux Virtual Objects
 from WSUDOR_Readux import WSUDOR_Readux_VirtualBook

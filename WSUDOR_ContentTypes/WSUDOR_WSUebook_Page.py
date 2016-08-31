@@ -27,10 +27,6 @@ from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
-# derivatives
-# from inc.derivatives import JP2DerivativeMaker
-from inc import derivatives
-
 # localconfig
 import localConfig
 

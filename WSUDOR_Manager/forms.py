@@ -40,6 +40,14 @@ class addDSForm(Form):
 	content = TextAreaField('Paste Content:')
 	upload = FileField('Upload Content')
 
+	
+# form for creating Learning Object
+class learningObjectForm(Form):	
+	dataType = SelectField('Select source of your file:', choices=[('', ''), ('dsLocation', 'URL'), ('upload', 'Uploaded Content')])
+	dsLocation = StringField('Location:')
+	upload = FileField('Upload Content')
+
+
 # form for creating a manifest needed for bag ingest
 class createManifestForm(Form):
 	# object info

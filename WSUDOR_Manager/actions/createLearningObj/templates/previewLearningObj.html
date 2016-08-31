@@ -1,0 +1,12 @@
+{% include 'header.html' %}
+
+
+<div class="row">
+	<div class="col-md-6">
+		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Preview</h2>
+		<h3>Currently viewing: <a target="_blank" href="//{{APP_HOST}}/item/{{obj.ohandle.pid}}">{{obj.ohandle.label}}</a></h3>
+	</div>
+</div>
+
+
+{% include 'footer.html' %}

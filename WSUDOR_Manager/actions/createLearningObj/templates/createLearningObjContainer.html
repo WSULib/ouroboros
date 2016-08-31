@@ -1,0 +1,96 @@
+{% include 'header.html' %}
+
+<style type="text/css">
+	.hidden_section{
+		display:none;
+	}
+</style>
+
+<div class="row">
+	<div class="col-md-6">
+		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Create Object</h2>
+		<p>Use the form below to create a learning object resource associated with a particular collection, and optionally, other objects.  This form will create a <strong>single</strong> object in the repository with whatever resources you upload along with it.  Different lesson plans should be broken up over multiple learning objects, but multiple resources can be uploaded (e.g. PDF and powerpoint, or supporting materials) for a single learning object.</p>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/createLearningObj/container" enctype="multipart/form-data">
+			<div class="col-md-6">				
+
+				<!-- Label -->
+				<div class="form-group">
+					<label class="control-label">Label:</label>
+					<p>Short, unique title for learning object.  Special characters and numbers should be avoided where possible.</p>
+					<input class="form-control" type="text" name="label" placeholder="e.g. Powerpoint and PDF lesson plans for Nightingale Letters Collection">
+				</div>
+
+				<!-- Description -->
+				<div class="form-group">
+					<label class="control-label">Description / Abstract:</label>
+					<p>Describe the learning object in detail here.</p>
+					<textarea class="form-control" rows=5 name="description" placeholder="e.g. This lesson plan explores how salutations are used in the Nightingale collection.  It is comprised of a single lesson plan, in PDF and PowerPoint formats."></textarea>
+				</div>
+
+				<!-- Date -->
+				<div class="form-group">
+					<label class="control-label">Date:</label>
+					<p>Meaningful date for this learning object, either when it was created or used.  Format should be <em>YYYY-MM-DD</em>.</p>
+					<input class="form-control" type="text" name="date" placeholder="e.g. 2016-05-02">
+				</div>
+
+				<!-- Collection -->
+				<div class="form-group">
+					<label class="control-label" for="collection">Select associated collection:</label> 
+					<select class="form-control input-sm" id="collection" name="collection">
+						{% for collection in collections %}
+							<option value="{{collection.collection_uri}}">{{collection.collection_title}}</option>
+						{% endfor %}
+					</select> 
+				</div>
+
+				<!-- Description -->
+				<div class="form-group">
+					<label class="control-label">Associated Objects (optional):</label>
+					<p>Paste identifiers, seperated by commas, of specific objects this learning object is associated with.</p>
+					<textarea class="form-control" rows=5 name="associated_objects" placeholder="e.g. wayne:foobar, wayne:foobar2, waynbe:foobar3"></textarea>
+				</div>
+
+
+				<!-- HIDDEN SECTIONS -->
+
+				<div class="form-group hidden_section">
+					<div class="checkbox">
+						<label>
+							<input name="bagify" type="checkbox"> Bagify bag after creation?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group hidden_section">
+					<div class="checkbox">
+						<label>
+							<input name="ingest" type="checkbox"> Ingest and delete bag after creation?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group purge">
+					<div class="checkbox">
+						<label>
+							<input name="purge" type="checkbox"> Purge Learning Object if already exists?
+						</label>
+					</div>
+				</div>
+
+				<div class="form-group">					
+					<input type="submit" class="btn btn-success" value="Next">
+				</div>
+
+			</div>
+
+		</form>
+	</div>
+</div>
+
+{% include 'footer.html' %}

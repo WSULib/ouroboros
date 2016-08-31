@@ -29,12 +29,12 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
 
 
-class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
+class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
-	label = "Container"
-	description = "Generic container object for hierarchical (usually mixed, archival) materials."
-	Fedora_ContentType = "CM:Container"
+	label = "Learning Object"
+	description = "This ContentType represents a Learning Object for collections.  Usually associated with objects in the collection, not but not required, it provides teaching resources associated with the collection."
+	Fedora_ContentType = "CM:LearningObject"
 	version = 1
 
 	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
@@ -42,8 +42,8 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# run __init__ from parent class
 		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
 		
-		# Add WSUDOR_Container struct_requirements to WSUDOR_Object instance struct_requirements
-		self.struct_requirements['WSUDOR_Container'] = {
+		# Add WSUDOR_LearningObject struct_requirements to WSUDOR_Object instance struct_requirements
+		self.struct_requirements['WSUDOR_LearningObject'] = {
 			"datastreams":[],
 			"external_relationships":[]
 		}
@@ -73,8 +73,6 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# ingest image type
 	@helpers.timing
 	def ingestBag(self):
-
-		print "\n\n\nWSUDOR_Container IS FIRING\n\n\n"
 
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
@@ -112,7 +110,7 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			
 			# writes derived RELS-EXT
 			# isRepresentedBy
-			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+			# self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 			
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
@@ -121,10 +119,7 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel",content_type_string)
 
 			# set discoverability if datastreams present
-			if len(self.objMeta['datastreams']) > 0:
-				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","info:fedora/True")
-			else:
-				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","info:fedora/False")
+			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable","info:fedora/True")
 
 			# write MODS datastream if MODS.xml exists
 			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
@@ -142,30 +137,39 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
-    <mods:title>%s</mods:title>
+    <mods:title>%(label)s</mods:title>
   </mods:titleInfo>
-  <mods:identifier type="local">%s</mods:identifier>
+  <mods:abstract>%(description)s</mods:abstract>
+  <mods:originInfo>
+  	<mods:dateCreated>%(date)s</mods:dateCreated>
+  </mods:originInfo>
+  <mods:identifier type="local">%(identifier)s</mods:identifier>
   <mods:extension>
-    <PID>%s</PID>
+    <PID>%(id)s</PID>
   </mods:extension>
 </mods:mods>
-				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
+				''' % {
+						'label':self.objMeta['label'],
+						'description':self.objMeta['description'],
+						'date':self.objMeta['date'],
+						'id':self.objMeta['id'],
+						'identifier':self.objMeta['identifier'],
+					}
 				print raw_MODS
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
-			# make generic container thumb
-			thumb_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/png", control_group="M")
-			thumb_handle.ds_location = "http://localhost/fedora/objects/wayne:WSUDORThumbnails/datastreams/WSUDOR_Container/content"
-			thumb_handle.label = "THUMBNAIL"
-			thumb_handle.save()
+			# write generic thumbnail for what should be SINGLE file per object
+			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, 'THUMBNAIL', 'THUMBNAIL', mimetype="image/jpeg", control_group="M")
+			rep_handle.ds_location = "http://localhost/fedora/objects/wayne:WSUDORThumbnails/datastreams/WSUDOR_LearningObject/content"
+			rep_handle.label = 'THUMBNAIL'
+			rep_handle.save()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
 
 			# finish generic ingest
 			return self.finishIngest()
-
 
 		# exception handling
 		except Exception,e:

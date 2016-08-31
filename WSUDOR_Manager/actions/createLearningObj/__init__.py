@@ -214,6 +214,10 @@ def createDocument_worker(parent_PID):
 			"object": "info:fedora/%s" % parent_PID
 		},
 		{
+			"predicate": "info:fedora/fedora-system:def/relations-external#isConstituentOf",
+			"object": "info:fedora/%s" % parent_PID
+		},
+		{
 			"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
 			"object": "info:fedora/False"
 		},		
@@ -226,8 +230,6 @@ def createDocument_worker(parent_PID):
 			"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
 		}
 	]
-
-	print om_handle.object_relationships
 
 	# prepare new working dir & recall original
 	working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
@@ -332,16 +334,16 @@ def createDocument_worker(parent_PID):
 
 	# render
 	time.sleep(3)
-	return redirect('tasks/createLearningObj/%s/preview' % pid)
+	return redirect('tasks/createLearningObj/%s/preview' % parent_PID)
 
 
 @createLearningObj.route('/createLearningObj/<PID>/preview', methods=['GET', 'POST'])
 def previewDocument(PID):
 
 	# open handle
-	obj = WSUDOR_ContentTypes.WSUDOR_Object(PID)
+	obj = WSUDOR_ContentTypes.WSUDOR_Object(PID)		
 
-	return render_template('previewLearningObj.html',obj=obj)
+	return render_template('previewLearningObj.html', obj=obj)
 
 
 

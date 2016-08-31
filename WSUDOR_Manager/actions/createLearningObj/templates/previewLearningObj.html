@@ -8,5 +8,18 @@
 	</div>
 </div>
 
+<div class="row">
+	<div class="col-md-6">
+		<p>Associated Files:</p>
+			<ul>
+				{% for constituent in obj.constituents %}
+					<li><a target="_blank" href="//{{APP_HOST}}/item/{{constituent}}">{{constituent}}</a></li>
+				{% endfor %}
+			</ul>
+		</p>
+		<p><a href="/{{APP_PREFIX}}/tasks/createLearningObj/{{obj.ohandle.pid}}"><button class="btn btn-success">Add another file?</button></a></p>
+	</div>
+</div>
+
 
 {% include 'footer.html' %}

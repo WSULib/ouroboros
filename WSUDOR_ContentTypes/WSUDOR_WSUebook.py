@@ -367,9 +367,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print sparql_count
 			if sparql_count < len(self.pages_from_objMeta):
 				time.sleep(.5)
+				ttime = time.time() - stime
+				print ttime
 				continue
 			else:
-				print 'child objects in risearch, continuing'
+				print 'constituent objects found in risearch, continuing'
 				break
 
 		# get solr_doc

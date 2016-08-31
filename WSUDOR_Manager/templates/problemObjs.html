@@ -16,7 +16,7 @@ $(document).ready(function () {
             if (button == "addButton") {
                 var action="claimObj";
             }
-            console.log(pid);
+
             $.ajax({
                 url: "/{{APP_PREFIX}}/"+action,
                 type: "POST",
@@ -38,26 +38,38 @@ $(document).ready(function () {
 </script>
 
 <div class="card-deck-wrapper">
-  {%for objs in problemObjs | batch(3) %}
+  {%for objs in problemObjs | batch(5) %}
 <div class="card-deck">
   {% for obj in objs %}
   {% with prefix, pid = obj.PID.split(':') %}
   <!-- Card -->
   <div class="card" id={{pid}}-{{obj.id}}>
-    <a target="_blank" href="//{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}"><img class="card-img-top" src="//{{APP_HOST}}/fedora/objects/{{obj.PID}}/datastreams/THUMBNAIL/content" alt="{{obj.PID}}"></a>
-    <div class="card-block" id={{pid}}-{{obj.id}}>
+    <a target="_blank" href="//{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}"><img class="card-img-top img-thumbnail" src="//{{APP_HOST}}/fedora/objects/{{obj.PID}}/datastreams/THUMBNAIL/content" alt="{{obj.PID}}"></a>
+<p class="card-text" style="padding-left:4px;"><small class="text-muted">{{obj.PID}}</small></p>
+    <div class="card-block" style="padding-left:4px;" id={{pid}}-{{obj.id}}>
       <h4 class="card-title">{{obj.solr_package['dc_title'][0]}}</h4>
       {% if obj.notes is not none %}
-            <p class="card-text">name: {{obj.notes['name']}}</p>
-            <p class="card-text">email: {{obj.notes['email']}}</p>
-            <p class="card-text">message: {{obj.notes['message']}}</p>
+      <blockquote class="card-blockquote">
+        <small>
+            <p class="card-text"><cite>name</cite>: {{obj.notes['name']}}</p>
+            <p class="card-text"><cite>email</cite>: {{obj.notes['email']}}</p>
+            <p class="card-text"><cite>message</cite>: {{obj.notes['message']}}</p>
+        </small>
+        </blockquote>
         {% else %}
-            NONE
+      <blockquote class="card-blockquote">
+        <small>
+            <p class="card-text"><cite>name</cite>: None</p>
+            <p class="card-text"><cite>email</cite>: None</p>
+            <p class="card-text"><cite>message</cite>: None</p>
+        </small>
+        </blockquote>
         {% endif %}
-    <p class="card-text"><small class="text-muted">{{obj.PID}}</small></p>
-            <button id="addButton" class="btn btn-success btn-add" type="button">Add to Workspace
+        <button id="addButton" class="btn btn-success btn-add" style="margin-top: 4px;" type="button">Add to Workspace
             </button>
-      <button id="removeButton" class="btn btn-success btn-danger" type="button">Remove
+        <button id="removeButton" class="btn btn-success btn-danger" style="margin-top: 4px;" type="button">Remove
+            </button>
+        <button id="replyButton" class="btn btn-success btn-warning" style="margin-top: 4px;" data-toggle="modal" data-target="#myModal" type="button">Reply
             </button>
     </div>
   </div>
@@ -68,5 +80,47 @@ $(document).ready(function () {
 {% endfor %}
 
 </div> <!-- ./card-deck-wrapper -->
+
+<!-- Modal -->
+<div id="myModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Respond to User</h4>
+      </div>
+      <div class="modal-body">
+        <form method="post" class="form-horizontal" id="form" action="http://localhost/digitalcollections/inc/sendmail.php">
+            <div class="col-xs-8">
+                <div class="form-group">
+                    <label for="name" class="control-label nameLabel col-lg-4 control-label">Name</label>
+                    <div class="col-lg-8">
+                        <input id="name" type="text" name="name" placeholder="Enter your name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="email" class="control-label emailLabel col-lg-4 control-label">Email</label>
+                    <div class="col-lg-8">
+                        <input id="email" type="text" name="email" placeholder="Enter your email" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="message" class="control-label messageLabel col-lg-4 control-label">Message</label>
+                    <div class="col-lg-8">
+                        <textarea id="message" name="message" placeholder="Your message" required></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-info pull-right">Send Message</button>
+            </div> <!-- col-xs-8 -->
+        </form>
+      </div> <!-- modal-body -->
+       <div class="modal-footer"></div>
+    </div> <!-- modal-content -->
+
+  </div>
+</div>
 
 {% include 'footer.html' %}

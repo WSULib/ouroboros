@@ -28,6 +28,7 @@ $(document).ready(function () {
          return false;
      });
     });
+
 </script>
 
 
@@ -57,6 +58,9 @@ $(document).ready(function () {
         </small>
         </blockquote>
         {% else %}
+        {% set name = "None" %}
+        {% set email = "None" %}
+        {% set message = "None" %}
       <blockquote class="card-blockquote">
         <small>
             <p class="card-text"><cite>name</cite>: None</p>
@@ -89,7 +93,7 @@ $(document).ready(function () {
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Respond to User</h4>
+        <h4 class="modal-title">Response</h4>
       </div>
       <div class="modal-body">
         <form method="post" class="form-horizontal" id="form" action="http://localhost/digitalcollections/inc/sendmail.php">

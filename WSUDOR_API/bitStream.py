@@ -85,7 +85,7 @@ class BitStream(object):
 			file_ext = mimetypes.guess_extension(self.obj_ds_handle.mimetype)
 			if file_ext == '.jpe':
 				file_ext = '.jpg'
-			response.headers['Content-Disposition'] = 'attachment; filename=%s_%s%s' % (self.PID, self.DS, file_ext)
+			response.headers['Content-Disposition'] = 'attachment; filename=%s%s' % (self.DS, file_ext)
 
 		# return response
 		return response

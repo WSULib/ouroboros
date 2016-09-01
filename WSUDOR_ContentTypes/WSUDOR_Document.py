@@ -199,7 +199,9 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 						# create PDF deriv for Word Doc
 						deriv_PDF = '/tmp/Ouroboros/%s.pdf' % ds['filename'].split(".")[0] # assumes no period in datastream id...
-						os.system('soffice --headless --convert-to pdf --outdir /tmp/Ouroboros %s' % file_path)
+						cmd = 'soffice --headless --convert-to pdf --outdir /tmp/Ouroboros %s' % file_path
+						print "###########################",cmd
+						os.system(cmd)
 
 						# write derivative PDF for FILE datastream
 						orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'FILE', 'FILE', mimetype='application/pdf', control_group='M')

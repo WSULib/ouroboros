@@ -12,6 +12,7 @@ from flask import Blueprint, render_template, redirect, abort, request
 import uuid
 import bagit
 import time
+import shutil
 
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
@@ -158,6 +159,9 @@ def createContainer_worker():
 	# open new handle
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(payload=working_dir, object_type='bag')
 	ingest_result = bag_handle.ingestBag()
+
+	# cleanup
+	# shutil.rmtree(working_dir)
 
 	# render
 	time.sleep(3)
@@ -331,6 +335,9 @@ def createDocument_worker(parent_PID):
 	# open new handle
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(payload=working_dir, object_type='bag')
 	ingest_result = bag_handle.ingestBag()
+
+	# cleanup
+	# shutil.rmtree(working_dir)
 
 	# render
 	time.sleep(3)

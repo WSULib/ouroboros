@@ -2,10 +2,10 @@
 <script>
 $(document).ready(function () {
 
-    // add to workspace and remove object button actions
+    // add workspace and remove object button actions
     $(function(APP_HOST)
     {
-        $(document).on('click', '.btn', function(e)
+        $(document).on('click', '.objectEdit', function(e)
         {
             e.preventDefault();
             button = this.id;
@@ -27,6 +27,33 @@ $(document).ready(function () {
 
          return false;
      });
+
+    // add modal functionality
+    $('#myModal').on('show.bs.modal', function (e) {
+      // Button that triggered the modal
+      var button = $(e.relatedTarget);
+      // Extract info from data-* attributes
+      var recipient_email = button.data('email');
+      var name = button.data('name');
+
+      // stops modal from being shown if there's no email
+      if (email=="None") return e.preventDefault()
+
+      var modal = $(this);
+      modal.find('.modal-title').text('New message to ' + name);
+      modal.find('.modal-body input#email').val(recipient_email);
+
+    })
+
+    // handle disabling of reply button
+    $('button#replyButton').each(function () {
+      var email = $(this).attr('data-email');
+      console.log($(this).attr('data-email'));
+      if (email == "None") {
+        $(this).attr('disabled', true);
+      }
+    });
+
     });
 
 </script>
@@ -50,31 +77,24 @@ $(document).ready(function () {
     <div class="card-block" style="padding-left:4px;" id={{pid}}-{{obj.id}}>
       <h4 class="card-title">{{obj.solr_package['dc_title'][0]}}</h4>
       {% if obj.notes is not none %}
-      <blockquote class="card-blockquote">
-        <small>
-            <p class="card-text"><cite>name</cite>: {{obj.notes['name']}}</p>
-            <p class="card-text"><cite>email</cite>: {{obj.notes['email']}}</p>
-            <p class="card-text"><cite>message</cite>: {{obj.notes['message']}}</p>
-        </small>
-        </blockquote>
-        {% else %}
+        {% set name = obj.notes['name'] %}
+        {% set email = obj.notes['email'] %}
+        {% set message = obj.notes['message'] %}
+      {% else %}
         {% set name = "None" %}
         {% set email = "None" %}
         {% set message = "None" %}
+      {% endif %}
       <blockquote class="card-blockquote">
         <small>
-            <p class="card-text"><cite>name</cite>: None</p>
-            <p class="card-text"><cite>email</cite>: None</p>
-            <p class="card-text"><cite>message</cite>: None</p>
+            <p class="card-text"><cite>name</cite>: {{name}}</p>
+            <p class="card-text"><cite>email</cite>: {{email}}</p>
+            <p class="card-text"><cite>message</cite>: {{message}}</p>
         </small>
-        </blockquote>
-        {% endif %}
-        <button id="addButton" class="btn btn-success btn-add" style="margin-top: 4px;" type="button">Add to Workspace
-            </button>
-        <button id="removeButton" class="btn btn-success btn-danger" style="margin-top: 4px;" type="button">Remove
-            </button>
-        <button id="replyButton" class="btn btn-success btn-warning" style="margin-top: 4px;" data-toggle="modal" data-target="#myModal" type="button">Reply
-            </button>
+      </blockquote>
+        <button id="addButton" class="btn btn-success btn-add objectEdit" style="margin-top: 4px;" type="button">Add to Workspace</button>
+        <button id="removeButton" class="btn btn-success btn-danger objectEdit" style="margin-top: 4px;" type="button">Remove</button>
+        <button id="replyButton" class="btn btn-success btn-warning" style="margin-top: 4px;" data-toggle="modal" data-name={{name}} data-email={{email}} data-target="#myModal" type="button">Reply</button>
     </div>
   </div>
 {% endwith %}
@@ -96,28 +116,27 @@ $(document).ready(function () {
         <h4 class="modal-title">Response</h4>
       </div>
       <div class="modal-body">
-        <form method="post" class="form-horizontal" id="form" action="http://localhost/digitalcollections/inc/sendmail.php">
+        <form class="form-horizontal" role="form" id="form_email" method="POST" action="/{{APP_PREFIX}}/email">
             <div class="col-xs-8">
                 <div class="form-group">
-                    <label for="name" class="control-label nameLabel col-lg-4 control-label">Name</label>
+                    <label for="email" class="control-label emailLabel col-lg-4 control-label">To</label>
                     <div class="col-lg-8">
-                        <input id="name" type="text" name="name" placeholder="Enter your name" required>
+                        <input id="email" type="text" name="recipient_email" placeholder="recipient's email" readonly required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="email" class="control-label emailLabel col-lg-4 control-label">Email</label>
+                    <label for="name" class="control-label nameLabel col-lg-4 control-label">From</label>
                     <div class="col-lg-8">
-                        <input id="email" type="text" name="email" placeholder="Enter your email" required>
+                        <input id="name" type="text" name="your_email" placeholder="Enter your email address" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="message" class="control-label messageLabel col-lg-4 control-label">Message</label>
                     <div class="col-lg-8">
-                        <textarea id="message" name="message" placeholder="Your message" required></textarea>
+                        <textarea id="message" name="message" placeholder="Your message" required style="margin: 0px; width: 372px; height: 332px;"></textarea>
                     </div>
                 </div>
-
-                <button type="submit" class="btn btn-info pull-right">Send Message</button>
+                <button type="submit" form="form_email" class="btn btn-info pull-right">Send Message</button>
             </div> <!-- col-xs-8 -->
         </form>
       </div> <!-- modal-body -->
@@ -126,5 +145,7 @@ $(document).ready(function () {
 
   </div>
 </div>
+
+
 
 {% include 'footer.html' %}

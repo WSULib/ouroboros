@@ -56,8 +56,9 @@ def item_datastream(pid,datastream):
 	# extract key and token if present
 	key = request.args.get('key', False)
 	token = request.args.get('token', False)
+	download = request.args.get('download', False)
 
-	bs = BitStream(pid, datastream, key, token)
+	bs = BitStream(pid, datastream, key=key, token=token, download=download)
 	return bs.stream()
 
 

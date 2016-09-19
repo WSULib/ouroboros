@@ -7,6 +7,7 @@ from flask import request, redirect, Response, jsonify, stream_with_context
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
 from WSUDOR_Manager import fedora_handle, redisHandles
+from WSUDOR_Manager.utilities import mimetypes
 
 from eulfedora.models import DatastreamObject, XmlDatastreamObject
 
@@ -28,7 +29,7 @@ Accepts keys and tokens for access (see doc/bitStream.md)
 # BitStream model to handle bitStream requests
 class BitStream(object):
 
-	def __init__(self, PID, DS, key=None, token=None):
+	def __init__(self, PID, DS, key=None, token=None, download=False):
 
 		# object and datastream
 		self.PID = PID
@@ -45,6 +46,7 @@ class BitStream(object):
 		# response params
 		self.msg = None
 		self.status_code = None
+		self.download = download
 
 		# stream params
 		self.chunk_step = 1024
@@ -72,8 +74,21 @@ class BitStream(object):
 
 	# on auth, stream datastream
 	def return_datastream(self):
-		return Response(self.streamGen(), mimetype=self.obj_ds_handle.mimetype)
+		'''
+		Can we set headers here?
+		Content-Disposition: attachment; filename=FILENAME
+		'''
+		response = Response(self.streamGen(), mimetype=self.obj_ds_handle.mimetype)
 
+		# if download flag present, add headers that force download and filename
+		if self.download:
+			file_ext = mimetypes.guess_extension(self.obj_ds_handle.mimetype)
+			if file_ext == '.jpe':
+				file_ext = '.jpg'
+			response.headers['Content-Disposition'] = 'attachment; filename=%s%s' % (self.DS, file_ext)
+
+		# return response
+		return response
 
 	# chunked, stream generator
 	def streamGen(self):
@@ -187,14 +202,15 @@ class BitStream(object):
 				return False
 
 		# if made this far, stream response
-		self.msg = {
-			"token":None,
-			"url":"https://%s/item/%s/bitStream/%s/" % (localConfig.APP_HOST, self.PID, self.DS),
-			"object":self.PID,
-			"datastream":self.DS			
-		}
-		self.status_code = 200
-		return True
+		else:
+			self.msg = {
+				"token":None,
+				"url":"https://%s/item/%s/bitStream/%s/?" % (localConfig.APP_HOST, self.PID, self.DS),
+				"object":self.PID,
+				"datastream":self.DS			
+			}
+			self.status_code = 200
+			return True
 
 
 	@classmethod
@@ -234,9 +250,10 @@ def bitStream(PID,DS):
 	# extract key and token if present
 	key = request.args.get('key', False)
 	token = request.args.get('token', False)
+	download = request.args.get('download', False)
 
 	# init BitStream
-	bs = BitStream(PID,DS,key=key,token=token)
+	bs = BitStream(PID,DS,key=key,token=token,download=download)
 	return bs.stream()
 
 

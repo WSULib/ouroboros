@@ -620,9 +620,19 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
 
 		# generate TEI
-		os.system('python /opt/readux/manage.py add_pagetei -u %s_Readux_VirtualVolume' % self.pid)
+		TEI_result = self.generateTEI()
 
 		return True
+
+
+	def generateTEI(self):
+		print "generating TEI..."
+		try:
+			return os.system('/usr/local/lib/venvs/ouroboros/bin/python /opt/readux/manage.py add_pagetei -u %s_Readux_VirtualVolume' % self.pid)
+		except:
+			print "Could not generate TEI"
+			return False
+
 
 		
 	def regenReaduxVirtualObjects(self):

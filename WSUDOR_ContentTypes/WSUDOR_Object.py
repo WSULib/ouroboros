@@ -426,6 +426,19 @@ class WSUDOR_GenObject(object):
 		return constituent_objects
 
 
+	# constituent objects
+	@helpers.LazyProperty
+	def collectionMembers(self):
+
+		'''
+		Returns PIDs that are members
+		'''
+
+		# get all members
+		return fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri)
+
+
+
 	# object triples
 	@helpers.LazyProperty
 	def rdf_triples(self):

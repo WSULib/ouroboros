@@ -197,8 +197,7 @@ def cw(target, action):
 		# grab user
 		user = models.User.query.filter_by(username=session['username']).first()
 		# grab model
-		cw = models.CeleryWorker(user.username, user.password)
-
+		cw = models.CeleryWorker(user.username)
 
 	elif target == 'rtail-celery-%s' % session['username']:
 

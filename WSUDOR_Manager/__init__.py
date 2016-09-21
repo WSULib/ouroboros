@@ -14,7 +14,6 @@ from eulfedora.server import Repository
 from celery import Celery
 import xmlrpclib
 
-
 # sniff out context
 if len(sys.argv) == 1:
 	run_context = 'ouroboros'
@@ -88,7 +87,8 @@ print sys.argv
 if run_context == 'ouroboros':
 	print "generating generic fedora_handle and generic celery worker"	
 	fedora_handle = Repository(FEDORA_ROOT, localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD, 'wayne')
-	fire_cw = True	
+	fire_cw = True
+
 else:
 	print "generating user authenticated fedora_handle"
 	app.config['USERNAME'] = sys.argv[5]

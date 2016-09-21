@@ -1010,6 +1010,16 @@ def collectionPageRender(getParams):
 # --------------------------------------------------------------------------------------------------------------------#
 #######################################################################################################################
 
+'''
+Convert all user accounts to MySQL model.
+	userSearch()
+	WSUDORuserAuth()
+	cookieAuth()
+	createUserAccount()
+	authUser()
+	getUserInfo()
+'''
+
 def userSearch(getParams):
 ######################################################################################################################
 
@@ -1025,8 +1035,8 @@ def userSearch(getParams):
 		baseURL += (k+"="+str(solrParams[k])+"&")	
 
 	## DEBUG
-	print "\n\n***SOLR PARAMS***",solrParams
-	print "\n\n***BASE URL***",baseURL,"\n\n"
+	# print "\n\n***SOLR PARAMS***",solrParams
+	# print "\n\n***BASE URL***",baseURL,"\n\n"
 
 	# make Solr Request, save to userDict
 	r = requests.get(baseURL)				
@@ -1324,10 +1334,6 @@ def authUser(getParams):
 	except ldap.LDAPError, e:
 		jsonString = json.dumps(e.message)
 		return jsonString
-
-	# except:
-	# 	jsonString = '{"desc":"unsucessful"}'
-	# 	return jsonString
 
 
 def getUserInfo(getParams):

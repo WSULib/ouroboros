@@ -9,9 +9,10 @@ session = requests.Session()
 try:
 	# single, primary search core
 	solr_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_SEARCH_CORE), make_request=session)
-
 	# Core used for bookreader fulltext
 	solr_bookreader_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_BOOKREADER_CORE), make_request=session)
+	# Core used for WSUDOR user accounts
+	solr_user_handle = Solr('http://localhost/solr4/users', make_request=session)
 except:
 	print "Could not setup solr handles"
 	solr_handle = False

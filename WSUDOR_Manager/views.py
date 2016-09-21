@@ -101,7 +101,10 @@ def userPage():
 	user = models.User.query.filter_by(username=username).first()
 
 	# get selected PIDs to show user
-	user.selected_objects_count = len(jobs.getSelPIDs())
+	try:
+		user.selected_objects_count = len(jobs.getSelPIDs())
+	except:
+		user.selected_objects_count = 0
 
 	return render_template("userPage.html", user=user)
 
@@ -389,73 +392,84 @@ def login():
 			# get user
 			user = User.get(username)
 
-			# update clientHash in DB if absent
+			# confirm clientHash
+			'''
+			If clientHash is None in DB, an account was just made for this user but they had not logged in yet.
+			Quickly check WSUDOR users database and confirm that clientHash provided at this moment from the client,
+			matches the clientHash stored in the DB.
+			'''
+
+			# Ouroboros DB has clientHash already
+			if user.clientHash:
+				# check match
+				ch_check = clientHash == user.clientHash
+
 			if not user.clientHash:
-				user.clientHash = clientHash
-				db.session.commit()
 
-			# login
-			user = User.get(username)
-			login_user(user, remember=True)
+				print "account found for %s, but clientHash not found, must be first login" % username
 
+				# retrieve clientHash from WSUDOR user DB
+				# query solr for user credentials
+				user_search = solrHandles.solr_user_handle.search(**{'q':'id:%s' % username})
+				if user_search.total_results == 1:
+					print "user found in WSUDOR DB, continuing check"
+					user_record = user_search.documents[0]
+					# check clientHash match
+					ch_check = clientHash == user_record['user_hash'][0]
+
+					# if checks out, first time login, update Ouroboros DB now
+					if ch_check:						
+						user.clientHash = clientHash
+						user.displayName = displayName
+						db.session.commit()
+
+				else:
+					print "user not found in WSUDOR User DB"
+					return jsonify({'msg':'Sorry %s, an error was had locating the account for "%s".  Please try logging in again.' % (displayName, username)})
+
+
+			# depending on clientHash check (ch_check), login or turn away
+			if ch_check:
+				# login
+				user = User.get(username)
+				login_user(user, remember=True)
+
+				# Login to Fedora with eulfedora and set session variables
+				utilities.login(username)
+				session['username'] = username
+
+				# Rtail
+				try:
+					sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+					sup_info = {}
+					sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
+					if sup_info['rtail-server']['statename'] == "RUNNING":
+
+						# Make sure to start the user's own log streaming
+						supervisor_name = 'rtail-celery-%s' % session['username']
+						supervisor_process = '''[program:rtail-celery-%(username)s]
+		command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
+		user = ouroboros
+		autostart=true
+		autorestart=true
+		stopasgroup=true
+		killasgroup=true''' % {'username':session['username']}
+						# create Log streamer for user
+						print "streaming activity log for %s celery worker " % session['username']
+						stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")
+						stream_cw.start()
+				except:
+					print "Rtail-server not running; therefore, not creating a log streamer for current user"
+
+				# Go to page
+				return redirect(request.args.get('next') or url_for('index'))
+
+			if not ch_check:
+				# turn away
+				return jsonify({'msg':'Sorry %s, the credentials in your cookie -- a hash of your username and password -- do not match.  Please try again.' % (displayName, username)})					
 		else:
-			# user is valid, but not created in Ouroboros, creating...
-			print "creating Ouroboros user account for: %s / %s" % (username, displayName)
-			
-			# checking permissions from localConfig for user
-			if username in localConfig.USERS:
-				user_roles = localConfig.USERS[username]
-			else:
-				user_roles = {
-					'role':'view',
-					'restrictions':None,
-					'fedoraRole':'view'
-				}
-
-			# Create user account
-			user = User(
-				username,
-				clientHash,
-				user_roles['role'],
-				user_roles['restrictions'],
-				user_roles['fedoraRole'],
-				displayName
-			)
-			db.session.add(user)
-			db.session.commit()
-			# Login
-			user = User.get(username)
-
-		# Login to Fedora with eulfedora and set session variables
-		utilities.login(username)
-		session['username'] = username
-
-		# Rtail
-		try:
-			sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-			sup_info = {}
-			sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
-			if sup_info['rtail-server']['statename'] == "RUNNING":
-
-				# Make sure to start the user's own log streaming
-				supervisor_name = 'rtail-celery-%s' % session['username']
-				supervisor_process = '''[program:rtail-celery-%(username)s]
-command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
-user = ouroboros
-autostart=true
-autorestart=true
-stopasgroup=true
-killasgroup=true''' % {'username':session['username']}
-				# create Log streamer for user
-				print "streaming activity log for %s celery worker " % session['username']
-				stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")
-				stream_cw.start()
-		except:
-			print "Rtail-server not running; therefore, not creating a log streamer for current user"
-
-		# Go to page
-		return redirect(request.args.get('next') or url_for('index'))
-			
+			print "user not found, informing client"
+			return jsonify({'msg':'Sorry %s, an account has not yet been created for "%s".  Please contact an administrator to have an Ouroboros account created.' % (displayName, username)})
 
 	# if WSUDOR cookie not found, redirect to login
 	else:

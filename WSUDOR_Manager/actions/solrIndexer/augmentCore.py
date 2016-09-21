@@ -5,9 +5,6 @@ import requests
 import json
 from eulfedora.server import Repository
 
-# init FC connection
-# repo = Repository(FEDORA_ROOT,FEDORA_USER,FEDORA_PASSWORD,FEDORA_PIDSPACE)
-
 # WSUDOR
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle

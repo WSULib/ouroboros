@@ -66,11 +66,49 @@ def tableWipe():
 		print "user dropped."
 	except:
 		print "user not found..."
+	try:
+		db.session.execute('DROP TABLE ingest_MODS;')
+		print "ingest_MODS dropped."
+	except:
+		print "ingest_MODS not found..."
+	try:
+		db.session.execute('DROP TABLE job_rollback;')
+		print "job_rollback dropped."
+	except:
+		print "job_rollback not found..."
+	try:
+		db.session.execute('DROP TABLE user_jobs;')
+		print "user_jobs dropped."
+	except:
+		print "user_jobs not found..."
+	try:
+		db.session.execute('DROP TABLE user_pids;')
+		print "user_pids dropped."
+	except:
+		print "user_pids not found..."
+	try:
+		db.session.execute('DROP TABLE xsl_transformations;')
+		print "xsl_transformations dropped."
+	except:
+		print "xsl_transformations not found..."
 	print "commiting..."
 	db.session.commit()
 
 	print "recreating..."
 	db.create_all()
+
+	print "recreating default admin users"
+	for user in localConfig.DEFAULT_ADMIN_USERS:
+		user = models.User(
+			user['username'],
+			None,
+			user['role'],
+			None,
+			user['fedoraRole'],
+			user['displayName']
+		)
+		db.session.add(user)
+		db.session.commit()
 
 # logs
 def tailUserCelery(user):

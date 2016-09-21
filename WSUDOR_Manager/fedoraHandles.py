@@ -11,6 +11,7 @@ if fedora_handle == False:
 	
 	# if not generic celery user
 	if app.config['USERNAME'] != "celery":
+		
 		# retrieve user creds from DB
 		from WSUDOR_Manager import models
 		user = models.User.query.filter_by(username=app.config['USERNAME']).first()

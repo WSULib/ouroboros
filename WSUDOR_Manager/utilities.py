@@ -17,13 +17,13 @@ from WSUDOR_Manager import models, app, fedoraHandles, celery
 from eulfedora.server import Repository
 
 
-def login(username,password):
+def login(username):
 
 		print "Logging in..."
 
 		# fire user celery worker
 		print "firing user celery worker for: %s" % username
-		cw = models.CeleryWorker(username,password)
+		cw = models.CeleryWorker(username)
 		cw.start()		
 
 

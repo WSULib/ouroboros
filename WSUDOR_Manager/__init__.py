@@ -106,10 +106,8 @@ class CeleryWorker(object):
 
 	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 	
-	def __init__(self,username,password):
+	def __init__(self,username):
 		self.username = username
-		self.password = password       
-
 
 	def _writeConfFile(self):
 		print "adding celery conf file"
@@ -222,7 +220,7 @@ celery = make_celery(app)
 if fire_cw:
 	# fire celery worker
 	print "firing generic celery worker"
-	cw = CeleryWorker("celery",False)
+	cw = CeleryWorker("celery")
 	cw.start()
 
 

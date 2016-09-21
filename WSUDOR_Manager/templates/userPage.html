@@ -3,7 +3,7 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<h2>Welcome to WSUDOR Manager, {{userData.username}}!</h2>
+		<h2>Welcome to WSUDOR Manager, {{user.displayName}}!</h2>
 	</div>
 </div>
 
@@ -11,7 +11,7 @@
 	<div class="col-md-12">
 		<ul>		
 			<li><h3>Object Selection & Workspace</h3></li>
-			<p>Currently selected objects: <strong>{{userData.selected_objects}}</strong></p>
+			<p>Currently selected objects: <strong>{{user.selected_objects_count}}</strong></p>
 			<ul>		
 				<li><a href="/{{APP_PREFIX}}/PIDSolr">Find Objects</a></li>
 				<li><a href="/{{APP_PREFIX}}/userWorkspace">Select Objects</a></li>

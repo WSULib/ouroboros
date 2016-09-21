@@ -68,17 +68,20 @@ class User(db.Model, UserMixin):
     
     id = db.Column('id', db.Integer, primary_key=True)
     username = db.Column('username', db.String(64), index=True, unique=True)
-    password = db.Column('password', db.String(64), index=True)
+    clientHash = db.Column('clientHash', db.String(120), index=True, nullable=True)
     role = db.Column('role', db.String(120), nullable=True)
     restrictions = db.Column('restrictions', db.String(120), nullable=True)
     fedoraRole = db.Column('fedoraRole', db.String(120), nullable=True)
+    displayName = db.Column('displayName', db.String(120), nullable=False)
 
-    def __init__(self, username, password, role, restrictions, fedoraRole):
+
+    def __init__(self, username, password, role, restrictions, fedoraRole, displayName):
         self.username = username
         self.password = password
         self.role = role
         self.restrictions = restrictions
         self.fedoraRole = fedoraRole
+        self.displayName = displayName
 
     def get_auth_token(self):
         """

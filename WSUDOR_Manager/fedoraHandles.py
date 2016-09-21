@@ -14,10 +14,14 @@ if fedora_handle == False:
 		# retrieve user creds from DB
 		from WSUDOR_Manager import models
 		user = models.User.query.filter_by(username=app.config['USERNAME']).first()
-		print "using auth %s / %s" % (user.username,user.password)
+		print "using auth %s / %s" % (user.username, user.password)
 
+		# LOGIN USERS USING FEDORA USERS
 		# uesr authenticated repository handle
-		fedora_handle = Repository(FEDORA_ROOT, user.username, user.password, 'wayne')
+		# fedora_handle = Repository(FEDORA_ROOT, user.username, user.password, 'wayne')
+
+		# LOGIN USING LDAP
+		fedora_handle = Repository(FEDORA_ROOT, FEDORA_USER, FEDORA_PASSWORD, 'wayne')		
 
 	# fire generic fedora_handle for system tasks
 	else:

@@ -1,0 +1,48 @@
+{% include 'header.html' %}
+
+<div class="row">
+  <div class="col-md-6">
+    <h1>Create User</h1>
+    <p>In the form below, you can create a user profile in the Ouroboros database that will be referenced when that user logs in.  In this way, users can be granted roles and permissions above the default "view".</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+
+    <form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/createUser" enctype="multipart/form-data">
+      <div class="col-md-4">
+
+        <!-- display name -->
+        <div class="form-group">
+          <label class="control-label">Display Name:</label>
+          <input class="form-control" type="text" name="displayName" placeholder="e.g. Jane Doe">
+        </div>
+
+        <!-- username -->
+        <div class="form-group">
+          <label class="control-label">Username:</label>
+          <input class="form-control" type="text" name="username" placeholder="e.g. jdoe">
+        </div>       
+
+        <!-- role -->
+        <div class="form-group">
+          <label class="control-label">Role:</label>
+          <select name="role" class="form-control input-sm">
+            <option value="administrator">administrator</option>
+            <option value="metadata">metadata</option>
+            <option value="view">view</option>
+          </select>
+        </div>
+
+        <div class="form-group">          
+          <button class="btn btn-success" type="submit">Create User</button>
+        </div>
+
+      </div>
+    </form>
+
+  </div>
+</div>
+
+{% include 'footer.html' %}

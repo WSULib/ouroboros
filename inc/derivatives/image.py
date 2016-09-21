@@ -169,6 +169,8 @@ class ImageDerivative(Derivative):
 	def makeJP2(self):
 
 		'''
+		Assuming tiff.
+
 		Loop for creating JP2, with trying derivations of the original input file if 
 		not successful the first time.
 
@@ -196,8 +198,10 @@ class ImageDerivative(Derivative):
 			cmd = cmd + " " + KDU_RECIPES[KDU_RECIPE_KEY+'_gray']
 		elif inBitsPerSample == ONE_BIT:
 			cmd = cmd + " " + KDU_RECIPES[KDU_RECIPE_KEY+'_gray']
+		elif inBitsPerSample == "Unknown":
+			cmd = cmd + " " + KDU_RECIPES[KDU_RECIPE_KEY+'_color']
 		else:
-			logging.warning("Could not find JP2 recipe for %s" + inBitsPerSample)
+			logging.warning("Could not find JP2 recipe for %s" % inBitsPerSample)
 			return False
 
 		# if color space as part of object, update kakadu command

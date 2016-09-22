@@ -37,7 +37,7 @@ def item_thumbnail(pid):
 		image_id = 'fedora:%s|THUMBNAIL' % pid,
 		region = 'full',
 		size = 'full',
-		rotation = 0,
+		rotation = '0',
 		quality = 'default',
 		format = 'png'
 		)

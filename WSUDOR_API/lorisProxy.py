@@ -105,7 +105,7 @@ def loris_image(image_id,region,size,rotation,quality,format):
 		size=size,
 		rotation=rotation,
 		quality=quality,
-		format=format
+		fmt=format
 	)
 
 	# run restrictions
@@ -146,23 +146,6 @@ def downsizeImage(pid,ds,ic):
 	We should pull target resolution size from colletion object
 	Or policy?
 	'''
-
-	# ########################################################################################################################
-	# # Hardcoded Options
-	# ########################################################################################################################
-	
-	# target_resolution = 700	
-	# restricted_collections = [
-	# 	'wayne:collectionvmc',
-	# 	'wayne:collectionUniversityBuildings'
-	# ]
-
-	# restricted_status = False
-	# collections = [ o for s,p,o in fedora_handle.get_object(pid).rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') ]
-	# for c in collections:
-	# 	if c.split("info:fedora/")[1] in restricted_collections:
-	# 		restricted_status = True
-	# 		break
 
 	########################################################################################################################
 	# RDF based

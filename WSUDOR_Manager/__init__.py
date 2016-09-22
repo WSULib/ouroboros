@@ -146,7 +146,8 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.userna
 		try:
 			self.sup_server.supervisor.reloadConfig()
 			self.sup_server.supervisor.addProcessGroup('celery-%s' % self.username)
-		except:
+		except Exception, e:
+			print "could not start supervisor process",e
 			return False
 
 

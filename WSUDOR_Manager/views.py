@@ -447,12 +447,12 @@ def login():
 						# Make sure to start the user's own log streaming
 						supervisor_name = 'rtail-celery-%s' % session['username']
 						supervisor_process = '''[program:rtail-celery-%(username)s]
-		command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
-		user = ouroboros
-		autostart=true
-		autorestart=true
-		stopasgroup=true
-		killasgroup=true''' % {'username':session['username']}
+command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
+user = ouroboros
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true''' % {'username':session['username']}
 						# create Log streamer for user
 						print "streaming activity log for %s celery worker " % session['username']
 						stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")

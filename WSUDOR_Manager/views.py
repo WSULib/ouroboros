@@ -501,7 +501,6 @@ def logout():
 # create user
 @app.route('/users/create', methods=['GET', 'POST'])
 @login_required
-@roles.admin
 def createUser():
 
 	if request.method == 'POST':
@@ -525,7 +524,7 @@ def createUser():
 # view all users
 @app.route('/users/view', methods=['GET', 'POST'])
 @login_required
-@roles.view
+@roles.auth(['view','gorgonzola'])
 def users_view():
 
 	users = models.User.query.all()
@@ -547,8 +546,11 @@ def credentials():
 @login_required
 def authfail():
 
+	route_roles = request.args['route_roles'].split(",")
+
 	return jsonify({
 		'msg':'your roles do not permit you to view this page',
+		'route_roles':route_roles,
 		'user_roles':g.user.roles()
 		})
 

@@ -7,39 +7,39 @@ from WSUDOR_Manager import models
 
 
 
+class auth(object):
 
-# administrator role check
-def admin(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
+	'''
+	This decorator function expects the first and only argument to be a list of roles.
+	These roles are checked against the roles of the user.
+	'''
 
-        # do things here
+	def __init__(self, roles):
+		"""
+		If there are no decorator arguments, the function
+		to be decorated is passed to the constructor.
+		"""
+		self.roles = roles
+		self.roles_string = ",".join(roles)
 
-        return f(*args, **kwargs)
+	def __call__(self, f):
+		"""
+		The __call__ method is not called until the
+		decorated function is called.
+		"""
+		print "Inside __call__()"
+		def wrapped_f(*args, **kwargs):
+			print "Authorized roles for this view:", self.roles
+			print "User roles:", g.user.roles()
 
-    return decorated_function
+			# authorize
+			role_overlap = set(self.roles) & set(g.user.roles())
 
-# metadata role check
-def metadata(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
+			if len(role_overlap) > 0:
+				print "matched on", role_overlap
+				return f(*args, **kwargs)
+			else:
+				print "did not find role overlap"
+				return redirect(url_for('authfail', route_roles=self.roles_string))
 
-        # do things here
-
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-# view role check
-def view(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-
-        # do things here
-        print "checking view auth"
-        if 'view' in g.user.roles():
-        	return f(*args, **kwargs)
-    	else:
-    		return redirect(url_for('authfail'))
-
-    return decorated_function
+		return wrapped_f

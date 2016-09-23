@@ -22,12 +22,13 @@ class auth(object):
 		self.roles = roles
 		self.roles_string = ",".join(roles)
 
+
 	def __call__(self, f):
 		"""
 		The __call__ method is not called until the
 		decorated function is called.
 		"""
-		print "Inside __call__()"
+		@wraps(f)
 		def wrapped_f(*args, **kwargs):
 			print "Authorized roles for this view:", self.roles
 			print "User roles:", g.user.roles()

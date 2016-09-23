@@ -501,6 +501,7 @@ def logout():
 # create user
 @app.route('/users/create', methods=['GET', 'POST'])
 @login_required
+@roles.auth(['admin'])
 def createUser():
 
 	if request.method == 'POST':
@@ -524,7 +525,7 @@ def createUser():
 # view all users
 @app.route('/users/view', methods=['GET', 'POST'])
 @login_required
-@roles.auth(['view','gorgonzola'])
+@roles.auth(['admin'])
 def users_view():
 
 	users = models.User.query.all()
@@ -534,6 +535,7 @@ def users_view():
 # current user WSUDOR credentials
 @app.route('/user/current/WSUDOR_credentials', methods=['GET', 'POST'])
 @login_required
+@roles.auth(['admin'])
 def credentials():
 
 	# parse cookie

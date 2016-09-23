@@ -28,6 +28,7 @@ from datetime import timedelta
 from WSUDOR_Manager import app
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
+from WSUDOR_Manager import roles
 from WSUDOR_Manager.actions import actions
 from WSUDOR_Manager import redisHandles
 from WSUDOR_Manager import login_manager
@@ -493,20 +494,24 @@ def logout():
 	response.set_cookie('WSUDOR', '', expires=0)
 	return response
 
+##########################
+# WSUDOR USERS
+##########################
 
-@app.route('/createUser', methods=['GET', 'POST'])
+# create user
+@app.route('/users/create', methods=['GET', 'POST'])
 @login_required
+@roles.admin
 def createUser():
 
 	if request.method == 'POST':
-		print "creating user: %s / %s" % (request.form['displayName'], request.form['username'])
+		print "creating user: %s" % (request.form['username'])
+		roles = request.form.getlist('role')
 		user = User(
 			request.form['username'],
 			None,
-			request.form['role'],
-			None,
-			request.form['role'],
-			request.form['displayName'],
+			roles,
+			request.form['username'],
 		)
 		db.session.add(user)
 		db.session.commit()
@@ -517,13 +522,36 @@ def createUser():
 		return render_template('createUser.html')
 
 
-@app.route('/user/credentials', methods=['GET', 'POST'])
+# view all users
+@app.route('/users/view', methods=['GET', 'POST'])
+@login_required
+@roles.view
+def users_view():
+
+	users = models.User.query.all()
+	return render_template('usersView.html', APP_PREFIX=localConfig.APP_PREFIX, users=users)
+
+
+# current user WSUDOR credentials
+@app.route('/user/current/WSUDOR_credentials', methods=['GET', 'POST'])
 @login_required
 def credentials():
 
 	# parse cookie
 	unquoted_cookie_string = urllib.unquote(request.cookies['WSUDOR'])
 	return jsonify(json.loads(unquoted_cookie_string))
+
+
+# current user WSUDOR credentials
+@app.route('/users/authfail', methods=['GET', 'POST'])
+@login_required
+def authfail():
+
+	return jsonify({
+		'msg':'your roles do not permit you to view this page',
+		'user_roles':g.user.roles()
+		})
+
 
 
 

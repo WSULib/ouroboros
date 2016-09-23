@@ -1,0 +1,48 @@
+{% include 'header.html' %}
+
+<div class="row">
+  <div class="col-md-6">
+
+    <h2>Ouroboros Users</h2>
+
+    <p>The table below shows current users in the Ouroboros users database.</p>
+
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+
+    <table class='table'>
+      <tr>
+        <th>username</th>
+        <th>display name</th>
+        <th>roles</th>
+        <th>confirmed</th>
+        <th>actions</th>
+      </tr>
+      {% for user in users %}
+        <tr>
+          <td>{{user.username}}</td>
+          <td>{{user.displayName}}</td>
+          <td>{{user.role}}</td>
+          <td>{% if user.clientHash %}<span style="color:green;">True</span>{% else %}<span style="color:red;">False</span>{% endif %}</td>
+          <td><a href="">edit</a> / <a href="">delete</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+
+    <p><a href="/{{APP_PREFIX}}/users/create"><button class="btn btn-success">Create User</button></a></p>
+
+  </div>
+</div>
+
+    
+
+{% include 'footer.html' %}

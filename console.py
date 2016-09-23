@@ -101,10 +101,8 @@ def tableWipe():
 	for user in localConfig.DEFAULT_ADMIN_USERS:
 		user = models.User(
 			user['username'],
-			None,
+			None, #clientHash
 			user['role'],
-			None,
-			user['fedoraRole'],
 			user['displayName']
 		)
 		db.session.add(user)

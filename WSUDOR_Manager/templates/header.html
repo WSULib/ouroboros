@@ -141,19 +141,13 @@ text-align: center;
 	</div> <!-- navbar-header -->
 	<div class="collapse navbar-collapse">
 		<ul class="nav navbar-nav">			
-			<!-- <li></li> -->
 			<li><a href="/{{APP_PREFIX}}/userPage">User Home</a></li>
 			<li><a href="/{{APP_PREFIX}}/systemStatus">System Status</a></li>
 			<li><a href="/{{APP_PREFIX}}/userJobs">User Jobs</a></li>
 				{% if g.user.is_authenticated%}
-			<!-- <li class="divider"></li> -->
-			<li><a href="{{ url_for('logout') }}">Logout</a></li>
-			<!-- <li class="divider"></li> -->
-			<li><a href="{{ url_for('login') }}">Login</a></li>
+			<li><a href="{{ url_for('logout') }}">Logout, <strong>{{g.user.displayName}}</strong></a></li>
 				{% endif %}
-			<!-- <li class="divider"></li> -->
 			<li><a href="/logs" target="_blank">Logs Viewer</a></li>
-			<!-- <li class="divider"></li> -->
 			<li>
 				<form style="margin-left:10px; margin-top:10px;" class="form-inline" role="form" method="GET" action="/{{APP_PREFIX}}/quickPID" enctype="multipart/form-data">
 					<!-- <div class="col-md-7"> -->

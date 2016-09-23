@@ -70,17 +70,16 @@ class User(db.Model, UserMixin):
     username = db.Column('username', db.String(64), index=True, unique=True)
     clientHash = db.Column('clientHash', db.String(120), index=True, nullable=True)
     role = db.Column('role', db.String(120), nullable=True)
-    restrictions = db.Column('restrictions', db.String(120), nullable=True)
-    fedoraRole = db.Column('fedoraRole', db.String(120), nullable=True)
     displayName = db.Column('displayName', db.String(120), nullable=False)
 
-
-    def __init__(self, username, password, role, restrictions, fedoraRole, displayName):
+    def __init__(self, username, clientHash, role, displayName):
         self.username = username
-        self.password = password
-        self.role = role
-        self.restrictions = restrictions
-        self.fedoraRole = fedoraRole
+        self.clientHash = clientHash
+        # parse roles
+        if type(role) == list:
+            self.role = ','.join(role)
+        elif type(role) == str:    
+            self.role = role
         self.displayName = displayName
 
     def get_auth_token(self):
@@ -101,6 +100,9 @@ class User(db.Model, UserMixin):
             return user
         return None
 
+    # return roles as list
+    def roles(self):
+        return [role.strip() for role in self.role.split(',')]
 
     def is_authenticated(self):
         return True

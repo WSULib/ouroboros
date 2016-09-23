@@ -287,7 +287,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			'''
 			for gen_type in ['THUMBNAIL','PREVIEW']:
 				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-				rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
+				rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s_%s/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
 				rep_handle.label = gen_type
 				rep_handle.save()
 

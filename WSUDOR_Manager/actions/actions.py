@@ -55,10 +55,6 @@ app.register_blueprint(MODSexport, url_prefix=tasks_URL_prefix)
 from editDSMime import editDSMime, editDSMime_worker
 app.register_blueprint(editDSMime, url_prefix=tasks_URL_prefix)
 
-#editDSXMLAdv
-from editDSXMLAdv import editDSXMLAdv, editDSXMLAdv_worker
-app.register_blueprint(editDSXMLAdv, url_prefix=tasks_URL_prefix)
-
 #editDSRegex
 from editDSRegex import editDSRegex, editDSRegex_regex_worker
 app.register_blueprint(editDSRegex, url_prefix=tasks_URL_prefix)

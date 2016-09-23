@@ -6,7 +6,6 @@ from flask import g, request, redirect, url_for
 from WSUDOR_Manager import models
 
 
-
 class auth(object):
 
 	'''
@@ -33,9 +32,13 @@ class auth(object):
 			print "Authorized roles for this view:", self.roles
 			print "User roles:", g.user.roles()
 
+			# if admin, always auth
+			if 'admin' in g.user.roles():
+				print "user is admin, authorized"
+				return f(*args, **kwargs)
+
 			# authorize
 			role_overlap = set(self.roles) & set(g.user.roles())
-
 			if len(role_overlap) > 0:
 				print "matched on", role_overlap
 				return f(*args, **kwargs)

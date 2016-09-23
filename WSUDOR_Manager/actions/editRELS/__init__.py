@@ -4,9 +4,10 @@
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import jobs, models, db, utilities
+from WSUDOR_Manager import jobs, models, db, utilities, roles
 from localConfig import *
 from flask import Blueprint, render_template, abort, request
+from flask.ext.login import login_required
 
 #python modules
 from lxml import etree
@@ -31,12 +32,16 @@ editRELS = Blueprint('editRELS', __name__, template_folder='templates', static_f
 
 @editRELS.route('/editRELS', methods=['POST', 'GET'])
 @utilities.objects_needed
+@login_required
+@roles.auth(['admin'])
 def index():	
 	return render_template("editRELS_index.html")
 
 
 @editRELS.route('/editRELS/add', methods=['POST', 'GET'])
 @utilities.objects_needed
+@login_required
+@roles.auth(['admin'])
 def editRELS_add():	
 	
 	# instantiate forms
@@ -47,6 +52,8 @@ def editRELS_add():
 
 @editRELS.route('/editRELS/advanced', methods=['POST', 'GET'])
 @utilities.objects_needed
+@login_required
+@roles.auth(['admin'])
 def editRELS_advanced():
 
 	'''
@@ -84,7 +91,7 @@ def editRELS_advanced():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.APP_HOST, PIDlet['cPID'])
+	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (PIDlet['cPID'])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
@@ -171,6 +178,8 @@ def editRELS_shared():
 
 
 @editRELS.route('/editRELS/regexConfirm', methods=['POST', 'GET'])
+@login_required
+@roles.auth(['admin'])
 def regexConfirm():
 		
 	# get PIDs	
@@ -261,7 +270,7 @@ def editRELS_edit_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content".format(localConfig.APP_HOST, PID)
+	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content".format(PID)
 	pre_mod_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 
@@ -305,6 +314,8 @@ def editRELS_edit_worker(job_package):
 		print newDS.save()
 
 
+@login_required
+@roles.auth(['admin'])
 def editRELS_regex_worker(job_package):		
 	
 	PID = job_package['PID']		
@@ -321,7 +332,7 @@ def editRELS_regex_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.APP_HOST, PID)
+	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (PID)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	

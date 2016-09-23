@@ -9,11 +9,13 @@ import urllib, urllib2
 import datetime
 from lxml import etree
 from flask import Blueprint, render_template, redirect, abort, request, session
+from flask.ext.login import login_required
 
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.jobs import getSelPIDs
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
+
 
 
 purgeObject = Blueprint('purgeObject', __name__, template_folder='templates', static_folder="static")
@@ -21,21 +23,24 @@ purgeObject = Blueprint('purgeObject', __name__, template_folder='templates', st
 
 @purgeObject.route('/purgeObject')
 @utilities.objects_needed
+@login_required
+@roles.auth(['admin'])
 def index():
 
-	# get PIDs	
-	PIDs = getSelPIDs()
 	return render_template("purgeObject.html")
 
 
 @purgeObject.route('/purgeObject/confirm', methods=['POST','GET'])
+@login_required
+@roles.auth(['admin'])
 def confirm():	
 
 	form_data = request.form
 	return render_template("purgeConfirm.html")
 
 
-
+@login_required
+@roles.auth(['admin'])
 def purgeObject_worker(job_package):	
 
 	form_data = job_package['form_data']

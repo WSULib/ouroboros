@@ -51,7 +51,7 @@ def index():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/MODS/content" % (localConfig.APP_HOST, PIDlet['cPID'][0])
+	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/MODS/content" % (PIDlet['cPID'][0])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
@@ -96,7 +96,7 @@ def editDSRegex_regex_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/MODS/content".format(localConfig.APP_HOST, PID)
+	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/MODS/content".format(PID)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")	
 	###############################################################
 	

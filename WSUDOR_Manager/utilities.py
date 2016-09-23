@@ -120,29 +120,29 @@ def delDuplicateElements(XML):
 #########################################################################################################
 # decorated function will redirect if no objects currently selected 
 def objects_needed(f):
-		@wraps(f)
-		def decorated_function(*args, **kwargs):        
+	@wraps(f)
+	def decorated_function(*args, **kwargs):        
 
-				try:
-						username = session['username']
-				except:
-						return render_template("noObjs.html")
+			try:
+					username = session['username']
+			except:
+					return render_template("noObjs.html")
 
-				userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)  
+			userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)  
 
-				if userSelectedPIDs.count() == 0 and 'job_type' in kwargs and kwargs['job_type'] == 'obj_loop':         
-						return render_template("noObjs.html")       
-				return f(*args, **kwargs)       
-		return decorated_function
+			if userSelectedPIDs.count() == 0 and 'job_type' in kwargs and kwargs['job_type'] == 'obj_loop':         
+					return render_template("noObjs.html")       
+			return f(*args, **kwargs)       
+	return decorated_function
 
 
 # pass APP_PREFIX to all templates
 @app.context_processor
 def inject_prefix():
-		return {
-				'APP_PREFIX':APP_PREFIX,
-				'APP_HOST':APP_HOST
-		}
+	return {
+			'APP_PREFIX':APP_PREFIX,
+			'APP_HOST':APP_HOST
+	}
 
 
 def sessionVarClean(session,var):

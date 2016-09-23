@@ -228,10 +228,10 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write PLAYLIST datastream with playlist_list
 			print "Generating PLAYLIST datastream"
 			for ds in playlist_list:
-				ds['thumbnail'] = "http://%s/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
-				ds['preview'] = "http://%s/fedora/objects/%s/datastreams/%s_PREVIEW/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
-				ds['mp3'] = "http://%s/fedora/objects/%s/datastreams/%s_MP3/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
-				ds['steaming_mp3'] = "http://%s/fedora/objects/%s/datastreams/%s_MP3/content" % (localConfig.APP_HOST, self.ohandle.pid, ds['ds_id'])
+				ds['thumbnail'] = "http://localhost/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (self.ohandle.pid, ds['ds_id'])
+				ds['preview'] = "http://localhost/fedora/objects/%s/datastreams/%s_PREVIEW/content" % (self.ohandle.pid, ds['ds_id'])
+				ds['mp3'] = "http://localhost/fedora/objects/%s/datastreams/%s_MP3/content" % (self.ohandle.pid, ds['ds_id'])
+				ds['steaming_mp3'] = "http://%s/fedora/objects/%s/datastreams/%s_MP3/content" % (self.ohandle.pid, ds['ds_id'])
 
 			playlist_handle = eulfedora.models.DatastreamObject(self.ohandle,"PLAYLIST", "PLAYLIST", mimetype="application/json", control_group="M")
 			playlist_handle.content = json.dumps( sorted(playlist_list, key=lambda k: k['order']) )
@@ -242,7 +242,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# write generic thumbnail and preview for object
 			for gen_type in ['THUMBNAIL','PREVIEW']:
 				rep_handle = eulfedora.models.DatastreamObject(self.ohandle,gen_type, gen_type, mimetype="image/jpeg", control_group="M")
-				rep_handle.ds_location = "http://%s/fedora/objects/%s/datastreams/%s_%s/content" % (localConfig.APP_HOST, self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
+				rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s_%s/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
 				rep_handle.label = gen_type
 				rep_handle.save()
 	

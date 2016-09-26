@@ -21,7 +21,7 @@ def index():
 	return render_template("addDS_index.html",form=form)
 
 
-@roles.auth(['admin','metadata'], is_celery=True)
+@roles.auth(['admin'], is_celery=True)
 def addDS_worker(job_package):
 	
 	form_data = job_package['form_data']	

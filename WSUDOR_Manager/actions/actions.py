@@ -19,37 +19,49 @@ import sys
 # register blueprints
 tasks_URL_prefix = "/tasks"
 
-#iiifManifest Management
-from iiifManifest import iiifManifest, iiifManifestGenerate_worker
-app.register_blueprint(iiifManifest, url_prefix=tasks_URL_prefix)
-
-#solrIndexer
-from solrIndexer import solrIndexer_blue
-app.register_blueprint(solrIndexer_blue, url_prefix=tasks_URL_prefix)
-
-#exportObject to objectBag
-from exportObject import exportObject, exportObject_worker
-app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
-
-#ingestBag
-from bagIngest import bagIngest, bagIngest_factory, bagIngest_worker 
-app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
-
-#ingestWorkspace
-from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback, checkObjectStatus_factory, checkObjectStatus_worker
-app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
+#addDS
+from addDS import addDS, addDS_worker
+app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
 
 #aem
 from aem import aem
 app.register_blueprint(aem, url_prefix=tasks_URL_prefix)
 
+#ingestBag
+from bagIngest import bagIngest, bagIngest_factory, bagIngest_worker 
+app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
+
+#checkJP2
+from checkJP2 import checkJP2, checkJP2_worker
+app.register_blueprint(checkJP2, url_prefix=tasks_URL_prefix)
+
+#checksum
+from checksum import checksum, checksum_worker
+app.register_blueprint(checksum, url_prefix=tasks_URL_prefix)
+
+#createManifest
+from createBag import createBag
+app.register_blueprint(createBag, url_prefix=tasks_URL_prefix)
+
+#createLearningObj
+from createLearningObj import createLearningObj
+app.register_blueprint(createLearningObj, url_prefix=tasks_URL_prefix)
+
+#createManifest
+from createManifest import createManifest
+app.register_blueprint(createManifest, url_prefix=tasks_URL_prefix)
+
+#createObj
+from createObj import createObj
+app.register_blueprint(createObj, url_prefix=tasks_URL_prefix)
+
 #createObjectIndex
 from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)
 
-#MODSexport
-from MODSexport import MODSexport, MODSimport_factory, MODSimport_worker
-app.register_blueprint(MODSexport, url_prefix=tasks_URL_prefix)
+#DCfromMODS
+from DCfromMODS import DCfromMODS, DCfromMODS_worker, DCfromMODS_single
+app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
 
 #editDSXMLAdv
 from editDSMime import editDSMime, editDSMime_worker
@@ -59,21 +71,36 @@ app.register_blueprint(editDSMime, url_prefix=tasks_URL_prefix)
 from editDSRegex import editDSRegex, editDSRegex_regex_worker
 app.register_blueprint(editDSRegex, url_prefix=tasks_URL_prefix)
 
-#manageOAI
-from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_toggleSet_worker, exposeToDPLA_worker, removeFromDPLA_worker
-app.register_blueprint(manageOAI, url_prefix=tasks_URL_prefix)
-
 #editRELS
 from editRELS import editRELS, editRELS_add_worker, editRELS_purge_worker, editRELS_modify_worker, editRELS_edit_worker, editRELS_regex_worker
 app.register_blueprint(editRELS, url_prefix=tasks_URL_prefix)
 
-#DCfromMODS
-from DCfromMODS import DCfromMODS, DCfromMODS_worker, DCfromMODS_single
-app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)
+#exportObject to objectBag
+from exportObject import exportObject, exportObject_worker
+app.register_blueprint(exportObject, url_prefix=tasks_URL_prefix)
 
-#addDS
-from addDS import addDS, addDS_worker
-app.register_blueprint(addDS, url_prefix=tasks_URL_prefix)
+#genericMethod
+from genericMethod import genericMethod_worker
+
+#iiifManifest Management
+from iiifManifest import iiifManifest, iiifManifestGenerate_worker
+app.register_blueprint(iiifManifest, url_prefix=tasks_URL_prefix)
+
+#ingestWorkspace
+from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback, checkObjectStatus_factory, checkObjectStatus_worker
+app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
+
+#manageOAI
+from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_toggleSet_worker, exposeToDPLA_worker, removeFromDPLA_worker
+app.register_blueprint(manageOAI, url_prefix=tasks_URL_prefix)
+
+#MODSexport
+from MODSexport import MODSexport, MODSimport_factory, MODSimport_worker
+app.register_blueprint(MODSexport, url_prefix=tasks_URL_prefix)
+
+#objectRefresh
+from objectRefresh import objectRefresh
+app.register_blueprint(objectRefresh, url_prefix=tasks_URL_prefix)
 
 #purgeDS
 from purgeDS import purgeDS, purgeDS_worker
@@ -83,48 +110,21 @@ app.register_blueprint(purgeDS, url_prefix=tasks_URL_prefix)
 from objectState import objectState, objectState_worker
 app.register_blueprint(objectState, url_prefix=tasks_URL_prefix)
 
-#checkJP2
-from checkJP2 import checkJP2, checkJP2_worker
-app.register_blueprint(checkJP2, url_prefix=tasks_URL_prefix)
+#pruneSolr
+from pruneSolr import pruneSolr, pruneSolr_factory, pruneSolr_worker
+app.register_blueprint(pruneSolr, url_prefix=tasks_URL_prefix)
 
 #purgeObject
 from purgeObject import purgeObject, purgeObject_worker
 app.register_blueprint(purgeObject, url_prefix=tasks_URL_prefix)
 
-#checksum
-from checksum import checksum, checksum_worker
-app.register_blueprint(checksum, url_prefix=tasks_URL_prefix)
-
-#createManifest
-from createManifest import createManifest
-app.register_blueprint(createManifest, url_prefix=tasks_URL_prefix)
-
-#createManifest
-from createBag import createBag
-app.register_blueprint(createBag, url_prefix=tasks_URL_prefix)
-
-#genericMethod
-from genericMethod import genericMethod_worker
-
-#objectRefresh
-from objectRefresh import objectRefresh
-app.register_blueprint(objectRefresh, url_prefix=tasks_URL_prefix)
-
 #sendObject
 from sendObject import sendObject, sendObject_worker
 app.register_blueprint(sendObject, url_prefix=tasks_URL_prefix)
 
-#pruneSolr
-from pruneSolr import pruneSolr, pruneSolr_factory, pruneSolr_worker
-app.register_blueprint(pruneSolr, url_prefix=tasks_URL_prefix)
-
-#createObj
-from createObj import createObj
-app.register_blueprint(createObj, url_prefix=tasks_URL_prefix)
-
-#createLearningObj
-from createLearningObj import createLearningObj
-app.register_blueprint(createLearningObj, url_prefix=tasks_URL_prefix)
+#solrIndexer
+from solrIndexer import solrIndexer_blue
+app.register_blueprint(solrIndexer_blue, url_prefix=tasks_URL_prefix)
 
 
 # Fires *after* task is complete

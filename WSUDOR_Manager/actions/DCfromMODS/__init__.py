@@ -25,15 +25,18 @@ With the function doing bulk and single, break the actual work in a function use
 
 @DCfromMODS.route('/DCfromMODS')
 @utilities.objects_needed
+@roles.auth(['admin','metadata'])
 def index():		
 	return redirect(url_for('fireTask',job_type='obj_loop', task_name='DCfromMODS_worker'))
 
 
 @DCfromMODS.route('/DCfromMODS/single/<PID>')
+@roles.auth(['admin','metadata'])
 def single(PID):
 	return DCfromMODS_single(PID)
 
 
+@roles.auth(['admin','metadata'])
 def DCfromMODS_single(PID):	
 
 	ohandle = fedora_handle.get_object(PID)
@@ -61,6 +64,7 @@ def DCfromMODS_single(PID):
 	return derive_results
 
 
+@roles.auth(['admin','metadata'])
 def DCfromMODS_worker(job_package):
 
 	PID = job_package['PID']

@@ -34,9 +34,6 @@ class auth(object):
 			print "Authorized roles for this view:", self.task_roles
 
 			# if celery context, grab user from job_package and query db
-			'''
-			Can we assume that we can always sniff out the job_package here?
-			'''
 			if self.is_celery:
 				username = args[0]['username']
 				print "celery task initiated by: %s" % username

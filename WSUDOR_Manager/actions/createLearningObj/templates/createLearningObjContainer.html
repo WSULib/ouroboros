@@ -20,22 +20,39 @@
 
 				<!-- Label -->
 				<div class="form-group">
-					<label class="control-label">Label:</label>
+					<label class="control-label">Title:</label>
 					<p>Short, unique title for learning object.  Special characters and numbers should be avoided where possible.</p>
 					<input class="form-control" type="text" name="label" placeholder="e.g. Powerpoint and PDF lesson plans for Nightingale Letters Collection">
 				</div>
 
 				<!-- Description -->
 				<div class="form-group">
-					<label class="control-label">Description / Abstract:</label>
+					<label class="control-label">Description:</label>
 					<p>Describe the learning object in detail here.</p>
 					<textarea class="form-control" rows=5 name="description" placeholder="e.g. This lesson plan explores how salutations are used in the Nightingale collection.  It is comprised of a single lesson plan, in PDF and PowerPoint formats."></textarea>
+				</div>
+
+				<!-- Subjects -->
+				<div class="form-group">
+					<label class="control-label">Subjects:</label>
+					<p>Include multiple Library of Congress subject headings (LCSH) here, seperated by commas</p>
+					<textarea class="form-control" rows=3 name="subjects" placeholder="e.g. Outerwear, Clothing and dress--History, Cloaks"></textarea>
+				</div>
+
+				<!-- Rights -->
+				<div class="form-group">
+					<label class="control-label">Rights Statement:</label>
+					<p>Select a rights statement from the dropdown below.</p>
+					<select class="form-control input-sm" name="rights">
+						<option value='Creative Commons License - By Attribution, Non-Commercial (CC BY-NC) - https://creativecommons.org/licenses/by-nc/4.0/'>Creative Commons License - By Attribution, Non-Commercial (CC BY-NC)</option>
+						<option value='Creative Commons License - Public Domain (CC0) - https://creativecommons.org/publicdomain/zero/1.0/'>Creative Commons License - Public Domain (CC 0)</option>
+					</select>
 				</div>
 
 				<!-- Date -->
 				<div class="form-group">
 					<label class="control-label">Date:</label>
-					<p>Meaningful date for this learning object, either when it was created or used.  Format should be <em>YYYY-MM-DD</em>.</p>
+					<p>Meaningful date for this learning object, either when it was created or used.  Format should be YYYY-MM-DD.</p>
 					<input class="form-control" type="text" name="date" placeholder="e.g. 2016-05-02">
 				</div>
 
@@ -49,7 +66,7 @@
 					</select> 
 				</div>
 
-				<!-- Description -->
+				<!-- Associated Objects -->
 				<div class="form-group">
 					<label class="control-label">Associated Objects (optional):</label>
 					<p>Paste identifiers, seperated by commas, of specific objects this learning object is associated with.</p>

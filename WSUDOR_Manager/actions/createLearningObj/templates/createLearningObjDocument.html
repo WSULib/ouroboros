@@ -18,17 +18,17 @@
 		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/createLearningObj/{{obj.pid}}/addFile" enctype="multipart/form-data">
 			<div class="col-md-6">				
 
-				<!-- Label -->
+				<!-- Title -->
 				<div class="form-group">
-					<label class="control-label">Label:</label>
-					<p>Human-readable label for file, keep it short.</p>
+					<label class="control-label">Title:</label>
+					<p>This title refers to the file you are adding to this learning object.  Short and sweet.</p>
 					<input class="form-control" type="text" name="label" placeholder="e.g. Lesson Plan PDF">
 				</div>
 
 				<!-- Label -->
 				<div class="form-group">
-					<label class="control-label">Label:</label>
-					<p>Filename that will be saved, avoid spaces and special characters.</p>
+					<label class="control-label">Filename:</label>
+					<p>Filename that will be used in the future for downloading this file.</p>
 					<input class="form-control" type="text" name="filename" placeholder="e.g. lesson_plan.pdf">
 				</div>
 
@@ -37,6 +37,23 @@
 					<label class="control-label">Description / Abstract:</label>
 					<p>Description of file that will become part of the parent Learning Object.</p>
 					<textarea class="form-control" rows=5 name="description" placeholder="e.g. Lesson plan in PDF format."></textarea>
+				</div>
+
+				<!-- Subjects -->
+				<div class="form-group">
+					<label class="control-label">Subjects:</label>
+					<p>Include multiple Library of Congress subject headings (LCSH) here, seperated by commas</p>
+					<textarea class="form-control" rows=3 name="subjects" placeholder="e.g. Outerwear, Clothing and dress--History, Cloaks"></textarea>
+				</div>
+
+				<!-- Rights -->
+				<div class="form-group">
+					<label class="control-label">Rights Statement:</label>
+					<p>Select a rights statement from the dropdown below.</p>
+					<select class="form-control input-sm" name="rights">
+						<option value='Creative Commons License - By Attribution, Non-Commercial (CC BY-NC) - https://creativecommons.org/licenses/by-nc/4.0/'>Creative Commons License - By Attribution, Non-Commercial (CC BY-NC)</option>
+						<option value='Creative Commons License - Public Domain (CC0) - https://creativecommons.org/publicdomain/zero/1.0/'>Creative Commons License - Public Domain (CC 0)</option>
+					</select>
 				</div>
 
 				<!-- Date -->
@@ -51,7 +68,9 @@
 					<label class="control-label" for="dest_repo">Content Type:</label> 
 					<select class="form-control input-sm" id="dest_repo" name="CM">
 						{% for CM in CMs %}
-							<option value="{{CM}}">WSUDOR_{{CM}}</option>
+							{% if CM in ['Image','Document'] %}
+								<option value="{{CM}}">{{CM}}</option>
+							{% endif %}
 						{% endfor %}
 					</select> 
 				</div>

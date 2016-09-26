@@ -9,6 +9,7 @@ import urllib, urllib2
 import datetime
 from lxml import etree
 from flask import Blueprint, render_template, redirect, abort, request
+from flask.ext.login import login_required
 import uuid
 import bagit
 import time
@@ -16,7 +17,7 @@ import shutil
 
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import utilities, forms
+from WSUDOR_Manager import utilities, forms, roles
 from WSUDOR_Manager.utilities import mimetypes
 from inc import WSUDOR_bagger
 
@@ -27,6 +28,8 @@ createLearningObj = Blueprint('createLearningObj', __name__, template_folder='te
 
 
 @createLearningObj.route('/createLearningObj', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin','metadata'])
 def index():	
 
 	# get collections
@@ -39,6 +42,8 @@ def index():
 
 
 @createLearningObj.route('/createLearningObj/container', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin','metadata'])
 def createContainer_worker():
 	
 	form_data = request.form
@@ -54,7 +59,7 @@ def createContainer_worker():
 		"label":form_data['label'],
 		"description":form_data['description'],
 		"date":form_data['date'],
-		"content_type":"WSUDOR_Container", 
+		"content_type":"WSUDOR_LearningObject", 
 		"policy":"info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted",
 	}
 
@@ -98,10 +103,11 @@ def createContainer_worker():
 		print "writing associated object relationships"
 		associated_objects = [obj.strip() for obj in form_data['associated_objects'].split(',')]
 		for obj in associated_objects:
-			om_handle.object_relationships.append({
-				"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/learningObjectFor",
-				"object": "info:fedora/%s" % obj
-			})
+			if obj != '':
+				om_handle.object_relationships.append({
+					"predicate":"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/learningObjectFor",
+					"object": "info:fedora/%s" % obj
+				})
 
 	# prepare new working dir & recall original
 	working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
@@ -112,19 +118,29 @@ def createContainer_worker():
 	os.system("mkdir %s/datastreams" % (working_dir))
 
 	# write custom MODS
+	
+	# prepare subjects
+	subjects = [subject.strip() for subject in form_data['subjects'].split(",")]
+	subject_string = ''
+	for subject in subjects:
+		if subject != '':
+			subject_string += '<mods:subject authority="lcsh"><mods:topic>%s</mods:topic></mods:subject>' % subject
+
 	raw_MODS = '''<?xml version="1.0" encoding="utf-8"?>
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
     <mods:title>%(label)s</mods:title>
   </mods:titleInfo>
   <mods:abstract>%(description)s</mods:abstract>
+  %(subject_string)s
   <mods:originInfo>
-  	<mods:dateCreated>%(date)s</mods:dateCreated>
+  	<mods:dateIssued encoding="w3cdtf" keyDate="yes">%(date)s</mods:dateIssued>
   </mods:originInfo>
   <mods:identifier type="local">%(identifier)s</mods:identifier>
   <mods:extension>
     <PID>%(id)s</PID>
   </mods:extension>
+  <mods:accessCondition type="useAndReproduction">%(rights)s</mods:accessCondition>
 </mods:mods>
 	''' % {
 			'label':om_handle.label,
@@ -132,6 +148,8 @@ def createContainer_worker():
 			'date':om_handle.date,
 			'id':om_handle.id,
 			'identifier':om_handle.identifier,
+			'subject_string':subject_string,
+			'rights':form_data['rights']
 		}
 	print raw_MODS
 	with open('%s/MODS.xml' % working_dir,'w') as f:
@@ -161,7 +179,7 @@ def createContainer_worker():
 	ingest_result = bag_handle.ingestBag()
 
 	# cleanup
-	# shutil.rmtree(working_dir)
+	shutil.rmtree(working_dir)
 
 	# render
 	time.sleep(3)
@@ -171,6 +189,8 @@ def createContainer_worker():
 
 @createLearningObj.route('/createLearningObj/<PID>', methods=['GET', 'POST'])
 @createLearningObj.route('/createLearningObj/<PID>/', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin','metadata'])
 def createDocument(PID):
 
 	# open handle
@@ -185,6 +205,8 @@ def createDocument(PID):
 
 
 @createLearningObj.route('/createLearningObj/<parent_PID>/addFile', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin','metadata'])
 def createDocument_worker(parent_PID):
 
 	form_data = request.form
@@ -244,12 +266,21 @@ def createDocument_worker(parent_PID):
 	os.system("mkdir %s/datastreams" % (working_dir))
 
 	# write custom MODS
+
+	# prepare subjects
+	subjects = [subject.strip() for subject in form_data['subjects'].split(",")]
+	subject_string = ''
+	for subject in subjects:
+		if subject != '':
+			subject_string += '<mods:subject authority="lcsh"><mods:topic>%s</mods:topic></mods:subject>' % subject
+
 	raw_MODS = '''<?xml version="1.0" encoding="utf-8"?>
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
     <mods:title>%(label)s</mods:title>
   </mods:titleInfo>
   <mods:abstract>%(description)s</mods:abstract>
+  %(subject_string)s
   <mods:originInfo>
   	<mods:dateCreated>%(date)s</mods:dateCreated>
   </mods:originInfo>
@@ -257,6 +288,7 @@ def createDocument_worker(parent_PID):
   <mods:extension>
     <PID>%(id)s</PID>
   </mods:extension>
+  <mods:accessCondition type="useAndReproduction">%(rights)s</mods:accessCondition>
 </mods:mods>
 	''' % {
 			'label':om_handle.label,
@@ -264,6 +296,8 @@ def createDocument_worker(parent_PID):
 			'date':om_handle.date,
 			'id':om_handle.id,
 			'identifier':om_handle.identifier,
+			'subject_string':subject_string,
+			'rights':form_data['rights']
 		}
 	print raw_MODS
 	with open('%s/MODS.xml' % working_dir,'w') as f:
@@ -345,6 +379,8 @@ def createDocument_worker(parent_PID):
 
 
 @createLearningObj.route('/createLearningObj/<PID>/preview', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin','metadata'])
 def previewDocument(PID):
 
 	# open handle

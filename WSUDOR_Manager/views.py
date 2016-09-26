@@ -75,6 +75,7 @@ import re
 
 @app.route("/")
 @login_required
+@roles.auth(['admin','metadata','view'])
 def index():
 	if "username" in session:
 		username = session['username']
@@ -86,6 +87,7 @@ def index():
 
 @app.route("/about")
 @login_required
+@roles.auth(['admin'])
 def about():
 
 	return render_template("about.html")
@@ -93,6 +95,7 @@ def about():
 
 @app.route('/userPage')
 @login_required
+@roles.auth(['admin','metadata','view'])
 def userPage():
 
 	# set username in session
@@ -112,6 +115,7 @@ def userPage():
 
 @app.route('/systemStatus')
 @login_required
+@roles.auth(['admin'])
 def systemStatus():
 
 	#check important ports
@@ -191,6 +195,7 @@ def systemStatus():
 
 @app.route('/systemStatus/cw/<target>/<action>')
 @login_required
+@roles.auth(['admin'])
 def cw(target, action):
 
 
@@ -267,6 +272,7 @@ killasgroup=true'''
 # Simple method to email; presumes you have a unix email smtp program like postfix installed and tested
 # Looking for a GET or POST request with parameters/values for 'message', 'recipient_email', and 'your_email'
 @login_required
+@roles.auth(['admin'])
 def email():
 	from email.mime.multipart import MIMEMultipart
 	from email.mime.text import MIMEText
@@ -295,6 +301,7 @@ def email():
 #########################################################################################################
 @app.route('/contentModels', methods=['GET', 'POST'])
 @login_required
+@roles.auth(['admin'])
 def contentModels():
 
 	# WSUDOR_ContentTypes
@@ -306,24 +313,28 @@ def contentModels():
 
 @app.route('/MODSedit', methods=['GET', 'POST'])
 @login_required
+@roles.auth(['admin','metadata','view'])
 def MODSedit():
 	return render_template("MODSedit.html")
 
 
 @app.route('/datastreamManagement', methods=['GET', 'POST'])
 @login_required
+@roles.auth(['admin','metadata','view'])
 def datastreamManagement():
 	return render_template("datastreamManagement.html")
 
 
 @app.route('/objectManagement', methods=['GET', 'POST'])
 @login_required
+@roles.auth(['admin','metadata','view'])
 def objectManagement():
 	return render_template("objectManagement.html")
 
 
 @app.route('/WSUDORManagement', methods=['GET', 'POST'])
 @login_required
+@roles.auth(['admin','metadata','view'])
 def WSUDORManagement():
 	return render_template("WSUDORManagement.html")
 
@@ -612,6 +623,7 @@ def fireTask(job_type,task_name):
 
 # confirmation page for objects, serializes relevant request objects as "job_package"
 @app.route("/cancelTask/<task_inputs_key>", methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def cancelTask(task_inputs_key):
 
 	print redisHandles.r_job_handle.delete(task_inputs_key)
@@ -717,6 +729,7 @@ def fireTaskWorker(task_name,task_inputs_key):
 
 #status of currently running, spooling, or pending jobs for user
 @app.route("/userJobs")
+@roles.auth(['admin','metadata'])
 def userJobs():
 
 	username = session['username']
@@ -851,6 +864,7 @@ def userJobs():
 # see all user jobs, including completed
 @app.route("/userAllJobs")
 @login_required
+@roles.auth(['admin','metadata'])
 def userAllJobs():
 
 	username = session['username']
@@ -876,6 +890,7 @@ def userAllJobs():
 
 # Details of a given job
 @app.route("/jobDetails/<job_num>")
+@roles.auth(['admin','metadata'])
 def jobDetails(job_num):
 
 	# get number of estimate tasks
@@ -909,6 +924,7 @@ def jobDetails(job_num):
 
 # Details of a given task
 @app.route("/taskDetails/<task_id>/<job_num>")
+@roles.auth(['admin','metadata'])
 def taskDetails(task_id,job_num):
 
 	if task_id != "NULL":
@@ -934,6 +950,7 @@ def taskDetails(task_id,job_num):
 
 # Remove job from SQL, remove tasks from Redis
 @app.route("/jobRemove/<job_num>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def jobRemove(job_num):
 
 	if request.method == "POST" and request.form['commit'] == "true":
@@ -948,6 +965,7 @@ def jobRemove(job_num):
 
 # Remove job from SQL, remove tasks from Redis
 @app.route("/jobRetire/<job_num>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def jobRetire(job_num):
 
 	result = jobs.jobRetire_worker(job_num)
@@ -958,6 +976,7 @@ def jobRetire(job_num):
 
 # Remove job from SQL, remove tasks from Redis
 @app.route("/flushPIDLock", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def flushPIDLock():
 	result = redisHandles.r_PIDlock.flushdb()
 	print "Result of PID Lock flush:",result
@@ -966,6 +985,7 @@ def flushPIDLock():
 
 # see all user jobs, including completed
 @app.route("/retireAllJobs")
+@roles.auth(['admin','metadata'])
 def retireAllJobs():
 
 	username = session['username']
@@ -987,6 +1007,7 @@ def retireAllJobs():
 
 # Flush all User Jobs (clear Celery tasks from Redis DB)
 @app.route("/flushCeleryTasks")
+@roles.auth(['admin','metadata'])
 def flushCeleryTasks():
 
 	# get username from session
@@ -1007,6 +1028,7 @@ def flushCeleryTasks():
 # Push subset of job to workspace PID group
 @app.route("/pushJobPIDs/<job_num>/<result>", methods=['POST', 'GET'])
 @login_required
+@roles.auth(['admin','metadata'])
 def pushJobPIDs(job_num,result):
 
 	print "creating workspace group of PIDs that were result: %s" % result
@@ -1060,6 +1082,7 @@ def pushJobPIDs(job_num,result):
 @app.route("/objPreview/<PIDnum>", methods=['POST', 'GET'])
 @login_required
 @utilities.objects_needed
+@roles.auth(['admin','metadata','view'])
 def objPreview(PIDnum):
 
 	object_package = {}
@@ -1138,6 +1161,7 @@ def objPreview(PIDnum):
 # PID check for user
 @app.route("/userWorkspace")
 @login_required
+@roles.auth(['admin','metadata','view'])
 def userWorkspace():
 	# get username from session
 	username = session['username']
@@ -1153,6 +1177,7 @@ def userWorkspace():
 # PID check for user
 @app.route("/selObjsOverview")
 @login_required
+@roles.auth(['admin','metadata','view'])
 def selObjsOverview():
 
 	# get username from session
@@ -1178,6 +1203,7 @@ def selObjsOverview():
 
 # Select / Deselect / Remove PIDs from user list
 @app.route("/PIDmanageAction/<action>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
 def PIDmanageAction(action):
 	# get username from session
 	username = session['username']
@@ -1218,6 +1244,7 @@ def PIDmanageAction(action):
 
 # small function toggle selection of PIDs
 @app.route("/PIDRowUpdate/<id>/<action>/<status>")
+@roles.auth(['admin','metadata','view'])
 def PIDRowUpdate(id,action,status):
 	# get username from session
 	username = session['username']
@@ -1251,6 +1278,7 @@ def PIDRowUpdate(id,action,status):
 
 # PID selection via Solr
 @app.route("/PIDSolr", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
 @login_required
 def PIDSolr():
 
@@ -1333,6 +1361,7 @@ def PIDSolr():
 
 # PID check for user
 @app.route("/updatePIDsfromSolr/<update_type>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
 def updatePIDsfromSolr(update_type):
 
 	# get username from session
@@ -1362,6 +1391,7 @@ def updatePIDsfromSolr(update_type):
 # PID check for user
 @app.route("/quickPID", methods=['POST', 'GET'])
 @login_required
+@roles.auth(['admin','metadata','view'])
 def quickPID():
 
 	# get username from session
@@ -1397,6 +1427,7 @@ def quickPID():
 # Retrieve all user-reported problem Objects
 @app.route("/problemObjs", methods=['POST', 'GET'])
 @login_required
+@roles.auth(['admin','metadata'])
 def problemObjs():
 
 	problemObjs = models.user_pids.query.filter_by(username="problemBot").all()
@@ -1423,6 +1454,7 @@ def problemObjs():
 # Retrieve all user-reported problem Objects
 @app.route("/claimObj", methods=['POST', 'GET'])
 @login_required
+@roles.auth(['admin','metadata'])
 def claimObj():
 
 	orig_obj = request.form['pid']
@@ -1440,6 +1472,7 @@ def claimObj():
 # Retrieve all user-reported problem Objects
 @app.route("/removeObj", methods=['POST', 'GET'])
 @login_required
+@roles.auth(['admin','metadata'])
 def removeObj():
 
 	orig_obj = request.form['pid']
@@ -1485,6 +1518,7 @@ def routeIndexer():
 
 # Clear imageServer Cache
 @app.route("/imgServerCacheClear")
+@roles.auth(['admin'])
 def imgServerCacheClear():
 
 	# run os command an return results
@@ -1499,6 +1533,7 @@ def imgServerCacheClear():
 
 # Clear imageServer Cache
 @app.route("/clearSymLinks")
+@roles.auth(['admin'])
 def clearSymLinks():
 
 	# run os command an return results
@@ -1514,6 +1549,7 @@ def clearSymLinks():
 
 # Clear user exported BagIt object archives
 @app.route("/clearExportBagItArchives")
+@roles.auth(['admin'])
 def clearExportBagItArchives():
 
 	# get username from session
@@ -1535,6 +1571,7 @@ def clearExportBagItArchives():
 # Collections Overview
 @app.route("/collectionsOverview")
 @login_required
+@roles.auth(['admin','metadata','view'])
 def collectionsOverview():
 
 	# get username from session
@@ -1590,6 +1627,7 @@ def collectionsOverview():
 # Run Generic Method from WSUDOR Object
 @app.route("/genericMethod", methods=['POST', 'GET'])
 @login_required
+@roles.auth(['admin'])
 def genericMethod():
 
 
@@ -1604,6 +1642,7 @@ def genericMethod():
 
 # wct investigator
 @app.route("/wcts/<wct>", methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def wcts(wct):
 
 	print "Opening",wct
@@ -1639,10 +1678,10 @@ def wcts(wct):
 
 # preview solr document values (a la eulindexer / indexdata functions from eulfedora)
 @app.route("/solrDoc/<pid>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def solrDoc(pid):
 
 	o = WSUDOR_ContentTypes.WSUDOR_Object(pid)
-
 	json_string = json.dumps(o.previewSolrDict())
 	resp = make_response(json_string)
 	resp.headers['Content-Type'] = 'application/json'
@@ -1689,5 +1728,6 @@ def solrReaduxDoc(pid, action):
 ######################################################
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
+@roles.auth(['admin','metadata','view'])
 def catch_all(path):
 	return render_template("404.html")

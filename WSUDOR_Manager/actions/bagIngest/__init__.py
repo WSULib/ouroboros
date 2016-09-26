@@ -7,7 +7,7 @@ from WSUDOR_Manager import celery
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, forms
+from WSUDOR_Manager import redisHandles, jobs, models, db, forms, roles
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 import localConfig
@@ -34,12 +34,14 @@ bagIngest = Blueprint('bagIngest', __name__, template_folder='templates', static
 
 # main view
 @bagIngest.route('/bagIngest', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def index():
 
 	return render_template("bagIngestIndex.html", REMOTE_REPOSITORIES=localConfig.REMOTE_REPOSITORIES)
 
 
 @celery.task(name="bagIngest_factory")
+@roles.auth(['admin'])
 def bagIngest_factory(job_package):
 
 	# get form data
@@ -148,7 +150,7 @@ def bagIngest_factory(job_package):
 
 		print "Finished firing ingest workers"
 
-
+@roles.auth(['admin'])
 def bagIngest_worker(job_package):
 	
 	bag_dir = job_package['bag_dir']
@@ -254,6 +256,7 @@ def bagIngest_worker(job_package):
 
 # UTILITIES
 #################################################################
+@roles.auth(['admin'])
 def payloadExtractor(payload_location,ingest_type):	
 	
 	'''

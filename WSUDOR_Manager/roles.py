@@ -13,13 +13,15 @@ class auth(object):
 	These roles are checked against the roles of the user.
 	'''
 
-	def __init__(self, roles):
+	def __init__(self, task_roles, is_celery=False):
 		"""
 		If there are no decorator arguments, the function
 		to be decorated is passed to the constructor.
 		"""
-		self.roles = roles
-		self.roles_string = ",".join(roles)
+		self.task_roles = task_roles
+		self.task_roles_string = ",".join(task_roles)
+		self.user_roles = []
+		self.is_celery = is_celery
 
 
 	def __call__(self, f):
@@ -29,21 +31,36 @@ class auth(object):
 		"""
 		@wraps(f)
 		def wrapped_f(*args, **kwargs):
-			print "Authorized roles for this view:", self.roles
-			print "User roles:", g.user.roles()
+			print "Authorized roles for this view:", self.task_roles
+
+			# if celery context, grab user from job_package and query db
+			'''
+			Can we assume that we can always sniff out the job_package here?
+			'''
+			if self.is_celery:
+				username = args[0]['username']
+				print "celery task initiated by: %s" % username
+				user = models.User.get(username)
+				self.user_roles = user.roles()
+				print "User roles:", self.user_roles
+
+			# if request context, grab roles from g.user
+			if not self.is_celery:
+				self.user_roles = g.user.roles()
+				print "User roles:", self.user_roles
 
 			# if admin, always auth
-			if 'admin' in g.user.roles():
+			if 'admin' in self.user_roles:
 				print "user is admin, authorized"
 				return f(*args, **kwargs)
 
 			# authorize
-			role_overlap = set(self.roles) & set(g.user.roles())
+			role_overlap = set(self.task_roles) & set(self.user_roles)
 			if len(role_overlap) > 0:
 				print "matched on", role_overlap
 				return f(*args, **kwargs)
 			else:
 				print "did not find role overlap"
-				return redirect(url_for('authfail', route_roles=self.roles_string))
+				return redirect(url_for('authfail', route_roles=self.task_roles_string))
 
 		return wrapped_f

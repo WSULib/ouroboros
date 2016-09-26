@@ -115,7 +115,7 @@ def userPage():
 
 @app.route('/systemStatus')
 @login_required
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def systemStatus():
 
 	#check important ports
@@ -195,7 +195,7 @@ def systemStatus():
 
 @app.route('/systemStatus/cw/<target>/<action>')
 @login_required
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def cw(target, action):
 
 

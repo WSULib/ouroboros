@@ -7,7 +7,7 @@ from WSUDOR_Manager import celery, utilities, fedoraHandles
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models
+from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models, roles
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 try:
@@ -58,6 +58,7 @@ aem = Blueprint('aem', __name__, template_folder='templates', static_folder="sta
 
 # main view
 @aem.route('/aem', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def index():	
 
 	return render_template("aem.html")

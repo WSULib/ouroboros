@@ -3,8 +3,9 @@
 # handles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.forms import addDSForm
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 from flask import Blueprint, render_template, abort
+from flask.ext.login import login_required
 import eulfedora
 
 
@@ -13,13 +14,14 @@ addDS = Blueprint('addDS', __name__, template_folder='templates', static_folder=
 
 @addDS.route('/addDS')
 @utilities.objects_needed
+@roles.auth(['admin','metadata'])
 def index():
 
 	form = addDSForm()	
 	return render_template("addDS_index.html",form=form)
 
 
-
+@roles.auth(['admin','metadata'], is_celery=True)
 def addDS_worker(job_package):
 	
 	form_data = job_package['form_data']	

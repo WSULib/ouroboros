@@ -2,7 +2,7 @@
 
 # handles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 import WSUDOR_ContentTypes
 import localConfig
 from flask import Blueprint, render_template, request

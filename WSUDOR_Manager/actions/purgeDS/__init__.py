@@ -4,7 +4,7 @@
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.forms import purgeDSForm
 from WSUDOR_Manager.jobs import getSelPIDs
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 from flask import Blueprint, render_template, request
 
 

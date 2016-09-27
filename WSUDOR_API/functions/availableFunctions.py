@@ -1392,10 +1392,13 @@ def objBitStreamTokens(getParams):
 	print "checking user auth..."
 	user_auth = cookieAuth(getParams)
 
-	# if user is logged in and part of staff group, return bitStream download tokens
-	user_auth = json.loads(user_auth)	
-	if user_auth['hashMatch'] and getParams['username'][0] in BITSTREAM_CLEARED_USERNAMES:
-
+	# if user is logged in and present in Ouroboros user table, return bitStream download tokens
+	user_auth = json.loads(user_auth)
+	print "#######################################################"
+	username = getParams['username'][0]
+	user_ouroboros = models.User.get(username)
+	print "#######################################################"
+	if user_auth['hashMatch'] and user_ouroboros:
 		print "generating bitStream token dictionary"
 		return json.dumps(BitStream.genAllTokens(getParams['PID'][0], BITSTREAM_KEY))
 

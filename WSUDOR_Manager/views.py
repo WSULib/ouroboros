@@ -1427,7 +1427,7 @@ def quickPID():
 # Retrieve all user-reported problem Objects
 @app.route("/problemObjs", methods=['POST', 'GET'])
 @login_required
-@roles.auth(['admin','metadata'])
+@roles.auth(['admin','metadata','view'])
 def problemObjs():
 
 	problemObjs = models.user_pids.query.filter_by(username="problemBot").all()

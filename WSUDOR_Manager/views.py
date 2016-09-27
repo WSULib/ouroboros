@@ -1690,6 +1690,7 @@ def solrDoc(pid):
 
 # returns document as run through readux
 @app.route("/solrReaduxDoc/<pid>/<action>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
 def solrReaduxDoc(pid, action):
 
 	# this is occassionaly hanging...

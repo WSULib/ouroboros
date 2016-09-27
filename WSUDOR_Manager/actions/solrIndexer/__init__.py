@@ -21,7 +21,7 @@ from localConfig import *
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 import WSUDOR_ContentTypes
-from WSUDOR_Manager import models, jobs, helpers
+from WSUDOR_Manager import models, jobs, helpers, roles
 import WSUDOR_Manager.actions as actions
 
 # augmentCore 
@@ -34,6 +34,7 @@ solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates
 
 
 @solrIndexer_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def updateSolr(update_type):	
 
 	# real or emulated solr events
@@ -283,6 +284,7 @@ class SolrIndexerWorker(object):
 
 
 @celery.task()
+@roles.auth(['admin','metadata'], is_celery=True)
 def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
 	print "solrIndexer running"

@@ -11,7 +11,7 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.jobs import getSelPIDs
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 from localConfig import *
 from WSUDOR_Manager import redisHandles
 from flask import Blueprint, render_template, abort, request, redirect
@@ -45,6 +45,7 @@ ListIdentifiers: http://digital.library.wayne.edu:8080/oaiprovider/?verb=ListIde
 '''
 
 @manageOAI.route('/manageOAI', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
 def index():	
 
 	overview = {}
@@ -103,6 +104,7 @@ def index():
 	return render_template("manageOAI_index.html", overview=overview, APP_HOST=localConfig.APP_HOST)
 
 @manageOAI.route('/manageOAI/serverWide', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
 def serverWide():	
 
 	# get all collections and collection titles
@@ -198,6 +200,7 @@ def serverWide():
 
 
 # generate OAI identifiers for objects
+@roles.auth(['admin','metadata'], is_celery=True)
 def manageOAI_genItemID_worker(job_package):
 	
 	# get PID
@@ -211,6 +214,7 @@ def manageOAI_genItemID_worker(job_package):
 	
 
 @manageOAI.route('/manageOAI/toggleSet/<PID>', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def manageOAI_toggleSet(PID):	
 
 	isOAIHarvestable_predicate = "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isOAIHarvestable"
@@ -272,6 +276,7 @@ class postTask(Task):
 
 # celery function, runs through normal channels
 @celery.task(base=postTask, bind=True, max_retries=100, name="manageOAI_toggleSet_worker")
+@roles.auth(['admin','metadata'], is_celery=True)
 def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 	PID = object_uri.split("/")[1]
 
@@ -305,6 +310,7 @@ def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 
 
 @manageOAI.route('/manageOAI/purgePROAI', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
 def purgePROAI():
 
 	'''
@@ -352,6 +358,7 @@ def purgePROAI():
 
 
 # expose objects to DPLA OAI-PMH set
+@roles.auth(['admin','metadata'], is_celery=True)
 def exposeToDPLA_worker(job_package):
 
 	print "adding to DPLAOAI set"
@@ -365,6 +372,7 @@ def exposeToDPLA_worker(job_package):
 
 
 # remove objects to DPLA OAI-PMH set
+@roles.auth(['admin','metadata'], is_celery=True)
 def removeFromDPLA_worker(job_package):
 
 	print "purging from DPLAOAI set"

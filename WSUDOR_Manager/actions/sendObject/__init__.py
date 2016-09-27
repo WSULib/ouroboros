@@ -13,11 +13,13 @@ sendObject = Blueprint('sendObject', __name__, template_folder='templates', stat
 
 @sendObject.route('/sendObject', methods=['POST', 'GET'])
 @utilities.objects_needed
+@roles.auth(['admin'])
 def index():
 
 	return render_template("sendObject.html", REMOTE_REPOSITORIES=localConfig.REMOTE_REPOSITORIES)
 
 
+@roles.auth(['admin'], is_celery=True)
 def sendObject_worker(job_package):
 
 	# open handle

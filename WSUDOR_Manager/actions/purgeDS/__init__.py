@@ -13,6 +13,7 @@ purgeDS = Blueprint('purgeDS', __name__, template_folder='templates', static_fol
 
 @purgeDS.route('/purgeDS', methods=['POST', 'GET'])
 @utilities.objects_needed
+@roles.auth(['admin'])
 def index():
 
 	# get PID to examine, if noted
@@ -36,7 +37,7 @@ def index():
 	return render_template("purgeDS.html",form=form,PID=PIDs[PIDnum],dsIDs=dsIDs,PIDnum=PIDnum)
 
 
-
+@roles.auth(['admin'], is_celery=True)
 def purgeDS_worker(job_package):
 
 	print job_package

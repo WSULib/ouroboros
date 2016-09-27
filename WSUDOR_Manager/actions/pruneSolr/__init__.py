@@ -6,15 +6,13 @@ from WSUDOR_Manager import celery
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, actions
+from WSUDOR_Manager import redisHandles, jobs, models, db, actions, roles
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules
 import json
 
 pruneSolr = Blueprint('pruneSolr', __name__, template_folder='templates', static_folder="static")
-
-
 
 @celery.task(name="pruneSolr_factory")
 def pruneSolr_factory(job_package):
@@ -66,6 +64,7 @@ def pruneSolr_factory(job_package):
 
 
 @celery.task(name="pruneSolr_worker")
+@roles.auth(['admin','metadata'], is_celery=True)
 def pruneSolr_worker(job_package, PID=False):
 
 	if PID:

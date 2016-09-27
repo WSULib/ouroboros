@@ -39,8 +39,7 @@ def confirm():
 	return render_template("purgeConfirm.html")
 
 
-@login_required
-@roles.auth(['admin'])
+@roles.auth(['admin'], is_celery=True)
 def purgeObject_worker(job_package):	
 
 	form_data = job_package['form_data']

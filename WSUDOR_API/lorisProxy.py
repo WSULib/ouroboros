@@ -136,7 +136,7 @@ where 'ic' is an IIIFImageClient object, passed to, and returned by, the functio
 CONSIDER MOVING ALL TO A RESTRICT CLASS
 '''
 
-def downsizeImage(pid,ds,ic):
+def downsizeImage(pid, ds, ic):
 
 	'''
 	If collection is flagged for downsizing, downsize downloadable image to target size pixels on long or short side
@@ -171,7 +171,8 @@ def downsizeImage(pid,ds,ic):
 		downsize = False
 
 		# derive size request
-		size_d = ic.dict_opts()['size']
+		size_d = ic.size.as_dict()
+		print size_d
 
 		# full requested
 		if size_d['full']:
@@ -179,18 +180,23 @@ def downsizeImage(pid,ds,ic):
 
 		# percent requested
 		# retrieve info.json and see if percent would exceed size restrictions
-		r = requests.get(ic.info()).json()
-		if ((r['width'] * float(size_d['pct']) / 100) >= target_resolution) or ((r['height'] * float(size_d['pct']) / 100) >= target_resolution):
-			downsize = True
+		if size_d['percent']:
+			r = requests.get(ic.info()).json()
+			if ((r['width'] * float(size_d['percent']) / 100) >= target_resolution) or ((r['height'] * float(size_d['percent']) / 100) >= target_resolution):
+				downsize = True
 
 		# specific size requested
-		if size_d['w'] >= target_resolution or size_d['h'] >= target_resolution:
+		if size_d['width'] >= target_resolution or size_d['height'] >= target_resolution:
 			downsize = True
 
 		# downsize if triggered
 		if downsize:
-			print "downsizing from %s to !%s,%s for Reuther" % (ic.image_options['size'], target_resolution, target_resolution)
-			ic = ic.size(width=target_resolution, height=target_resolution, exact=True)
+			print "downsizing from %s to !%s,%s for Reuther" % (ic.size.as_dict(), target_resolution, target_resolution)
+			ic.size.set_options(
+				width=target_resolution,
+				height=target_resolution,
+				exact=True
+			)
 
 	return ic
 

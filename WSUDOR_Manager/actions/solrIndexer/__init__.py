@@ -284,7 +284,6 @@ class SolrIndexerWorker(object):
 
 
 @celery.task()
-@roles.auth(['admin','metadata'], is_celery=True)
 def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
 	print "solrIndexer running"

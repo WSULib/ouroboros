@@ -10,6 +10,7 @@ import datetime
 from lxml import etree
 from flask import Blueprint, render_template, redirect, abort
 
+from WSUDOR_Manager import roles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 
 
@@ -17,11 +18,12 @@ checksum = Blueprint('checksum', __name__, template_folder='templates', static_f
 
 
 @checksum.route('/checksum')
+@roles.auth(['admin','metadata','view'])
 def index():	
 	return render_template("checksum.html")
 
 
-
+@roles.auth(['admin','metadata','view'])
 def checksum_worker(job_package):
 	form_data = job_package['form_data']
 	print form_data

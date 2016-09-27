@@ -12,7 +12,7 @@ from flask import Blueprint, render_template, redirect, abort
 
 from WSUDOR_ContentTypes import WSUDOR_Object
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 
 
 checkJP2 = Blueprint('checkJP2', __name__, template_folder='templates', static_folder="static")
@@ -20,12 +20,13 @@ checkJP2 = Blueprint('checkJP2', __name__, template_folder='templates', static_f
 
 @checkJP2.route('/checkJP2')
 @utilities.objects_needed
+@roles.auth(['admin'])
 def index():	
 
 	return render_template("checkJP2.html")
 
 
-
+@roles.auth(['admin'], is_celery=True)
 def checkJP2_worker(job_package):
 
 	form_data = job_package['form_data']

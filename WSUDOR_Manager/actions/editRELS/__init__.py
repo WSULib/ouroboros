@@ -101,6 +101,7 @@ def editRELS_advanced():
 
 @editRELS.route('/editRELS/shared', methods=['POST', 'GET'])
 @utilities.objects_needed
+@roles.auth(['admin'])
 def editRELS_shared():
 	'''
 	Will return only RDF statements shared (predicate AND object) by all PIDs	
@@ -206,7 +207,7 @@ def regexConfirm():
 	
 	return render_template("editRELS_regexConfirm.html",return_package=return_package)
 
-
+@roles.auth(['admin'], is_celery=True)
 def editRELS_add_worker(job_package):
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)	
@@ -222,6 +223,7 @@ def editRELS_add_worker(job_package):
 	return obj_ohandle.add_relationship(predicate_string, object_string)
 
 
+@roles.auth(['admin'], is_celery=True)
 def editRELS_purge_worker(job_package):
 
 	PID = job_package['PID']		
@@ -236,6 +238,7 @@ def editRELS_purge_worker(job_package):
 	return obj_ohandle.purge_relationship(predicate_string, object_string)
 
 
+@roles.auth(['admin'], is_celery=True)
 def editRELS_modify_worker(job_package):
 
 	PID = job_package['PID']		
@@ -251,6 +254,7 @@ def editRELS_modify_worker(job_package):
 	return obj_ohandle.modify_relationship(old_predicate_string, old_object_string, new_object_string)
 
 
+@roles.auth(['admin'], is_celery=True)
 def editRELS_edit_worker(job_package):		
 	'''
 	Takes modified raw RDF XML, applies to all PIDs in job.	
@@ -314,8 +318,7 @@ def editRELS_edit_worker(job_package):
 		print newDS.save()
 
 
-@login_required
-@roles.auth(['admin'])
+@roles.auth(['admin'], is_celery=True)
 def editRELS_regex_worker(job_package):		
 	
 	PID = job_package['PID']		

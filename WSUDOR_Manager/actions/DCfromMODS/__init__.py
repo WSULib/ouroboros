@@ -14,6 +14,7 @@ from lxml import etree
 from flask import Blueprint, render_template, redirect, abort, url_for, session
 
 # handles
+from WSUDOR_Manager import roles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 
 

@@ -2,7 +2,7 @@
 
 # handles
 from WSUDOR_Manager.forms import createManifestForm
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 from flask import Blueprint, render_template, request, jsonify, redirect, session, Response, json
 import re
 import requests
@@ -15,13 +15,17 @@ createManifest = Blueprint('createManifest', __name__, template_folder='template
 
 @createManifest.route('/createManifest')
 @utilities.objects_needed
+@roles.auth(['admin','metadata','view'])
 def index():
 
     form = createManifestForm()
     return render_template("createManifest.html",form=form)
 
+
 @createManifest.route('/stagingManifest', methods=['GET', 'POST'])
+@roles.auth(['admin','metadata','view'])
 def stagingManifest():
+
     if request.method == 'GET':
         return redirect("/tasks/createManifest", code=302)
 
@@ -65,23 +69,30 @@ def stagingManifest():
             session['objMetaManifestData'] = form_data
             objMeta.downloadFile(form_data)
             counter = counter + 1
+
         return render_template("stagingManifest.html", form_data=form_data)
 
+
 @createManifest.route('/previewManifest', methods=['GET', 'POST'])
+@roles.auth(['admin','metadata','view'])
 def previewManifest():
     if request.method == 'POST':
         form_data = session['objMetaManifestData']
         objMeta = ObjMeta(**form_data)
         return objMeta.displayJSONWeb(form_data)
 
+
 @createManifest.route('/downloadManifest', methods=['GET', 'POST'])
+@roles.auth(['admin','metadata','view'])
 def downloadManifest():
     if request.method == 'POST':
         form_data = session['objMetaManifestData']
         objMeta = ObjMeta(**form_data)
         return objMeta.downloadFile(form_data)
 
+
 @createManifest.route('/mimeTypeSearch', methods=['GET', 'POST'])
+@roles.auth(['admin','metadata','view'])
 def mimeTypeSearch():
     if request.method == 'GET':
         return render_template("mimeTypeSearch.html")

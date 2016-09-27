@@ -4,7 +4,7 @@
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import models, jobs, db, utilities
+from WSUDOR_Manager import models, jobs, db, utilities, roles
 import localConfig
 from flask import Blueprint, render_template, abort, request
 
@@ -30,6 +30,7 @@ Improvements:
 
 @editDSRegex.route('/editDSRegex', methods=['POST', 'GET'])
 @utilities.objects_needed
+@roles.auth(['admin'])
 def index():
 
 	# get PID to examine, if noted
@@ -62,6 +63,7 @@ def index():
 
 
 @editDSRegex.route('/editDSRegex/regexConfirm', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def regexConfirm():
 		
 	# get PIDs	
@@ -89,6 +91,7 @@ def regexConfirm():
 	return render_template("editDSRegex_regexConfirm.html",return_package=return_package)
 
 
+@roles.auth(['admin'], is_celery=True)
 def editDSRegex_regex_worker(job_package):		
 	
 	PID = job_package['PID']		

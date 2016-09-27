@@ -1,7 +1,8 @@
 # Ouroboros manager roles
 
-from functools import wraps
 from flask import g, request, redirect, url_for
+from functools import wraps
+import json
 
 from WSUDOR_Manager import models
 
@@ -58,6 +59,13 @@ class auth(object):
 				return f(*args, **kwargs)
 			else:
 				print "did not find role overlap"
-				return redirect(url_for('authfail', route_roles=self.task_roles_string))
+				if not self.is_celery:
+					return redirect(url_for('authfail', route_roles=self.task_roles_string))
+				if self.is_celery:
+					return json.dumps({
+								'msg':'your roles do not permit you to perform this task',
+								'task_roles':self.task_roles,
+								'user_roles':self.user_roles
+							})
 
 		return wrapped_f

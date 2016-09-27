@@ -19,7 +19,7 @@ from flask import Blueprint, render_template, redirect, abort, request, session
 import eulfedora
 
 from WSUDOR_Manager.jobs import getSelPIDs, genPIDlet
-from WSUDOR_Manager import utilities, redisHandles
+from WSUDOR_Manager import utilities, redisHandles, roles
 import WSUDOR_ContentTypes
 import localConfig
 
@@ -33,6 +33,7 @@ This action is designed to export a given object as a WSUDOR objectBag, an insta
 
 @iiifManifest.route('/iiifManifest')
 @utilities.objects_needed
+@roles.auth(['admin','metadata','view'])
 def index():	
 
 	# get PIDs	
@@ -43,6 +44,7 @@ def index():
 
 @iiifManifest.route('/iiifManifest/viewManifests/<PIDnum>')
 @utilities.objects_needed
+@roles.auth(['admin','metadata','view'])
 def viewManifests(PIDnum):	
 
 	# get PIDs	
@@ -69,7 +71,7 @@ def viewManifests(PIDnum):
 	return render_template("iiifManifest_view.html",PIDnum=(int(PIDnum)+1),PIDlet=PIDlet, json_return=json.dumps( json.loads(json_return), indent=2), iiif_manifest_prefix=localConfig.IIIF_MANIFEST_PREFIX,APP_HOST=localConfig.APP_HOST )
 
 
-
+@roles.auth(['admin','metadata','view'], is_celery=True)
 def iiifManifestGenerate_worker(job_package):	 
 
 

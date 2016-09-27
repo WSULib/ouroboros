@@ -1,4 +1,4 @@
-# utility for Bag Ingest
+# Ingest WorkSpace
 
 # celery
 from WSUDOR_Manager import celery, utilities, fedoraHandles
@@ -7,7 +7,7 @@ from WSUDOR_Manager import celery, utilities, fedoraHandles
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models
+from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models, roles
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 try:
@@ -57,6 +57,7 @@ ingestWorkspace = Blueprint('ingestWorkspace', __name__, template_folder='templa
 
 # main view
 @ingestWorkspace.route('/ingestWorkspace', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def index():
 
 	# get all jobs
@@ -67,6 +68,7 @@ def index():
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def job(job_id):
 
 	# get handle
@@ -120,6 +122,7 @@ def job(job_id):
 
 # job delete
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>/delete', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def deleteJob(job_id):
 
 	'''
@@ -148,6 +151,7 @@ def deleteJob(job_id):
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/createJob', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def createJob():
 
 	# render
@@ -157,6 +161,7 @@ def createJob():
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/objectDetails/<job_id>/<ingest_id>', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def objectDetails(job_id,ingest_id):
 
 	'''
@@ -180,6 +185,7 @@ def objectDetails(job_id,ingest_id):
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>/viewMETS', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def viewMETS(job_id):
 
 	# get handle
@@ -195,6 +201,7 @@ def viewMETS(job_id):
 
 # return json for job
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>.json', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
 def jobjson(job_id):	
 
 	def exists(input):
@@ -255,6 +262,7 @@ def jobjson(job_id):
 # View SQL row data
 #################################################################################
 @ingestWorkspace.route('/ingestWorkspace/viewSQLData/<table>/<id>/<column>/<mimetype>', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def viewSQLData(table,id,column,mimetype):
 	return "Coming soon"
 
@@ -324,7 +332,6 @@ def createJob_factory(job_package):
 	if form_data['METS_type'] == 'archivematica':
 		metsrw_handle = metsrw.METSDocument.fromstring(ingest_metadata)
 		createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j)
-
 
 
 def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_div, sm_parts, sm_index, dmd_index, j):
@@ -421,7 +428,6 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 		step += 1
 
 
-
 def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 
 	# handle collection
@@ -509,6 +515,7 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 
 
 @celery.task(name="createJob_worker")
+@roles.auth(['admin'], is_celery=True)
 def createJob_worker(job_package):
 
 	print "Adding ingest_workspace_object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
@@ -578,7 +585,6 @@ def createBag_factory(job_package):
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(object_rows))
 
-
 	# If file path included, reindex files
 	# parse and index files, add to job rows
 	if form_data['files_location'] != '':
@@ -601,7 +607,6 @@ def createBag_factory(job_package):
 			# add to job in MySQL
 			j.file_index = json.dumps(fd)
 			j._commit()
-
 
 	# insert into MySQL as ingest_workspace_object rows
 	step = 1
@@ -630,12 +635,10 @@ def createBag_factory(job_package):
 
 
 @celery.task(name="createBag_worker")
+@roles.auth(['admin'], is_celery=True)
 def createBag_worker(job_package):
 
 	print "FIRING createBag_worker"
-
-	# DEBUG
-	# print job_package
 
 	# get form data
 	form_data = job_package['form_data']
@@ -786,6 +789,7 @@ def ingestBag_factory(job_package):
 
 
 @celery.task(name="ingestBag_callback")
+@roles.auth(['admin'], is_celery=True)
 def ingestBag_callback(job_package):
 	
 	print "FIRING ingestBag_callback"	
@@ -850,6 +854,7 @@ def checkObjectStatus_factory(job_package):
 
 
 @celery.task(name="checkObjectStatus_worker")
+@roles.auth(['admin'], is_celery=True)
 def checkObjectStatus_worker(job_package):
 
 	'''

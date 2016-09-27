@@ -11,7 +11,7 @@ from lxml import etree
 from flask import Blueprint, render_template, redirect, abort
 
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import jobs, models, db, utilities, redisHandles
+from WSUDOR_Manager import jobs, models, db, utilities, redisHandles, roles
 
 import localConfig
 
@@ -20,6 +20,7 @@ editDSMime = Blueprint('editDSMime', __name__, template_folder='templates', stat
 
 @editDSMime.route('/editDSMime/<PIDnum>')
 @utilities.objects_needed
+@roles.auth(['admin'])
 def index(PIDnum):	
 	# gen PIDlet
 	PIDlet = jobs.genPIDlet(int(PIDnum))
@@ -37,7 +38,7 @@ def index(PIDnum):
 	return render_template("editDSMime.html", PIDlet=PIDlet, PIDnum=PIDnum, ds_list=ds_list, APP_HOST=localConfig.APP_HOST)
 
 
-
+@roles.auth(['admin'], is_celery=True)
 def editDSMime_worker(job_package):
 	form_data = job_package['form_data']
 	print form_data		

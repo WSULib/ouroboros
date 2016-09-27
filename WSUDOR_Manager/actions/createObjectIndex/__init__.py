@@ -12,7 +12,7 @@ from flask import Blueprint, render_template, abort, request, redirect
 import eulfedora
 
 # fedoraManagere2
-from WSUDOR_Manager import celery
+from WSUDOR_Manager import celery, roles
 from celery import Task
 
 
@@ -29,6 +29,7 @@ Actions where users selects a collection, and an index is applied to each object
 
 @createObjectIndex.route('/createObjectIndex')
 @utilities.objects_needed
+@roles.auth(['admin'])
 def index():
 
 	# get form
@@ -48,6 +49,7 @@ def index():
 
 
 @createObjectIndex.route('/createObjectIndex/process', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def process():
 	
 	# collect PID
@@ -62,6 +64,7 @@ def process():
 
 
 @celery.task(name="createObjectIndex_worker")
+@roles.auth(['admin'], is_celery=True)
 def createObjectIndex_worker(collection_PID_suffix):
 	
 	print "Operating on:",collection_PID_suffix

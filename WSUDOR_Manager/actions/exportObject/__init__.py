@@ -20,7 +20,7 @@ import eulfedora
 
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.jobs import getSelPIDs
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 import WSUDOR_ContentTypes
 
 
@@ -33,6 +33,7 @@ This action is designed to export a given object as a WSUDOR objectBag, an insta
 
 @exportObject.route('/exportObject')
 @utilities.objects_needed
+@roles.auth(['admin','metadata'])
 def index():	
 
 	# get PIDs	
@@ -40,7 +41,7 @@ def index():
 	return render_template("exportObject.html")
 
 
-
+@roles.auth(['admin','metadata'], is_celery=True)
 def exportObject_worker(job_package):	 
 
 	export_result = WSUDOR_ContentTypes.WSUDOR_Object(job_package['PID']).exportBag(job_package)

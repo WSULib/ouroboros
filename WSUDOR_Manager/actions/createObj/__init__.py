@@ -14,7 +14,7 @@ import bagit
 
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, roles
 
 from WSUDOR_Manager.models import ObjMeta
 
@@ -23,6 +23,7 @@ createObj = Blueprint('createObj', __name__, template_folder='templates', static
 
 
 @createObj.route('/createObj', methods=['GET', 'POST'])
+@roles.auth(['admin'])
 def index():	
 
 	# get content models
@@ -39,6 +40,7 @@ def index():
 
 
 @createObj.route('/createObj/create', methods=['GET', 'POST'])
+@roles.auth(['admin'])
 def createObj_worker():
 	
 	form_data = request.form

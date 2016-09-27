@@ -1,7 +1,7 @@
 # utility for Bag Ingest
 
 # celery
-from WSUDOR_Manager import celery
+from WSUDOR_Manager import celery, roles
 
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
@@ -38,6 +38,7 @@ createBag = Blueprint('createBag', __name__, template_folder='templates', static
 ## WSUDOR_WSUebook ########################################################################################
 # main view
 @createBag.route('/createBag/WSUDOR_WSUebook', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def index():
 
 	form = forms.createBagForm_WSUebook()
@@ -46,6 +47,7 @@ def index():
 
 # singleBag worker
 @createBag.route('/createBag/WSUDOR_WSUebook/create', methods=['POST', 'GET'])
+@roles.auth(['admin'])
 def createBag_create():	
 
 	def abort(msg):

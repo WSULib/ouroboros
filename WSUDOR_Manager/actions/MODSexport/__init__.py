@@ -25,7 +25,7 @@ MODSexport = Blueprint('MODSexport', __name__, template_folder='templates', stat
 @MODSexport.route('/MODSexport')
 @utilities.objects_needed
 @login_required
-@roles.auth(['metadata'])
+@roles.auth(['admin','metadata'])
 def index():
 	
 	return render_template("MODSexport_index.html")
@@ -34,7 +34,7 @@ def index():
 @MODSexport.route('/MODSexport/export')
 @utilities.objects_needed
 @login_required
-@roles.auth(['metadata'])
+@roles.auth(['admin','metadata'])
 def MODSexport_export():
 
 	# get username
@@ -140,7 +140,7 @@ def MODSexport_export():
 # IMPORT
 @MODSexport.route('/MODSexport/import_form')
 @login_required
-@roles.auth(['metadata'])
+@roles.auth(['admin','metadata'])
 def MODSexport_import():
 
 	# receive <mods:modsCollection>, parse, update associated MODS records
@@ -149,8 +149,6 @@ def MODSexport_import():
 
 
 @celery.task(name="MODSimport_factory")
-@login_required
-@roles.auth(['metadata'])
 def MODSimport_factory(job_package):
 
 	print "FIRING MODSimport_factory"
@@ -220,8 +218,7 @@ def MODSimport_factory(job_package):
 	print "Finished firing MODS import workers"
 
 
-@login_required
-@roles.auth(['metadata'])
+@roles.auth(['admin','metadata'], is_celery=True)
 def MODSimport_worker(job_package):	
 	'''
 	Receive job_package, which contains PID, update MODS

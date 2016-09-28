@@ -20,7 +20,6 @@ fuzzywuzzy==0.2
 ipython
 lockfile==0.10.2
 mysolr==0.8.2
-piffle
 ply
 pydub==0.9.5
 python-ldap==2.4.13

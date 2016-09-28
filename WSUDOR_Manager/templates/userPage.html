@@ -2,49 +2,112 @@
 <!-- User Page -->
 
 <div class="row">
-	<div class="col-md-8">
-		<h2>Welcome to Ouroboros, {{user.displayName}}!</h2>
-		<p>Ouroboros is the primary internal, graphical managemenet tool for the Wayne State University Digital Object Repository (WSUDOR), which supports the Digital Collections, and other initiatives.</p>
-		<p>If Ouroboros seems a bit rough around the edges, that's because it is!  This graphical interface was designed as an internal application, and had evolved through a handful of iterations.  It has stretched and warped to accomodate new digital object types, platform stakeholders, and demands of security and access.  Which is all to say, thanks for your patience and pardon the mess.</p>
-		<p>Below, you will find roughly organized links for system information and tasks:</p>
+
+	<!-- left part of page -->
+	<div class="col-md-9">
+
+		<div class="row">
+			<div class="col-md-12">
+				<h3>Welcome to Ouroboros, {{user.displayName}}!</h3>
+
+				<p>Ouroboros is the primary internal, graphical managemenet tool for the Wayne State University Digital Object Repository (WSUDOR), which supports the Digital Collections, and other initiatives.  This graphical interface was designed as an internal application, and had evolved through a handful of iterations.  It has stretched and warped to accomodate new digital object types, platform stakeholders, and demands of security and access.  Which is all to say, thanks for your patience and pardon the mess.</p>
+				<p>Below, you will find roughly organized links for system information and tasks</p>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-md-12">
+
+				<div class="col-md-6">
+
+					<h3>Find, Select, and Preview Objects</h3>
+					<p>Currently selected objects: <strong>{{user.selected_objects_count}}</strong></p>
+					<ul>		
+						<li><a href="/{{APP_PREFIX}}/PIDSolr">Find Objects</a></li>
+						<li><a href="/{{APP_PREFIX}}/userWorkspace">Select Objects</a></li>
+						<li><a href="/{{APP_PREFIX}}/objPreview/0">Preivew Selected Objects</a></li>
+					</ul>
+
+					<h3>Object Management</h3>
+					<ul>
+						<li><a href="/{{APP_PREFIX}}/tasks/objectState">Change Object State</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/editRELS">RDF / RELS-EXT Modeling</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/createObjectIndex">Generate / Update Object Collection(s) Index</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/exportObject">Export Object as BagIt archive</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/sendObject">Send Object to Remote Repository</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/purgeObject">Purge Objects</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/iiifManifest">IIIF Manifest Management</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/checkJP2">Check JP2 Integrity</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/checksum">Checksum Objects</a></li>
+						<li><a href="/{{APP_PREFIX}}/genericMethod">Run Generic WSUDOR Object Method</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/addDS">Add Datastream</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/editDSXMLAdv">XPath & Regex XML editing</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/editDSMime/0">Edit DS Mime/Type</span></a></li>		
+						<li><a href="/{{APP_PREFIX}}/tasks/purgeDS">Purge Datastream</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/MODSexport">MODS Batch Export / Import</a></li>	
+						<li><a href="/{{APP_PREFIX}}/tasks/editDSRegex">Regex "Find and Replace" for MODS</a></li>		
+						<li><a href="/{{APP_PREFIX}}/tasks/DCfromMODS">Derive DC from MODS</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">Ingest Workspace</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/bagIngest">Bag Ingest (with option to push to remote repository)</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/createObj">Create Generic Object</a></li>
+						<li><a href="/{{APP_PREFIX}}/tasks/createLearningObj">Create Learning Object</a></li>
+					</ul>
+
+				</div>	
+
+				<div class="col-md-6">
+
+					<h3>Server and Ouroboros Management</h3>
+					<ul>		
+						<li><a href="/{{APP_PREFIX}}/tasks/manageOAI">Manage OAI-PMH output and DPLA settings</a></li>
+
+						<li><a href="/{{APP_PREFIX}}/tasks/updateSolr/select">Update / Index Solr</a></li>
+						<li><a href="/{{APP_PREFIX}}/imgServerCacheClear">Clear imageServer Cache</a></li>
+						<li><a href="/{{APP_PREFIX}}/clearSymLinks">Clear symLinks from fedDataSpy()</a></li>
+						<li><a href="/{{APP_PREFIX}}/clearExportBagItArchives">Clear exported, web accessible BagIt objects</a></li>
+						<li><a href="/{{APP_PREFIX}}/collectionsOverview">Collections Overview</a></li>	
+						<li><a href="/{{APP_PREFIX}}/users/create">Create User Account</a></li>	
+						<li><a href="/{{APP_PREFIX}}/users/view">View Users</a></li>
+					</ul>
+					
+					<h3>Jobs</h3>
+					<ul>
+						<li><a href="/{{APP_PREFIX}}/userJobs">Currently Running Jobs</a></li>
+						<li><a href="/{{APP_PREFIX}}/userAllJobs">All Jobs</a></li>
+						<li><a href="/{{APP_PREFIX}}/flushPIDLock">Release all Objects from "PID Lock"</a></li>
+						<li><a href="/{{APP_PREFIX}}/flushCeleryTasks">Flush Jobs (clears Celery tasks in Redis DB)</a></li>
+					</ul>
+
+				</div>
+
+			</div>
+		</div>
 	</div>
+
+	<!-- user specific roles -->
+
+	<div class="col-md-3">
+		<h3>User roles</h3>
+		{% if 'admin' in user.role %}
+			<div class="col-md-12" style="background-color:rgb(255,211,211); padding: 10px 20px 10px 20px; border-radius:10px; margin-top:5px; margin-bottom:5px; margin-right:10px;">
+				<p><span style="font-size:1.5em; font-weight:bold;">Admin</span> - With great power, comes great responsibility.</p>
+			</div>
+		{% endif %}
+			{% if 'metadata' in user.role %}
+			<div class="col-md-12" style="background-color:rgb(254,255,211); padding: 10px 20px 10px 20px; border-radius:10px; margin-top:5px; margin-bottom:5px; margin-right:10px;">
+				<p><span style="font-size:1.5em; font-weight:bold;">Metadata</span> - This user role is granted access to routes and tasks that create, edit, index, and preview metadata for digital objects. This includes some parts of managing OAI-PMH and DPLA feeds.</p>
+			</div>
+		{% endif %}
+		{% if 'view' in user.role %}
+			<div class="col-md-12" style="background-color:rgb(211,255,211); padding: 10px 20px 10px 20px; border-radius:10px; margin-top:5px; margin-bottom:5px; margin-right:10px;">
+				<p><span style="font-size:1.5em; font-weight:bold;">View</span> - This user role allows for finding, selecting, and looking at information about objects, and some limited server monitoring.  This role is very limited!  Don't be surprised if most links do not work.</p>
+			</div>
+		{% endif %}
+	</div>
+
 </div>
 
-<div class="row">
-	<div class="col-md-12">
-		<ul>		
-			<li><h3>Object Selection & Workspace</h3></li>
-			<p>Currently selected objects: <strong>{{user.selected_objects_count}}</strong></p>
-			<ul>		
-				<li><a href="/{{APP_PREFIX}}/PIDSolr">Find Objects</a></li>
-				<li><a href="/{{APP_PREFIX}}/userWorkspace">Select Objects</a></li>
-				<li><a href="/{{APP_PREFIX}}/selObjsOverview">Selected Objects Overview</a></li>
-			</ul>
 
-			<li><h3>Tasks</h3></li>
-			<ul>		
-				<li><a href="/{{APP_PREFIX}}/contentModels">Content Types</a></li>
-				<li><a href="/{{APP_PREFIX}}/objectManagement">Object Management</a></li>
-				<li><a href="/{{APP_PREFIX}}/datastreamManagement">Datastream Management</a></li>
-				<li><a href="/{{APP_PREFIX}}/MODSedit">MODS Management</a></li>
-				<li><a href="/{{APP_PREFIX}}/tasks/editRELS">RDF / RELS-EXT Modeling</a></li>		
-				<!-- <li><a href="/tasks/checksum" style="color:orange;">Checksum Objects</a></li> -->
-				<li><a href="/{{APP_PREFIX}}/tasks/manageOAI">Manage OAI Feed</a></li>
-				<li><a href="/{{APP_PREFIX}}/WSUDORManagement">WSUDOR Management</a></li>
-				<li><a href="/{{APP_PREFIX}}/genericMethod">Run Generic WSUDOR Object Method</a></li>
-			</ul>	
-			
-			<li><h3>Jobs</h3></li>
-			<ul>
-				<li><a href="/{{APP_PREFIX}}/userJobs">Currently Running Jobs</a></li>
-				<li><a href="/{{APP_PREFIX}}/userAllJobs">All Jobs</a></li>
-				<li><a href="/{{APP_PREFIX}}/flushPIDLock">Release all Objects from "PID Lock"</a></li>
-				<li><a href="/{{APP_PREFIX}}/flushCeleryTasks">Flush Jobs (clears Celery tasks in Redis DB)</a></li>
-			</ul>
-
-		</ul>
-	</div>
-</div>
 
 
 {% include 'footer.html' %}

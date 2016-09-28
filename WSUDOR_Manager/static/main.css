@@ -15,7 +15,7 @@ ul.nav {
 ul.nav li {
 	display:inline;
 	padding-right:5px;
-	border-right: 2px solid #ccc;
+	/*border-right: 2px solid #ccc;*/
 }
 
 .nav li:last-child { 

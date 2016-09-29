@@ -527,7 +527,7 @@ def createUser():
 		db.session.add(user)
 		db.session.commit()
 		flash('User successfully registered')
-		return redirect(url_for('index'))
+		return redirect(url_for('users_view'))
 
 	elif request.method == 'GET': 
 		return render_template('createUser.html')
@@ -541,6 +541,45 @@ def users_view():
 
 	users = models.User.query.all()
 	return render_template('usersView.html', APP_PREFIX=localConfig.APP_PREFIX, users=users)
+
+
+# view all users
+@app.route('/user/<username>/edit', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin'])
+def editUser(username):
+
+	if request.method == 'POST':
+		print "editing user: %s" % (username)
+		
+		# get user
+		user = models.User.get(username)
+		
+		# get form data
+		roles = request.form.getlist('role')
+		
+		# update model		
+		user.role = ','.join(roles)
+		user.displayName = request.form['displayName']
+		db.session.commit()
+		flash('User successfully edited')
+		return redirect(url_for('users_view'))
+
+	else:
+		user = models.User.get(username)
+		return render_template('editUser.html', APP_PREFIX=localConfig.APP_PREFIX, user=user)
+
+
+# view all users
+@app.route('/user/<username>/delete', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin'])
+def deleteUser(username):
+
+	# delete user
+	models.User.query.filter_by(username=username).delete()
+	db.session.commit()
+	return redirect(url_for('users_view'))
 
 
 # current user WSUDOR credentials

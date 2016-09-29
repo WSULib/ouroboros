@@ -1,0 +1,57 @@
+{% include 'header.html' %}
+
+<div class="row">
+  <div class="col-md-6">
+    <h1>Edit User : {{user.username}}</h1>
+    <p>Using the form below, you can update Display Name and roles for a user, or delete the user entirely.  Note: the username cannot be changed, as these are linked to Access IDs.</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+
+    <form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/user/{{user.username}}/edit" enctype="multipart/form-data">
+      <div class="col-md-4">        
+
+        <!-- username -->
+        <div class="form-group">
+          <label class="control-label">Username (cannot be changed):</label>
+          <input class="form-control" type="text" name="username" value="{{user.username}}" readonly="readonly">
+        </div>  
+
+        <!-- displayName -->
+        <div class="form-group">
+          <label class="control-label">Display Name:</label>
+          <input class="form-control" type="text" name="displayName" value="{{user.displayName}}">
+        </div>     
+
+        <div class="form-group">
+          <div class="checkbox">
+            <label><input type="checkbox" {% if 'admin' in user.role %}checked{% endif %} name="role" value="admin">administrator</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" {% if 'metadata' in user.role %}checked{% endif %} name="role" value="metadata">metadata</label>
+          </div>
+          <div class="checkbox">
+            <label><input type="checkbox" {% if 'view' in user.role %}checked{% endif %} name="role" value="view">view</label>
+          </div>
+        </div>
+
+        <div class="form-group">          
+          <button class="btn btn-warning" type="submit">Update User</button>
+        </div>
+
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-4">
+    <p>Exercise caution here: deleting a user account -- <strong>including your own!</strong> -- will prevent logging in until another administrator recreates that account.</p>
+    <a href="/{{APP_PREFIX}}/user/{{user.username}}/delete"><button class="btn btn-danger" type="submit">Delete User</button></a>
+  </div>
+</div>
+
+{% include 'footer.html' %}

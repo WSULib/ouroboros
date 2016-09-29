@@ -27,7 +27,7 @@
           <td>{{user.displayName}}</td>
           <td>{{user.role}}</td>
           <td>{% if user.clientHash %}<span style="color:green;">True</span>{% else %}<span style="color:red;">False</span>{% endif %}</td>
-          <td><a href="">edit</a> / <a href="">delete</a></td>
+          <td><a href="/{{APP_PREFIX}}/user/{{user.username}}/edit">edit</a></td>
         </tr>
       {% endfor %}
     </table>

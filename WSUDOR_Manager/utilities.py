@@ -122,17 +122,14 @@ def delDuplicateElements(XML):
 def objects_needed(f):
 	@wraps(f)
 	def decorated_function(*args, **kwargs):        
-
-			try:
-					username = session['username']
-			except:
-					return render_template("noObjs.html")
-
-			userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)  
-
-			if userSelectedPIDs.count() == 0 and 'job_type' in kwargs and kwargs['job_type'] == 'obj_loop':         
-					return render_template("noObjs.html")       
-			return f(*args, **kwargs)       
+		try:
+			username = session['username']
+		except:
+			return render_template("noObjs.html")
+		userSelectedPIDs = models.user_pids.query.filter_by(username=username, status=True)
+		if userSelectedPIDs.count() == 0:
+			return render_template("noObjs.html")       
+		return f(*args, **kwargs)       
 	return decorated_function
 
 

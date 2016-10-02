@@ -219,6 +219,24 @@
 
 	</div>
 
+	<!-- ingest bags -->
+	<div class="col-md-6">
+		<div class="well">
+
+			<h4>Enrich Archivematica Metadata</h4>
+			<p>When ingesting materials via Archivematica, little-to-no metadata comes along with the files.  We rely on "enriching" the metadata with a custom METS file that augments the metadata already present.</p>
+			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/createJob_factory" enctype="multipart/form-data">
+
+				<div class="form-group" id="upload">
+					<label class="control-label">Upload METS file:</label>
+					<input id="upload" name="upload" type="file"></input><br>
+				</div>
+
+			</form> 
+
+		</div>
+	</div>
+
 	<!-- check bag and ingest status -->
 	<div class="col-md-6">
 		<div class="well">

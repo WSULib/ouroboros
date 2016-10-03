@@ -1274,8 +1274,6 @@ class WSUDOR_GenObject(object):
 		5) recreate <mods:extension>/<orig_filename> if lost
 		'''
 
-		ipytho
-
 		# METS root
 		METS_root = METS_handle.getroot()
 

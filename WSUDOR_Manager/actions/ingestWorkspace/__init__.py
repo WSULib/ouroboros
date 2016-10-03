@@ -57,7 +57,7 @@ ingestWorkspace = Blueprint('ingestWorkspace', __name__, template_folder='templa
 
 # main view
 @ingestWorkspace.route('/ingestWorkspace', methods=['POST', 'GET'])
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def index():
 
 	# get all jobs
@@ -68,7 +68,7 @@ def index():
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>', methods=['POST', 'GET'])
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def job(job_id):
 
 	# get handle
@@ -122,7 +122,7 @@ def job(job_id):
 
 # job delete
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>/delete', methods=['POST', 'GET'])
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def deleteJob(job_id):
 
 	'''
@@ -151,7 +151,7 @@ def deleteJob(job_id):
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/createJob', methods=['POST', 'GET'])
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def createJob():
 
 	# render
@@ -161,7 +161,7 @@ def createJob():
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/objectDetails/<job_id>/<ingest_id>', methods=['POST', 'GET'])
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def objectDetails(job_id,ingest_id):
 
 	'''
@@ -185,13 +185,24 @@ def objectDetails(job_id,ingest_id):
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>/viewMETS', methods=['POST', 'GET'])
-@roles.auth(['admin'])
+@roles.auth(['admin','metadata'])
 def viewMETS(job_id):
 
 	# get handle
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
 
 	return Response(j.ingest_metadata, mimetype='text/xml')
+
+
+# job edit / view
+@ingestWorkspace.route('/ingestWorkspace/job/<job_id>/viewEnrichedMETS', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def viewEnrichedMETS(job_id):
+
+	# get handle
+	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+
+	return Response(j.enrichment_metadata, mimetype='text/xml')
 
 
 
@@ -310,10 +321,6 @@ def createJob_factory(job_package):
 		sm = METSroot.find('{http://www.loc.gov/METS/}structMap')
 		collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
 		
-		# get sm_parts through, ignoring comments (OLD)
-		# sm_parts = [element for element in collection_level_div.getchildren() if type(element) != etree._Comment]
-		# sm_index = { element.attrib['DMDID']:element for element in sm_parts }
-
 		# new - xpath, all DMDID sections regardless of level
 		'''
 		Will need to understand parent moving forward (might be good to include anyhow)
@@ -922,6 +929,183 @@ def checkObjectStatus_worker(job_package):
 	return job_package
 
 	
+#################################################################################
+# Enrich Archivematica Metadata
+#################################################################################
+
+@celery.task(name="aem_factory")
+def aem_factory(job_package):
+
+	print "FIRING aem_factory"
+
+	# get form data
+	form_data = job_package['form_data']
+	print form_data
+
+	# set new task_name, for the worker below
+	job_package['custom_task_name'] = 'aem_worker'
+	job_package['job_id'] = form_data['job_id']
+
+	'''
+	Will not iterate over db rows, because part of AEM is to create new rows for intellectual objects.
+
+	Instead, iterate over METS file.
+
+	If type == intellectual,
+		create new row for that object
+	else,
+		update MODS if matching on filename
+	'''
+
+	# get enrichment metadata
+	with open(job_package['upload_data'],'r') as fhand:
+		enrichment_metadata = fhand.read()
+	
+	# grab job
+	j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
+
+	# determine highest ingest_id
+	o = models.ingest_workspace_object.query.filter_by(job=j).order_by('ingest_id desc').first()
+	high_ingest_id = o.ingest_id
+
+	# add enrichment metadata
+	print "setting new enrichment metadata"
+	j.enrichment_metadata = enrichment_metadata
+	db.session.commit()
+
+	# for each section of METS, break into chunks
+	METSroot = etree.fromstring(enrichment_metadata)
+	ns = METSroot.nsmap
+	
+	# grab stucture map
+	sm = METSroot.find('{http://www.loc.gov/METS/}structMap')
+	collection_level_div = sm.find('{http://www.loc.gov/METS/}div')
+	
+	# new - xpath, all DMDID sections regardless of level
+	sm_parts = collection_level_div.xpath('.//mets:div[@DMDID]', namespaces=ns)
+	sm_index = { element.attrib['DMDID']:element for element in sm_parts }
+
+	# get dmd parts
+	dmd_parts = [element for element in METSroot.findall('{http://www.loc.gov/METS/}dmdSec')]
+	dmd_index = { element.attrib['ID']:element for element in dmd_parts }
+
+	# update job info (need length from above)
+	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
+
+	# insert into MySQL as ingest_workspace_object rows
+	step = 1
+	
+	# iterate through and add components
+	for i, sm_part in enumerate(sm_parts):
+		
+		print "Enriching struct_map div %s / %s" % (step, len(sm_parts))
+		job_package['step'] = step
+
+		################################################################################################
+		# include Struct Map and DMD section in job package
+
+		# get DMDID
+		job_package['DMDID'] = sm_part.attrib['DMDID']
+
+		# set ingest_id as highest ingest_id + step
+		job_package['ingest_id'] = high_ingest_id + step
+
+		# attempt to get label
+		if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
+			job_package['object_title'] = sm_part.attrib['LABEL']
+		else:
+			print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
+			job_package['object_title'] = sm_part.attrib['DMDID']
+
+		# store structMap section as python dictionary
+		sm_dict = xmltodict.parse(etree.tostring(sm_part))
+		job_package['struct_map'] = json.dumps(sm_dict)
+
+		# Use DMD index
+		dmd_handle = dmd_index[sm_part.attrib['DMDID']]
+		# grab MODS record and write to temp file		
+		MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
+		fhand = open(temp_filename,'w')
+		fhand.write(etree.tostring(MODS_elem))
+		fhand.close()		
+		job_package['MODS_temp_filename'] = temp_filename
+		################################################################################################
+
+		# fire task via custom_loop_taskWrapper			
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+		task_id = result.id
+
+		# Set handle in Redis
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED")
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		# bump step
+		step += 1
+
+
+
+@celery.task(name="aem_worker")
+@roles.auth(['admin'], is_celery=True)
+def aem_worker(job_package):
+
+	# DEBUG
+	print job_package
+
+	intellectual_objects = [
+		'series',
+		'collection'		
+	]
+
+	# get sm_part type
+	sm_part = json.loads(job_package['struct_map'])
+	sm_part_type = sm_part['mets:div']['@TYPE']
+
+	if sm_part_type in intellectual_objects:
+		print "creating new object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+
+		'''
+		Need to check for this intellectual object if already created.  If so, delete and continue
+		'''
+
+		# MODS file
+		if job_package['MODS_temp_filename']:
+			with open(job_package['MODS_temp_filename'], 'r') as fhand:
+				MODS = fhand.read()
+				os.remove(job_package['MODS_temp_filename'])
+		else:
+			MODS = None
+
+		# determine pid
+		if sm_part_type == 'collection':
+			id_prefix = 'collection'
+		else:
+			id_prefix = ''
+
+		# this may or may not be true - bag creation should update this...
+		derived_pid = 'wayne:%s%s' % (id_prefix,job_package['DMDID'])
+
+		# insert with SQLAlchemy Core
+		db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
+			'job_id': job_package['job_id'],	    
+			'object_type': "Intellectual",
+			'object_title': job_package['object_title'],
+			'DMDID': job_package['DMDID'],
+			'pid': derived_pid,
+			'ingest_id': job_package['ingest_id'],
+			'struct_map': job_package['struct_map'],
+			'MODS': MODS
+		}])
+
+		db.session.commit()
+
+
+	else:
+		print "updating MODS for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+
+
 
 
 #################################################################################

@@ -13,10 +13,10 @@
 				<li><strong>Created:</strong> {{j.created}}</li>
 				<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
 			</ul>
-			<h4><strong>Actions</strong></h4>
+			<h4><strong>Associated Metadata</strong></h4>
 			<ul>
-				<li style="margin-bottom:5px;"><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewMETS"><button class="btn btn-sm btn-success details">View METS</button></a></li>
-				<!-- <li style="margin-bottom:5px;"></li> -->
+				<li style="margin-bottom:5px;"><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewMETS"><button class="btn btn-sm btn-warning details">Ingest METS</button></a></li>
+				<li style="margin-bottom:5px;"><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewEnrichedMETS"><button class="btn btn-sm btn-warning details">Enrichment METS</button></a></li>
 			</ul>
 		</div>
 		<div class="col-md-8">
@@ -225,11 +225,15 @@
 
 			<h4>Enrich Archivematica Metadata</h4>
 			<p>When ingesting materials via Archivematica, little-to-no metadata comes along with the files.  We rely on "enriching" the metadata with a custom METS file that augments the metadata already present.</p>
-			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/createJob_factory" enctype="multipart/form-data">
+			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/aem_factory" enctype="multipart/form-data">
 
 				<div class="form-group" id="upload">
 					<label class="control-label">Upload METS file:</label>
 					<input id="upload" name="upload" type="file"></input><br>
+				</div>
+				<div class="form-group">
+					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
+					<input type="submit" class="btn btn-success" value="Enrich Metadata">
 				</div>
 
 			</form> 

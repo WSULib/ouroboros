@@ -187,6 +187,8 @@ class ingest_workspace_job(db.Model):
     bag_creation_class = db.Column(db.String(4096))
     # file index 
     file_index = db.Column(db.Text(4294967295))
+    # enrichment metadata for AEM
+    enrichment_metadata = db.Column(db.Text(4294967295))
 
     def __init__(self, name):       
         self.name = name    

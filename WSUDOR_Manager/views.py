@@ -614,7 +614,6 @@ def authfail():
 
 # confirmation page for objects, serializes relevant request objects as "job_package"
 @app.route("/fireTask/<job_type>/<task_name>", methods=['POST', 'GET'])
-@utilities.objects_needed
 def fireTask(job_type,task_name):
 
 	username = session['username']
@@ -671,7 +670,6 @@ def cancelTask(task_inputs_key):
 
 # fireTaskWorker is the factory that begins tasks from WSUDOR_Manager.actions
 @app.route("/fireTaskWorker/<task_name>/<task_inputs_key>", methods=['POST', 'GET'])
-@utilities.objects_needed
 def fireTaskWorker(task_name,task_inputs_key):
 
 	print "Starting task request..."

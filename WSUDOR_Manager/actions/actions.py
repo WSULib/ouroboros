@@ -87,7 +87,7 @@ from iiifManifest import iiifManifest, iiifManifestGenerate_worker
 app.register_blueprint(iiifManifest, url_prefix=tasks_URL_prefix)
 
 #ingestWorkspace
-from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback, checkObjectStatus_factory, checkObjectStatus_worker
+from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker, createBag_factory, createBag_worker, ingestBag_factory, ingestBag_callback, checkObjectStatus_factory, checkObjectStatus_worker, aem_factory, aem_worker
 app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
 
 #manageOAI

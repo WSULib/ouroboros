@@ -789,7 +789,6 @@ def ingestBag_factory(job_package):
 
 
 @celery.task(name="ingestBag_callback")
-@roles.auth(['admin'], is_celery=True)
 def ingestBag_callback(job_package):
 	
 	print "FIRING ingestBag_callback"	

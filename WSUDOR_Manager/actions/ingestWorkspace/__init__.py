@@ -946,17 +946,6 @@ def aem_factory(job_package):
 	job_package['custom_task_name'] = 'aem_worker'
 	job_package['job_id'] = form_data['job_id']
 
-	'''
-	Will not iterate over db rows, because part of AEM is to create new rows for intellectual objects.
-
-	Instead, iterate over METS file.
-
-	If type == intellectual,
-		create new row for that object
-	else,
-		update MODS if matching on filename
-	'''
-
 	# get enrichment metadata
 	with open(job_package['upload_data'],'r') as fhand:
 		enrichment_metadata = fhand.read()
@@ -974,7 +963,7 @@ def aem_factory(job_package):
 	db.session.commit()
 
 	# for each section of METS, break into chunks
-	METSroot = etree.fromstring(enrichment_metadata)
+	METSroot = etree.fromstring(j.enrichment_metadata.encode('utf-8'))
 	ns = METSroot.nsmap
 	
 	# grab stucture map
@@ -984,6 +973,9 @@ def aem_factory(job_package):
 	# new - xpath, all DMDID sections regardless of level
 	sm_parts = collection_level_div.xpath('.//mets:div[@DMDID]', namespaces=ns)
 	sm_index = { element.attrib['DMDID']:element for element in sm_parts }
+
+	# reinsert collection level div
+	sm_parts.insert(0,collection_level_div)
 
 	# get dmd parts
 	dmd_parts = [element for element in METSroot.findall('{http://www.loc.gov/METS/}dmdSec')]
@@ -1001,7 +993,6 @@ def aem_factory(job_package):
 		print "Enriching struct_map div %s / %s" % (step, len(sm_parts))
 		job_package['step'] = step
 
-		################################################################################################
 		# include Struct Map and DMD section in job package
 
 		# get DMDID
@@ -1009,6 +1000,10 @@ def aem_factory(job_package):
 
 		# set ingest_id as highest ingest_id + step
 		job_package['ingest_id'] = high_ingest_id + step
+
+		# set parent type and DMDID, to determine if hasParent relationship is needed		
+		sm_parent = sm_part.getparent()
+		job_package['sm_parent'] = dict(sm_parent.attrib)
 
 		# attempt to get label
 		if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
@@ -1030,7 +1025,6 @@ def aem_factory(job_package):
 		fhand.write(etree.tostring(MODS_elem))
 		fhand.close()		
 		job_package['MODS_temp_filename'] = temp_filename
-		################################################################################################
 
 		# fire task via custom_loop_taskWrapper			
 		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
@@ -1054,6 +1048,9 @@ def aem_worker(job_package):
 	# DEBUG
 	print job_package
 
+	# grab job
+	j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
+
 	intellectual_objects = [
 		'series',
 		'collection'		
@@ -1063,29 +1060,30 @@ def aem_worker(job_package):
 	sm_part = json.loads(job_package['struct_map'])
 	sm_part_type = sm_part['mets:div']['@TYPE']
 
+	# MODS file
+	if job_package['MODS_temp_filename']:
+		with open(job_package['MODS_temp_filename'], 'r') as fhand:
+			MODS = fhand.read()
+			os.remove(job_package['MODS_temp_filename'])
+	else:
+		MODS = None
+
+	# intellectual object
 	if sm_part_type in intellectual_objects:
 		print "creating new object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
 
-		'''
-		Need to check for this intellectual object if already created.  If so, delete and continue
-		'''
-
-		# MODS file
-		if job_package['MODS_temp_filename']:
-			with open(job_package['MODS_temp_filename'], 'r') as fhand:
-				MODS = fhand.read()
-				os.remove(job_package['MODS_temp_filename'])
-		else:
-			MODS = None
-
-		# determine pid
+		# check of Intellectual object already created, if so, delete
+		# derive pid
 		if sm_part_type == 'collection':
 			id_prefix = 'collection'
 		else:
 			id_prefix = ''
+		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+		o = models.ingest_workspace_object.query.filter_by(job=j,pid=derived_pid).first()
 
-		# this may or may not be true - bag creation should update this...
-		derived_pid = 'wayne:%s%s' % (id_prefix,job_package['DMDID'])
+		if o:
+			o._delete()
+			db.session.commit()
 
 		# insert with SQLAlchemy Core
 		db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
@@ -1099,11 +1097,54 @@ def aem_worker(job_package):
 			'MODS': MODS
 		}])
 
-		db.session.commit()
+		# check for intellectual parent objects
+		sm_parent = job_package['sm_parent']
+		if sm_parent != {} and sm_parent['TYPE'] in intellectual_objects:
+			# write parent
+			parent_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, sm_parent['DMDID'].split("aem_prefix_")[-1])
+			print "parent pid should be: %s" % parent_pid
+			obj_handle = fedora_handle.get_object(derived_pid)
+			obj_handle.add_relationship(
+				"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
+				"info:fedora/%s" % parent_pid
+			)
+			obj_handle.save()
 
 
+	# update file-like object
 	else:
-		print "updating MODS for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+		print "updating descriptive information for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+
+		# derive PID
+		# determine pid
+		if sm_part_type == 'collection':
+			id_prefix = 'collection'
+		else:
+			id_prefix = ''
+		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+		print "derived pid: %s" % derived_pid
+
+		# grab row
+		o = models.ingest_workspace_object.query.filter_by(job=j,pid=derived_pid).first()
+		print o.object_title, o.pid
+
+		o.MODS = MODS
+
+		# check for intellectual parent objects
+		sm_parent = job_package['sm_parent']
+		if sm_parent['TYPE'] in intellectual_objects:
+			# write parent
+			parent_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, sm_parent['DMDID'].split("aem_prefix_")[-1])
+			print "parent pid should be: %s" % parent_pid
+			obj_handle = fedora_handle.get_object(derived_pid)
+			obj_handle.add_relationship(
+				"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
+				"info:fedora/%s" % parent_pid
+			)
+			obj_handle.save()
+
+	# commit db
+	db.session.commit()
 
 
 

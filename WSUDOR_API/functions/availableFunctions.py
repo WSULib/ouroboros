@@ -93,15 +93,13 @@ def solrSearch(getParams):
 		# if 
 		if q_string.startswith('wayne:'):
 			q_string = q_string.replace(":","\:")
-		qd['q'] = q_string
+		qd['q'] = q_string		
 	else:		
 		qd['q'] = [""]
-
 
 	# FACETS	
 	if 'facets[]' in getParams:
 		qd['facet.field'] = [ facet for facet in getParams['facets[]'] ]
-
 
 	# FILTER QUERIES	
 	if 'fq[]' in getParams:
@@ -1394,16 +1392,18 @@ def objBitStreamTokens(getParams):
 
 	# if user is logged in and present in Ouroboros user table, return bitStream download tokens
 	user_auth = json.loads(user_auth)
-	print "#######################################################"
 	username = getParams['username'][0]
 	user_ouroboros = models.User.get(username)
-	print "#######################################################"
 	if user_auth['hashMatch'] and user_ouroboros:
 		print "generating bitStream token dictionary"
-		return json.dumps(BitStream.genAllTokens(getParams['PID'][0], BITSTREAM_KEY))
-
+		try:
+			return json.dumps(BitStream.genAllTokens(getParams['PID'][0], BITSTREAM_KEY))
+		except:
+			return json.dumps({
+						"status":False,
+						"msg":"an error was had generating tokens"	
+					})
 	else:
-
 		return json.dumps({
 			"status":False,
 			"msg":"user not authorized for bitStream tokenized URLs"	

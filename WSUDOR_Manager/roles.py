@@ -32,30 +32,30 @@ class auth(object):
 		"""
 		@wraps(f)
 		def wrapped_f(*args, **kwargs):
-			print "Authorized roles for this view:", self.task_roles
+			# print "Authorized roles for this view:", self.task_roles
 
 			# if celery context, grab user from job_package and query db
 			if self.is_celery:
 				username = args[0]['username']
-				print "celery task initiated by: %s" % username
+				# print "celery task initiated by: %s" % username
 				user = models.User.get(username)
 				self.user_roles = user.roles()
-				print "User roles:", self.user_roles
+				# print "User roles:", self.user_roles
 
 			# if request context, grab roles from g.user
 			if not self.is_celery:
 				self.user_roles = g.user.roles()
-				print "User roles:", self.user_roles
+				# print "User roles:", self.user_roles
 
 			# if admin, always auth
 			if 'admin' in self.user_roles:
-				print "user is admin, authorized"
+				# print "user is admin, authorized"
 				return f(*args, **kwargs)
 
 			# authorize
 			role_overlap = set(self.task_roles) & set(self.user_roles)
 			if len(role_overlap) > 0:
-				print "matched on", role_overlap
+				# print "matched on", role_overlap
 				return f(*args, **kwargs)
 			else:
 				print "did not find role overlap"

@@ -175,7 +175,10 @@ class SolrIndexerWorker(object):
 			return False
 
 		# re-derive Dublin Core metadata
-		obj_handle.DCfromMODS()
+		try:
+			obj_handle.DCfromMODS()
+		except:
+			print "could not re-derive DC from MODS"
 
 		# purge previous Solr doc content
 		obj_handle.SolrDoc.doc = helpers.BlankObject()

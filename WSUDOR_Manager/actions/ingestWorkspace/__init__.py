@@ -1046,7 +1046,7 @@ def aem_factory(job_package):
 def aem_worker(job_package):
 
 	# DEBUG
-	print job_package
+	# print job_package
 
 	# grab job
 	j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
@@ -1098,17 +1098,17 @@ def aem_worker(job_package):
 		}])
 
 		# check for intellectual parent objects
-		sm_parent = job_package['sm_parent']
-		if sm_parent != {} and sm_parent['TYPE'] in intellectual_objects:
-			# write parent
-			parent_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, sm_parent['DMDID'].split("aem_prefix_")[-1])
-			print "parent pid should be: %s" % parent_pid
-			obj_handle = fedora_handle.get_object(derived_pid)
-			obj_handle.add_relationship(
-				"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
-				"info:fedora/%s" % parent_pid
-			)
-			obj_handle.save()
+		# sm_parent = job_package['sm_parent']
+		# if sm_parent != {} and sm_parent['TYPE'] in intellectual_objects:
+		# 	# write parent
+		# 	parent_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, sm_parent['DMDID'].split("aem_prefix_")[-1])
+		# 	print "parent pid should be: %s" % parent_pid
+		# 	obj_handle = fedora_handle.get_object(derived_pid)
+		# 	obj_handle.add_relationship(
+		# 		"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
+		# 		"info:fedora/%s" % parent_pid
+		# 	)
+		# 	obj_handle.save()
 
 
 	# update file-like object
@@ -1128,20 +1128,24 @@ def aem_worker(job_package):
 		o = models.ingest_workspace_object.query.filter_by(job=j,pid=derived_pid).first()
 		print o.object_title, o.pid
 
+		# update title
+		o.object_title = job_package['object_title']
+
+		# update MODS
 		o.MODS = MODS
 
 		# check for intellectual parent objects
-		sm_parent = job_package['sm_parent']
-		if sm_parent['TYPE'] in intellectual_objects:
-			# write parent
-			parent_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, sm_parent['DMDID'].split("aem_prefix_")[-1])
-			print "parent pid should be: %s" % parent_pid
-			obj_handle = fedora_handle.get_object(derived_pid)
-			obj_handle.add_relationship(
-				"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
-				"info:fedora/%s" % parent_pid
-			)
-			obj_handle.save()
+		# sm_parent = job_package['sm_parent']
+		# if sm_parent['TYPE'] in intellectual_objects:
+		# 	# write parent
+		# 	parent_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, sm_parent['DMDID'].split("aem_prefix_")[-1])
+		# 	print "parent pid should be: %s" % parent_pid
+		# 	obj_handle = fedora_handle.get_object(derived_pid)
+		# 	obj_handle.add_relationship(
+		# 		"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
+		# 		"info:fedora/%s" % parent_pid
+		# 	)
+		# 	obj_handle.save()
 
 	# commit db
 	db.session.commit()

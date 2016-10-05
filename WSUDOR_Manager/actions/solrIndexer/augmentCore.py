@@ -34,7 +34,7 @@ def augmentCore(PID):
 				ebookText(PID)
 
 			# hierarchicalfiles
-			if str(obj) == "info:fedora/CM:HierarchicalFiles":			
+			if str(obj) == "info:fedora/CM:Document":			
 				print "Firing hierarchical augment"
 				hierarchicalDocuments(PID)
 
@@ -99,7 +99,6 @@ def hierarchicalDocuments(PID):
 	data_json = json.dumps(data)
 	r = requests.post(baseurl, data=data_json, headers=headers)
 	print r.text
-
 
 	# get all PDF's
 	pdf_ds_list = [ 

@@ -251,7 +251,7 @@ killasgroup=true'''
 
 	else:
 		# grab model
-		cw = models.CeleryWorker("celery", False)
+		cw = models.CeleryWorker("celery")
 
 	# start
 	if action == 'start':

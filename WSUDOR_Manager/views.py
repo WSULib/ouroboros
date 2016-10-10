@@ -1667,8 +1667,14 @@ def collectionsOverview():
 @roles.auth(['admin'])
 def genericMethod():
 
-
-	return render_template("genericMethod.html")
+	# iterate through content types
+	methods = set()	
+	for ct in dir(WSUDOR_ContentTypes):
+		if not ct.startswith("__"):
+			methods.update(dir(getattr(WSUDOR_ContentTypes,ct)))
+	methods_list = list(methods)
+	methods_list.sort()
+	return render_template("genericMethod.html", methods_list=methods_list)
 
 
 

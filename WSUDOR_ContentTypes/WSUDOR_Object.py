@@ -914,7 +914,6 @@ class WSUDOR_GenObject(object):
 			return False
 
 
-
 	def _checkJP2Orientation(self,ds):
 		print "Checking aspect ratio of JP2 with Loris"
 
@@ -941,9 +940,47 @@ class WSUDOR_GenObject(object):
 			return False
 
 
+	def _checkJP2OrientationAndSize(self, ds):
+		print "Checking aspect ratio and size of %s with Loris" % ds
+
+		# check jp2
+		print "checking jp2 dimensions..."
+		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
+		print ds_url
+		uf = urlopen(ds_url)
+		jp2_dimensions = self._from_jp2(uf)
+		print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
+
+		# check original
+		print "checking original dimensions..."
+		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
+		print ds_url
+		uf = urlopen(ds_url)
+		orig_dimensions = self._extract_with_pillow(uf)
+		print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
+
+		# check orientation
+		tests = True
+		if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
+			print "same orientation"
+			tests = True
+		else:
+			tests = False
+
+		# check size
+		if jp2_dimensions == orig_dimensions:
+			print "same size"
+			tests = True
+		else:
+			tests = False
+
+		# return tests
+		return tests
+
+
 
 	# regnerate derivative JP2s
-	def checkJP2(self, regenJP2_on_fail=False, tests=['all']):
+	def checkJP2(self, regenJP2_on_fail=True, tests=['all']):
 
 		'''
 		Function to check health and integrity of JP2s for object
@@ -965,7 +1002,7 @@ class WSUDOR_GenObject(object):
 
 			# check aspect ratio
 			if 'all' in tests or 'orientation' in tests:
-				checks.append( self._checkJP2Orientation(ds) )
+				checks.append( self._checkJP2OrientationAndSize(ds) )
 
 			print "Final checks:", checks
 

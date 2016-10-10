@@ -617,7 +617,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		for obj in sparql_response:
 			print "Indexing object: %s" % obj['virtobj']
-			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
+			index_url = "http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) 
+			print index_url
+			print requests.get(index_url).content
 
 		# generate TEI
 		TEI_result = self.generateTEI()

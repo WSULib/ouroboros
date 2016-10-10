@@ -1727,10 +1727,13 @@ def solrDoc(pid):
 
 # returns document as run through readux
 @app.route("/solrReaduxDoc/<pid>/<action>", methods=['POST', 'GET'])
-@roles.auth(['admin','metadata','view'])
+# @roles.auth(['admin','metadata','view'])
 def solrReaduxDoc(pid, action):
 
-	# this is occassionaly hanging...
+	'''
+	This is not currently working with roles, and does appear to hang sometimes.
+	'''
+
 	try:
 		r = requests.get('%s/indexdata/%s' % (localConfig.READUX_BASE_URL, pid)).json()
 	except:

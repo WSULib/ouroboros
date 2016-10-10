@@ -776,7 +776,7 @@ class WSUDOR_GenObject(object):
 
 
 	# regnerate derivative JP2s
-	def regenJP2(self, regenIIIFManifest=False, target_ds=None):
+	def regenJP2(self, regenIIIFManifest=False, target_ds=None, clear_cache=True):
 		'''
 		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
 		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
@@ -832,6 +832,10 @@ class WSUDOR_GenObject(object):
 			if regenIIIFManifest:
 				print "regenerating IIIF manifest"
 				self.genIIIFManifest()
+
+			if clear_cache:
+				print "clearing cache"
+				self.removeObjFromCache()
 
 			return True
 

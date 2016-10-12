@@ -499,6 +499,42 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		print solr_bookreader_handle.commit()
 
 
+	# method to regenerate full-text HTML
+	def regenFullHTML(self):
+
+		'''
+		Some books were created mis-ordered HTML pages for the HTML_FULL datastream.
+		This utility recreates HTML_FULL, leveraging self.html_concat
+		'''
+
+		# iterarte through pages
+		for page_num in self.pages_from_rels:
+			page = self.pages_from_rels[page_num]
+			print "working on %s" % page
+			html_handle = page.getDatastreamObject('HTML')
+			html_parsed = BeautifulSoup(html_handle.content)
+			print "HTML document parsed..."
+			#sets div with page_ID
+			self.html_concat = self.html_concat + '<div id="page_ID_%s" class="html_page">' % (page_num)
+			#Set in try / except block, as some HTML documents contain no elements within <body> tag
+			try:
+				for block in html_parsed.body:
+					self.html_concat = self.html_concat + unicode(block)
+			except:
+				print "<body> tag is empty, skipping. Adding page_ID anyway."
+
+			#closes page_ID / div
+			self.html_concat = self.html_concat + "</div>"
+
+		# HTML (based on concatenated HTML from self.html_concat)
+		print "Saving new, ordered HTML_FULL"
+		html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
+		html_full_handle.label = "Full HTML for item"
+		html_full_handle.content = self.html_concat.encode('utf-8')
+		html_full_handle.save()
+		return html_full_handle
+
+
 
 	#############################################################################
 	# associated Readux style virtual objects

@@ -1427,7 +1427,8 @@ def reportProb(getParams):
 
 	try:
 		PID = getParams['PID'][0]
-		problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs")
+		form_notes = getParams['notes'][0]
+		problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs",form_notes)
 		db.session.add(problemPID)
 		db.session.commit()
 		jsonString = '{"msg":"True"}'

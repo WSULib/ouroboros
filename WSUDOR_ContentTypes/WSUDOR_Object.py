@@ -1440,7 +1440,7 @@ class WSUDOR_GenObject(object):
 		'''
 
 		# Check if to see that doesn't have sensitive flag
-		s = list(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library/.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive'))
+		s = list(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive'))
 		if not s:
 			# else
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive","True")

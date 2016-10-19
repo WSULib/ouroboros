@@ -1,0 +1,19 @@
+{% include 'header.html' %}
+
+<style type="text/css">
+	.hidden_section{
+		display:none;
+	}
+</style>
+
+<div class="row">
+	<div class="col-md-6">
+		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Home</h2>
+		<ul>
+			<li><a href="/{{APP_PREFIX}}/tasks/learningObj/create/container">Create New Learning Object</a></li>
+		</ul>			
+	</div>
+</div>
+
+
+{% include 'footer.html' %}

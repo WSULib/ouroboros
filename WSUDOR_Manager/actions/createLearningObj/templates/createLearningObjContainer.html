@@ -8,14 +8,14 @@
 
 <div class="row">
 	<div class="col-md-6">
-		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Create Object</h2>
+		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Create Container</h2>
 		<p>Use the form below to create a learning object resource associated with a particular collection, and optionally, other objects.  This form will create a <strong>single</strong> object in the repository with whatever resources you upload along with it.  Different lesson plans should be broken up over multiple learning objects, but multiple resources can be uploaded (e.g. PDF and powerpoint, or supporting materials) for a single learning object.</p>
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-12">
-		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/createLearningObj/container" enctype="multipart/form-data">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/learningObj/create/container/worker" enctype="multipart/form-data">
 			<div class="col-md-6">				
 
 				<!-- Label -->
@@ -30,6 +30,13 @@
 					<label class="control-label">Description:</label>
 					<p>Describe the learning object in detail here.</p>
 					<textarea class="form-control" rows=5 name="description" placeholder="e.g. This lesson plan explores how salutations are used in the Nightingale collection.  It is comprised of a single lesson plan, in PDF and PowerPoint formats."></textarea>
+				</div>
+
+				<!-- Creator -->
+				<div class="form-group">
+					<label class="control-label">Creator / Author:</label>
+					<p>Creator of this learning object.</p>
+					<input class="form-control" type="text" name="creator" placeholder="e.g. Jane Doe">
 				</div>
 
 				<!-- Subjects -->

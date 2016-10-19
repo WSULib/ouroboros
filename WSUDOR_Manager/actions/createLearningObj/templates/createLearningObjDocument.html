@@ -8,14 +8,14 @@
 
 <div class="row">
 	<div class="col-md-6">
-		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Add Files</h2>
+		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Create Document</h2>
 		<h3>Currently working on: <a target="_blank" href="//{{APP_HOST}}/item/{{obj.ohandle.pid}}">{{obj.ohandle.label}}</a></h3>
 	</div>
 </div>
 
 <div class="row">
 	<div class="col-md-12">
-		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/createLearningObj/{{obj.pid}}/addFile" enctype="multipart/form-data">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/tasks/learningObj/container/{{obj.PID}}/create/document/worker" enctype="multipart/form-data">
 			<div class="col-md-6">				
 
 				<!-- Title -->
@@ -28,7 +28,7 @@
 				<!-- Label -->
 				<div class="form-group">
 					<label class="control-label">Filename:</label>
-					<p>Filename that will be used in the future for downloading this file.</p>
+					<p>Filename that will be used in the future for downloading this file.  <strong>Please note:</strong> the filename suffix (e.g. .pdf, .docx) will determine how this file is ingested and derivatives made.</p>
 					<input class="form-control" type="text" name="filename" placeholder="e.g. lesson_plan.pdf">
 				</div>
 
@@ -37,6 +37,13 @@
 					<label class="control-label">Description / Abstract:</label>
 					<p>Description of file that will become part of the parent Learning Object.</p>
 					<textarea class="form-control" rows=5 name="description" placeholder="e.g. Lesson plan in PDF format."></textarea>
+				</div>
+
+				<!-- Creator -->
+				<div class="form-group">
+					<label class="control-label">Creator / Author:</label>
+					<p>Creator of this learning object.</p>
+					<input class="form-control" type="text" name="creator" placeholder="e.g. Jane Doe">
 				</div>
 
 				<!-- Subjects -->

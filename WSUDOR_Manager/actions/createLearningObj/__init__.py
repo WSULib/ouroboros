@@ -27,10 +27,22 @@ from WSUDOR_Manager.models import ObjMeta
 createLearningObj = Blueprint('createLearningObj', __name__, template_folder='templates', static_folder="static")
 
 
-@createLearningObj.route('/createLearningObj', methods=['GET', 'POST'])
+@createLearningObj.route('/learningObj', methods=['GET', 'POST'])
 @login_required
 @roles.auth(['admin','metadata'])
 def index():	
+
+	# get current learning objects to preview
+	
+
+	# render
+	return render_template("learningObj.html")
+
+
+@createLearningObj.route('/learningObj/create/container', methods=['GET', 'POST'])
+@login_required
+@roles.auth(['admin','metadata'])
+def createContainer():	
 
 	# get collections
 	sparql_query = "select $collection_title $collection_uri from <#ri> where { $collection_uri <fedora-rels-ext:hasContentModel> <fedora:CM:Collection> . $collection_uri <http://purl.org/dc/elements/1.1/title> $collection_title . } ORDER BY ASC($collection_title)"
@@ -41,7 +53,7 @@ def index():
 
 
 
-@createLearningObj.route('/createLearningObj/container', methods=['GET', 'POST'])
+@createLearningObj.route('/learningObj/create/container/worker', methods=['GET', 'POST'])
 @login_required
 @roles.auth(['admin','metadata'])
 def createContainer_worker():
@@ -58,6 +70,7 @@ def createContainer_worker():
 		"identifier":unique_identifier,
 		"label":form_data['label'],
 		"description":form_data['description'],
+		"creator":form_data['creator'],
 		"date":form_data['date'],
 		"content_type":"WSUDOR_LearningObject", 
 		"policy":"info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted",
@@ -133,6 +146,12 @@ def createContainer_worker():
   </mods:titleInfo>
   <mods:abstract>%(description)s</mods:abstract>
   %(subject_string)s
+  <mods:name authority="local" type="person">
+	<mods:namePart>%(creator)s</mods:namePart>
+	<mods:role>
+	  <mods:roleTerm authority="marcrelator" type="text">creator</mods:roleTerm>
+	</mods:role>
+  </mods:name>
   <mods:originInfo>
   	<mods:dateIssued encoding="w3cdtf" keyDate="yes">%(date)s</mods:dateIssued>
   </mods:originInfo>
@@ -145,6 +164,7 @@ def createContainer_worker():
 	''' % {
 			'label':om_handle.label,
 			'description':om_handle.description,
+			'creator':om_handle.creator,
 			'date':om_handle.date,
 			'id':om_handle.id,
 			'identifier':om_handle.identifier,
@@ -183,12 +203,12 @@ def createContainer_worker():
 
 	# render
 	time.sleep(3)
-	return redirect('tasks/createLearningObj/%s' % pid)
+	return redirect('tasks/learningObj/container/%s' % pid)
 
 	
 
-@createLearningObj.route('/createLearningObj/<PID>', methods=['GET', 'POST'])
-@createLearningObj.route('/createLearningObj/<PID>/', methods=['GET', 'POST'])
+@createLearningObj.route('/learningObj/container/<PID>/create/document', methods=['GET', 'POST'])
+@createLearningObj.route('/learningObj/container/<PID>/create/document/', methods=['GET', 'POST'])
 @login_required
 @roles.auth(['admin','metadata'])
 def createDocument(PID):
@@ -204,7 +224,7 @@ def createDocument(PID):
 	
 
 
-@createLearningObj.route('/createLearningObj/<parent_PID>/addFile', methods=['GET', 'POST'])
+@createLearningObj.route('/learningObj/container/<PID>/create/document/worker', methods=['GET', 'POST'])
 @login_required
 @roles.auth(['admin','metadata'])
 def createDocument_worker(parent_PID):
@@ -224,6 +244,7 @@ def createDocument_worker(parent_PID):
 		"identifier":unique_identifier,
 		"label":form_data['label'],
 		"description":form_data['description'],
+		"creator":form_data['creator'],
 		"date":form_data['date'],
 		"content_type":"WSUDOR_%s" % form_data['CM'], 
 		"policy":"info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
@@ -281,6 +302,12 @@ def createDocument_worker(parent_PID):
   </mods:titleInfo>
   <mods:abstract>%(description)s</mods:abstract>
   %(subject_string)s
+  <mods:name authority="local" type="person">
+	<mods:namePart>%(creator)s</mods:namePart>
+	<mods:role>
+	  <mods:roleTerm authority="marcrelator" type="text">creator</mods:roleTerm>
+	</mods:role>
+  </mods:name>
   <mods:originInfo>
   	<mods:dateCreated>%(date)s</mods:dateCreated>
   </mods:originInfo>
@@ -293,6 +320,7 @@ def createDocument_worker(parent_PID):
 	''' % {
 			'label':om_handle.label,
 			'description':om_handle.description,
+			'creator':om_handle.creator,
 			'date':om_handle.date,
 			'id':om_handle.id,
 			'identifier':om_handle.identifier,
@@ -375,10 +403,10 @@ def createDocument_worker(parent_PID):
 
 	# render
 	time.sleep(3)
-	return redirect('tasks/createLearningObj/%s/preview' % parent_PID)
+	return redirect('tasks/learningObj/container/%s' % parent_PID)
 
 
-@createLearningObj.route('/createLearningObj/<PID>/preview', methods=['GET', 'POST'])
+@createLearningObj.route('/learningObj/container/<PID>', methods=['GET', 'POST'])
 @login_required
 @roles.auth(['admin','metadata'])
 def previewDocument(PID):

@@ -33,10 +33,14 @@ createLearningObj = Blueprint('createLearningObj', __name__, template_folder='te
 def index():	
 
 	# get current learning objects to preview
-	
+	los = fedora_handle.risearch.sparql_query('select $lo_title $lo_uri from <#ri> where { $lo_uri <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/learningObjectFor> $lo_target . $lo_uri <http://purl.org/dc/elements/1.1/title> $lo_title . } ORDER BY ASC($lo_title)')
+	los_set = set()
+	for lo in los:
+		los_set.add((lo['lo_title'], lo['lo_uri'].split("/")[-1]))
+	los = list(los_set)
 
 	# render
-	return render_template("learningObj.html")
+	return render_template("learningObj.html", los=los)
 
 
 @createLearningObj.route('/learningObj/create/container', methods=['GET', 'POST'])
@@ -142,7 +146,7 @@ def createContainer_worker():
 	raw_MODS = '''<?xml version="1.0" encoding="utf-8"?>
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
-    <mods:title>%(label)s</mods:title>
+	<mods:title>%(label)s</mods:title>
   </mods:titleInfo>
   <mods:abstract>%(description)s</mods:abstract>
   %(subject_string)s
@@ -153,11 +157,11 @@ def createContainer_worker():
 	</mods:role>
   </mods:name>
   <mods:originInfo>
-  	<mods:dateIssued encoding="w3cdtf" keyDate="yes">%(date)s</mods:dateIssued>
+	<mods:dateIssued encoding="w3cdtf" keyDate="yes">%(date)s</mods:dateIssued>
   </mods:originInfo>
   <mods:identifier type="local">%(identifier)s</mods:identifier>
   <mods:extension>
-    <PID>%(id)s</PID>
+	<PID>%(id)s</PID>
   </mods:extension>
   <mods:accessCondition type="useAndReproduction">%(rights)s</mods:accessCondition>
 </mods:mods>
@@ -224,7 +228,7 @@ def createDocument(PID):
 	
 
 
-@createLearningObj.route('/learningObj/container/<PID>/create/document/worker', methods=['GET', 'POST'])
+@createLearningObj.route('/learningObj/container/<parent_PID>/create/document/worker', methods=['GET', 'POST'])
 @login_required
 @roles.auth(['admin','metadata'])
 def createDocument_worker(parent_PID):
@@ -298,7 +302,7 @@ def createDocument_worker(parent_PID):
 	raw_MODS = '''<?xml version="1.0" encoding="utf-8"?>
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
-    <mods:title>%(label)s</mods:title>
+	<mods:title>%(label)s</mods:title>
   </mods:titleInfo>
   <mods:abstract>%(description)s</mods:abstract>
   %(subject_string)s
@@ -309,11 +313,11 @@ def createDocument_worker(parent_PID):
 	</mods:role>
   </mods:name>
   <mods:originInfo>
-  	<mods:dateCreated>%(date)s</mods:dateCreated>
+	<mods:dateCreated>%(date)s</mods:dateCreated>
   </mods:originInfo>
   <mods:identifier type="local">%(identifier)s</mods:identifier>
   <mods:extension>
-    <PID>%(id)s</PID>
+	<PID>%(id)s</PID>
   </mods:extension>
   <mods:accessCondition type="useAndReproduction">%(rights)s</mods:accessCondition>
 </mods:mods>

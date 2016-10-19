@@ -11,6 +11,13 @@
 		<h2><img src="{{ url_for('static',filename='img/lb.png')}}" height=60 /> Learning Object - Home</h2>
 		<ul>
 			<li><a href="/{{APP_PREFIX}}/tasks/learningObj/create/container">Create New Learning Object</a></li>
+			<li>Edit Learning Object
+				<ul>
+					{% for lo in los %}
+						<li><a href="/{{APP_PREFIX}}/tasks/learningObj/container/{{lo[1]}}">{{lo[0]}}</a></li>
+					{% endfor %}
+				</ul>
+			</li>
 		</ul>			
 	</div>
 </div>

@@ -10,6 +10,7 @@ from flask import render_template, request, session, redirect, make_response, Re
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
 from WSUDOR_API_main import WSUDOR_API_main
+from WSUDOR_Manager.helpers import gzipped
 
 
 # session data secret key
@@ -21,6 +22,7 @@ WSUDOR_API_app.secret_key = 'WSUDOR-WSUDOR_API'
 #########################################################################################################
 @WSUDOR_API_app.route("/%s/" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
 @WSUDOR_API_app.route("/%s" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@gzipped
 def index():		
 	
 	'''

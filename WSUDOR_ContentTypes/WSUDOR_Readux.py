@@ -162,9 +162,12 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		# label
 		self.label = wsudor_book.ohandle.label
 
-		# determine single parent collection 
+		# determine single parent collection
 		parent_collection = [ o for s,p,o in wsudor_book.ohandle.rels_ext.content if p == rdflib.term.URIRef(u'info:fedora/fedora-system:def/relations-external#isMemberOfCollection') and o != rdflib.term.URIRef(u'info:fedora/wayne:collectionWSUebooks') ]
-		parent_obj = fedora_handle.get_object(parent_collection[0])
+		if len(parent_collection) > 0:
+			parent_obj = fedora_handle.get_object(parent_collection[0])
+		else:
+			parent_obj = False
 
 		# Build RELS-EXT
 
@@ -176,11 +179,7 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/model#hasModel"),
 				"object": rdflib.term.URIRef("info:fedora/emory-control:ScannedBook-1.0")
-			},
-			{
-				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isMemberOfCollection"),
-				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualCollection" % (parent_obj.pid))
-			},
+			},			
 			{
 				"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#hasConstituent"),
 				"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualVolume" % (wsudor_book.pid))
@@ -198,6 +197,15 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 				"object": rdflib.term.URIRef("info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted")
 			}
 		]
+
+		# add parent relationship if present
+		if parent_obj:
+			object_relationships.append(
+				{
+					"predicate": rdflib.term.URIRef("info:fedora/fedora-system:def/relations-external#isMemberOfCollection"),
+					"object": rdflib.term.URIRef("info:fedora/%s_Readux_VirtualCollection" % (parent_obj.pid))
+				}
+		)
 
 		for r in object_relationships:
 			self.rels_ext.content.add((rdflib.term.URIRef('info:fedora/%s' % self.pid), r['predicate'], r['object']))

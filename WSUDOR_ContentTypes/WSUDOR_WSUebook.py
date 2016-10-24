@@ -265,7 +265,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				page_obj.ingest(self, page_num)
 
 			# iterate through anticipated missing pages and create missing page objects
-			for page_num in self.missing_pages_from_objMeta:			
+			for page_num in self.missing_pages_from_objMeta:
 				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
 				page_obj.ingestMissingPage(self, page_num)
 

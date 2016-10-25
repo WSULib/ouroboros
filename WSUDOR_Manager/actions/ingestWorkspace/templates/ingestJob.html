@@ -2,9 +2,23 @@
 
 <!-- metadata -->
 <div class="row">
+
 	<div class="col-md-12">
 		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a> : "{{j.name}}"</h1>
-		<div class="col-md-4">
+	</div>
+
+	<div class="col-md-12">
+		<!-- Nav tabs -->
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" class="active"><a href="#info" aria-controls="info" role="tab" data-toggle="tab">Info</a></li>
+			<li role="presentation"><a href="#filter" aria-controls="filter" role="tab" data-toggle="tab">Filter</a></li>
+		</ul>
+	</div>
+
+	<!-- tab content -->
+	<div class="col-md-12 tab-content">
+	
+		<div role="tabpanel" class="col-md-6 tab-pane fade in active" id="info">
 			<h4><strong>Information</strong></h4>
 			<ul>
 				<li><strong>Name:</strong> {{j.name}}</li>
@@ -13,13 +27,14 @@
 				<li><strong>Created:</strong> {{j.created}}</li>
 				<li><strong>Object Count:</strong> {{ j.objects.all()|length }}</li>
 			</ul>
-			<h4><strong>Associated Metadata</strong></h4>
+			<h4><strong>Associated METS files</strong></h4>
 			<ul>
 				<li style="margin-bottom:5px;"><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewMETS"><button class="btn btn-sm btn-warning details">Ingest METS</button></a></li>
 				<li style="margin-bottom:5px;"><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}/viewEnrichedMETS"><button class="btn btn-sm btn-warning details">Enrichment METS</button></a></li>
 			</ul>
 		</div>
-		<div class="col-md-8">
+
+		<div role="tabpanel" class="col-md-6 tab-pane fade" id="filter">
 			<h4><strong>Filter Rows</strong></h4>
 			<p>Note: these filters remove rows from view only, they will still be acted upon if included in ranges below.</p>
 			<form class="form" id="form" role="form" method="GET" action="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}" enctype="multipart/form-data">
@@ -52,9 +67,9 @@
 				</div>
 			</form>
 		</div>
-		<div class="col-md-4">
-					
-		</div>
+
+	</div>
+
 	</div>
 </div>
 
@@ -93,14 +108,17 @@
 
 <div class="row">
 
-	<!-- Nav tabs -->
-	  <ul class="nav nav-tabs" role="tablist">
-	    <li role="presentation" class="active"><a href="#make" aria-controls="make" role="tab" data-toggle="tab">Make Bags</a></li>
-	    <li role="presentation"><a href="#ingest" aria-controls="ingest" role="tab" data-toggle="tab">Ingest</a></li>
-	    <li role="presentation"><a href="#enrich" aria-controls="enrich" role="tab" data-toggle="tab">Enrich</a></li>
-	    <li role="presentation"><a href="#check" aria-controls="check" role="tab" data-toggle="tab">Check</a></li>
-	  </ul>
+	<div class="col-md-12">
+		<!-- Nav tabs -->
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" class="active"><a href="#make" aria-controls="make" role="tab" data-toggle="tab">Make Bags</a></li>
+			<li role="presentation"><a href="#ingest" aria-controls="ingest" role="tab" data-toggle="tab">Ingest</a></li>
+			<li role="presentation"><a href="#enrich" aria-controls="enrich" role="tab" data-toggle="tab">Enrich</a></li>
+			<li role="presentation"><a href="#check" aria-controls="check" role="tab" data-toggle="tab">Check</a></li>
+		</ul>
+	</div>
 
+	<!-- tab content -->
 	<div class="col-md-12 tab-content">
 
 		<!-- make bags -->

@@ -235,6 +235,7 @@ class ingest_workspace_object(db.Model):
     ingested = db.Column(db.String(255))
     repository = db.Column(db.String(255)) # eventually pull from localConfig.REPOSITORIES
     bag_validation_dict = db.Column(db.Text(4294967295))
+    aem_enriched = db.Column(db.String(255))
 
     # init with 'job' as ingest_workspace_job instance
     def __init__(self, job, object_title="Unknown", DMDID=None):        
@@ -242,10 +243,11 @@ class ingest_workspace_object(db.Model):
         self.object_title = object_title
         self.DMDID = DMDID
         self.ingested = False
-        self.repository = None      
+        self.repository = None
+        self.aem_enriched = False
 
     def __repr__(self):     
-        return '<ID: %s>' % (self.id)
+        return '<ID: %s, OBJECT TITLE: %s>' % (self.id,self.object_title)
 
     def serialize(self):
         return {
@@ -258,7 +260,8 @@ class ingest_workspace_object(db.Model):
             'DMDID':self.DMDID,
             'ingested':self.ingested,
             'repository':self.repository,
-            'struct_map':self.struct_map
+            'struct_map':self.struct_map,
+            'aem_enriched':self.aem_enriched
         }
 
     def _delete(self):

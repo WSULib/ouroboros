@@ -256,6 +256,7 @@ def jobjson(job_id):
 	columns.append(ColumnDT('bag_validation_dict', filter=bag_validation))
 	columns.append(ColumnDT('objMeta', filter=exists))
 	columns.append(ColumnDT('ingested', filter=existsReturnValue))
+	columns.append(ColumnDT('aem_enriched', filter=boolean))
 	columns.append(ColumnDT('repository'))
 
 	# build query
@@ -679,10 +680,20 @@ def createBag_worker(job_package):
 		MODS_handle = False
 		print "could not load MODS as etree element"
 
+	# attempt to pre-load METS with metsrw
+	try:
+		temp_filename = '/tmp/Ouroboros/%s.xml' % uuid.uuid4()
+		with open(temp_filename, 'w') as fhand:
+			fhand.write(o.job.ingest_metadata.encode('utf-8'))
+		o.metsrw_parsed = metsrw.METSDocument.fromfile(temp_filename)
+		os.remove(temp_filename)
+	except:
+		print "could not pre-parse METS file with metsrw"
+
 	# if not purging bags, and previous bag_path already found, skip
 	if purge_bags == False and o.bag_path != None:
 		print "skipping bag creation for %s / %s, already exists" % (o.object_title,o.DMDID)
-		bag_result = False
+		bag_result = False	
 
 	# else, create bags (either overwriting or creating new)
 	else:
@@ -1045,8 +1056,15 @@ def aem_factory(job_package):
 @roles.auth(['admin'], is_celery=True)
 def aem_worker(job_package):
 
+	'''
+	Needs to create intellectual hasParent relationships
+		- 
+	'''
+
 	# DEBUG
-	# print job_package
+	print "###############################################################"
+	print "This represents the intellectual parent as provided by AEM METS: %s" % job_package['sm_parent']
+	print "###############################################################"
 
 	# grab job
 	j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
@@ -1095,9 +1113,9 @@ def aem_worker(job_package):
 			'pid': derived_pid,
 			'ingest_id': job_package['ingest_id'],
 			'struct_map': job_package['struct_map'],
-			'MODS': MODS
+			'MODS': MODS,
+			'aem_enriched': True
 		}])
-
 
 	# update file-like object
 	else:
@@ -1110,16 +1128,33 @@ def aem_worker(job_package):
 		else:
 			id_prefix = ''
 		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+
+		# temp shim, remove '_pdf'
+		derived_pid = derived_pid.replace("_pdf","")
+		derived_pid = derived_pid.replace("_PDF","")
+
 		print "derived pid: %s" % derived_pid
 
 		# grab row
 		o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
 
-		# update title
-		o.object_title = job_package['object_title']
+		if o:
 
-		# update MODS
-		o.MODS = MODS
+			# update title
+			o.object_title = job_package['object_title']
+
+			# update DMDID
+			o.DMDID = job_package['DMDID']
+
+			# update MODS
+			o.MODS = MODS
+
+			# enriched
+			o.aem_enriched = True
+
+		else:
+
+			print "couldn't find matching PID row in database for %s" % derived_pid
 
 	# commit db
 	db.session.commit()

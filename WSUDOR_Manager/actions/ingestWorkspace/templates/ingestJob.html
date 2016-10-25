@@ -3,7 +3,7 @@
 <!-- metadata -->
 <div class="row">
 	<div class="col-md-12">
-		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a> : Job "{{j.name}}"</h1>
+		<h1><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace">WSUDOR Ingest Workspace</a> : "{{j.name}}"</h1>
 		<div class="col-md-4">
 			<h4><strong>Information</strong></h4>
 			<ul>
@@ -92,206 +92,216 @@
 
 <div class="row">
 
-	<!-- make bags -->
-	<div class="col-md-6">
+	<!-- Nav tabs -->
+	  <ul class="nav nav-tabs" role="tablist">
+	    <li role="presentation" class="active"><a href="#make" aria-controls="make" role="tab" data-toggle="tab">Make Bags</a></li>
+	    <li role="presentation"><a href="#ingest" aria-controls="ingest" role="tab" data-toggle="tab">Ingest</a></li>
+	    <li role="presentation"><a href="#enrich" aria-controls="enrich" role="tab" data-toggle="tab">Enrich</a></li>
+	    <li role="presentation"><a href="#check" aria-controls="check" role="tab" data-toggle="tab">Check</a></li>
+	  </ul>
+
+	<div class="col-md-12 tab-content">
+
 		<!-- make bags -->
-		<div class="well">
-			<h4>Make Bags</h4>	
+		<div role="tabpanel" class="col-md-6 tab-pane fade in active" id="make">
+			<!-- make bags -->
+			<div class="panel-body">
+				<h4>Make Bags</h4>	
 
-			<p>Using a particular bag creation class, here you can create bags that will be stored on disk for ingest at a later time.  When bags are created, they will leverage symlinks to the binary files, keeping them small.  As such, they will also be compressed as a tarball and inserted in MySQL as a tarball binary.</p>
-			<p>These bags will be created under <code>/tmp/Ouroboros/ingest_job/[INGEST_JOB_NAME]</code> on disk.  This path will be stored in MySQL to be used for ingest.</p>
-			
-			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/createBag_factory" enctype="multipart/form-data">
-				<div class="form-group">
-					<label class="control-label" for="bag_creation_class">Bag Ingest Class:</label> 
-					<select class="form-control input-sm" id="bag_creation_class" name="bag_creation_class">
-						{% for bag_class in ouroboros_assets.bag_classes.__all__ %}
-							<option value="{{bag_class}}">{{bag_class}}</option>
-						{% endfor %}
-					</select> 
-				</div>				
-				<div class="form-group">
-					<label class="control-label">Path of Binaries:</label>
-					<p>If value entered for this field, job will create an index of the files, and store this in the DB.  If left blank, it will skip this step and used what was previously stored.</p>
-					<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection"></input>
-				</div>
-				<div class="form-group">
-					<div class="checkbox">
-						<label>
-							<input name="binary_index" type="checkbox"> Index file location? (<span style="color:red;">Warning:</span> Though it can speed up large collections where exact location of file is unknown, it can be very slow if the file location is large.)
-						</label>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label">Object ID's to create bags:</label>
-					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
-				</div>				
-				<div class="form-group">
-					<div class="checkbox">
-						<label>
-							<input name="purge_bags" type="checkbox"> Purge bags if already created?
-						</label>
-					</div>
-				</div>
-				<div class="form-group">
-					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
-					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
-					<input type="submit" class="btn btn-success" value="Make Bags">
-				</div>
-			</form>
-		</div>
-
-	</div>
-
-	<!-- ingest bags -->
-	<div class="col-md-6">
-		<div class="well">
-			<h4>Ingest Bags</h4>	
-			<p>Using the form below, ingest select rows to a repository of your choice.</p>
-			
-			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/ingestBag_factory" enctype="multipart/form-data">
-				<div class="form-group">
-					<label class="control-label">Object ID's to ingest:</label>
-					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
-				</div>
-				<div class="form-group">
-					<div class="checkbox">
-						<label>
-							<input name="overwrite" type="checkbox"> Purge if already exists?
-						</label>
-					</div>
-				</div>
-				<div class="form-group">
-					<div class="checkbox">
-						<label>
-							<input name="push_remote" type="checkbox" onclick="$('.push_remote').fadeToggle();"> Push to remote repository?
-						</label>
-					</div>
-				</div>
-				<div style="display:none;" class="push_remote">
+				<p>Using a particular bag creation class, here you can create bags that will be stored on disk for ingest at a later time.  When bags are created, they will leverage symlinks to the binary files, keeping them small.  As such, they will also be compressed as a tarball and inserted in MySQL as a tarball binary.</p>
+				<p>These bags will be created under <code>/tmp/Ouroboros/ingest_job/[INGEST_JOB_NAME]</code> on disk.  This path will be stored in MySQL to be used for ingest.</p>
+				
+				<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/createBag_factory" enctype="multipart/form-data">
 					<div class="form-group">
-						<label class="control-label" for="dest_repo">Destination Repository:</label> 
-						<select class="form-control input-sm" id="dest_repo" name="dest_repo">
-							<option value="local">local</option>
-							{% for repo in localConfig.REMOTE_REPOSITORIES %}
-								<option value="{{repo}}">{{repo}}</option>
+						<label class="control-label" for="bag_creation_class">Bag Ingest Class:</label> 
+						<select class="form-control input-sm" id="bag_creation_class" name="bag_creation_class">
+							{% for bag_class in ouroboros_assets.bag_classes.__all__ %}
+								<option value="{{bag_class}}">{{bag_class}}</option>
 							{% endfor %}
 						</select> 
-					</div>		
+					</div>				
 					<div class="form-group">
-						<label class="control-label" for="export_context">Export Context:</label> 
-						<select class="form-control input-sm" id="export_context" name="export_context">
-							<option value="archive">archive</option>
-							<option value="migrate">migrate</option>
-						</select> 
+						<label class="control-label">Path of Binaries:</label>
+						<p>If value entered for this field, job will create an index of the files, and store this in the DB.  If left blank, it will skip this step and used what was previously stored.</p>
+						<input class="form-control" type="text" name="files_location" placeholder="e.g. /mnt/foobar_computer/digital_collections/collection"></input>
 					</div>
 					<div class="form-group">
 						<div class="checkbox">
 							<label>
-								<input name="omit_checksums" type="checkbox"> Omit checksums on send (can be helpful if objects contain Redirect (R) or External (E) datastreams)?
+								<input name="binary_index" type="checkbox"> Index file location? (<span style="color:red;">Warning:</span> Though it can speed up large collections where exact location of file is unknown, it can be very slow if the file location is large.)
 							</label>
 						</div>
 					</div>
 					<div class="form-group">
-						<div class="checkbox">
-							<label>
-								<input name="overwrite" type="checkbox"> Purge and recreate in destination repository if already present?
-							</label>
-						</div>
-					</div>			
+						<label class="control-label">Object ID's to create bags:</label>
+						<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
+					</div>				
 					<div class="form-group">
 						<div class="checkbox">
 							<label>
-								<input name="refresh_remote" type="checkbox"> Refresh / Index object in remote repository?
+								<input name="purge_bags" type="checkbox"> Purge bags if already created?
 							</label>
 						</div>
 					</div>
-				</div>
-				<div class="form-group">
-					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
-					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
-					<input class="form-control" type="hidden" name="origin" value="ingestWorkspace"></input>
-					<input type="submit" class="btn btn-success" value="Ingest Bags">
-				</div>
-			</form>
-			
+					<div class="form-group">
+						<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
+						<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
+						<input type="submit" class="btn btn-success" value="Make Bags">
+					</div>
+				</form>
+			</div>
 		</div>
 
-	</div>
-
-	<!-- ingest bags -->
-	<div class="col-md-6">
-		<div class="well">
-
-			<h4>Enrich Archivematica Metadata</h4>
-			<p>When ingesting materials via Archivematica, little-to-no metadata comes along with the files.  We rely on "enriching" the metadata with a custom METS file that augments the metadata already present.</p>
-			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/aem_factory" enctype="multipart/form-data">
-
-				<div class="form-group" id="upload">
-					<label class="control-label">Upload METS file:</label>
-					<input id="upload" name="upload" type="file"></input><br>
-				</div>
-				<div class="form-group">
-					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
-					<input type="submit" class="btn btn-success" value="Enrich Metadata">
-				</div>
-
-			</form> 
-
-		</div>
-	</div>
-
-	<!-- check bag and ingest status -->
-	<div class="col-md-6">
-		<div class="well">
-			<h4>(Re)Check Object Statuses</h4>	
-			<p>Here you can recheck the status of bags and/or the ingest status of objects in repositories.</p>
-			
-			<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/checkObjectStatus_factory" enctype="multipart/form-data">
+		<!-- ingest bags -->
+		<div role="tabpanel" class="col-md-6 tab-pane fade" id="ingest">
+			<div class="panel-body">
+				<h4>Ingest Bags</h4>	
+				<p>Using the form below, ingest select rows to a repository of your choice.</p>
 				
-				<div class="form-group">
-					<label class="control-label">Object ID's to (re)check statuses:</label>
-					<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
-				</div>
-
-				<div class="form-group">
-					<div class="checkbox">
-						<label>
-							<input name="check_bag_path" type="checkbox"> Check bag path?
-						</label>
-					</div>
-				</div>
-
-				<div class="form-group">
-					<div class="checkbox">
-						<label>
-							<input name="check_repo" type="checkbox" onclick="$('.check_remote').fadeToggle();"> Check object status in repository?
-						</label>
-					</div>
-				</div>
-
-				<div style="display:none;" class="check_remote">
+				<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/ingestBag_factory" enctype="multipart/form-data">
 					<div class="form-group">
-						<label class="control-label" for="dest_repo">Target Repository:</label> 
-						<select class="form-control input-sm" id="dest_repo" name="dest_repo">
-							<option value="local">local</option>
-							{% for repo in localConfig.REMOTE_REPOSITORIES %}
-								<option value="{{repo}}">{{repo}}</option>
-							{% endfor %}
-						</select> 
+						<label class="control-label">Object ID's to ingest:</label>
+						<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
 					</div>
-				</div>
+					<div class="form-group">
+						<div class="checkbox">
+							<label>
+								<input name="overwrite" type="checkbox"> Purge if already exists?
+							</label>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="checkbox">
+							<label>
+								<input name="push_remote" type="checkbox" onclick="$('.push_remote').fadeToggle();"> Push to remote repository?
+							</label>
+						</div>
+					</div>
+					<div style="display:none;" class="push_remote">
+						<div class="form-group">
+							<label class="control-label" for="dest_repo">Destination Repository:</label> 
+							<select class="form-control input-sm" id="dest_repo" name="dest_repo">
+								<option value="local">local</option>
+								{% for repo in localConfig.REMOTE_REPOSITORIES %}
+									<option value="{{repo}}">{{repo}}</option>
+								{% endfor %}
+							</select> 
+						</div>		
+						<div class="form-group">
+							<label class="control-label" for="export_context">Export Context:</label> 
+							<select class="form-control input-sm" id="export_context" name="export_context">
+								<option value="archive">archive</option>
+								<option value="migrate">migrate</option>
+							</select> 
+						</div>
+						<div class="form-group">
+							<div class="checkbox">
+								<label>
+									<input name="omit_checksums" type="checkbox"> Omit checksums on send (can be helpful if objects contain Redirect (R) or External (E) datastreams)?
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="checkbox">
+								<label>
+									<input name="overwrite" type="checkbox"> Purge and recreate in destination repository if already present?
+								</label>
+							</div>
+						</div>			
+						<div class="form-group">
+							<div class="checkbox">
+								<label>
+									<input name="refresh_remote" type="checkbox"> Refresh / Index object in remote repository?
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
+						<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
+						<input class="form-control" type="hidden" name="origin" value="ingestWorkspace"></input>
+						<input type="submit" class="btn btn-success" value="Ingest Bags">
+					</div>
+				</form>
 				
-				<div class="form-group">
-					<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
-					<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
-					<input type="submit" class="btn btn-success" value="Ingest Bags">
-				</div>
-			</form>
-			
+			</div>
+		</div>
+
+		<!-- enrich rows -->
+		<div role="tabpanel" class="col-md-6 tab-pane fade" id="enrich">
+			<div class="panel-body">
+
+				<h4>Enrich Archivematica Metadata</h4>
+				<p>When ingesting materials via Archivematica, little-to-no metadata comes along with the files.  We rely on "enriching" the metadata with a custom METS file that augments the metadata already present.</p>
+				<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/aem_factory" enctype="multipart/form-data">
+
+					<div class="form-group" id="upload">
+						<label class="control-label">Upload METS file:</label>
+						<input id="upload" name="upload" type="file"></input><br>
+					</div>
+					<div class="form-group">
+						<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
+						<input type="submit" class="btn btn-success" value="Enrich Metadata">
+					</div>
+
+				</form> 
+
+			</div>
+		</div>
+
+		<!-- check bag and ingest status -->
+		<div role="tabpanel" class="col-md-6 tab-pane fade" id="check">
+			<div class="panel-body">
+				<h4>(Re)Check Object Statuses</h4>	
+				<p>Here you can recheck the status of bags and/or the ingest status of objects in repositories.</p>
+				
+				<form class="form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/checkObjectStatus_factory" enctype="multipart/form-data">
+					
+					<div class="form-group">
+						<label class="control-label">Object ID's to (re)check statuses:</label>
+						<input class="form-control" type="text" name="object_id_range" placeholder="e.g. 1-100,150-200 (think printing pages)"></input>
+					</div>
+
+					<div class="form-group">
+						<div class="checkbox">
+							<label>
+								<input name="check_bag_path" type="checkbox"> Check bag path?
+							</label>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<div class="checkbox">
+							<label>
+								<input name="check_repo" type="checkbox" onclick="$('.check_remote').fadeToggle();"> Check object status in repository?
+							</label>
+						</div>
+					</div>
+
+					<div style="display:none;" class="check_remote">
+						<div class="form-group">
+							<label class="control-label" for="dest_repo">Target Repository:</label> 
+							<select class="form-control input-sm" id="dest_repo" name="dest_repo">
+								<option value="local">local</option>
+								{% for repo in localConfig.REMOTE_REPOSITORIES %}
+									<option value="{{repo}}">{{repo}}</option>
+								{% endfor %}
+							</select> 
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<input class="form-control" type="hidden" name="job_id" value="{{j.id}}"></input>
+						<input class="form-control" type="hidden" name="job_name" value="{{j.name}}"></input>
+						<input type="submit" class="btn btn-success" value="Ingest Bags">
+					</div>
+				</form>
+				
+			</div>
 		</div>
 
 	</div>
+
 </div>
 
 

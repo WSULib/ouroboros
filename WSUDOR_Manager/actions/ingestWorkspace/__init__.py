@@ -1086,6 +1086,7 @@ def aem_worker(job_package):
 			db.session.commit()
 
 		# insert with SQLAlchemy Core
+		print "inserting into DB"
 		db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
 			'job_id': job_package['job_id'],	    
 			'object_type': "Intellectual",

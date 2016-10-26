@@ -228,6 +228,9 @@ class ingest_workspace_object(db.Model):
     # derived metadata
     object_title = db.Column(db.String(4096))
     DMDID = db.Column(db.String(4096))
+    AMDID = db.Column(db.String(4096))
+    file_id = db.Column(db.String(255))
+    ASpaceID = db.Column(db.String(255))
     struct_map = db.Column(db.Text(4294967295))
     pid = db.Column(db.String(255))
     # flags and status
@@ -242,6 +245,9 @@ class ingest_workspace_object(db.Model):
         self.job = job
         self.object_title = object_title
         self.DMDID = DMDID
+        self.AMDID = None
+        self.file_id = None
+        self.ASpaceID = None
         self.ingested = False
         self.repository = None
         self.aem_enriched = False
@@ -258,6 +264,9 @@ class ingest_workspace_object(db.Model):
             'objMeta':self.objMeta,
             'object_title':self.object_title,
             'DMDID':self.DMDID,
+            'AMDID':self.AMDID,
+            'file_id':self.file_id,
+            'ASpaceID':self.ASpaceID,
             'ingested':self.ingested,
             'repository':self.repository,
             'struct_map':self.struct_map,

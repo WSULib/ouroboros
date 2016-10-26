@@ -35,10 +35,15 @@
 		</div>
 
 		<div role="tabpanel" class="col-md-6 tab-pane fade" id="filter">
-			<h4><strong>Filter Rows</strong></h4>
-			<p>Note: these filters remove rows from view only, they will still be acted upon if included in ranges below.</p>
+			
+
+			<div class="col-md-12">
+				<h4><strong>Filter Rows</strong></h4>
+				<p>Note: these filters remove rows from view only, they will still be acted upon if included in ranges below.</p>
+			</div>
+			
 			<form class="form" id="form" role="form" method="GET" action="/{{APP_PREFIX}}/tasks/ingestWorkspace/job/{{j.id}}" enctype="multipart/form-data">
-				<div class="col-md-7">
+				<div class="col-md-5">
 					<div class="form-group">
 						<label class="control-label">Row Range:</label>					
 						<input class="form-control" type="text" name="row_range" placeholder="Range of rows to include. e.g. 42-244 (#-#, no spaces)"></input>
@@ -48,7 +53,7 @@
 						<input class="form-control" type="text" name="ingested" placeholder="String of  remote repositories (e.g. 'local' or 'new_prod'), or 'None' for not ingested "></input>
 					</div>
 				</div>
-				<div class="col-md-5">	
+				<div class="col-md-3">	
 					<div class="form-group">
 						<div class="radio">
 							<label>
@@ -60,12 +65,25 @@
 								<input name="bag_path" type="radio" value="False"> See rows <em>without</em> bags
 							</label>
 						</div>
-					</div>			
+						<div class="radio">
+							<label>
+								<input name="aem_enriched" type="radio" value="True"> See AEM enriched rows
+							</label>
+						</div>
+						<div class="radio">
+							<label>
+								<input name="aem_enriched" type="radio" value="False"> See <em>non</em> AEM enriched rows
+							</label>
+						</div>
+					</div>	
+				</div>				
+				<div class="col-md-12">		
 					<div class="form-group">
 						<input type="submit" class="btn btn-success" value="Filter">
 					</div>
 				</div>
 			</form>
+
 		</div>
 
 	</div>
@@ -80,7 +98,7 @@
 	<div class="col-md-12">
 
 		<!-- insert table here -->
-		<table id="object_table" class="display" cellspacing="0" width="100%">
+		<table id="object_table" class="display" cellspacing="0" width="100%" style="font-size:100%;">
             <thead>
                 <tr>            
                     <th>ingest_id</th>
@@ -88,6 +106,9 @@
                     <th>pid</th>
                     <th>object_type</th>
                     <th>DMDID</th>
+                    <th>AMDID</th>
+                    <th>file_id</th>
+                    <th>ASpaceID</th>
                     <th>struct_map</th>
                     <th>MODS</th>
                     <th>bag_path</th>

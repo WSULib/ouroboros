@@ -111,6 +111,14 @@ def job(job_id):
 	else:
 		utilities.sessionVarClean(session,'bag_path')
 
+	# aem enriched
+	if 'aem_enriched' in request.args and request.args['aem_enriched'] == "True":
+		session['aem_enriched'] = True
+	if 'aem_enriched' in request.args and request.args['aem_enriched'] == "False":
+		session['aem_enriched'] = False
+	else:
+		utilities.sessionVarClean(session,'aem_enriched')
+
 	# SET SESSIONS VARS
 	print "filtered rows stored in Redis"
 	current_row_set = currentRowsSet(job_id,session)
@@ -205,6 +213,25 @@ def viewEnrichedMETS(job_id):
 	return Response(j.enrichment_metadata, mimetype='text/xml')
 
 
+# object row delete
+@ingestWorkspace.route('/ingestWorkspace/object/delete/<job_id>/<ingest_id>', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def deleteObject(job_id,ingest_id):
+
+
+	# clean job
+	print "removing object"
+	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+	o = models.ingest_workspace_object.query.filter_by(job=j, ingest_id=ingest_id).first()
+	o._delete()
+	db.session.commit()
+
+	# remove working directory
+	print "removing ingest_jobs directory"
+	os.system('rm -r /home/ouroboros/ingest_jobs/ingest_job_%s' % job_id)
+
+	return redirect('/%s/tasks/ingestWorkspace/job/%s' % (localConfig.APP_PREFIX, job_id))
+
 
 #################################################################################
 # Datatables Endpoint
@@ -249,7 +276,10 @@ def jobjson(job_id):
 	columns.append(ColumnDT('object_title'))
 	columns.append(ColumnDT('pid'))
 	columns.append(ColumnDT('object_type'))
-	columns.append(ColumnDT('DMDID'))	
+	columns.append(ColumnDT('DMDID'))
+	columns.append(ColumnDT('AMDID'))
+	columns.append(ColumnDT('file_id'))
+	columns.append(ColumnDT('ASpaceID'))	
 	columns.append(ColumnDT('struct_map', filter=exists))
 	columns.append(ColumnDT('MODS', filter=exists))
 	columns.append(ColumnDT('bag_path'))
@@ -392,6 +422,9 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 			# get DMDID
 			job_package['DMDID'] = sm_part.attrib['DMDID']
 
+			# set empty AMDID and file_id
+			job_package['AMDID'], job_package['file_id'] = [None, None]
+
 			# attempt to get label
 			if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
 				job_package['object_title'] = sm_part.attrib['LABEL']
@@ -451,7 +484,6 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 	# parse Archivematica METS
 	# mets = metsrw.METSDocument.fromstring(ingest_metadata)
 	mets = metsrw_handle
-	# print mets.all_files()
 
 	# grab stucture map
 	sm = mets.tree.find('{http://www.loc.gov/METS/}structMap')
@@ -482,6 +514,14 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		# get DMDID
 		job_package['DMDID'] = None
 		job_package['object_title'] = fs.label
+
+		# set AMDID and file_id
+		try:
+			print "amdSec ids:", fs.admids
+			job_package['AMDID'] = fs.admids[0]
+		except:
+			job_package['AMDID'] = None
+		job_package['file_id'] = fs.file_id()
 		
 		print "StructMap part ID: %s" % job_package['DMDID']
 
@@ -551,6 +591,8 @@ def createJob_worker(job_package):
 		'object_type': job_package['object_type'],
 		'object_title': job_package['object_title'],
 		'DMDID': job_package['DMDID'],
+		'AMDID': job_package['AMDID'],
+		'file_id': job_package['file_id'],
 		'pid': derived_pid,
 		'ingest_id': job_package['ingest_id'],
 		'struct_map': job_package['struct_map'],
@@ -951,7 +993,6 @@ def aem_factory(job_package):
 
 	# get form data
 	form_data = job_package['form_data']
-	print form_data
 
 	# set new task_name, for the worker below
 	job_package['custom_task_name'] = 'aem_worker'
@@ -1056,15 +1097,8 @@ def aem_factory(job_package):
 @roles.auth(['admin'], is_celery=True)
 def aem_worker(job_package):
 
-	'''
-	Needs to create intellectual hasParent relationships
-		- 
-	'''
-
 	# DEBUG
-	print "###############################################################"
 	print "This represents the intellectual parent as provided by AEM METS: %s" % job_package['sm_parent']
-	print "###############################################################"
 
 	# grab job
 	j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
@@ -1086,6 +1120,18 @@ def aem_worker(job_package):
 	else:
 		MODS = None
 
+	# attempt to read dmdSec for ASpaceID
+	if MODS:
+		mods_handle = etree.fromstring(MODS)
+		ns = mods_handle.nsmap		
+		ASpaceID_elem = mods_handle.find('{http://www.loc.gov/mods/v3}extension/ASpaceID')
+		if ASpaceID_elem is not None:
+			ASpaceID = ASpaceID_elem.text
+		else:
+			ASpaceID = None
+	else:
+		ASpaceID = None
+
 	# intellectual object
 	if sm_part_type in intellectual_objects:
 		print "creating new object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
@@ -1097,6 +1143,9 @@ def aem_worker(job_package):
 		else:
 			id_prefix = ''
 		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+		'''
+		mets:dmdSec IDs cannot start with an integer, hence the 'aem_prefix" from above
+		'''
 		o = models.ingest_workspace_object.query.filter_by(job=j,pid=derived_pid).first()
 
 		if o:
@@ -1110,6 +1159,7 @@ def aem_worker(job_package):
 			'object_type': "Intellectual",
 			'object_title': job_package['object_title'],
 			'DMDID': job_package['DMDID'],
+			'ASpaceID': ASpaceID,
 			'pid': derived_pid,
 			'ingest_id': job_package['ingest_id'],
 			'struct_map': job_package['struct_map'],
@@ -1119,7 +1169,7 @@ def aem_worker(job_package):
 
 	# update file-like object
 	else:
-		print "updating descriptive information for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+		print "updating descriptive information for %s / %s" % (job_package['DMDID'], job_package['object_title'])
 
 		# derive PID
 		# determine pid
@@ -1129,9 +1179,12 @@ def aem_worker(job_package):
 			id_prefix = ''
 		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
 
-		# temp shim, remove '_pdf'
-		derived_pid = derived_pid.replace("_pdf","")
-		derived_pid = derived_pid.replace("_PDF","")
+		# temporary shim, strip perceived file extension from derived PID
+		file_extension_suffixes = [
+			'_pdf','_PDF','_docx','_DOCX'	
+		]
+		for suffix in file_extension_suffixes:
+			derived_pid = derived_pid.replace(suffix,'')
 
 		print "derived pid: %s" % derived_pid
 
@@ -1146,6 +1199,9 @@ def aem_worker(job_package):
 			# update DMDID
 			o.DMDID = job_package['DMDID']
 
+			# update ASpaceID
+			o.ASpaceID = ASpaceID
+
 			# update MODS
 			o.MODS = MODS
 
@@ -1158,7 +1214,6 @@ def aem_worker(job_package):
 
 	# commit db
 	db.session.commit()
-
 
 
 
@@ -1192,6 +1247,14 @@ def rowQueryBuild(job_id, session):
 			query = query.filter(or_(models.ingest_workspace_object.bag_path != None, models.ingest_workspace_object.bag_path != "0" ))
 		if not session['bag_path']:
 			query = query.filter(or_(models.ingest_workspace_object.bag_path == None, models.ingest_workspace_object.bag_path == "0" ))
+
+	# aem enriched
+	if "aem_enriched" in session:
+		print "adding aem enriched filter"
+		if session['aem_enriched']:
+			query = query.filter(or_(models.ingest_workspace_object.aem_enriched != None, models.ingest_workspace_object.aem_enriched != "0" ))
+		if not session['aem_enriched']:
+			query = query.filter(or_(models.ingest_workspace_object.aem_enriched == None, models.ingest_workspace_object.aem_enriched == "0" ))
 
 	# return query object
 	return query

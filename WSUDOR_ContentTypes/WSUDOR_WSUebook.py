@@ -564,6 +564,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 						ocr_list[1:1] = page_ocr
 						# pop from dictionary
 						del pages_from_rels[page_num]
+					if len(pages_from_rels) == 0:
+						break
 				else:
 					print "time elapsed %s" % str(time.time()-stime)
 					time.sleep(5)

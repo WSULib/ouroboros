@@ -149,7 +149,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 					objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
 					content_type = objmeta['content_type']
 
-		print "Our content type is:",content_type
+		# print "Our content type is:",content_type
 
 	except Exception,e:
 		print traceback.format_exc()

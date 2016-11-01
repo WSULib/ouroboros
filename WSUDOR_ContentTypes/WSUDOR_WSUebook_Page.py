@@ -303,7 +303,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			fhand.close()
 
 
-
 	def processALTOXML(self, ds):
 		print "Processing ALTO XML"
 		file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
@@ -314,10 +313,104 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		generic_handle.save()
 		
 
+	def sendAbbyyFiles(self):
+		'''
+		1) Send image to /tmp/abbyy/incoming/[PID]/IMAGE_[PAGE_NUM].[MIMETYPE]
+		2) Wait for return?
+		'''
 
-	'''
-	Consider methods / attributes for JP2, THUMBNAIL, ETC.
-	'''
+		print "sending image file to abbyy for %s" % self.pid
+
+		# open image handle
+		image_handle = self.ohandle.getDatastreamObject('IMAGE')
+		image_filename = '%s/%s%s' % (localConfig.ABBYY_INCOMING, self.pid.replace(":","_"), utilities.mimetypes.guess_extension(image_handle.mimetype))
+		print image_filename
+
+		# write to file
+		with open(image_filename, 'w') as fd:
+			fd.write(image_handle.content)
+
+
+	def checkAbbyyFiles(self):
+
+		stime = time.time()
+
+		# open image handle
+		image_handle = self.ohandle.getDatastreamObject('IMAGE')
+
+		# generate list of files to watch for (per the "ouroboros" workflow output in abbyy)
+		abbyy_output = [			
+			self.pid.replace(":","_") + ".htm",
+			self.pid.replace(":","_") + ".pdf",
+			self.pid.replace(":","_") + ".txt",
+			self.pid.replace(":","_") + ".xml",
+		]
+
+		# loop through and wait for files
+		if set(abbyy_output).issubset(os.listdir(localConfig.ABBYY_OUTPUT)):
+			print "OCR complete for %s" % self.pid
+			return abbyy_output
+		else:
+			return False
+
+
+	def updateAbbyyFiles(self, cleanup=True):
+
+		'''update datastreams with abbyy output'''
+
+		print "updating ABYYY files for %s" % self.pid
+
+		# prep filenames
+		abbyy_output = {			
+			'HTML':localConfig.ABBYY_OUTPUT + "/" + self.pid.replace(":","_") + ".htm",
+			'PDF':localConfig.ABBYY_OUTPUT + "/" + self.pid.replace(":","_") + ".pdf",
+			'TXT':localConfig.ABBYY_OUTPUT + "/" + self.pid.replace(":","_") + ".txt",
+			'ALTOXML':localConfig.ABBYY_OUTPUT + "/" + self.pid.replace(":","_") + ".xml",
+		}
+
+		# HTML
+		with open(abbyy_output['HTML'],'r') as fd:
+			if 'HTML' in self.ohandle.ds_list:
+				print "updating HTML"
+				ds_handle = self.ohandle.getDatastreamObject('HTML')
+				ds_handle.content = fd.read()
+				ds_handle.save()
+			else:
+				print "creating HTML datastream"
+				ds_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "HTML", "HTML", mimetype="text/html", control_group='M')
+				ds_handle.label = "HTML"
+				ds_handle.content = fd.read()
+				ds_handle.save()
+		
+		# TXT
+		print "skipping txt for now..."
+		
+		# ALTOXML
+		with open(abbyy_output['ALTOXML'],'r') as fd:
+			if 'ALTOXML' in self.ohandle.ds_list:
+				print "updating ALTOXML"
+				ds_handle = self.ohandle.getDatastreamObject('ALTOXML')
+				ds_handle.content = fd.read()
+				ds_handle.save()
+			else:
+				print "creating ALTOXML datastream"
+				ds_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "ALTOXML", "ALTOXML", mimetype="text/xml", control_group='M')
+				ds_handle.label = "ALTOXML"
+				ds_handle.content = fd.read()
+				ds_handle.save()
+		
+		# PDF
+		'''
+		Will require updating full-text PDF
+		'''
+		print "skipping pdf for now..."
+
+
+		# cleanup
+		if cleanup:
+			for k in abbyy_output:
+				os.remove(abbyy_output[k])
+
 
 
 # helpers

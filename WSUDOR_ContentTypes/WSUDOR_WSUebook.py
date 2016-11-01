@@ -535,6 +535,50 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return html_full_handle
 
 
+	def regenAbbyyFiles(self, sendFiles=True, checkFiles=True, updateFiles=True):
+		
+		'''
+		1) iterate through pages, fire off page images to Abbyy
+		2) poll for ALL page images to finish
+		'''
+		stime = time.time()
+		pages_from_rels = self.pages_from_rels.copy()
+
+		if sendFiles:
+			# fire off page images to Abbyy
+			print "sending files to Abbyy"
+			for page_num in pages_from_rels:
+				page = WSUDOR_ContentTypes.WSUDOR_Object(pages_from_rels[page_num])
+				page.sendAbbyyFiles()
+
+		if checkFiles:
+			# poll for finished OCR process
+			ocr_list = []
+			print "polling for OCR process to complete"
+			while len(pages_from_rels) > 0:			
+				for page_num in pages_from_rels:
+					page = WSUDOR_ContentTypes.WSUDOR_Object(pages_from_rels[page_num])
+					page_ocr = page.checkAbbyyFiles()
+					if page_ocr:
+						# add to list				
+						ocr_list[1:1] = page_ocr
+						# pop from dictionary
+						del pages_from_rels[page_num]
+				else:
+					print "time elapsed %s" % str(time.time()-stime)
+					time.sleep(5)
+
+		if updateFiles:
+			# update datastreams
+			pages_from_rels = self.pages_from_rels.copy()
+			for page_num in pages_from_rels:
+				page = WSUDOR_ContentTypes.WSUDOR_Object(pages_from_rels[page_num])
+				page.updateAbbyyFiles(cleanup=True)
+
+		# finis
+		print "total time elapsed: %s seconds" % str(time.time()-stime)
+		return True
+
 
 	#############################################################################
 	# associated Readux style virtual objects

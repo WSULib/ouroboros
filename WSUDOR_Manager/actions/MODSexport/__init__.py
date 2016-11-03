@@ -55,7 +55,9 @@ def MODSexport_export():
 			# get MODS ds
 			obj_ohandle = fedora_handle.get_object(PID)					
 			ds_handle = obj_ohandle.getDatastreamObject('MODS')
-			
+
+			# get MODS string
+			MODS_string = unicode(ds_handle.content.serialize(),'utf-8')
 
 			'''
 			Little bit of complexity here:
@@ -77,7 +79,7 @@ def MODSexport_export():
 				# if absent, create with <PID> subelement
 				if len(extension_check) == 0:
 					#serialize and replace
-					MODS_content = ds_handle.content.serialize()				
+					MODS_content = MODS_string
 					MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><PID>%s</PID></mods:extension></mods:mods>" % PID)
 				
 				# <mods:extension> present, but no PID subelement, create
@@ -85,14 +87,14 @@ def MODSexport_export():
 					PID_elem = etree.SubElement(extension_check[0],"PID")
 					PID_elem.text = PID
 					#serialize
-					MODS_content = ds_handle.content.serialize()
+					MODS_content = MODS_string
 
 			# overwrite with PID
 			else:
 				PID_element = PID_check[0]
 				PID_element.text = PID
 				#serialize
-				MODS_content = ds_handle.content.serialize()
+				MODS_content = MODS_string
 
 
 			# # OLD
@@ -121,7 +123,7 @@ def MODSexport_export():
 
 			
 			# write to file
-			outfile.write(MODS_content)
+			outfile.write(MODS_content.encode('utf-8'))
 
 		# close MODS collection
 		outfile.write('\n</mods:modsCollection>')

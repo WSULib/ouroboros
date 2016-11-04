@@ -100,6 +100,7 @@ def solrSearch(getParams):
 	# FACETS	
 	if 'facets[]' in getParams:
 		qd['facet.field'] = [ facet for facet in getParams['facets[]'] ]
+		qd['facet.method'] = 'fc'
 
 	# FILTER QUERIES	
 	if 'fq[]' in getParams:

@@ -25,7 +25,6 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers, utilities
-from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 
 # localconfig
 import localConfig

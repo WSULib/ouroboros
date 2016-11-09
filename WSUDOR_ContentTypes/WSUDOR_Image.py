@@ -26,7 +26,7 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
-from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
+# from WSUDOR_API.functions.packagedFunctions import singleObjectPackage
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
@@ -307,82 +307,82 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 
-	# ingest image type
-	def genIIIFManifest(self, on_demand=False):
+	# # ingest image type
+	# def genIIIFManifest(self, on_demand=False):
 
-		# run singleObjectPackage
-		'''
-		A bit of a hack here: creating getParams{} with pid as list[] as expected by singleObjectPackage(),
-		simulates normal WSUDOR_API use of singleObjectPackage()
-		'''
-		getParams = {}
-		getParams['PID'] = [self.pid]
+	# 	# run singleObjectPackage
+	# 	'''
+	# 	A bit of a hack here: creating getParams{} with pid as list[] as expected by singleObjectPackage(),
+	# 	simulates normal WSUDOR_API use of singleObjectPackage()
+	# 	'''
+	# 	getParams = {}
+	# 	getParams['PID'] = [self.pid]
 
-		# run singleObjectPackage() from API
-		if on_demand == True:
-			getParams['on_demand'] = True
-			single_json = json.loads(singleObjectPackage(getParams))
-		else:
-			single_json = json.loads(singleObjectPackage(getParams))
+	# 	# run singleObjectPackage() from API
+	# 	if on_demand == True:
+	# 		getParams['on_demand'] = True
+	# 		single_json = json.loads(singleObjectPackage(getParams))
+	# 	else:
+	# 		single_json = json.loads(singleObjectPackage(getParams))
 
-		# create root mani obj
-		try:
-			manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
-		except:
-			manifest = iiif_manifest_factory_instance.manifest( label="Unknown Title" )
-		manifest.viewingDirection = "left-to-right"
+	# 	# create root mani obj
+	# 	try:
+	# 		manifest = iiif_manifest_factory_instance.manifest( label=single_json['objectSolrDoc']['mods_title_ms'][0] )
+	# 	except:
+	# 		manifest = iiif_manifest_factory_instance.manifest( label="Unknown Title" )
+	# 	manifest.viewingDirection = "left-to-right"
 
-		# build metadata
-		'''
-		Order of preferred fields is the order they will show on the viewer
-		NOTE: solr items are stored here as strings so they won't evaluate
-		'''
-		preferred_fields = [
-			("Title", "single_json['objectSolrDoc']['mods_title_ms'][0]"),
-			("Description", "single_json['objectSolrDoc']['mods_abstract_ms'][0]"),
-			("Year", "single_json['objectSolrDoc']['mods_key_date_year'][0]"),
-			("Item URL", "\"<a href='%s'>%s</a>\" % (single_json['objectSolrDoc']['mods_location_url_ms'][0],single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
-			("Original", "single_json['objectSolrDoc']['mods_otherFormat_note_ms'][0]")
-		]
-		for field_set in preferred_fields:
-			try:
-				manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
-			except:
-				print "Could Not Set Metadata Field, Skipping",field_set[0]
+	# 	# build metadata
+	# 	'''
+	# 	Order of preferred fields is the order they will show on the viewer
+	# 	NOTE: solr items are stored here as strings so they won't evaluate
+	# 	'''
+	# 	preferred_fields = [
+	# 		("Title", "single_json['objectSolrDoc']['mods_title_ms'][0]"),
+	# 		("Description", "single_json['objectSolrDoc']['mods_abstract_ms'][0]"),
+	# 		("Year", "single_json['objectSolrDoc']['mods_key_date_year'][0]"),
+	# 		("Item URL", "\"<a href='%s'>%s</a>\" % (single_json['objectSolrDoc']['mods_location_url_ms'][0],single_json['objectSolrDoc']['mods_location_url_ms'][0])"),
+	# 		("Original", "single_json['objectSolrDoc']['mods_otherFormat_note_ms'][0]")
+	# 	]
+	# 	for field_set in preferred_fields:
+	# 		try:
+	# 			manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
+	# 		except:
+	# 			print "Could Not Set Metadata Field, Skipping",field_set[0]
 
-		# start anonymous sequence
-		seq = manifest.sequence(label="default sequence")
+	# 	# start anonymous sequence
+	# 	seq = manifest.sequence(label="default sequence")
 
-		# iterate through component parts
-		for image in single_json['parts_imageDict']['sorted']:
+	# 	# iterate through component parts
+	# 	for image in single_json['parts_imageDict']['sorted']:
 
-			# generate obj|ds identifier as defined in loris TemplateHTTP extension
-			fedora_http_ident = "fedora:%s|%s" % (self.pid,image['jp2'])
-			# fedora_http_ident = "%s|%s" % (self.pid,image['jp2']) #loris_dev
+	# 		# generate obj|ds identifier as defined in loris TemplateHTTP extension
+	# 		fedora_http_ident = "fedora:%s|%s" % (self.pid,image['jp2'])
+	# 		# fedora_http_ident = "%s|%s" % (self.pid,image['jp2']) #loris_dev
 
-			# Create a canvas with uri slug of page-1, and label of Page 1
-			cvs = seq.canvas(ident=fedora_http_ident, label=image['ds_id'])
+	# 		# Create a canvas with uri slug of page-1, and label of Page 1
+	# 		cvs = seq.canvas(ident=fedora_http_ident, label=image['ds_id'])
 
-			# Create an annotation on the Canvas
-			anno = cvs.annotation()
+	# 		# Create an annotation on the Canvas
+	# 		anno = cvs.annotation()
 
-			# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
-			img = anno.image(fedora_http_ident, iiif=True)
+	# 		# Add Image: http://www.example.org/path/to/image/api/p1/full/full/0/native.jpg
+	# 		img = anno.image(fedora_http_ident, iiif=True)
 
-			# OR if you have an IIIF service:
-			img.set_hw_from_iiif()
+	# 		# OR if you have an IIIF service:
+	# 		img.set_hw_from_iiif()
 
-			cvs.height = img.height
-			cvs.width = img.width
+	# 		cvs.height = img.height
+	# 		cvs.width = img.width
 
-		# create datastream with IIIF manifest and return JSON string
-		print "Inserting manifest for",self.pid,"as object datastream..."
-		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "IIIF_MANIFEST", "IIIF_MANIFEST", mimetype="application/json", control_group="M")
-		ds_handle.label = "IIIF_MANIFEST"
-		ds_handle.content = manifest.toString()
-		ds_handle.save()
+	# 	# create datastream with IIIF manifest and return JSON string
+	# 	print "Inserting manifest for",self.pid,"as object datastream..."
+	# 	ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "IIIF_MANIFEST", "IIIF_MANIFEST", mimetype="application/json", control_group="M")
+	# 	ds_handle.label = "IIIF_MANIFEST"
+	# 	ds_handle.content = manifest.toString()
+	# 	ds_handle.save()
 
-		return manifest.toString()
+	# 	return manifest.toString()
 
 
 # helpers

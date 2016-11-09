@@ -1,3 +1,5 @@
+# APIv2
+
 ## DPLA API
 
 This DPLA has a nicely organized and documented API, here are some of their routes from their [documentation](https://dp.la/info/developers/codex/requests/):
@@ -30,7 +32,7 @@ Though we understand the search / browse page might always need a particular set
 
 	http://api.dp.la/v2/collections
 
-### Thoughts
+## Thoughts
 
 Interestingly, the above is really suited for search / browse.  What about API calls for a single item's metadata and relationships?  We previously had a `singleObjectPackage` that would run a bunch of sub-functions and aggregate that information.  Each sub-function was indicated in the API call with a `functions[]=` that was parsed by Twisted.
 
@@ -41,7 +43,7 @@ It's conceivable that a search / browse response would be a bunch of individual 
 How do they do this?  Are these relationships stored statically when an item is indexed?  
 
 
-### Implementation
+## Implementation
 
 Consider the [Flask-API library](http://www.flaskapi.org/#installation).  Includes markdown documentation and a lot of content negotiation, which while fun to create, might save some time and do it much better.
 

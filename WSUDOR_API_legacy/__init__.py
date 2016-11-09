@@ -40,13 +40,17 @@ class ReverseProxied(object):
 		return self.app(environ, start_response)
 
 # create app
-WSUDOR_APIv2_app = Flask(__name__)
-WSUDOR_APIv2_app.wsgi_app = ReverseProxied(WSUDOR_APIv2_app.wsgi_app)
-WSUDOR_APIv2_app.debug = True
-WSUDOR_API_app.secret_key = 'WSUDOR_APIv2'
+WSUDOR_API_app = Flask(__name__)
+WSUDOR_API_app.wsgi_app = ReverseProxied(WSUDOR_API_app.wsgi_app)
+WSUDOR_API_app.debug = True
 
 # Flask-Cache for API
-cache = Cache(WSUDOR_APIv2_app, config={'CACHE_TYPE': 'simple'})
+cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 
 # get handlers
 import views
+import iiif_manifest
+import imageServer
+import bitStream
+import lorisProxy
+import item

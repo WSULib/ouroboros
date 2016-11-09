@@ -43,14 +43,10 @@ class ReverseProxied(object):
 WSUDOR_API_app = Flask(__name__)
 WSUDOR_API_app.wsgi_app = ReverseProxied(WSUDOR_API_app.wsgi_app)
 WSUDOR_API_app.debug = True
+WSUDOR_API_app.secret_key = 'WSUDOR_APIv2'
 
 # Flask-Cache for API
 cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 
 # get handlers
 import views
-import iiif_manifest
-import imageServer
-import bitStream
-import lorisProxy
-import item

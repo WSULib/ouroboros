@@ -16,6 +16,7 @@ beautifulsoup4==4.5.1
 celery==3.1.11
 coverage==3.7.1
 decorator==3.3.2
+flask-restful
 fuzzywuzzy==0.2
 ipython
 lockfile==0.10.2

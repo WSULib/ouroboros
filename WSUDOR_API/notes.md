@@ -39,3 +39,10 @@ Their documentation begins to unpack this a bit with information about their [Re
 It's conceivable that a search / browse response would be a bunch of individual records -- unsurprisingly -- **but that those records would be identical to what is returned for a single item**.  This would depart from our current mode, as it would require a BUNCH of, in our previous approach, sub-queries and calls that would slow down search/browse.  
 
 How do they do this?  Are these relationships stored statically when an item is indexed?  
+
+
+### Implementation
+
+Consider the [Flask-API library](http://www.flaskapi.org/#installation).  Includes markdown documentation and a lot of content negotiation, which while fun to create, might save some time and do it much better.
+
+Also, [Flask-RESTful](http://flask-restful-cn.readthedocs.io/en/0.3.5/quickstart.html) looks interesting.  **Update:** this one is looking good.

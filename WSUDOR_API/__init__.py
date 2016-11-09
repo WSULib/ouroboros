@@ -4,6 +4,7 @@
 from flask import Flask, render_template, g
 from flask.ext.login import LoginManager
 from flask.ext.cache import Cache
+from flask_restful import Api
 
 # http://flask.pocoo.org/snippets/35/
 class ReverseProxied(object):
@@ -43,10 +44,13 @@ class ReverseProxied(object):
 WSUDOR_API_app = Flask(__name__)
 WSUDOR_API_app.wsgi_app = ReverseProxied(WSUDOR_API_app.wsgi_app)
 WSUDOR_API_app.debug = True
-WSUDOR_API_app.secret_key = 'WSUDOR_APIv2'
+WSUDOR_API_app.secret_key = 'WSUDOR_API'
 
 # Flask-Cache for API
 cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
+
+# Flask-RESTful init
+api = Api(WSUDOR_API_app)
 
 # get handlers
 import views

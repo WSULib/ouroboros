@@ -10,6 +10,7 @@ from flask import jsonify, make_response
 
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
+from WSUDOR_Manager.helpers import gzipped, timing
 
 
 '''
@@ -19,6 +20,7 @@ desc: provides custom error responses with messages and HTTP codes
 
 # 401
 @WSUDOR_API_app.errorhandler(401)
+@timing
 def e401(error):
     return make_response(jsonify({
     	'http_status_code': '401',

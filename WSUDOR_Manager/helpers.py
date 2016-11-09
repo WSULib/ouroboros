@@ -39,7 +39,7 @@ def timing(f):
 		time1 = time.time()
 		ret = f(*args)
 		time2 = time.time()
-		print '%s function took %0.3f ms, %0.3f s' % (f.func_name, (time2-time1)*1000.0, (time2-time1))
+		print 'timer: %s() took %0.3f ms, %0.3f s' % (f.func_name, (time2-time1)*1000.0, (time2-time1))
 		return ret
 	return wrap
 

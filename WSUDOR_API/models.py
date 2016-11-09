@@ -6,7 +6,7 @@
 import localConfig
 
 # modules
-from flask_restful import reqparse, Resource
+from flask_restful import abort, reqparse, Resource
 
 # WSUDOR_API_app
 from WSUDOR_API import api
@@ -17,6 +17,14 @@ from WSUDOR_API import api
 class HelloWorld(Resource):
 
     def get(self, name):
+
+    	'''
+    	expecting variable based on route from views.py
+    	also, triggers abort() if match
+    	'''
+
+    	if name.lower() == 'shoppinghorse':
+    		abort(400, message='ANYONE but ShoppingHorse...')
         return {'hello': name}
 
 

@@ -346,7 +346,7 @@ def isMemberOf(getParams):
 	return jsonString
 
 # get isMemberOf children for single PID
-def hasMemberOf(getParams):	
+def hasMemberOf(getParams):
 	baseURL = "http://localhost/fedora/risearch"
 	risearch_query = "select $memberTitle $object from <#ri> where $object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/%s> and $object <http://purl.org/dc/elements/1.1/title> $memberTitle order by $memberTitle" % (getParams['PID'][0])
 	risearch_params = {

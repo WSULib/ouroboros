@@ -305,8 +305,6 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			raise Exception(traceback.format_exc())
 
 
-
-
 	# # ingest image type
 	# def genIIIFManifest(self, on_demand=False):
 
@@ -400,7 +398,40 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		}
 		'''
 
+
+		parts_imageDict = {}
+		parts_imageDict['parts_list'] = []
+		for image in self.hasInternalParts:			
+
+			parts_imageDict[image] = {
+				'ds_id':image,
+				'thumbnail' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "info:fedora/%s/%s" % (self.pid, image)).next(),
+				'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "info:fedora/%s/%s" % (self.pid, image)).next(),
+				'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "info:fedora/%s/%s" % (self.pid, image)).next()
+			}
+
+			# check for order and assign
+			try:
+				order = int(fedora_handle.risearch.get_objects("info:fedora/%s/%s" % (self.pid, image), "info:fedora/fedora-system:def/relations-internal#isOrder").next())
+			except:
+				order = False
+			parts_imageDict[image]['order'] = order
+
+			# add to list
+			parts_imageDict['parts_list'].append((parts_imageDict[image]['order'], parts_imageDict[image]['ds_id']))
 		
+
+		# sort and make iterable list from dictionary
+		parts_imageDict['parts_list'].sort(key=lambda tup: tup[0])
+		parts_imageList = []
+		for each in parts_imageDict['parts_list']:
+			parts_imageList.append(parts_imageDict[each[1]])
+		
+		# reassign		
+		del parts_imageDict['parts_list']
+		parts_imageDict['sorted'] = parts_imageList
+
+		return ("parts_imageDict", parts_imageDict)
 
 
 

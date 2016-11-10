@@ -412,6 +412,10 @@ class WSUDOR_GenObject(object):
 		return self.objSizeDict
 
 
+	#######################################################
+	# RDF Relationships
+	#######################################################
+
 	# constituent objects
 	@helpers.LazyProperty
 	def constituents(self):
@@ -426,7 +430,7 @@ class WSUDOR_GenObject(object):
 		return constituent_objects
 
 
-	# constituent objects
+	# collection members
 	@helpers.LazyProperty
 	def collectionMembers(self):
 
@@ -435,17 +439,54 @@ class WSUDOR_GenObject(object):
 		'''
 
 		# get all members
-		return fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri)
+		return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri))
 
 
-	# constituent objects
+	# rels-int, partOf
 	@helpers.LazyProperty
-	def hasParts(self):
+	def hasInternalParts(self):
 
-		# get ordered, constituent objs
-		sparql_response = fedora_handle.risearch.sparql_query('select $s WHERE {{ $s <info:fedora/fedora-system:def/relations-external#isPartOf> <info:fedora/%s> . }}' % (self.pid))
-		parts = [ fedora_handle.get_object(obj['s']) for obj in sparql_response ]		
+		'''
+		returns datastreams that are rels-int:partOf object
+		'''
+		
+		sparql_response = fedora_handle.risearch.sparql_query('select $s WHERE {{ $s <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s> . }}' % (self.pid))
+		parts = [ fedora_handle.get_object(obj['s']) for obj in sparql_response ]
+		parts = [ part.pid.split("/")[-1] for part in parts ]
 		return parts
+
+
+	# hasMemberOf
+	@helpers.LazyProperty
+	def hasMemberOf(self):
+
+		'''
+		returns subjecst that are isMember of object
+		'''
+
+		# get all members
+		return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOf', self.ohandle.uri))
+
+
+	# isMemberOfCollection
+	@helpers.LazyProperty
+	def isMemberOfCollections(self):
+
+		'''
+		returns list of collections object belongs to
+		'''
+		
+		return self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+
+
+	# learning objects
+	@helpers.LazyProperty
+	def hasLearningObjects(self):
+
+		# get collections
+		sparql_query = "select $lo_title $lo_uri from <#ri> where { $lo_uri <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/learningObjectFor> <fedora:%s> . $lo_uri <http://purl.org/dc/elements/1.1/title> $lo_title . }" % self.pid
+		learning_objects = list(fedora_handle.risearch.sparql_query(sparql_query))
+		return learning_objects
 
 
 

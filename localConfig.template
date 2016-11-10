@@ -1,0 +1,177 @@
+# Prod CONFIGURATION
+###################
+
+# Public Facing Host
+PUBLIC_HOST = "192.168.42.5"
+
+# Ouroboros version name
+APP_NAME = "fedora-stack-ouroboros"
+APP_HOST = "192.168.42.5"
+
+# APP URL 
+'''
+If you would like to use now prefix for the app, set the following:
+	APP_PREFIX = "."
+	APP_PREFIX_USE = False
+Otherwise, select the prefix and leave the APP_PREFIX_USE as True
+'''
+APP_PREFIX = "ouroboros"
+APP_PREFIX_USE = True 
+
+# fedoraManager2 
+WSUDOR_MANAGER_FIRE = True
+WSUDOR_MANAGER_PORT = 5004
+
+# WSUAPI - Primary API for front-end
+WSUDOR_API_FIRE = True
+WSUDOR_API_LISTENER_PORT = 61617
+WSUDOR_API_PREFIX = "WSUAPI"
+API_SKIP_CACHE = True
+API_CACHE_TIMEOUT = 600
+
+# STOMP client for Fedora JMS 
+FEDCONSUMER_FIRE = False
+FEDCONSUMER_PORT = 61616
+
+# Solr 
+SOLR_MANAGE_CORE = 'fedobjs'
+SOLR_SEARCH_CORE = 'fedobjs'
+SOLR_BOOKREADER_CORE = 'bookreader'
+
+# solrIndexer
+# printOnly (if True, will not write to Solr)
+SOLR_INDEXER_WRITE_DEFAULT = False
+SOLR_AUTOINDEX = False
+
+# Celery Config
+REDIS_BROKER_DB = 5
+REDIS_BACKEND_DB = 6
+CELERY_CONCURRENCY = 1 # number of celery workers to initialize for user (recommended 1 for stability, but can increase)
+
+# paths
+DATATABLES_HANDLE = "https://{APP_HOST}/cgi-bin/php_simple.php".format(APP_HOST=APP_HOST)
+
+# OAI Settings
+TOMCAT_PROAI_PATH = '/oaiprovider'
+PROAI_CACHE_LOCATION = '/var/lib/tomcat7/webapps/oaiprovider/cache'
+
+# LORIS & IIIF
+IIIF_MANIFEST_PREFIX = "iiif_manifest"
+IIIF_MANIFEST_TARGET_HOST = APP_HOST
+LORIS_API_ENDPOINT = "http://localhost:6081/loris_local/"
+LORIS_STREAM_CHUNK_SIZE = 2048
+LORIS_HTTP_CACHE = "/var/cache/loris2/fedora_source"
+
+# WSUDOR ITEM API
+ITEM_STREAM_CHUNK_SIZE = 2048
+
+#MySQL Creds
+MYSQL_USERNAME = "WSUDOR_Manager"
+MYSQL_PASSWORD = "WSUDOR_Manager"
+MYSQL_DATABASE = "WSUDOR_Manager"
+
+# bitStream
+BITSTREAM_KEY = 'SHORT_BUT_SECURE_KEY' # this key will be used for token creation
+BITSTREAM_SALT = 'NOT_USED_YET'
+UNBLOCKED_DATASTREAMS = [
+	'DC',
+	'MODS',
+	'RELS-EXT',
+	'COLLECTIONPDF',
+	'HTML_FULL',
+	'HTML_PDF',
+	'FILE',
+	'HTML',
+	'ALTOXML',
+	'IIIF_MANIFEST'
+]
+# Staff Access IDs okayed for bitStream usage
+BITSTREAM_CLEARED_USERNAMES = [
+	'ab1234'	
+]
+
+# Readux
+READUX_BASE_URL = "http://localhost/readux"
+
+# Abbyy synced folder
+ABBYY_INCOMING = "/tmp/abbyy/incoming"
+ABBYY_OUTPUT = "/tmp/abbyy/output"
+
+################################
+# sensitive information
+################################
+
+# Fedora Repository settings
+FEDORA_ROOT = 'http://localhost:8080/fedora/'
+FEDORA_USER = 'fedoraAdmin'
+FEDORA_PASSWORD = 'fedorapassword'
+FEDORA_PIDSPACE = 'wayne'
+
+# Tomcat 7
+TOMCAT_USER = 'tomcat'
+TOMCAT_PASSWORD = 'tomcat'
+
+# salt for account username/password hahses
+USER_ACCOUNT_SALT = "Wayne State University Digital Object Repository"
+
+# ouroboros sudo password
+USER_SUDO_PASSWORD = 'ouroboros'
+
+# users & login
+LOGIN_URL = '/digitalcollections/login'
+DEFAULT_ADMIN_USERS = [
+	{
+		'username':'ab1234',
+		'role':'admin',
+		'restrictions':None,
+		'fedoraRole':'admin',
+		'displayName':'ab1234'
+	}	
+]
+
+# Remote Repositories
+
+'''
+
+'REMOTE_REPOSITORIES' is a mapping of Fedora instances reachable by this
+instance of Ouroboros.
+
+	Below is a sample configuration for a swarm of Vagrant Virtual Machines,
+	but it is likely these will have to be configured in production to point
+	at actual machines.
+
+	This dictionary will populate drop-downs across  Ouroboros related to
+	ingest, sending objects, etc.
+
+'REPOSITORY_NAME' is the repository name of this server.
+
+	This variable acts as a key for the 'REMOTE_REPOSITORIES' dictionary described 
+	below, but it is unlikely you'll need it in this context.  'fedoraHandles.py' 
+	opens a local handle to Fedora under 'fedora_handle' that is mapped to the values 
+	above: FEDORA_ROOT, FEDORA_USER, FEDORA_PASSWORD, FEDORA_PIDSPACE.
+
+'''
+
+REPOSITORY_NAME = 'fedora-stack-prod'
+REMOTE_REPOSITORIES = {
+	'local' : {
+		'OUROBOROS_BASE_URL':'http://localhost/ouroboros',
+		'FEDORA_ROOT':'http://localhost/fedora',
+		'FEDORA_USERNAME':'fedoraAdmin',
+		'FEDORA_PASSWORD':'fedorapassword',
+		'SOLR_ROOT':'http://localhost/solr4',
+		'IIIF_MANIFEST_TARGET_HOST':'192.168.42.5'
+	}	
+}
+
+
+
+
+
+
+
+
+
+
+
+

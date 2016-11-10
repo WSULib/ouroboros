@@ -32,7 +32,7 @@ from WSUDOR_API import WSUDOR_API_app
 # Ouroboros pidfile ##############################################################
 # function to create/remove Ouroboros pidfile
 def pidfileCreate():
-	print "Creating pidfile"
+	print "creating pidfile"
 
 	with open("/var/run/ouroboros/%s.pid" % (APP_NAME),"w") as fhand:
 		fhand.write(str(os.getpid()))

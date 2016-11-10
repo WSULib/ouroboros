@@ -83,7 +83,6 @@ If no args passed, assume 'python runserver.py', and thus, not celery worker.
 If celery worker -- with multiple args -- fire fedora_handle based on username
 	- set fedora_handle to False, knowing it will get built in fedora_handle
 '''
-print sys.argv
 if run_context == 'ouroboros':
 	print "generating generic fedora_handle and generic celery worker"	
 	fedora_handle = Repository(FEDORA_ROOT, localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD, 'wayne')
@@ -218,7 +217,7 @@ def make_celery(app):
 celery = make_celery(app)
 
 # assuming Ouroboros Celery worker
-if fire_cw:
+if fire_cw and localConfig.WSUDOR_MANAGER_FIRE:
 	# fire celery worker
 	print "firing generic celery worker"
 	cw = CeleryWorker("celery")
@@ -232,25 +231,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://%s:%s@localhost/%s' % (localCon
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_POOL_SIZE'] = 1
 db = SQLAlchemy(app)
-
-
-## EXP ##
-# from sqlalchemy import exc, event
-# from sqlalchemy.event import listen
-# from sqlalchemy.pool import Pool
-
-# @event.listens_for(Pool, "checkout")
-# def check_connection(dbapi_con, con_record, con_proxy):
-# 	'''Listener for Pool checkout events that pings every connection before using.
-# 	Implements pessimistic disconnect handling strategy. See also:
-# 	http://docs.sqlalchemy.org/en/rel_0_8/core/pooling.html#disconnect-handling-pessimistic'''
-
-# 	if run_context == 'celery':
-# 		# invesitage scoped session
-# 		print db.session
-		
-# listen(Pool, 'checkout', check_connection)
-## EXP ##
 
 
 

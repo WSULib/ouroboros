@@ -2,6 +2,9 @@
 # WSUDOR_API : models.py
 
 
+# python modules
+import time
+
 # Ouroboros config
 import localConfig
 
@@ -15,6 +18,46 @@ from WSUDOR_API import api
 from WSUDOR_ContentTypes import WSUDOR_Object
 
 
+# ResponseObject
+#################################################################################
+
+class ResponseObject(object):
+
+	'''
+	This can be built in one of two ways:
+		1) init empty, and build up
+			response = ResponseObject()
+			response.status_code = 200
+			response.body = { 'goober':'tronic' }
+			response.headers = { 'X-Powered-By':'custom headers' }
+
+		2) init with code, body, and headers already compiled:
+			response = ResponseObject(200, body, headers)
+
+	Then use generate_response() method to return:
+		return response.generate_response()
+	'''
+
+	def __init__(self, status_code=None, headers={}, body={} ):
+		self.status_code = status_code
+		self.headers = headers
+		self.stime = time.time()
+		self.body = body
+
+		# add custom X-Powered-By headers
+		self.headers['X-Powered-By'] = ['ShoppingHorse','DumpsterTurkey']
+
+
+	def generate_response(self):
+
+		return {
+			'header':{
+				'response_time': time.time() - self.stime,
+			},
+			'response': self.body,
+		}, self.status_code, self.headers
+
+
 # ITEMS
 #################################################################################
 class Item(Resource):
@@ -25,28 +68,16 @@ class Item(Resource):
 	'''
 
 	def __init__(self, *args, **kwargs):
-		self.solr_doc = None
-		self.collections = None
-		self.learning_objects = None
-		self.content_type = None
 		self.content_type_specific = []
 
 
 	def get(self, pid):
 
-		print self.solr_doc
+		# init ResponseObject
+		response = ResponseObject()
 
 		# get object
 		obj = WSUDOR_Object(pid)
-
-		'''
-		- get Solr doc
-		- get isMemberOfCollection
-			- collection Metadata for each?
-		- hierarchical tree
-		- trigger content_type specifics
-		- learning objects
-		'''
 
 		# determine content-type
 		try:
@@ -61,17 +92,17 @@ class Item(Resource):
 				f.__name__:f() # name of content_type function: function output
 			})
 
-		return {
-			'content_type': ct,			
+		# build response
+		response.status_code =200
+		response.body = {
+			'content_type': ct,
 			'solr_doc': obj.SolrDoc.asDictionary(),
 			'collections': obj.isMemberOfCollections,
 			'learning_objects': obj.hasLearningObjects,
 			'hierarchical_tree': obj.hierarchicalTree,
 			'content_type_specific': self.content_type_specific
-		}, 200, {
-			'X-Powered-By': ['ShoppingHorse','DumpsterTurkey']
 		}
-		
+		return response.generate_response()
 
 
 

@@ -600,7 +600,7 @@ class WSUDOR_GenObject(object):
 
 		# reomve current PID from siblings
 		for idx, val in enumerate(sibling_dict['results']):
-			if val['sibling'] == getParams['PID'][0]:
+			if val['sibling'] == self.pid:
 				del sibling_dict['results'][idx]
 
 		# children

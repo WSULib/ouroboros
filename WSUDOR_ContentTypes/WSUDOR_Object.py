@@ -495,6 +495,153 @@ class WSUDOR_GenObject(object):
 	def rdf_triples(self):
 		return list(self.ohandle.rels_ext.content)
 
+	# object triples
+	@helpers.LazyProperty
+	def hierarchicalTree(self):
+
+		# parent
+		baseURL = "http://localhost/fedora/risearch"
+		risearch_query = '''
+		select $parent $parentTitle from <#ri> where
+		    <info:fedora/%s> 
+		    <wsudor:hasParent> 
+		    $parent
+		and 
+		    $parent
+		    <dc:title>
+		    $parentTitle	
+	    order by $parentTitle
+
+		''' % (self.pid)
+		risearch_params = {
+			'type': 'tuples',
+			'lang': 'itql',
+			'format': 'json',
+			'limit':'',
+			'dt': 'on',
+			'query': risearch_query
+		}
+		r = fedora_handle.api.session.get(baseURL, params=risearch_params)
+		# strip risearch namespace "info:fedora"
+		parent_jsonString = r.text.replace('info:fedora/','')
+		parent_dict = json.loads(parent_jsonString)
+
+		# parent siblings
+		baseURL = "http://localhost/fedora/risearch"
+		risearch_query = '''
+		select $parentSibling $parentSiblingTitle from <#ri> where 
+		    <info:fedora/%s> 
+		    <wsudor:hasParent> 
+		    $parent
+		and 
+		    $parent
+		    <dc:title>
+		    $parentTitle
+		and
+		    $parent
+		    <wsudor:hasParent>
+		    $grandParent
+		and
+		    $parentSibling
+		    <wsudor:hasParent>
+		    $grandParent
+		and 
+		    $parentSibling
+		    <dc:title>
+		    $parentSiblingTitle
+	    order by $parentSiblingTitle
+
+		''' % (self.pid)
+		risearch_params = {
+			'type': 'tuples',
+			'lang': 'itql',
+			'format': 'json',
+			'limit':'',
+			'dt': 'on',
+			'query': risearch_query
+		}
+
+		r = fedora_handle.api.session.get(baseURL, params=risearch_params)
+		# strip risearch namespace "info:fedora"
+		parent_sibling_jsonString = r.text.replace('info:fedora/','')
+		parent_sibling_dict = json.loads(parent_sibling_jsonString)
+
+		# siblings
+		baseURL = "http://localhost/fedora/risearch"
+		risearch_query = '''
+		select $sibling $siblingTitle from <#ri> where 
+		    <info:fedora/%s> 
+		    <wsudor:hasParent> 
+		    $parent
+		and 
+		    $sibling
+		    <wsudor:hasParent>
+		    $parent
+		and 
+		    $sibling
+		    <dc:title>
+		    $siblingTitle
+	    order by $siblingTitle
+
+		''' % (self.pid)
+		risearch_params = {
+			'type': 'tuples',
+			'lang': 'itql',
+			'format': 'json',
+			'limit':'',
+			'dt': 'on',
+			'query': risearch_query
+		}
+
+		r = fedora_handle.api.session.get(baseURL, params=risearch_params)
+		# strip risearch namespace "info:fedora"
+		sibling_jsonString = r.text.replace('info:fedora/','')
+		sibling_dict = json.loads(sibling_jsonString)
+
+		# reomve current PID from siblings
+		for idx, val in enumerate(sibling_dict['results']):
+			if val['sibling'] == getParams['PID'][0]:
+				del sibling_dict['results'][idx]
+
+		# children
+		baseURL = "http://localhost/fedora/risearch"
+		risearch_query = '''
+		select $child $childTitle from <#ri> where 
+		    $child
+		    <wsudor:hasParent> 
+		    <info:fedora/%s> 
+		and
+		    $child
+		    <dc:title>
+		    $childTitle
+	    order by $childTitle
+
+		''' % (self.pid)
+		risearch_params = {
+			'type': 'tuples',
+			'lang': 'itql',
+			'format': 'json',
+			'limit':'',
+			'dt': 'on',
+			'query': risearch_query
+		}
+
+		r = fedora_handle.api.session.get(baseURL, params=risearch_params)
+		# strip risearch namespace "info:fedora"
+		child_jsonString = r.text.replace('info:fedora/','')
+		child_dict = json.loads(child_jsonString)
+
+
+		treeDict = {
+			"parent":parent_dict,
+			"parent_siblings":parent_sibling_dict,
+			"siblings":sibling_dict,
+			"children":child_dict
+		}
+
+
+		return treeDict
+
 
 	# WSUDOR_Object Methods
 	############################################################################################################

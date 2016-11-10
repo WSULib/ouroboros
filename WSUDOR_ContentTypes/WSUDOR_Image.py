@@ -66,6 +66,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"external_relationships":[]
 		}
 
+		self.public_api_additions = [self.imageParts]
+
 
 	# perform ingestTest
 	def validIngestBag(self):
@@ -431,7 +433,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		del parts_imageDict['parts_list']
 		parts_imageDict['sorted'] = parts_imageList
 
-		return ("parts_imageDict", parts_imageDict)
+		# return
+		return parts_imageDict
 
 
 

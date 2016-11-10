@@ -15,7 +15,6 @@ from WSUDOR_API import api
 from WSUDOR_ContentTypes import WSUDOR_Object
 
 
-#################################################################################
 # ITEMS
 #################################################################################
 class Item(Resource):
@@ -25,32 +24,69 @@ class Item(Resource):
 	expects: PID of item to retrieve
 	'''
 
+	def __init__(self, *args, **kwargs):
+		self.solr_doc = None
+		self.collections = None
+		self.learning_objects = None
+		self.content_type = None
+		self.content_type_specific = []
+
+
 	def get(self, pid):
+
+		print self.solr_doc
 
 		# get object
 		obj = WSUDOR_Object(pid)
 
-		# DEBUG
-		return obj.ohandle.label
+		'''
+		- get Solr doc
+		- get isMemberOfCollection
+			- collection Metadata for each?
+		- hierarchical tree
+		- trigger content_type specifics
+		- learning objects
+		'''
+
+		# determine content-type
+		try:
+			ct = obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
+		except:
+			print "could not determine content type, setting None"
+			ct = None
+
+		# run content-type api additions
+		for f in obj.public_api_additions:
+			self.content_type_specific.append({
+				f.__name__:f() # name of content_type function: function output
+			})
+
+		return {
+			'content_type': ct,			
+			'solr_doc': obj.SolrDoc.asDictionary(),
+			'collections': obj.isMemberOfCollections,
+			'learning_objects': obj.hasLearningObjects,
+			'hierarchical_tree': obj.hierarchicalTree,
+			'content_type_specific': self.content_type_specific
+		}, 200, {
+			'X-Powered-By': ['ShoppingHorse','DumpsterTurkey']
+		}
+		
 
 
 
-
-#################################################################################
 # COLLECTIONS
 #################################################################################
 
 
 
 
-#################################################################################
 # SEARCH
 #################################################################################
 
 
 
 
-#################################################################################
 # TESTING
 #################################################################################
 class HelloWorld(Resource):

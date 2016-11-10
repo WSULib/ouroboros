@@ -77,6 +77,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# empty destinations for concatenated content
 		self.html_concat = ''
 
+		# content-type methods run and returned to API
+		self.public_api_additions = []
+
 
 	# pages from objMeta class
 	@helpers.LazyProperty

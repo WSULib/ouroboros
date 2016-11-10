@@ -52,6 +52,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.faux_width = False
 		self.faux_height = False
 
+		# content-type methods run and returned to API
+		self.public_api_additions = []
+
 
 	# page order
 	@helpers.LazyProperty

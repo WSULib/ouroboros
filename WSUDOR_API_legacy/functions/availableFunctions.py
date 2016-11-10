@@ -577,7 +577,6 @@ def hierarchicalTree(getParams):
 	'dt': 'on',
 	'query': risearch_query
 	}
-	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	parent_jsonString = r.text.replace('info:fedora/','')
@@ -618,7 +617,6 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	parent_sibling_jsonString = r.text.replace('info:fedora/','')
@@ -651,7 +649,6 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	sibling_jsonString = r.text.replace('info:fedora/','')
@@ -685,7 +682,6 @@ def hierarchicalTree(getParams):
 	'query': risearch_query
 	}
 
-	# r = requests.post(baseURL, auth=(WSUDOR_API_USER, WSUDOR_API_PASSWORD), data=risearch_params)
 	r = fedora_handle.api.session.get(baseURL, params=risearch_params)
 	# strip risearch namespace "info:fedora"
 	child_jsonString = r.text.replace('info:fedora/','')

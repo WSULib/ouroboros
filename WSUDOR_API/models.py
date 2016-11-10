@@ -76,8 +76,15 @@ class Item(Resource):
 		# init ResponseObject
 		response = ResponseObject()
 
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
 		# get object
 		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)	
+		
 
 		# determine content-type
 		try:
@@ -95,6 +102,7 @@ class Item(Resource):
 		# build response
 		response.status_code =200
 		response.body = {
+			'pid': pid,
 			'content_type': ct,
 			'solr_doc': obj.SolrDoc.asDictionary(),
 			'collections': obj.isMemberOfCollections,

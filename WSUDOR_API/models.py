@@ -11,6 +11,45 @@ from flask_restful import abort, fields, reqparse, Resource
 # WSUDOR_API_app
 from WSUDOR_API import api
 
+# WSUDOR_Manager
+from WSUDOR_ContentTypes import WSUDOR_Object
+
+
+#################################################################################
+# ITEMS
+#################################################################################
+class Item(Resource):
+
+	'''
+	desc: returns full metadata information for a single item
+	expects: PID of item to retrieve
+	'''
+
+	def get(self, pid):
+
+		# get object
+		obj = WSUDOR_Object(pid)
+
+		# DEBUG
+		return obj.ohandle.label
+
+
+
+
+#################################################################################
+# COLLECTIONS
+#################################################################################
+
+
+
+
+#################################################################################
+# SEARCH
+#################################################################################
+
+
+
+
 #################################################################################
 # TESTING
 #################################################################################

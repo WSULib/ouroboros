@@ -438,6 +438,16 @@ class WSUDOR_GenObject(object):
 		return fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri)
 
 
+	# constituent objects
+	@helpers.LazyProperty
+	def hasParts(self):
+
+		# get ordered, constituent objs
+		sparql_response = fedora_handle.risearch.sparql_query('select $s WHERE {{ $s <info:fedora/fedora-system:def/relations-external#isPartOf> <info:fedora/%s> . }}' % (self.pid))
+		parts = [ fedora_handle.get_object(obj['s']) for obj in sparql_response ]		
+		return parts
+
+
 
 	# object triples
 	@helpers.LazyProperty

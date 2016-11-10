@@ -385,6 +385,26 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# 	return manifest.toString()
 
 
+	# create dictionary comprehensive of all associated images
+	def imageParts(self):
+		
+		'''
+		Supplanting `main_imageDict_comp` and `parts_imageDict_comp` from API_legacy
+		desc: return dictionary with all image components, including pointer to "main" or representative image
+		image_part = {
+			ds_id: foobar,
+			jp2: foobar_JP2,
+			order: 2,			
+			preview: foobar_PREVIEW,
+			thumbnail: foobar_THUMBNAIL
+		}
+		'''
+
+		
+
+
+
+
 # helpers
 def imMode(im):
 	# check for 16-bit tiffs

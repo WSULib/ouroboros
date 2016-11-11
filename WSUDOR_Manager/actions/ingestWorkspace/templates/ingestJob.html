@@ -374,6 +374,11 @@
 		
 	});
 </script>
+<!-- mousetrap -->
+<script>
+	Mousetrap.bind('left', function() { $(".previous").click(); });
+	Mousetrap.bind('right', function() { $(".next").click(); });
+</script>
 
 
 {% include 'footer.html' %}

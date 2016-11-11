@@ -1178,22 +1178,6 @@ def aem_worker(job_package):
 		Now that we have the archivematica DMDID, we can match on that?
 		'''
 
-		# Previous approach: match on derived pid
-		##################################################################################################################################
-		# temporary shim, strip perceived file extension from derived PID
-		# file_extension_suffixes = [
-		# 	'_pdf','_PDF','_docx','_DOCX'	
-		# ]
-		# for suffix in file_extension_suffixes:
-		# 	derived_pid = derived_pid.replace(suffix,'')
-
-		# print "derived pid: %s" % derived_pid
-
-		# # grab row
-		# o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
-
-		# New approach: match on archivematica file id
-		##################################################################################################################################
 		# document
 		if sm_part_type == 'document':
 			o = models.ingest_workspace_object.query.filter_by(job=j, file_id=job_package['DMDID']).first()
@@ -1209,7 +1193,6 @@ def aem_worker(job_package):
 			derived_pid = derived_pid.replace(".","_")
 			print "derived pid: %s" % derived_pid
 			o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
-		##################################################################################################################################
 
 		if o:
 

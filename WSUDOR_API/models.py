@@ -58,6 +58,7 @@ class ResponseObject(object):
 		}, self.status_code, self.headers
 
 
+
 # ITEMS
 #################################################################################
 class Item(Resource):
@@ -84,7 +85,6 @@ class Item(Resource):
 		obj = WSUDOR_Object(pid)
 		if not obj:
 			abort(404, message='%s not found' % pid)	
-		
 
 		# determine content-type
 		try:

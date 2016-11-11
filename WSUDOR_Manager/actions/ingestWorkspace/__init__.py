@@ -1069,7 +1069,11 @@ def aem_factory(job_package):
 		job_package['struct_map'] = json.dumps(sm_dict)
 
 		# Use DMD index
-		dmd_handle = dmd_index[sm_part.attrib['DMDID']]
+		try:
+			dmd_handle = dmd_index[sm_part.attrib['DMDID']]
+		except:
+			etree.tostring(sm_part)
+
 		# grab MODS record and write to temp file		
 		MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
@@ -1090,7 +1094,6 @@ def aem_factory(job_package):
 
 		# bump step
 		step += 1
-
 
 
 @celery.task(name="aem_worker")
@@ -1171,25 +1174,42 @@ def aem_worker(job_package):
 	else:
 		print "updating descriptive information for %s / %s" % (job_package['DMDID'], job_package['object_title'])
 
-		# derive PID
-		# determine pid
-		if sm_part_type == 'collection':
-			id_prefix = 'collection'
-		else:
-			id_prefix = ''
-		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+		'''
+		Now that we have the archivematica DMDID, we can match on that?
+		'''
 
+		# Previous approach: match on derived pid
+		##################################################################################################################################
 		# temporary shim, strip perceived file extension from derived PID
-		file_extension_suffixes = [
-			'_pdf','_PDF','_docx','_DOCX'	
-		]
-		for suffix in file_extension_suffixes:
-			derived_pid = derived_pid.replace(suffix,'')
+		# file_extension_suffixes = [
+		# 	'_pdf','_PDF','_docx','_DOCX'	
+		# ]
+		# for suffix in file_extension_suffixes:
+		# 	derived_pid = derived_pid.replace(suffix,'')
 
-		print "derived pid: %s" % derived_pid
+		# print "derived pid: %s" % derived_pid
 
-		# grab row
-		o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
+		# # grab row
+		# o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
+
+		# New approach: match on archivematica file id
+		##################################################################################################################################
+		# document
+		if sm_part_type == 'document':
+			o = models.ingest_workspace_object.query.filter_by(job=j, file_id=job_package['DMDID']).first()
+
+		# file (intellectual)
+		if sm_part_type == 'file':
+			# determine pid
+			if sm_part_type == 'collection':
+				id_prefix = 'collection'
+			else:
+				id_prefix = ''
+			derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+			derived_pid = derived_pid.replace(".","_")
+			print "derived pid: %s" % derived_pid
+			o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
+		##################################################################################################################################
 
 		if o:
 

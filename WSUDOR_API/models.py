@@ -9,6 +9,7 @@ import time
 import localConfig
 
 # modules
+import flask_restful
 from flask_restful import abort, fields, reqparse, Resource
 
 # WSUDOR_API_app
@@ -133,37 +134,44 @@ class SolrSearch(object):
 		overrides from client
 	'''
 
+
 	# order from https://wiki.apache.org/solr/CommonQueryParameters
+	'''
+	Might make sense to expose this configuration to localConfig.py
+	'''
 	default_params = { 
 		'q': '*:*',
 		'sort': None,
 		'start': 0,
-		'rows': 0,
+		'rows': 10,
 		'fq': [],
-		'fl': [],
+		'fl': [ "id", "mods*", "dc*", "rels*", "obj*", "last_modified"],
 		'facet': False,
 		'facet.mincount': 1,
 		'facet.limit': -1,
-		'facet.field': []
+		'facet.field': [],
+		'wt': 'json',
 	}
 
-	def __init__(self, client_params, include_defaults=True):
+	def __init__(self, client_params, skip_defaults=False):
 
-		# init blank params
-		self.query_params = {}
-
+		self.params = {}
 		self.client_params = client_params
 
 		# include defaults
-		if include_defaults:
-			self.query_params.update(self.default_params)
+		if not skip_defaults:
+			self.params.update(self.default_params)
 
 		# merge defaults with overrides from client
-		self.query_params.update(self.client_params)
-		
-		# debug
-		print self.query_params
+		self.params.update(self.client_params)
 
+		# DEBUG
+		print self.params
+
+		# flip on facets of fields requested
+		if 'facet.field' in self.params and len(self.params['facet.field']) > 0:
+			self.params['facet'] = True
+		
 
 class Search(Resource):
 
@@ -192,10 +200,23 @@ class Search(Resource):
 		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
 		parser.add_argument('rows', type=int, help='expecting integer for number of rows to return')
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
+		parser.add_argument('wt', type=str, help='expecting string for return format (e.g. json, xml, csv)')
+		parser.add_argument('skip_defaults', type=flask_restful.inputs.boolean, help='true / false: if set false, will not load default solr params')
 		args = parser.parse_args()
 
+		# remove None values from args
+		args = dict((k, v) for k, v in args.iteritems() if v != None)
+
+		# include defaults?
+		if 'skip_defaults' in args and args['skip_defaults'] == True:
+			skip_defaults = True
+		else:
+			skip_defaults = False
+		if 'skip_defaults' in args:
+			del args['skip_defaults']
+
 		# build SolrSearch object
-		solr_search = SolrSearch(args)
+		solr_search = SolrSearch(args, skip_defaults=skip_defaults)
 
 		# Send and return query
 		sr = solr_handle.search(**solr_search.params)

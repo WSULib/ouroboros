@@ -130,30 +130,27 @@ class SolrSearch(object):
 	that is sent to solr_handle
 	'''
 
-	# default ordered facets, can be overridden
-	ordered_facets = [
-	  	"rels_hasContentModel",
-	  	"rels_isMemberOfCollection",  	
-	  	"facet_mods_year",
-	  	"dc_subject",
-	  	"dc_creator",
-	  	"dc_coverage",
-	  	"dc_language",
-	  	"dc_publisher" 	  	
-	  ]
+	def __init__(self, params=None):
 
+		'''
+		desc: translate parsed API args to mysolr syntax
+		expecting: dictionary of args as parsed by Search class
+		'''
+		
+		# facets
+		'''
+		This works for now, but again, the front-end should probably send these values.
+		At least, the ability override...
+		'''
+		if 'facet' in params:
+			params['facet.field'] = params['facet']
+			del params['facet']
+			params['facet.mincount'] = 1;
+			params['facet.limit'] = ["-1"]
+			params['facet'] = True
 
-	def __init__(self, **kwargs):
-		self.q = kwargs['q']
-		self.facet_list = kwargs['facet_list']
-		self.sort = kwargs['sort']
-		self.rows = kwargs['rows']
-		self.start = kwargs['start']
-
-
-	def as_dictionary(self):
-		return self.__dict__
-
+		# assidng
+		self.params = params
 
 
 class Search(Resource):
@@ -162,7 +159,6 @@ class Search(Resource):
 	desc: primary search class, prepared to handle general search, collection search,
 	and searching within items
 	'''
-
 
 	def get(self):
 
@@ -173,19 +169,24 @@ class Search(Resource):
 		parser = reqparse.RequestParser(bundle_errors=True)
 
 		# parse args
-		parser.add_argument('q', type=str, help='provide a solr search string')
-		parser.add_argument('facet_list', type=str, action='append', help='list of facets to return with response')
-		parser.add_argument('sort', type=str, help='field to sort by') # add multiple for tiered sorting?
-		parser.add_argument('rows', type=int, help='integer of number of rows to return')
-		parser.add_argument('start', type=int, help='integer for start of rows in response')
+		'''
+		Do we need to set a catch for every possible field?
+		Or some kind of dynamic catch?
+		PERHAPS: we should have straight 1:1 from fields caught....
+		or another route that does, like `SearchAdvanced`?
+		'''
+		parser.add_argument('q', type=str, help='expecting solr search string')
+		parser.add_argument('facet', type=str, action='append', help='expecting field to return as facet (multiple)')
+		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
+		parser.add_argument('rows', type=int, help='expecting integer for number of rows to return')
+		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
 		args = parser.parse_args()
-		print args
 
 		# build SolrSearch object
-		solr_search = SolrSearch(**args)
+		solr_search = SolrSearch(args)
 
 		# Send and return query
-		sr = solr_handle.search(**solr_search.as_dictionary())
+		sr = solr_handle.search(**solr_search.params)
 
 		# build response
 		response.status_code =200

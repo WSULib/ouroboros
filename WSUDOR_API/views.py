@@ -23,6 +23,7 @@ api.add_resource(models.Item, '/%s/item/<string:pid>' % (localConfig.WSUDOR_API_
 
 # SEARCH
 #################################################################################
+api.add_resource(models.Search, '/%s/search' % (localConfig.WSUDOR_API_PREFIX), endpoint='search')
 
 
 

@@ -16,6 +16,7 @@ from WSUDOR_API import api
 
 # WSUDOR_Manager
 from WSUDOR_ContentTypes import WSUDOR_Object
+from WSUDOR_Manager.solrHandles import solr_handle
 
 
 # ResponseObject
@@ -122,7 +123,85 @@ class Item(Resource):
 
 # SEARCH
 #################################################################################
+class SolrSearch(object):
 
+	'''
+	desc: container for solr search params, hasmethod for returning dictionary
+	that is sent to solr_handle
+	'''
+
+	# default ordered facets, can be overridden
+	ordered_facets = [
+	  	"rels_hasContentModel",
+	  	"rels_isMemberOfCollection",  	
+	  	"facet_mods_year",
+	  	"dc_subject",
+	  	"dc_creator",
+	  	"dc_coverage",
+	  	"dc_language",
+	  	"dc_publisher" 	  	
+	  ]
+
+
+	def __init__(self, q='*:*', facet_list=ordered_facets, sort='id', rows=10, start=0):
+		self.q = q
+		self.facet_list = facet_list
+		self.sort = sort
+		self.rows = rows
+		self.start = start
+
+
+	def as_dictionary(self):
+		return self.__dict__
+
+
+
+class Search(Resource):
+
+	'''
+	desc: primary search class, prepared to handle general search, collection search,
+	and searching within items
+	'''
+
+
+	def get(self):
+
+		# init parser
+		parser = reqparse.RequestParser(bundle_errors=True)
+
+		# parse args
+		parser.add_argument('q', type=str, help='provide a solr search string')
+		parser.add_argument('facet_list', type=str, action='append', help='list of facets to return with response')
+		parser.add_argument('sort', type=str, help='field to sort by') # add multiple for tiered sorting?
+		parser.add_argument('rows', type=int, help='integer of number of rows to return')
+		parser.add_argument('start', type=int, help='integer for start of rows in response')
+		args = parser.parse_args()
+		print args
+
+		# build SolrSearch object
+		# solr_search = SolrSearch(
+		# 	q = args['q']
+		# )
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# query Solr
+		# query dictionary (qd)
+		qd = {}
+
+		# query string
+		qd['q'] = ["*:*"]
+
+		# Send and return query
+		sr = solr_handle.search(**qd)
+
+		# build response
+		response.status_code =200
+		response.body = {
+			'solr_results': sr.raw_content
+		}
+		return response.generate_response()
 
 
 
@@ -143,7 +222,6 @@ class HelloWorld(Resource):
 
 
 class ArgParsing(Resource):
-
 
 	def get(self):
 		parser = reqparse.RequestParser(bundle_errors=True)

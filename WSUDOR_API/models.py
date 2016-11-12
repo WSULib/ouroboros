@@ -128,29 +128,41 @@ class SolrSearch(object):
 	'''
 	desc: container for solr search params, hasmethod for returning dictionary
 	that is sent to solr_handle
+	expecting: dictionary of args as parsed by Search class
+		Use dictionary1.update(dictionary2) to update defaults with 
+		overrides from client
 	'''
 
-	def __init__(self, params=None):
+	# order from https://wiki.apache.org/solr/CommonQueryParameters
+	default_params = { 
+		'q': '*:*',
+		'sort': None,
+		'start': 0,
+		'rows': 0,
+		'fq': [],
+		'fl': [],
+		'facet': False,
+		'facet.mincount': 1,
+		'facet.limit': -1,
+		'facet.field': []
+	}
 
-		'''
-		desc: translate parsed API args to mysolr syntax
-		expecting: dictionary of args as parsed by Search class
-		'''
+	def __init__(self, client_params, include_defaults=True):
+
+		# init blank params
+		self.query_params = {}
+
+		self.client_params = client_params
+
+		# include defaults
+		if include_defaults:
+			self.query_params.update(self.default_params)
+
+		# merge defaults with overrides from client
+		self.query_params.update(self.client_params)
 		
-		# facets
-		'''
-		This works for now, but again, the front-end should probably send these values.
-		At least, the ability override...
-		'''
-		if 'facet' in params:
-			params['facet.field'] = params['facet']
-			del params['facet']
-			params['facet.mincount'] = 1;
-			params['facet.limit'] = ["-1"]
-			params['facet'] = True
-
-		# assidng
-		self.params = params
+		# debug
+		print self.query_params
 
 
 class Search(Resource):
@@ -176,7 +188,7 @@ class Search(Resource):
 		or another route that does, like `SearchAdvanced`?
 		'''
 		parser.add_argument('q', type=str, help='expecting solr search string')
-		parser.add_argument('facet', type=str, action='append', help='expecting field to return as facet (multiple)')
+		parser.add_argument('facet.field', type=str, action='append', help='expecting field to return as facet (multiple)')
 		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
 		parser.add_argument('rows', type=int, help='expecting integer for number of rows to return')
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')

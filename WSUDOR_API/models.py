@@ -143,12 +143,12 @@ class SolrSearch(object):
 	  ]
 
 
-	def __init__(self, q='*:*', facet_list=ordered_facets, sort='id', rows=10, start=0):
-		self.q = q
-		self.facet_list = facet_list
-		self.sort = sort
-		self.rows = rows
-		self.start = start
+	def __init__(self, **kwargs):
+		self.q = kwargs['q']
+		self.facet_list = kwargs['facet_list']
+		self.sort = kwargs['sort']
+		self.rows = kwargs['rows']
+		self.start = kwargs['start']
 
 
 	def as_dictionary(self):
@@ -166,6 +166,9 @@ class Search(Resource):
 
 	def get(self):
 
+		# init ResponseObject
+		response = ResponseObject()
+
 		# init parser
 		parser = reqparse.RequestParser(bundle_errors=True)
 
@@ -179,22 +182,10 @@ class Search(Resource):
 		print args
 
 		# build SolrSearch object
-		# solr_search = SolrSearch(
-		# 	q = args['q']
-		# )
-
-		# init ResponseObject
-		response = ResponseObject()
-
-		# query Solr
-		# query dictionary (qd)
-		qd = {}
-
-		# query string
-		qd['q'] = ["*:*"]
+		solr_search = SolrSearch(**args)
 
 		# Send and return query
-		sr = solr_handle.search(**qd)
+		sr = solr_handle.search(**solr_search.as_dictionary())
 
 		# build response
 		response.status_code =200

@@ -1049,6 +1049,7 @@ def aem_factory(job_package):
 	# get dmd parts
 	dmd_parts = [element for element in METSroot.findall('{http://www.loc.gov/METS/}dmdSec')]
 	dmd_index = { element.attrib['ID']:element for element in dmd_parts }
+	print dmd_index
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
@@ -1062,55 +1063,55 @@ def aem_factory(job_package):
 		print "Enriching struct_map div %s / %s" % (step, len(sm_parts))
 		job_package['step'] = step
 
-		try:
+		# try:
 
-			# include Struct Map and DMD section in job package
+		# include Struct Map and DMD section in job package
 
-			# get DMDID
-			job_package['DMDID'] = sm_part.attrib['DMDID']
+		# get DMDID
+		job_package['DMDID'] = sm_part.attrib['DMDID']
 
-			# set ingest_id as highest ingest_id + step
-			job_package['ingest_id'] = high_ingest_id + step
+		# set ingest_id as highest ingest_id + step
+		job_package['ingest_id'] = high_ingest_id + step
 
-			# set parent type and DMDID, to determine if hasParent relationship is needed		
-			sm_parent = sm_part.getparent()
-			job_package['sm_parent'] = dict(sm_parent.attrib)
+		# set parent type and DMDID, to determine if hasParent relationship is needed		
+		sm_parent = sm_part.getparent()
+		job_package['sm_parent'] = dict(sm_parent.attrib)
 
-			# attempt to get label
-			if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
-				job_package['object_title'] = sm_part.attrib['LABEL']
-			else:
-				print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
-				job_package['object_title'] = sm_part.attrib['DMDID']
+		# attempt to get label
+		if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
+			job_package['object_title'] = sm_part.attrib['LABEL']
+		else:
+			print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
+			job_package['object_title'] = sm_part.attrib['DMDID']
 
-			# store structMap section as python dictionary
-			sm_dict = xmltodict.parse(etree.tostring(sm_part))
-			job_package['struct_map'] = json.dumps(sm_dict)
+		# store structMap section as python dictionary
+		sm_dict = xmltodict.parse(etree.tostring(sm_part))
+		job_package['struct_map'] = json.dumps(sm_dict)
 
-			# Use DMD index
-			dmd_handle = dmd_index[sm_part.attrib['DMDID']]
-			# grab MODS record and write to temp file		
-			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
-			temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
-			fhand = open(temp_filename,'w')
-			fhand.write(etree.tostring(MODS_elem))
-			fhand.close()		
-			job_package['MODS_temp_filename'] = temp_filename
+		# Use DMD index
+		dmd_handle = dmd_index[sm_part.attrib['DMDID']]
+		# grab MODS record and write to temp file		
+		MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
+		fhand = open(temp_filename,'w')
+		fhand.write(etree.tostring(MODS_elem))
+		fhand.close()		
+		job_package['MODS_temp_filename'] = temp_filename
 
-			# fire task via custom_loop_taskWrapper			
-			result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
-			task_id = result.id
+		# fire task via custom_loop_taskWrapper			
+		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+		task_id = result.id
 
-			# Set handle in Redis
-			redisHandles.r_job_handle.set("%s" % (task_id), "FIRED")
-				
-			# update incrementer for total assigned
-			jobs.jobUpdateAssignedCount(job_package['job_num'])
+		# Set handle in Redis
+		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED")
+			
+		# update incrementer for total assigned
+		jobs.jobUpdateAssignedCount(job_package['job_num'])
 
-		except:
+		# except:
 
-			print "##############################################"
-			print "an error was had enriching %s" % etree.tostring(sm_part)
+		# 	print "##############################################"
+		# 	print "an error was had enriching %s" % etree.tostring(sm_part)
 
 		# bump step
 		step += 1

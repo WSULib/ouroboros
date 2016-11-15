@@ -114,7 +114,7 @@ def job(job_id):
 	# aem enriched
 	if 'aem_enriched' in request.args and request.args['aem_enriched'] == "True":
 		session['aem_enriched'] = True
-	if 'aem_enriched' in request.args and request.args['aem_enriched'] == "False":
+	elif 'aem_enriched' in request.args and request.args['aem_enriched'] == "False":
 		session['aem_enriched'] = False
 	else:
 		utilities.sessionVarClean(session,'aem_enriched')
@@ -813,7 +813,7 @@ def ingestBag_factory(job_package):
 	print job_package
 
 	# get form data
-	form_data = job_package['form_data']	
+	form_data = job_package['form_data']
 
 	# set new task_name, for the worker below
 	job_package['custom_task_name'] = 'bagIngest_worker'
@@ -829,7 +829,7 @@ def ingestBag_factory(job_package):
 	
 	# insert into MySQL as ingest_workspace_object rows
 	step = 1
-	time.sleep(2)
+	time.sleep(.5)
 	for row in object_rows:
 
 		print "Preparing to ingest ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
@@ -845,15 +845,21 @@ def ingestBag_factory(job_package):
 			job_package['bag_dir'] = o.bag_path
 		else:
 			job_package['bag_dir'] = False
-		
-		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
-		task_id = result.id
 
-		# Set handle in Redis
-		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (step))
-			
-		# update incrementer for total assigned
-		jobs.jobUpdateAssignedCount(job_package['job_num'])
+		# check if enriched or permitted to ingest anyway
+		if o.aem_enriched or 'ingest_non_enriched' in form_data:
+		
+			result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+			task_id = result.id
+
+			# Set handle in Redis
+			redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (step))
+				
+			# update incrementer for total assigned
+			jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		else:
+			print "eitiher object not-enriched, or permission not granted to ingest non-enriched"
 
 		# bump step
 		step += 1
@@ -1056,31 +1062,32 @@ def aem_factory(job_package):
 		print "Enriching struct_map div %s / %s" % (step, len(sm_parts))
 		job_package['step'] = step
 
-		# include Struct Map and DMD section in job package
-
-		# get DMDID
-		job_package['DMDID'] = sm_part.attrib['DMDID']
-
-		# set ingest_id as highest ingest_id + step
-		job_package['ingest_id'] = high_ingest_id + step
-
-		# set parent type and DMDID, to determine if hasParent relationship is needed		
-		sm_parent = sm_part.getparent()
-		job_package['sm_parent'] = dict(sm_parent.attrib)
-
-		# attempt to get label
-		if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
-			job_package['object_title'] = sm_part.attrib['LABEL']
-		else:
-			print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
-			job_package['object_title'] = sm_part.attrib['DMDID']
-
-		# store structMap section as python dictionary
-		sm_dict = xmltodict.parse(etree.tostring(sm_part))
-		job_package['struct_map'] = json.dumps(sm_dict)
-
-		# Use DMD index
 		try:
+
+			# include Struct Map and DMD section in job package
+
+			# get DMDID
+			job_package['DMDID'] = sm_part.attrib['DMDID']
+
+			# set ingest_id as highest ingest_id + step
+			job_package['ingest_id'] = high_ingest_id + step
+
+			# set parent type and DMDID, to determine if hasParent relationship is needed		
+			sm_parent = sm_part.getparent()
+			job_package['sm_parent'] = dict(sm_parent.attrib)
+
+			# attempt to get label
+			if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
+				job_package['object_title'] = sm_part.attrib['LABEL']
+			else:
+				print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
+				job_package['object_title'] = sm_part.attrib['DMDID']
+
+			# store structMap section as python dictionary
+			sm_dict = xmltodict.parse(etree.tostring(sm_part))
+			job_package['struct_map'] = json.dumps(sm_dict)
+
+			# Use DMD index
 			dmd_handle = dmd_index[sm_part.attrib['DMDID']]
 			# grab MODS record and write to temp file		
 			MODS_elem = dmd_handle.find('{http://www.loc.gov/METS/}mdWrap[@MDTYPE="MODS"]/{http://www.loc.gov/METS/}xmlData/{http://www.loc.gov/mods/v3}mods')
@@ -1089,18 +1096,21 @@ def aem_factory(job_package):
 			fhand.write(etree.tostring(MODS_elem))
 			fhand.close()		
 			job_package['MODS_temp_filename'] = temp_filename
+
+			# fire task via custom_loop_taskWrapper			
+			result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+			task_id = result.id
+
+			# Set handle in Redis
+			redisHandles.r_job_handle.set("%s" % (task_id), "FIRED")
+				
+			# update incrementer for total assigned
+			jobs.jobUpdateAssignedCount(job_package['job_num'])
+
 		except:
-			print "could not find matching DMD section"
 
-		# fire task via custom_loop_taskWrapper			
-		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
-		task_id = result.id
-
-		# Set handle in Redis
-		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED")
-			
-		# update incrementer for total assigned
-		jobs.jobUpdateAssignedCount(job_package['job_num'])
+			print "##############################################"
+			print "an error was had enriching %s" % etree.tostring(sm_part)
 
 		# bump step
 		step += 1
@@ -1151,14 +1161,9 @@ def aem_worker(job_package):
 		print "creating new object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
 
 		# check of Intellectual object already created, if so, delete
-		# derive pid
-		if sm_part_type == 'collection':
-			id_prefix = 'collection'
-		else:
-			id_prefix = ''
-		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+		derived_pid = 'wayne:%s%s' % (j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
 		'''
-		mets:dmdSec IDs cannot start with an integer, hence the 'aem_prefix" from above
+		mets:dmdSec IDs cannot start with an integer
 		'''
 		o = models.ingest_workspace_object.query.filter_by(job=j,pid=derived_pid).first()
 
@@ -1185,32 +1190,13 @@ def aem_worker(job_package):
 	else:
 		print "updating descriptive information for %s / %s" % (job_package['DMDID'], job_package['object_title'])
 
-		######################################################################################################
-		# # derive PID
-		# # determine pid
-		# if sm_part_type == 'collection':
-		# 	id_prefix = 'collection'
-		# else:
-		# 	id_prefix = ''
-		# derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
-
-		# # temporary shim, strip perceived file extension from derived PID
-		# file_extension_suffixes = [
-		# 	'_pdf','_PDF','_docx','_DOCX'	
-		# ]
-		# for suffix in file_extension_suffixes:
-		# 	derived_pid = derived_pid.replace(suffix,'')
-
-		# print "derived pid: %s" % derived_pid
-
-		# # grab row
-		# o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
-		######################################################################################################
-
 		# grab row
 		if sm_part_type == 'document':
-			o = models.ingest_workspace_object.query.filter_by(job=j, file_id=job_package['DMDID']).first()
+			print "detected document type"
+			o = models.ingest_workspace_object.query.filter_by(job=j, file_id=job_package['DMDID']).first()			
+
 		if sm_part_type == 'file':
+			print "detected intellectual file type"
 			derived_pid = 'wayne:%s%s' % (j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1].replace(".","_"))
 			print "derived pid: %s" % derived_pid
 			o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
@@ -1276,8 +1262,10 @@ def rowQueryBuild(job_id, session):
 	if "aem_enriched" in session:
 		print "adding aem enriched filter"
 		if session['aem_enriched']:
+			print "filter: enriched"
 			query = query.filter(or_(models.ingest_workspace_object.aem_enriched != None, models.ingest_workspace_object.aem_enriched != "0" ))
 		if not session['aem_enriched']:
+			print "filter: NOT enriched"
 			query = query.filter(or_(models.ingest_workspace_object.aem_enriched == None, models.ingest_workspace_object.aem_enriched == "0" ))
 
 	# return query object

@@ -211,6 +211,13 @@
 						</div>
 					</div>
 					<div class="form-group">
+							<div class="checkbox">
+								<label>
+									<input name="ingest_non_enriched" type="checkbox"> Ingest if not enriched?
+								</label>
+							</div>
+						</div>
+					<div class="form-group">
 						<div class="checkbox">
 							<label>
 								<input name="push_remote" type="checkbox" onclick="$('.push_remote').fadeToggle();"> Push to remote repository?
@@ -240,7 +247,7 @@
 									<input name="omit_checksums" type="checkbox"> Omit checksums on send (can be helpful if objects contain Redirect (R) or External (E) datastreams)?
 								</label>
 							</div>
-						</div>
+						</div>						
 						<div class="form-group">
 							<div class="checkbox">
 								<label>

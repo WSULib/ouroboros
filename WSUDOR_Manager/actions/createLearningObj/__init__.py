@@ -92,11 +92,7 @@ def createContainer_worker():
 		{
 			"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
 			"object": form_data['collection']
-		},
-		{
-			"predicate": "info:fedora/fedora-system:def/relations-external#isMemberOfCollection",
-			"object": "info:fedora/wayne:collectionLearningObjects"
-		},
+		},		
 		{
 			"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
 			"object": "info:fedora/True"

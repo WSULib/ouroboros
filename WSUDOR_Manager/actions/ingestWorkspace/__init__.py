@@ -523,22 +523,24 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		job_package['pid'] = pid
 		###############################################################################################
 
-		# set AMDID and file_id, and grab amdSec if available
-		try:
-			print "amdSec ids:", fs.admids
-			job_package['AMDID'] = fs.admids[0]
-			job_package['amdSec'] = etree.tostring(mets.tree.xpath("//mets:amdSec[@ID='%s']" % (job_package['AMDID']), namespaces=mets.tree.getroot().nsmap)[0])
-			
-			'''
-			consider getting child premis object and events right now
-			but where to store?  
-				SQL? 
-				temp file?
-			'''
-
-		except:
-			job_package['AMDID'] = None
+		# set file_id
 		job_package['file_id'] = fs.file_id()
+
+		# parse amdSec and PREMIS events
+		if len(fs.admids) > 0:
+			print "amdSec ids:", fs.admids
+			job_package['AMDID'] = fs.admids[0]			
+			amdSec = mets.tree.xpath("//mets:amdSec[@ID='%s']" % (job_package['AMDID']), namespaces=mets.tree.getroot().nsmap)[0]
+			events_list = []
+			premis_events = amdSec.getchildren()
+			for event in premis_events:
+				events_list.append(etree.tostring(event.getchildren()[0].getchildren()[0].getchildren()[0]))
+			premis_events_json = json.dumps(events_list)
+			job_package['premis_events'] = premis_events_json
+		else:
+			job_package['AMDID'] = None
+			job_package['premis_events'] = None
+
 		
 		print "StructMap part ID: %s" % job_package['DMDID']
 
@@ -617,6 +619,7 @@ def createJob_worker(job_package):
 		'object_title': job_package['object_title'],
 		'DMDID': job_package['DMDID'],
 		'AMDID': job_package['AMDID'],
+		'premis_events': job_package['premis_events'],
 		'file_id': job_package['file_id'],
 		'pid': derived_pid,
 		'ingest_id': job_package['ingest_id'],

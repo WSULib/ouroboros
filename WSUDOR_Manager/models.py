@@ -232,6 +232,7 @@ class ingest_workspace_object(db.Model):
     object_title = db.Column(db.String(4096))
     DMDID = db.Column(db.String(4096))
     AMDID = db.Column(db.String(4096))
+    premis_events = db.Column(db.Text(4294967295))
     file_id = db.Column(db.String(255))
     ASpaceID = db.Column(db.String(255))
     struct_map = db.Column(db.Text(4294967295))
@@ -592,7 +593,7 @@ class PREMISClient(object):
         '''
 
         # parse string or element
-        if type(event) == str:
+        if type(event) == str or type(event) == unicode:
 
             try:
                 prepped_event = etree.fromstring(event)

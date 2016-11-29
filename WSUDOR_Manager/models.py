@@ -11,6 +11,7 @@ from flask import Response, jsonify
 import fileinput
 import xmlrpclib
 import os
+from lxml import etree
 # from itsdangerous import URLSafeTimedSerializer
 
 # session data secret key
@@ -538,11 +539,59 @@ class createSupervisorProcess(object):
 
 
 
+########################################################################
+# PREMIS
+########################################################################
+
+class PREMISClient(object):
+
+    '''
+    This client will be used to initialize and add PREMIS 
+    events to a PREMIS datastream.
+
+    Initialize empty, or with PID (assuming 'PREMIS' ds_id)
+    '''
+
+    def __init__(self, pid=False, ds_id='PREMIS'):
+
+        self.pid = pid
+        self.ohandle = False
+        self.premis_ds = False
+        self.premis_tree = None
+
+        # if pid provided, attempt to retrieve PREMIS
+        if pid:
+            self.ohandle = fedora_handle.get_object(pid)
+            if ds_id in self.ohandle.ds_list:
+                self.premis_ds = self.ohandle.getDatastreamObject('PREMIS')
+                self.xml = self.premis_ds.content.node
+            else:
+                print "%s datastream not found, initializing blank PREMIS node" % ds_id
+
+        # if no pre-exisintg PREMIS datastream, init new one
+        if not self.premis_ds:
+            self.premis_root = etree.Element('premis')
+            self.premis_tree = etree.ElementTree(self.premis_root)
 
 
+    def add_event_xml(self, event):
+        
+        '''
+        accept XML string or etree element, add to PREMIS datastream
+        '''
+
+        # parse string or element
+        if type(event) == str:
+            prepped_event = etree.fromstring(event)
+        if type(event) == etree._Element:
+            prepped_event = event
+
+        self.premis_root.append(prepped_event)
 
 
-
+    def as_string(self, pretty_print=2):
+        
+        return etree.tostring(self.premis_tree, pretty_print=pretty_print)
 
 
 

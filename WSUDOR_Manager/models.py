@@ -12,6 +12,7 @@ import fileinput
 import xmlrpclib
 import os
 from lxml import etree
+import re
 import eulfedora
 # from itsdangerous import URLSafeTimedSerializer
 
@@ -575,7 +576,12 @@ class PREMISClient(object):
 
         # if no pre-exisintg PREMIS datastream, init new one
         if not self.premis_ds:
-            self.premis_root = etree.Element('premis')
+            ns = {
+                "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xsd": "http://www.w3.org/2001/XMLSchema",
+                "premis": "info:lc/xmlns/premis-v2",
+            }
+            self.premis_root = etree.Element('premis', nsmap=ns)
             self.premis_tree = etree.ElementTree(self.premis_root)
 
 
@@ -587,7 +593,14 @@ class PREMISClient(object):
 
         # parse string or element
         if type(event) == str:
-            prepped_event = etree.fromstring(event)
+
+            try:
+                prepped_event = etree.fromstring(event)
+            except:
+                print "could not parse element from string, attempting to inject xsi declaration after first blank space"
+                event = re.sub(r' ', ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ', event, 1) # trailing 1 allows only one replace
+                prepped_event = etree.fromstring(event)
+
         if type(event) == etree._Element:
             prepped_event = event
 

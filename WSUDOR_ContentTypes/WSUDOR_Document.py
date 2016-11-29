@@ -225,6 +225,13 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					rep_handle.label = gen_type
 					rep_handle.save()
 
+			# create PREMIS datastream
+
+			# for premis event in objMeta, add to 
+			PREMIS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M')
+			PREMIS_handle.label = "PREMIS"
+			PREMIS_handle.content = '<?xml version="1.0" encoding="UTF-8"?><premis></premis>'
+			PREMIS_handle.save()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()

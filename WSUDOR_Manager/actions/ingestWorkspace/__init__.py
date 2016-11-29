@@ -523,15 +523,29 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		job_package['pid'] = pid
 		###############################################################################################
 
-		# set AMDID and file_id
+		# set AMDID and file_id, and grab amdSec if available
 		try:
 			print "amdSec ids:", fs.admids
 			job_package['AMDID'] = fs.admids[0]
+			job_package['amdSec'] = etree.tostring(mets.tree.xpath("//mets:amdSec[@ID='%s']" % (job_package['AMDID']), namespaces=mets.tree.getroot().nsmap)[0])
+			
+			'''
+			consider getting child premis object and events right now
+			but where to store?  
+				SQL? 
+				temp file?
+			'''
+
 		except:
 			job_package['AMDID'] = None
 		job_package['file_id'] = fs.file_id()
 		
 		print "StructMap part ID: %s" % job_package['DMDID']
+
+		'''
+		It's possible we shouldn't write this entire struct_map to celery job?
+		Grab in worker below?
+		'''
 
 		# store structMap section as python dictionary
 		sm_dict = xmltodict.parse(etree.tostring(fs.serialize_structmap()))
@@ -596,7 +610,7 @@ def createJob_worker(job_package):
 	else:
 		derived_pid = 'wayne:%s%s' % (id_prefix,job_package['DMDID'])
 
-		# insert with SQLAlchemy Core
+	# insert with SQLAlchemy Core
 	db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
 		'job_id': job_package['job_id'],	    
 		'object_type': job_package['object_type'],

@@ -2,7 +2,14 @@
 <!-- Imports -->
 <script type="text/javascript" src="{{ url_for('static',filename='chartjs/Chart.js')}}"></script>
 
-
+<style>
+	.normal_sized {
+		font-size:100%;
+	}
+	.normal_sized td {
+		font-size: 100%;
+	}
+</style>
 
 <div class="row">
 	<div class="col-md-12">
@@ -214,49 +221,57 @@
 			}
 		</script>
 		<h3>Datastreams</h3>
-		<p>Below are all files associated with this digital object.  The "Download" button is a link to this file that includes a single-use download token.  To provide a usable URL to a user, right-click that button and save the link, but do not use it.  It is good for one download only.  To refresh the Download buttons, simple refresh this page.  <span><a href="#" onclick="$('.more_ds_info').slideToggle(); return false;">Click for more info about these datastreams...</a></span></p>
-		<div class="more_ds_info well" style="display:none;">
+		<p>Below are all files associated with this digital object.  The "Download" button is a link to this file that includes a single-use download token.  To provide a usable URL to a user, right-click that button and save the link, but do not use it.  It is good for one download only.  To refresh the Download buttons, simple refresh this page.</p>
+		<p><a class="btn btn-warning" href="#" onclick="$('.more_ds_info').slideToggle(); return false;">Click for more info</a></span></p>
+		<div class="more_ds_info" style="display:none; padding:20px; background-color:#ffffdf;">
 			<h4>Preservation and Internal Files</h4>
 			<p>The table below includes ALL files associated with a digital object in Fedora Comons, including datastreams used for mostly internal use. Some of these internal datastreams include:</p>
-			<table class="table">
+			<table class="table normal_sized">
 				<tr>
-					<td><strong>MODS, DC</strong></td>
+					<td><code>MODS, DC</code></td>
 					<td>MODS and Dublin Core (DC) descriptive metadata.</td>
 				</tr>
 				<tr>
-					<td><strong>BAGIT_META</strong></td>
+					<td><code>THUMBNAIL, PREVIEW</code></td>
+					<td>Single image that is representative of this digital object: 'THUMBNAIL' is small, 'PREVIEW' is medium sized.</td>
+				</tr>
+				<tr>
+					<td><code>BAGIT_META</code></td>
 					<td>A tarball of metadata used for ingest.</td>
 				</tr>
 				<tr>
-					<td><strong>POLICY</strong></td>
+					<td><code>POLICY</code></td>
 					<td>This XML file is an XACML policy that Fedora Commons uses to decided access.</td>
 				</tr>
 				<tr>
-					<td><strong>OBJMETA</strong></td>
+					<td><code>OBJMETA</code></td>
 					<td>JSON file with datastreams originally ingested with this object.</td>
 				</tr>
 				<tr>
-					<td><strong>RELS-EXT, RELS-INT</strong></td>
+					<td><code>RELS-EXT, RELS-INT</code></td>
 					<td>XML files containing RDF that outline relationships to other objects, relationships between datastreams, and relationships to outside URIs.</td>
 				</tr>
 				<tr>
-					<td><strong>IIF_MANIFEST</strong></td>
+					<td><code>IIF_MANIFEST</code></td>
 					<td>Where applicable, International Image Interoperability Framework (IIIF) manifest for this digital object.  This manifest powers zooming image viewers, book readers, etc.</td>
 				</tr>
 			</table>
+			
 			<h4>Images</h4>
-			<p>For sharing links to images for users, which one to use?  As you might notice, a single image has multiple derivatives.  For example a datastream with the label, "vmc4098", maybe have multiple similar datastreams:
+			<p>For sharing links to images for users, which one to use?  As you might notice, a single image has multiple derivatives.  For example a datastream with the label, <code>vmc4098</code>, maybe have multiple similar datastreams:
 				<ul>
-					<li>vmc4098</li>
-					<li>vmc4098_ACCESS</li>
-					<li>vmc4098_JP2</li>
-					<li>vmc4098_PREVIEW</li>
-					<li>vmc4098_THUMBNAIL</li>
+					<li><code>vmc4098</code></li>
+					<li><code>vmc4098_ACCESS</code></li>
+					<li><code>vmc4098_JP2</code></li>
+					<li><code>vmc4098_PREVIEW</code></li>
+					<li><code>vmc4098_THUMBNAIL</code></li>
 				</ul>
 			</p>
-			<p>The datastream without any suffix (e.g. vmc4098)is the original image ingested, quite often in TIFF format.  However, it can be convenient to share a full-sized JPEG file with users, which is indicated by the "_ACCESS" suffix (e.g. vmc4098_ACCESS).  JPEG2000's are also available with the "_JP2" suffix.</p>
+			<p>The datastream without any suffix (e.g. <code>vmc4098</code>) is the original image ingested, quite often in TIFF format.  However, it can be convenient to share a full-sized JPEG file with users, which is indicated by the <code>_ACCESS</code> suffix (e.g. <code>vmc4098_ACCESS</code>).  JPEG2000's are also available with the <code>_JP2</code> suffix.</p>
+			
 			<h4>Archival Documents</h4>
-			<p>In many cases, these will contain only a couple files worth sharing.  One is the original name of the ingested file, e.g. "DS1777.1.04.03.pdf".  All archival documents also have a "FILE" datastream, which is simply a pointer to the original file.  Both can be used or shared, though "FILE" has no use restrictions and requires no download token.</p>
+			<p>In many cases, these will contain only a couple files worth sharing.  One is the original name of the ingested file, e.g. <code>DS1777.1.04.03.pdf</code>.  All archival documents also have a <code>FILE</code> datastream, which is simply a pointer to the original file.  Both can be used or shared, though <code>FILE</code> has no use restrictions and requires no download token.</p>
+		
 		</div>
 		<table style="font-size:90%;" style="margin:auto;" class="table">
 			<tr class="headers" style="text-align:left;">

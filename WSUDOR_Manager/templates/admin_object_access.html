@@ -223,7 +223,7 @@
 		<h3>Datastreams</h3>
 		<p>Below are all files associated with this digital object.  The "Download" button is a link to this file that includes a single-use download token.  To provide a usable URL to a user, right-click that button and save the link, but do not use it.  It is good for one download only.  To refresh the Download buttons, simple refresh this page.</p>
 		<p><a class="btn btn-warning" href="#" onclick="$('.more_ds_info').slideToggle(); return false;">Click for more info</a></span></p>
-		<div class="more_ds_info" style="display:none; padding:20px; background-color:#ffffdf;">
+		<div class="more_ds_info" style="display:none; padding:20px;">
 			<h4>Preservation and Internal Files</h4>
 			<p>The table below includes ALL files associated with a digital object in Fedora Comons, including datastreams used for mostly internal use. Some of these internal datastreams include:</p>
 			<table class="table normal_sized">
@@ -234,6 +234,10 @@
 				<tr>
 					<td><code>THUMBNAIL, PREVIEW</code></td>
 					<td>Single image that is representative of this digital object: 'THUMBNAIL' is small, 'PREVIEW' is medium sized.</td>
+				</tr>
+				<tr>
+					<td><code>PREMIS</code></td>
+					<td>PREMIS is preservation metadata.  This PREMIS file is kicked off with Archivematica's original ingest, and later preservation activites are logged here as <code>&lt;premis&gt;</code> events.</td>
 				</tr>
 				<tr>
 					<td><code>BAGIT_META</code></td>

@@ -249,6 +249,10 @@ class BitStream(object):
 
 			return response_dict
 
+		else:
+			print "bitstream key not recognized"
+			return False
+
 
 # bitStream
 @WSUDOR_API_app.route("/%s/bitStream/<PID>/<DS>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])

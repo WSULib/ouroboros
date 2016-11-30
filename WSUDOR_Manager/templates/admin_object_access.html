@@ -1,0 +1,357 @@
+{% include 'header.html' %}
+<!-- Imports -->
+<script type="text/javascript" src="{{ url_for('static',filename='chartjs/Chart.js')}}"></script>
+
+
+
+<div class="row">
+	<div class="col-md-12">
+		<h2>Administrator Object Overview</h2>
+		<p>This page provides a general overview of a single digital object, including files associated with this object, relationships to other objects, size, and OAI-PMH information.</p>
+	</div>
+</div>
+
+<hr>
+
+<div class="row">
+	<div class="col-md-7">
+		<h3>Metadata</h3>
+		<h5>"{{object_package.solr_package.dc_title[0]}}"</h5>
+		<table id="solr_table" style="font-size:90%;" class="table">
+			<tr>
+				<td><strong>thumbnail:</strong></td>
+				<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/digitalcollections/item?id={{pid}}"><img class="img-rounded" src="http://{{localConfig.APP_HOST}}/item/{{pid}}/thumbnail"/></a></td>
+			</tr>
+			{% set displayed_fields = ['dc_description','dc_date','dc_rights'] %}			
+			{% for field in displayed_fields %}
+				{% if field in object_package.solr_package %}
+					<tr>
+						<td><strong>{{field}}:</strong></td>
+						<td>{{object_package.solr_package[field][0]}}</td>
+					</tr>	
+				{% else %}
+					<tr>
+						<td><strong>{{field}}:</strong></td>
+						<td><span style="color:red;">None Found</span></td>
+					</tr>			
+				{% endif %}
+			{% endfor %}			
+		</table>
+
+	</div>	
+	<div class="col-md-5">
+		<div id="size">			
+			<canvas id="size_chart" width="320" height="320"></canvas>
+			<script type="text/javascript">
+				// Get context with jQuery - using jQuery's .get() method.
+				var ctx = $("#size_chart").get(0).getContext("2d");								
+
+				// prepare data
+				var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');				
+
+				/**
+				 * Converts an HSV color value to RGB. Conversion formula
+				 * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+				 * Assumes h, s, and v are contained in the set [0, 1] and
+				 * returns r, g, and b in the set [0, 255].
+				 *
+				 * @param   Number  h       The hue
+				 * @param   Number  s       The saturation
+				 * @param   Number  v       The value
+				 * @return  Array           The RGB representation
+
+				 Pulled from: http://axonflux.com/handy-rgb-to-hsl-and-rgb-to-hsv-color-model-c
+				 */
+				function hsvToRgb(h, s, v){
+				    var r, g, b;
+
+				    var i = Math.floor(h * 6);
+				    var f = h * 6 - i;
+				    var p = v * (1 - s);
+				    var q = v * (1 - f * s);
+				    var t = v * (1 - (1 - f) * s);
+
+				    switch(i % 6){
+				        case 0: r = v, g = t, b = p; break;
+				        case 1: r = q, g = v, b = p; break;
+				        case 2: r = p, g = v, b = t; break;
+				        case 3: r = p, g = q, b = v; break;
+				        case 4: r = t, g = p, b = v; break;
+				        case 5: r = v, g = p, b = q; break;
+				    }
+
+				    return [r * 255, g * 255, b * 255];
+				}
+
+				/**
+				 * Converts an HSL color value to RGB. Conversion formula
+				 * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+				 * Assumes h, s, and l are contained in the set [0, 1] and
+				 * returns r, g, and b in the set [0, 255].
+				 *
+				 * @param   Number  h       The hue
+				 * @param   Number  s       The saturation
+				 * @param   Number  l       The lightness
+				 * @return  Array           The RGB representation
+				 */
+				function hslToRgb(h, s, l){
+				    var r, g, b;
+
+				    if(s == 0){
+				        r = g = b = l; // achromatic
+				    }else{
+				        function hue2rgb(p, q, t){
+				            if(t < 0) t += 1;
+				            if(t > 1) t -= 1;
+				            if(t < 1/6) return p + (q - p) * 6 * t;
+				            if(t < 1/2) return q;
+				            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+				            return p;
+				        }
+
+				        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+				        var p = 2 * l - q;
+				        r = hue2rgb(p, q, h + 1/3);
+				        g = hue2rgb(p, q, h);
+				        b = hue2rgb(p, q, h - 1/3);
+				    }
+
+				    return [r * 255, g * 255, b * 255];
+				}
+
+				// loop through
+				data = [];
+				for (var key in raw_data) {
+
+				  // skip datastreams with 0 size, and "total_size" key
+				  if ( raw_data.hasOwnProperty(key) && key != "total_size" && raw_data[key][0] > 0 ) {				  	
+				    
+				  	// determine color using HSV
+				  	percentage_of_total = raw_data[key][0] / raw_data['total_size'][0];
+				  	seg_percent = ( 1 - percentage_of_total ) * .23;
+				  	rgb_values = hsvToRgb(seg_percent, .9, .9);				  	
+
+				    var temp_obj = {
+				    	"label":key,
+				    	"value":raw_data[key][0],
+				    	"human_value":raw_data[key][1],
+				    	"color":"rgb("+Math.round(rgb_values[0])+","+Math.round(rgb_values[1])+","+Math.round(rgb_values[2])+")"
+				    }
+				    data.push(temp_obj);
+				  }				  
+				}				
+
+				// quick sort based on value (passes as param to .sort() method)
+				function compare(a,b) {
+				  if (a.value < b.value)
+				     return -1;
+				  if (a.value > b.value)
+				    return 1;
+				  return 0;
+				}
+				data = data.sort(compare);
+
+				var options = {
+				    //Boolean - Whether we should show a stroke on each segment
+				    segmentShowStroke : true,
+				    //String - The colour of each segment stroke
+				    segmentStrokeColor : "#fff",
+				    //Number - The width of each segment stroke
+				    segmentStrokeWidth : 1,
+				    //Number - The percentage of the chart that we cut out of the middle
+				    percentageInnerCutout : 50, // This is 0 for Pie charts
+				    //Number - Amount of animation steps
+				    animationSteps : 50,
+				    //String - Animation easing effect
+				    animationEasing : "easeOutCirc",
+				    //Boolean - Whether we animate the rotation of the Doughnut
+				    animateRotate : true,
+				    //Boolean - Whether we animate scaling the Doughnut from the centre
+				    animateScale : false				    
+				}
+
+				// This will get the first returned node in the jQuery collection.				
+				var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
+			</script>
+			<h4>Total Object Size: <strong>{{object_package.size_dict.total_size.1}}</strong></h4>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-10">
+		<script>
+			function customThumbs(ds_row) {
+				// debug
+				tronic = ds_row;
+				img_ele = $($(ds_row.find('td')[0]).find('img')[0])
+
+				// debug mimetype
+				var mimetype = $(ds_row).attr('mimetype');
+
+				// use mimetype to get datastream
+				thumb_hash = {
+					'application/pdf': 'PDF',
+					'application/x-tar': 'Archive',
+					'text/xml': 'XML',
+					'text/html': 'HTML',
+					'application/json': 'JSON',
+					'application/rdf+xml': 'RDF'
+
+				}
+
+				if (mimetype in thumb_hash) {
+					ds = thumb_hash[mimetype];
+				}
+				else {
+					ds = 'Unknown';
+				}
+				thumb_url = 'http://{{localConfig.APP_HOST}}/item/wayne:WSUDORThumbnails/bitStream/'+ds+'?key={{localConfig.BITSTREAM_KEY}}'
+
+				// replace
+				img_ele.attr('src',thumb_url);
+				img_ele.attr('height', 30);
+			}
+		</script>
+		<h3>Datastreams</h3>
+		<p>Below are all files associated with this digital object.  The "Download" button is a link to this file that includes a single-use download token.  To provide a usable URL to a user, right-click that button and save the link, but do not use it.  It is good for one download only.  To refresh the Download buttons, simple refresh this page.  <span><a href="#" onclick="$('.more_ds_info').slideToggle(); return false;">Click for more info about these datastreams...</a></span></p>
+		<div class="more_ds_info well" style="display:none;">
+			<h4>Preservation and Internal Files</h4>
+			<p>The table below includes ALL files associated with a digital object in Fedora Comons, including datastreams used for mostly internal use. Some of these internal datastreams include:</p>
+			<table class="table">
+				<tr>
+					<td><strong>MODS, DC</strong></td>
+					<td>MODS and Dublin Core (DC) descriptive metadata.</td>
+				</tr>
+				<tr>
+					<td><strong>BAGIT_META</strong></td>
+					<td>A tarball of metadata used for ingest.</td>
+				</tr>
+				<tr>
+					<td><strong>POLICY</strong></td>
+					<td>This XML file is an XACML policy that Fedora Commons uses to decided access.</td>
+				</tr>
+				<tr>
+					<td><strong>OBJMETA</strong></td>
+					<td>JSON file with datastreams originally ingested with this object.</td>
+				</tr>
+				<tr>
+					<td><strong>RELS-EXT, RELS-INT</strong></td>
+					<td>XML files containing RDF that outline relationships to other objects, relationships between datastreams, and relationships to outside URIs.</td>
+				</tr>
+				<tr>
+					<td><strong>IIF_MANIFEST</strong></td>
+					<td>Where applicable, International Image Interoperability Framework (IIIF) manifest for this digital object.  This manifest powers zooming image viewers, book readers, etc.</td>
+				</tr>
+			</table>
+			<h4>Images</h4>
+			<p>For sharing links to images for users, which one to use?  As you might notice, a single image has multiple derivatives.  For example a datastream with the label, "vmc4098", maybe have multiple similar datastreams:
+				<ul>
+					<li>vmc4098</li>
+					<li>vmc4098_ACCESS</li>
+					<li>vmc4098_JP2</li>
+					<li>vmc4098_PREVIEW</li>
+					<li>vmc4098_THUMBNAIL</li>
+				</ul>
+			</p>
+			<p>The datastream without any suffix (e.g. vmc4098)is the original image ingested, quite often in TIFF format.  However, it can be convenient to share a full-sized JPEG file with users, which is indicated by the "_ACCESS" suffix (e.g. vmc4098_ACCESS).  JPEG2000's are also available with the "_JP2" suffix.</p>
+			<h4>Archival Documents</h4>
+			<p>In many cases, these will contain only a couple files worth sharing.  One is the original name of the ingested file, e.g. "DS1777.1.04.03.pdf".  All archival documents also have a "FILE" datastream, which is simply a pointer to the original file.  Both can be used or shared, though "FILE" has no use restrictions and requires no download token.</p>
+		</div>
+		<table style="font-size:90%;" style="margin:auto;" class="table">
+			<tr class="headers" style="text-align:left;">
+				<td><strong>Thumbnail</strong></td>
+				<td><strong>ID</strong></td>
+				<td><strong>Label</strong></td>
+				<td><strong>Mime Type</strong></td>
+				<td><strong>Size</strong></td>
+				<td><strong>Downloads</strong></td>				
+			</tr>
+			{% for ds in object_package.datastream_package|sort %}				
+				<tr mimetype="{{object_package.datastream_package[ds].mimeType}}">
+					<td><img src="http://{{localConfig.APP_HOST}}/loris/fedora:{{pid}}|{{ds}}/full/60,/0/default.jpg" onError="this.onerror = '';customThumbs($(this).parent().parent());"/></td>						
+					<td>{{ds}}</td>
+					<td>{{object_package.datastream_package[ds].label}}</td>
+					<td>{{object_package.datastream_package[ds].mimeType}}</td>
+					<td>{{object_package.size_dict[ds].1}}</td>			
+					<!-- use bitStream tokens here -->		
+					<td>
+						<a target="_blank" href="{{object_package.bitStream_tokens[ds].url}}" class="btn btn-success download_button" onclick="$(this).removeClass('btn-success').addClass('btn-danger').addClass('disabled'); $(this).html('Link Expired'); $(this).prop('disabled',true);">Download</a>
+					</td>
+				</tr>
+			{% endfor %}
+		</table>
+		<script>
+
+		</script>
+	</div>
+	{% if object_package.components_package %}
+	<div class="col-md-6">
+		<h3>Components</h3>		
+		<table style="font-size:90%;" style="margin:auto;" class="table">
+			<tr class="headers">
+				<td><strong>PID</strong></td>				
+			</tr>
+			{% for subject in object_package.components_package %}				
+				<tr>						
+					<td>{{subject}}</td>				
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+	{% endif %}
+</div>
+
+<!-- <div class="row">
+	
+</div> -->
+
+<div class="row">
+	<div class="col-md-10">
+		<h3>RDF Relationships</h3>
+		<p>RDF relationships are the "glue" that hold digital objects together in Fedora Commons.  These relationships describe what collections objects belong to, what objects are related, etc.  You can view these raw RDF relationships below by clicking the button below.</p>
+		<p><a class="btn btn-warning" href="#" onclick="$('.rdf_relationships').slideToggle(); return false;">show RDF relationships</a></p>
+		<div class="rdf_relationships" style="display:none;">			
+			<table style="font-size:90%;" id="rdf_triples_modify" style="margin:auto;" class="table">
+				<tr class="headers">
+					<td><strong>Predicate</strong></td>
+					<td><strong>Object</strong></td>				
+				</tr>
+				{% for predicate,object in object_package.rdf_package %}				
+					<tr>						
+						<td class="predicate">{{predicate}}</td>
+						<td class="object">{{object}}</td>					
+					</tr>
+				{% endfor %}
+			</table>
+		</div>
+	</div>
+</div>
+
+
+
+<div class="row">
+	<div class="col-md-10">
+		<h3><a href="/{{APP_PREFIX}}/tasks/manageOAIOAI">OAI</a></h3>
+		<p>This small section shows the unique OAI-PMH identifier for this object, and what sets it belongs to.  This identifier and OAI-PMH record is what eventually makes its way to the Digital Public Library of America (DPLA).</p>
+		<ul>{% if object_package.OAI_package['ID'] %}			
+			<li><strong>OAI Record:</strong> <a target="_blank" href="http://{{localConfig.APP_HOST}}/oaiprovider/?verb=GetRecord&identifier={{object_package.OAI_package['ID']}}&metadataPrefix=mods">link</a></li>
+			{% endif %}
+			
+			<li><strong>Members of OAI Sets</strong>:
+				<ul>
+					{% for set in object_package.OAI_package['sets'] %}
+					<li>{{set}}</li>
+					{% endfor %}
+				</ul>
+			</li>			
+
+		</ul>
+	</div>
+</div>
+
+
+
+
+
+{% include 'footer.html' %}

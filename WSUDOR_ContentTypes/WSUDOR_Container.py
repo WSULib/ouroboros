@@ -154,6 +154,23 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
+			# write METS files if hierarchical container type
+			if self.objMeta['intellectual_type'] == 'collection':
+
+				if os.path.exists(self.Bag.path + "/data/archivematica_METS.xml"):
+					archivematica_mets_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "ARCHIVEMATICA_METS", "Archivematica METS", mimetype="text/xml", control_group='M')
+					archivematica_mets_handle.label = "Archivematica METS"
+					file_path = self.Bag.path + "/data/archivematica_METS.xml"
+					archivematica_mets_handle.content = open(file_path)
+					archivematica_mets_handle.save()
+
+				if os.path.exists(self.Bag.path + "/data/aspace_enrichment_METS.xml"):
+					archivematica_mets_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "ENRICHMENT_METS", "Enrichment METS from ArchivesSpace", mimetype="text/xml", control_group='M')
+					archivematica_mets_handle.label = "Enrichment METS from ArchivesSpace"
+					file_path = self.Bag.path + "/data/aspace_enrichment_METS.xml"
+					archivematica_mets_handle.content = open(file_path)
+					archivematica_mets_handle.save()
+
 			# make generic container thumb
 			thumb_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/png", control_group="M")
 			thumb_handle.ds_location = "http://localhost/fedora/objects/wayne:WSUDORThumbnails/datastreams/WSUDOR_Container/content"

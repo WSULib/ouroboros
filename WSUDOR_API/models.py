@@ -34,7 +34,7 @@ class ResponseObject(object):
 			response.headers = { 'X-Powered-By':'custom headers' }
 
 		2) init with code, body, and headers already compiled:
-			response = ResponseObject(200, body, headers)
+			response = ResponseObject(status_code=200, body={}, headers={})
 
 	Then use generate_response() method to return:
 		return response.generate_response()
@@ -54,10 +54,27 @@ class ResponseObject(object):
 
 		return {
 			'header':{
-				'response_time': time.time() - self.stime,
+				'api_response_time': time.time() - self.stime,
 			},
 			'response': self.body,
 		}, self.status_code, self.headers
+
+
+# ITEMS
+#################################################################################
+class Identify(Resource):
+
+	'''
+	desc: returns generic API information	
+	'''
+
+	def get(self):
+
+		# init ResponseObject
+		response = ResponseObject(status_code=200, body={
+			'identify':'WSUDOR API'	
+		})
+		return response.generate_response()
 
 
 

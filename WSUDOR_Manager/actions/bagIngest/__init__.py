@@ -208,7 +208,7 @@ def bagIngest_worker(job_package):
 		# ingest bag
 		try:
 			# because we're sending remotely, not indexing locally
-			ingest_bag = bag_handle.ingestBag()
+			ingest_bag = bag_handle.ingestBag(indexObject=False)
 		except Exception, e:
 			raise Exception(e)
 			return False

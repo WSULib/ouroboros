@@ -120,7 +120,7 @@ def loris_image(image_id,region,size,rotation,quality,format):
 	# debug url
 	image_url = str(ic)
 	print image_url
-	r = requests.get(str(ic), stream=True)
+	r = requests.get(str(ic), stream=False)
 
 	# stream_with_context
 	# http://flask.pocoo.org/snippets/118/

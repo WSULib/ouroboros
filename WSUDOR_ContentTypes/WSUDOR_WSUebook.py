@@ -183,7 +183,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest
-	def ingestBag(self,indexObject=True):
+	def ingestBag(self, indexObject=True):
 
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")

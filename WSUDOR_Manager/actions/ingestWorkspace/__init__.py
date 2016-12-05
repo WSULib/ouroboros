@@ -190,6 +190,16 @@ def objectDetails(job_id,ingest_id):
 	return render_template("objectDetails.html", o=o, bag_tree=bag_tree)
 
 
+# row objMeta
+@ingestWorkspace.route('/ingestWorkspace/objectDetails/<job_id>/<ingest_id>/objMeta.json', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def objectDetails_objMeta(job_id, ingest_id):
+
+	# get object handle from DB
+	o = models.ingest_workspace_object.query.filter_by(job_id=job_id,ingest_id=ingest_id).first()
+	return jsonify(json.loads(o.objMeta))
+
+
 
 # job edit / view
 @ingestWorkspace.route('/ingestWorkspace/job/<job_id>/viewMETS', methods=['POST', 'GET'])
@@ -301,13 +311,12 @@ def jobjson(job_id):
 
 
 #################################################################################
-# View SQL row data
+# Row Data
 #################################################################################
 @ingestWorkspace.route('/ingestWorkspace/viewSQLData/<table>/<id>/<column>/<mimetype>', methods=['POST', 'GET'])
 @roles.auth(['admin'])
 def viewSQLData(table,id,column,mimetype):
 	return "Coming soon"
-
 
 
 #################################################################################
@@ -450,6 +459,9 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 			fhand.write(etree.tostring(MODS_elem))
 			fhand.close()		
 			job_package['MODS_temp_filename'] = temp_filename
+
+			# not storing PREMIS events yet
+			job_package['premis_events'] = None
 
 		except:
 			print "ERROR"

@@ -107,7 +107,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		missing_pages_set = set(page_nums).symmetric_difference(xrange(page_nums[0], page_nums[-1] + 1))
 
 		# add page 1 if not present
-		if not 1 in missing_pages_set:
+		if 1 not in missing_pages_set and 1 not in page_nums:
 			missing_pages_set.add(1)
 
 		return missing_pages_set
@@ -265,9 +265,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				page_obj.ingest(self, page_num)
 
 			# iterate through anticipated missing pages and create missing page objects
-			for page_num in self.missing_pages_from_objMeta:
-				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
-				page_obj.ingestMissingPage(self, page_num)
+			'''
+			Consider not doing...
+			'''
+			# for page_num in self.missing_pages_from_objMeta:
+			# 	page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+			# 	page_obj.ingestMissingPage(self, page_num)
 
 			########################################################################################################
 

@@ -160,12 +160,12 @@ class SolrSearch(object):
 
 	def __init__(self):
 
-		# capture args
-		self.get_request_args()
-
 		self.params = {}
 
-		# include defaults
+		# capture request args
+		self.capture_request_args()
+
+		# include defaults if skip_defaults is not present, or False
 		if not self.skip_defaults:
 			self.params.update(self.default_params)
 
@@ -180,7 +180,10 @@ class SolrSearch(object):
 			self.params['facet'] = True
 
 
-	def get_request_args(self):
+	def capture_request_args(self):
+
+		# using request arg parsing from flask-restful
+		# http://flask-restful-cn.readthedocs.io/en/0.3.5/reqparse.html
 
 		# init parser
 		parser = reqparse.RequestParser(bundle_errors=True)
@@ -217,6 +220,7 @@ class SolrSearch(object):
 			doc['item_metadata'] = 'http://%s/WSUAPI/item/%s' % (localConfig.APP_HOST,doc['id'])
 
 
+
 class Search(Resource):
 
 	'''
@@ -240,6 +244,7 @@ class Search(Resource):
 			'solr_results': solr_search.search_results.raw_content
 		}
 		return response.generate_response()
+
 
 
 class CollectionSearch(Resource):

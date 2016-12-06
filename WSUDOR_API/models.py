@@ -60,7 +60,7 @@ class ResponseObject(object):
 		}, self.status_code, self.headers
 
 
-# ITEMS
+# Identify
 #################################################################################
 class Identify(Resource):
 
@@ -78,7 +78,7 @@ class Identify(Resource):
 
 
 
-# ITEMS
+# Items
 #################################################################################
 class Item(Resource):
 
@@ -133,29 +133,16 @@ class Item(Resource):
 
 
 
-# COLLECTIONS
-#################################################################################
-
-
-
-
-# SEARCH
+# Search
 #################################################################################
 class SolrSearch(object):
 
 	'''
-	desc: container for solr search params, hasmethod for returning dictionary
-	that is sent to solr_handle
-	expecting: dictionary of args as parsed by Search class
-		Use dictionary1.update(dictionary2) to update defaults with 
-		overrides from client
+	Class for capturing request args and setting container for search params
 	'''
-
 
 	# order from https://wiki.apache.org/solr/CommonQueryParameters
-	'''
-	Might make sense to expose this configuration to localConfig.py
-	'''
+	# expose this configuration to localConfig.py?
 	default_params = { 
 		'q': '*:*',
 		'sort': None,
@@ -170,17 +157,20 @@ class SolrSearch(object):
 		'wt': 'json',
 	}
 
-	def __init__(self, client_params, skip_defaults=False):
+
+	def __init__(self):
+
+		# capture args
+		self.get_request_args()
 
 		self.params = {}
-		self.client_params = client_params
 
 		# include defaults
-		if not skip_defaults:
+		if not self.skip_defaults:
 			self.params.update(self.default_params)
 
 		# merge defaults with overrides from client
-		self.params.update(self.client_params)
+		self.params.update(self.args)
 
 		# DEBUG
 		print self.params
@@ -188,31 +178,17 @@ class SolrSearch(object):
 		# flip on facets of fields requested
 		if 'facet.field' in self.params and len(self.params['facet.field']) > 0:
 			self.params['facet'] = True
-		
 
-class Search(Resource):
 
-	'''
-	desc: primary search class, prepared to handle general search, collection search,
-	and searching within items
-	'''
-
-	def get(self):
-
-		# init ResponseObject
-		response = ResponseObject()
+	def get_request_args(self):
 
 		# init parser
 		parser = reqparse.RequestParser(bundle_errors=True)
 
 		# parse args
-		'''
-		Do we need to set a catch for every possible field?
-		Or some kind of dynamic catch?
-		PERHAPS: we should have straight 1:1 from fields caught....
-		or another route that does, like `SearchAdvanced`?
-		'''
 		parser.add_argument('q', type=str, help='expecting solr search string')
+		parser.add_argument('fq', type=str, action='append', help='expecting filter query (fq) (multiple)')
+		parser.add_argument('fl', type=str, action='append', help='expecting field limiter (fl) (multiple)')
 		parser.add_argument('facet.field', type=str, action='append', help='expecting field to return as facet (multiple)')
 		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
 		parser.add_argument('rows', type=int, help='expecting integer for number of rows to return')
@@ -222,28 +198,82 @@ class Search(Resource):
 		args = parser.parse_args()
 
 		# pop select fields from args
-		skip_defaults = args['skip_defaults']
+		self.skip_defaults = args['skip_defaults']
 		del args['skip_defaults']
 
 		# remove None values from args
-		args = dict((k, v) for k, v in args.iteritems() if v != None)
+		self.args = dict((k, v) for k, v in args.iteritems() if v != None)
+
+
+	def execute_search(self, include_item_metadata=True):
+		self.search_results = solr_handle.search(**self.params)
+		if include_item_metadata:
+			self.interleave_item_metadata()
+
+
+	def interleave_item_metadata(self):
+		# inteleave single item metadata URLs
+		for doc in self.search_results.raw_content['response']['docs']:
+			doc['item_metadata'] = 'http://%s/WSUAPI/item/%s' % (localConfig.APP_HOST,doc['id'])
+
+
+class Search(Resource):
+
+	'''
+	desc: primary search class, prepared to handle general search
+	'''
+
+	def get(self):
+
+		# init ResponseObject
+		response = ResponseObject()
 
 		# build SolrSearch object
-		solr_search = SolrSearch(args, skip_defaults=skip_defaults)
+		solr_search = SolrSearch()
 
-		# Send and return query
-		sr = solr_handle.search(**solr_search.params)
+		# execute query
+		solr_search.execute_search()
 
 		# build response
 		response.status_code =200
 		response.body = {
-			'solr_results': sr.raw_content
+			'solr_results': solr_search.search_results.raw_content
 		}
 		return response.generate_response()
 
 
+class CollectionSearch(Resource):
 
-# TESTING
+	'''
+	desc: collection search class, prepared to search within a single collection
+	expects: collection pid
+	'''
+
+	def get(self, pid):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# build SolrSearch object
+		solr_search = SolrSearch()
+
+		# add collection pid to fq
+		if 'fq' not in solr_search.params:
+			solr_search.params['fq'] = []
+		solr_search.params['fq'].append('rels_isMemberOfCollection:info\:fedora/%s' % pid.replace(":","\:"))
+
+		# execute query
+		solr_search.execute_search()
+
+		# build response
+		response.status_code =200
+		response.body = {
+			'solr_results': solr_search.search_results.raw_content
+		}
+		return response.generate_response()
+
+		
+# Testing
 #################################################################################
 class HelloWorld(Resource):
 

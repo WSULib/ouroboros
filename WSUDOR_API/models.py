@@ -172,6 +172,10 @@ class SolrSearch(object):
 		# merge defaults with overrides from client
 		self.params.update(self.args)
 
+		# confirm that id is always in fl
+		if 'id' not in self.params['fl']:
+			self.params['fl'].append('id')
+
 		# DEBUG
 		print self.params
 

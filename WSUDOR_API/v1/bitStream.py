@@ -2,7 +2,7 @@
 import localConfig
 
 # flask proper
-from flask import request, redirect, Response, jsonify, stream_with_context
+from flask import request, redirect, Response, jsonify, stream_with_context, Blueprint
 
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
@@ -17,11 +17,7 @@ import uuid
 import hashlib
 from contextlib import closing
 
-# set API versioned prefix
-from . import gen_api_prefix
-print "bitStream: API_PREFIX set as:",gen_api_prefix()
-API_PREFIX = gen_api_prefix()
-
+bitStream_blueprint = Blueprint('bitStream_v1', __name__)
 
 '''
 Small utility to serve unblocked datastreams from Fedora, including:
@@ -249,8 +245,8 @@ class BitStream(object):
 
 
 # bitStream
-@WSUDOR_API_app.route("/%s/bitStream/<PID>/<DS>" % (API_PREFIX), methods=['POST', 'GET'])
-def bitStream_v1(PID,DS):
+@bitStream_blueprint.route("/bitStream/<PID>/<DS>", methods=['POST', 'GET'])
+def main(PID,DS):
 
 	# extract key and token if present
 	key = request.args.get('key', False)

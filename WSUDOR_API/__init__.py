@@ -6,7 +6,6 @@ import localConfig
 from flask import Flask, render_template, g
 from flask.ext.login import LoginManager
 from flask.ext.cache import Cache
-from flask_restful import Api
 
 # http://flask.pocoo.org/snippets/35/
 class ReverseProxied(object):
@@ -81,22 +80,26 @@ generate it's own prefix.  See `__init__.py` for each `v#` folder.
 cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 
 ########################################################
-# v1
-########################################################
-from v1 import views, bitStream, lorisProxy
-
-
-
-
-########################################################
 # v2
 ########################################################
-# Flask-RESTful init for primary, metadata API
-# api = Api(WSUDOR_API_app, prefix='/v2')
-api = Api(WSUDOR_API_app)
-from v2 import views
-# load auxillary API handlers
-from v2.inc import bitStream, lorisProxy
+# # Flask-RESTful init for primary, metadata API
+# # api = Api(WSUDOR_API_app, prefix='/v2')
+# api = Api(WSUDOR_API_app)
+# from v2 import views
+# # load auxillary API handlers
+# from v2.inc import bitStream, lorisProxy
+import v2
+
+
+########################################################
+# v1
+########################################################
+import v1
+
+
+
+
+
 
 
 

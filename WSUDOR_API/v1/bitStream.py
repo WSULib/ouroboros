@@ -253,7 +253,7 @@ def bitStream(PID,DS):
 	download = request.args.get('download', False)
 
 	# init BitStream
-	bs = BitStream(PID,DS,key=key,token=token,download=download)
+	bs = BitStream(PID,DS,key=key, token=token, download=download)
 	return bs.stream()
 
 

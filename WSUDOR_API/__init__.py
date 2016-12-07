@@ -49,8 +49,11 @@ WSUDOR_API_app.secret_key = 'WSUDOR_API'
 # Flask-Cache for API
 cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 
-# Flask-RESTful init
-api = Api(WSUDOR_API_app)
+# v1
 
-# get handlers
-import views
+# v2
+# Flask-RESTful init for primary, metadata API
+api = Api(WSUDOR_API_app)
+from v2 import views
+# load auxillary API handlers
+from v2.inc import bitStream, lorisProxy

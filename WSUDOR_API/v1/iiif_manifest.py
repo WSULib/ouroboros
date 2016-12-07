@@ -57,7 +57,7 @@ def iiif_annotation_list(identifier):
 	getParams = {each:request.values.getlist(each) for each in request.values}
 
 	try:
-		# fire retrieveManifest
+		# fire retrieveAnnotationList
 		response = make_response( retrieveAnnotationList(identifier) )
 		response.headers['Access-Control-Allow-Origin'] = '*'
 		response.headers['Access-Control-Allow-Methods'] = 'GET, POST'

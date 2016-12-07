@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # WSUDOR_API : models.py
 
-
 # python modules
 import time
 
@@ -11,9 +10,6 @@ import localConfig
 # modules
 import flask_restful
 from flask_restful import abort, fields, reqparse, Resource
-
-# WSUDOR_API_app
-from WSUDOR_API import api
 
 # WSUDOR_Manager
 from WSUDOR_ContentTypes import WSUDOR_Object

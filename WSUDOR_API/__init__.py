@@ -47,47 +47,12 @@ WSUDOR_API_app.wsgi_app = ReverseProxied(WSUDOR_API_app.wsgi_app)
 WSUDOR_API_app.debug = True
 WSUDOR_API_app.secret_key = 'WSUDOR_API'
 
-'''
-The PrefixMiddleware class below works very nicely for adding a prefix to an app.
-However, choosing to have each API version, wrapped in its `v#` folder,
-generate it's own prefix.  See `__init__.py` for each `v#` folder.
-'''
-# class PrefixMiddleware(object):
-
-#     def __init__(self, app, prefix=''):
-#         self.app = app
-#         self.prefix = prefix
-
-#     def __call__(self, environ, start_response):
-
-#         if environ['PATH_INFO'].startswith(self.prefix):
-#             environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
-#             environ['SCRIPT_NAME'] = self.prefix
-#             return self.app(environ, start_response)
-#         else:
-#             start_response('404', [('Content-Type', 'text/plain')])
-#             return ["This url does not belong to the app.".encode()]
-# '''
-# Requires leading slash in prefix below
-# '''
-# if not localConfig.WSUDOR_API_PREFIX.startswith('/'):
-# 	app_prefix = '/%s' % localConfig.WSUDOR_API_PREFIX
-# else:
-# 	app_prefix = localConfig.WSUDOR_API_PREFIX
-# WSUDOR_API_app.wsgi_app = PrefixMiddleware(WSUDOR_API_app.wsgi_app, prefix=app_prefix)
-
 # Flask-Cache for API
 cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 
 ########################################################
 # v2
 ########################################################
-# # Flask-RESTful init for primary, metadata API
-# # api = Api(WSUDOR_API_app, prefix='/v2')
-# api = Api(WSUDOR_API_app)
-# from v2 import views
-# # load auxillary API handlers
-# from v2.inc import bitStream, lorisProxy
 import v2
 
 

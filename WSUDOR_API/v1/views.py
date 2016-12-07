@@ -5,18 +5,14 @@ import localConfig
 import json
 
 # flask proper
-from flask import render_template, request, session, redirect, make_response, Response
+from flask import render_template, request, session, redirect, make_response, Response, Blueprint
 
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
 from WSUDOR_API_main import WSUDOR_API_main
 from WSUDOR_Manager.helpers import gzipped
 
-# set API versioned prefix
-from . import gen_api_prefix
-print "API_PREFIX set as:",gen_api_prefix()
-API_PREFIX = gen_api_prefix()
-
+views_blueprint = Blueprint('views_v1', __name__)
 
 # session data secret key
 ###############################################
@@ -25,8 +21,7 @@ WSUDOR_API_app.secret_key = 'WSUDOR-WSUDOR_API'
 
 # MAIN
 #########################################################################################################
-@WSUDOR_API_app.route("/%s/" % (API_PREFIX), methods=['POST', 'GET'])
-@WSUDOR_API_app.route("/%s" % (API_PREFIX), methods=['POST', 'GET'])
+@views_blueprint.route("/", methods=['POST', 'GET'])
 @gzipped
 def index():		
 	

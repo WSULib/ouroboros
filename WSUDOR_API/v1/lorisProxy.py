@@ -2,7 +2,7 @@
 import localConfig
 
 # flask proper
-from flask import request, redirect, Response, jsonify, stream_with_context
+from flask import request, redirect, Response, jsonify, stream_with_context, Blueprint
 
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
@@ -20,6 +20,7 @@ import rdflib
 # use piffle for IIIF client
 from piffle.iiif import IIIFImageClient
 
+lorisProxy_blueprint = Blueprint('lorisProxy_v1', __name__)
 
 '''
 Proxy for Loris allowing for eventual valves and fine-grained control over 
@@ -72,7 +73,7 @@ Requires the following in Apache:
 ###################
 
 # Loris Info 
-@WSUDOR_API_app.route("/%s/lorisProxy/<image_id>/info.json" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@lorisProxy_blueprint.route("/lorisProxy/<image_id>/info.json", methods=['POST', 'GET'])
 def loris_info(image_id):
 
 	# instantiate IIIFImageClient
@@ -90,7 +91,7 @@ def loris_info(image_id):
 IIIF Image API
 {scheme}://{server}{/prefix}/{identifier}/{region}/{size}/{rotation}/{quality}.{format}
 '''
-@WSUDOR_API_app.route("/%s/lorisProxy/<image_id>/<region>/<size>/<rotation>/<quality>.<format>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@lorisProxy_blueprint.route("/lorisProxy/<image_id>/<region>/<size>/<rotation>/<quality>.<format>", methods=['POST', 'GET'])
 def loris_image(image_id,region,size,rotation,quality,format):
 	
 	# parse pid and datastream from image_id

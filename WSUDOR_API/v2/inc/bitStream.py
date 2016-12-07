@@ -245,7 +245,7 @@ class BitStream(object):
 
 
 # bitStream
-@WSUDOR_API_app.route("/bitStream/<PID>/<DS>", methods=['POST', 'GET'])
+@bitStream_blueprint.route("/bitStream/<PID>/<DS>", methods=['POST', 'GET'])
 def bitStream(PID,DS):
 
 	# extract key and token if present

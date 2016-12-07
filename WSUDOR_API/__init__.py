@@ -50,17 +50,8 @@ WSUDOR_API_app.secret_key = 'WSUDOR_API'
 # Flask-Cache for API
 cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 
-########################################################
-# v2
-########################################################
-import v2
-
-
-########################################################
-# v1
-########################################################
-import v1
-
+# import api versions
+import v1, v2
 
 
 

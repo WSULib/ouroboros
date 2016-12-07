@@ -17,6 +17,11 @@ import uuid
 import hashlib
 from contextlib import closing
 
+# set API versioned prefix
+from .. import gen_api_prefix
+print "API_PREFIX set as:",gen_api_prefix()
+API_PREFIX = gen_api_prefix()
+
 
 '''
 Small utility to serve unblocked datastreams from Fedora, including:
@@ -244,7 +249,7 @@ class BitStream(object):
 
 
 # bitStream
-@WSUDOR_API_app.route("/%s/bitStream/<PID>/<DS>" % (localConfig.WSUDOR_API_PREFIX), methods=['POST', 'GET'])
+@WSUDOR_API_app.route("/%s/bitStream/<PID>/<DS>" % (API_PREFIX), methods=['POST', 'GET'])
 def bitStream(PID,DS):
 
 	# extract key and token if present

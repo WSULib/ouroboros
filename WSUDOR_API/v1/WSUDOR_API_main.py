@@ -10,9 +10,9 @@ import localConfig
 
 # WSUDOR_API modules
 from WSUDOR_API import cache
-# from functions.utils import *
-# from functions.availableFunctions import *
-# from functions.packagedFunctions import *
+from functions.utils import *
+from functions.availableFunctions import *
+from functions.packagedFunctions import *
 
 # CACHE
 #########################################################################################################

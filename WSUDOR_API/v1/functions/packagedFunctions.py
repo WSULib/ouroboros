@@ -19,7 +19,7 @@ from utils import *
 from localConfig import *
 
 # modules from WSUDOR_Manager
-from WSUDOR_API.fedoraHandles import fedora_handle
+from WSUDOR_API.v1.fedoraHandles import fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
 import WSUDOR_ContentTypes
 

@@ -19,8 +19,8 @@ from localConfig import *
 
 # modules from WSUDOR_Manager
 import WSUDOR_ContentTypes
-from WSUDOR_API.fedoraHandles import fedora_handle
-from WSUDOR_API.bitStream import BitStream
+from WSUDOR_API.v1.fedoraHandles import fedora_handle
+from WSUDOR_API.v1.bitStream import BitStream
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import utilities

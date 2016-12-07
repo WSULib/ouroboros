@@ -83,7 +83,7 @@ cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
 ########################################################
 # v1
 ########################################################
-from v1 import views
+from v1 import views, bitStream, lorisProxy
 
 
 

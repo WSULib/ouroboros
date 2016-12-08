@@ -8,12 +8,16 @@ import time
 import localConfig
 
 # modules
+from flask import redirect
 import flask_restful
 from flask_restful import abort, fields, reqparse, Resource
 
 # WSUDOR_Manager
 from WSUDOR_ContentTypes import WSUDOR_Object
 from WSUDOR_Manager.solrHandles import solr_handle
+
+# API
+from inc.bitStream import BitStream
 
 
 # ResponseObject
@@ -76,7 +80,20 @@ class Identify(Resource):
 
 # Items
 #################################################################################
-class Item(Resource):
+
+# class Item(Resource):
+
+# 	def __init__(self, *args, **kwargs):
+# 		print dir(self.dispatch_request)
+# 		print args
+# 		print kwargs
+# 		# # get object
+# 		# obj = WSUDOR_Object(pid)
+# 		# if not obj:
+# 		# 	abort(404, message='%s not found' % pid)
+
+
+class ItemMetadata(Resource):
 
 	'''
 	desc: returns full metadata information for a single item
@@ -127,6 +144,40 @@ class Item(Resource):
 		}
 		return response.generate_response()
 
+
+class ItemFile(Resource):
+
+	'''
+	desc: returns full metadata information for a single item
+	expects: PID of item to retrieve
+	'''
+
+	def get(self, pid, datastream):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
+
+		# init parser
+		parser = reqparse.RequestParser(bundle_errors=True)
+
+		# parse args
+		parser.add_argument('key', type=str, help='expecting secret download key', default=False)
+		parser.add_argument('token', type=str, help='expecting download one-use token ', default=False)
+		parser.add_argument('download', type=flask_restful.inputs.boolean, help='if set, download headers are sent', default=False)
+		args = parser.parse_args()
+
+		# init BitStream
+		bs = BitStream(pid, datastream, key=args['key'], token=args['token'], download=args['download'])
+		return bs.stream()
 
 
 # Search

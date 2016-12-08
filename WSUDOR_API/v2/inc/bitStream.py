@@ -91,6 +91,7 @@ class BitStream(object):
 		# return response
 		return response
 
+
 	# chunked, stream generator
 	def streamGen(self):
 

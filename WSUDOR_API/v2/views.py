@@ -22,7 +22,8 @@ api = Api(api_blueprint)
 api.add_resource(models.Identify, '/', endpoint='identify')
 
 # ITEMS
-api.add_resource(models.Item, '/item/<string:pid>', endpoint='item')
+api.add_resource(models.ItemMetadata, '/item/<string:pid>', endpoint='item_metadata') # single item page
+api.add_resource(models.ItemFile, '/item/<string:pid>/file/<string:datastream>', endpoint='item_file') # datastream fom single item, via bitStream
 
 # SEARCH
 api.add_resource(models.Search, '/search', endpoint='search')

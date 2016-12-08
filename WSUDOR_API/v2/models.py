@@ -18,6 +18,7 @@ from WSUDOR_Manager.solrHandles import solr_handle
 
 # API
 from inc.bitStream import BitStream
+from inc.lorisProxy import loris_image
 
 
 # ResponseObject
@@ -80,19 +81,6 @@ class Identify(Resource):
 
 # Items
 #################################################################################
-
-# class Item(Resource):
-
-# 	def __init__(self, *args, **kwargs):
-# 		print dir(self.dispatch_request)
-# 		print args
-# 		print kwargs
-# 		# # get object
-# 		# obj = WSUDOR_Object(pid)
-# 		# if not obj:
-# 		# 	abort(404, message='%s not found' % pid)
-
-
 class ItemMetadata(Resource):
 
 	'''
@@ -178,6 +166,85 @@ class ItemFile(Resource):
 		# init BitStream
 		bs = BitStream(pid, datastream, key=args['key'], token=args['token'], download=args['download'])
 		return bs.stream()
+
+
+class ItemThumbnail(Resource):
+
+	'''
+	desc: Return thumbnail for item
+	expecting: pid, delivery_mechanism
+	'''
+
+	def __init__(self,**kwargs):
+		self.delivery_mechanism = kwargs['delivery_mechanism']
+
+	def get(self, pid):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
+
+		# init parser
+		parser = reqparse.RequestParser(bundle_errors=True)
+
+		# BitStream
+		if self.delivery_mechanism.lower() == 'bitstream':
+			bs = BitStream(pid, 'THUMBNAIL')
+			return bs.stream()
+
+		# Loris
+		if self.delivery_mechanism.lower() == 'loris':
+			return loris_image(
+				image_id = 'fedora:%s|THUMBNAIL' % pid,
+				region = 'full',
+				size = 'full',
+				rotation = '0',
+				quality = 'default',
+				format = 'png'
+			)
+
+
+class ItemLoris(Resource):
+
+	'''
+	desc: Returns datastream via loris	
+	'''
+
+	def get(self, pid, datastream, region, size, rotation, quality, format):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
+
+		# init parser
+		parser = reqparse.RequestParser(bundle_errors=True)
+
+		# Loris
+		return loris_image(
+			image_id = 'fedora:%s|%s' % (pid,datastream),
+			region = region,
+			size = size,
+			rotation = rotation,
+			quality = quality,
+			format = format
+		)
+
 
 
 # Search

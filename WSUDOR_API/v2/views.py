@@ -18,14 +18,17 @@ api_blueprint = Blueprint('api', __name__)
 # init flask-restful api handle
 api = Api(api_blueprint)
 
-# IDENTIFY
+# General
 api.add_resource(models.Identify, '/', endpoint='identify')
 
-# ITEMS
+# Items
 api.add_resource(models.ItemMetadata, '/item/<string:pid>', endpoint='item_metadata') # single item page
 api.add_resource(models.ItemFile, '/item/<string:pid>/file/<string:datastream>', endpoint='item_file') # datastream fom single item, via bitStream
+api.add_resource(models.ItemThumbnail, '/item/<string:pid>/thumbnail', endpoint='item_thumbnail', resource_class_kwargs={'delivery_mechanism':'loris'}) # single item thumbnail, choose either 'bitStream' or 'loris' for 'delivery_mechanism'
+api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>/<string:region>/<string:size>/<int:rotation>/<string:quality>.<string:format>', endpoint='item_loris') # returns item datastream via Loris
+# api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif', endpoint='item_iiif') # single item page
 
-# SEARCH
+# Search
 api.add_resource(models.Search, '/search', endpoint='search')
 api.add_resource(models.CollectionSearch, '/collection/<string:pid>/search', endpoint='collection_search')
 

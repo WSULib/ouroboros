@@ -13,5 +13,5 @@ from inc import bitStream, lorisProxy
 
 # register blueprints
 WSUDOR_API_app.register_blueprint(views.api_blueprint, url_prefix=gen_api_prefix())
-WSUDOR_API_app.register_blueprint(bitStream.bitStream_blueprint, url_prefix=gen_api_prefix())
+# WSUDOR_API_app.register_blueprint(bitStream.bitStream_blueprint, url_prefix=gen_api_prefix())
 WSUDOR_API_app.register_blueprint(lorisProxy.lorisProxy_blueprint, url_prefix=gen_api_prefix())

@@ -19,6 +19,7 @@ from WSUDOR_Manager.solrHandles import solr_handle
 # API
 from inc.bitStream import BitStream
 from inc.lorisProxy import loris_image, loris_info
+from inc.iiif_manifest import iiif_manifest, iiif_annotation_list
 
 
 # ResponseObject
@@ -284,6 +285,33 @@ class ItemLoris(Resource):
 				quality = quality,
 				format = format
 			)
+
+
+class ItemIIIF(Resource):
+
+	'''
+	desc: Returns datastream via loris	
+	'''
+
+	def get(self, pid, annotation_list=False):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
+
+		if annotation_list:
+			return iiif_annotation_list(pid)
+
+		else:
+			return iiif_manifest(pid)
 
 
 

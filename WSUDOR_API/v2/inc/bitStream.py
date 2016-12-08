@@ -5,7 +5,6 @@ import localConfig
 from flask import request, redirect, Response, jsonify, stream_with_context, Blueprint
 
 # WSUDOR_API_app
-from WSUDOR_API import WSUDOR_API_app
 from WSUDOR_Manager import fedora_handle, redisHandles
 from WSUDOR_Manager.utilities import mimetypes
 

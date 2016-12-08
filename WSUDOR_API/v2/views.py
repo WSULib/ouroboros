@@ -27,7 +27,8 @@ api.add_resource(models.ItemFile, '/item/<string:pid>/file/<string:datastream>',
 api.add_resource(models.ItemThumbnail, '/item/<string:pid>/thumbnail', endpoint='item_thumbnail', resource_class_kwargs={'delivery_mechanism':'loris'}) # single item thumbnail, choose either 'bitStream' or 'loris' for 'delivery_mechanism'
 api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>/<string:region>/<string:size>/<int:rotation>/<string:quality>.<string:format>', endpoint='item_loris_image') # returns item datastream via Loris
 api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>/info.json', endpoint='item_loris_json') # returns item datastream via Loris
-# api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif', endpoint='item_iiif') # single item page
+api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif', endpoint='item_iiif') # iiif manifest for item
+api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/annotation_list', endpoint='item_iiif_annotation_list', defaults={'annotation_list': True}) # iiif annotation list for item
 
 # Search
 api.add_resource(models.Search, '/search', endpoint='search')

@@ -25,7 +25,8 @@ api.add_resource(models.Identify, '/', endpoint='identify')
 api.add_resource(models.ItemMetadata, '/item/<string:pid>', endpoint='item_metadata') # single item page
 api.add_resource(models.ItemFile, '/item/<string:pid>/file/<string:datastream>', endpoint='item_file') # datastream fom single item, via bitStream
 api.add_resource(models.ItemThumbnail, '/item/<string:pid>/thumbnail', endpoint='item_thumbnail', resource_class_kwargs={'delivery_mechanism':'loris'}) # single item thumbnail, choose either 'bitStream' or 'loris' for 'delivery_mechanism'
-api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>/<string:region>/<string:size>/<int:rotation>/<string:quality>.<string:format>', endpoint='item_loris') # returns item datastream via Loris
+api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>/<string:region>/<string:size>/<int:rotation>/<string:quality>.<string:format>', endpoint='item_loris_image') # returns item datastream via Loris
+api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>/info.json', endpoint='item_loris_json') # returns item datastream via Loris
 # api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif', endpoint='item_iiif') # single item page
 
 # Search

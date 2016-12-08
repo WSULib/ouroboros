@@ -17,7 +17,7 @@ import uuid
 import hashlib
 from contextlib import closing
 
-# bitStream_blueprint = Blueprint('bitStream_v2', __name__)
+bitStream_blueprint = Blueprint('bitStream_v2', __name__)
 
 '''
 Small utility to serve unblocked datastreams from Fedora, including:
@@ -245,18 +245,18 @@ class BitStream(object):
 			return response_dict
 
 
-# # bitStream
-# @bitStream_blueprint.route("/bitStream/<PID>/<DS>", methods=['POST', 'GET'])
-# def bitStream(PID,DS):
+# bitStream
+@bitStream_blueprint.route("/bitStream/<PID>/<DS>", methods=['POST', 'GET'])
+def bitStream(PID,DS):
 
-# 	# extract key and token if present
-# 	key = request.args.get('key', False)
-# 	token = request.args.get('token', False)
-# 	download = request.args.get('download', False)
+	# extract key and token if present
+	key = request.args.get('key', False)
+	token = request.args.get('token', False)
+	download = request.args.get('download', False)
 
-# 	# init BitStream
-# 	bs = BitStream(PID,DS,key=key, token=token, download=download)
-# 	return bs.stream()
+	# init BitStream
+	bs = BitStream(PID,DS,key=key, token=token, download=download)
+	return bs.stream()
 
 
 

@@ -18,7 +18,7 @@ from WSUDOR_Manager.solrHandles import solr_handle
 
 # API
 from inc.bitStream import BitStream
-from inc.lorisProxy import loris_image
+from inc.lorisProxy import loris_image, loris_info
 
 
 # ResponseObject
@@ -244,6 +244,46 @@ class ItemLoris(Resource):
 			quality = quality,
 			format = format
 		)
+
+
+class ItemLoris(Resource):
+
+	'''
+	desc: Returns datastream via loris	
+	'''
+
+	def get(self, pid, datastream, region=None, size=None, rotation=None, quality=None, format=None):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
+
+		# set image id
+		image_id = 'fedora:%s|%s' % (pid,datastream)
+
+		# if loris params are None, assume info.json requested
+		# if region == size == rotation == quality == format == None:
+		if all(e==None for e in [region,size,rotation,quality,format]):
+			return loris_info(image_id)
+
+		# Loris
+		else:
+			return loris_image(
+				image_id = image_id,
+				region = region,
+				size = size,
+				rotation = rotation,
+				quality = quality,
+				format = format
+			)
 
 
 

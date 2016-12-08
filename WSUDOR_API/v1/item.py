@@ -14,13 +14,14 @@ from bitStream import BitStream
 from lorisProxy import loris_image
 
 # general
-from flask import request, redirect, Response, jsonify, stream_with_context
+from flask import request, redirect, Response, jsonify, stream_with_context, Blueprint
 import requests
 
+item_blueprint = Blueprint('item_v1', __name__)
 
 # Item root, redirect
-@WSUDOR_API_app.route("/item/<pid>", methods=['POST', 'GET'])
-@WSUDOR_API_app.route("/item/<pid>/", methods=['POST', 'GET'])
+@item_blueprint.route("/item/<pid>", methods=['POST', 'GET'])
+@item_blueprint.route("/item/<pid>/", methods=['POST', 'GET'])
 def item(pid):	
 
 	# redirect to digital collections page
@@ -29,8 +30,8 @@ def item(pid):
 
 # Item Thumbnail
 # e.g. https://digital.library.wayne.edu/loris/fedora:wayne:CFAIEB01c010%7CTHUMBNAIL/full/full/0/default.png
-@WSUDOR_API_app.route("/item/<pid>/thumbnail", methods=['POST', 'GET'])
-@WSUDOR_API_app.route("/item/<pid>/thumbnail/", methods=['POST', 'GET'])
+@item_blueprint.route("/item/<pid>/thumbnail", methods=['POST', 'GET'])
+@item_blueprint.route("/item/<pid>/thumbnail/", methods=['POST', 'GET'])
 def item_thumbnail(pid):
 
 	return loris_image(
@@ -44,8 +45,8 @@ def item_thumbnail(pid):
 
 
 # Datastream Wrapper for bitStream
-@WSUDOR_API_app.route("/item/<pid>/bitStream/<datastream>", methods=['POST', 'GET'])
-@WSUDOR_API_app.route("/item/<pid>/bitStream/<datastream>/", methods=['POST', 'GET'])
+@item_blueprint.route("/item/<pid>/bitStream/<datastream>", methods=['POST', 'GET'])
+@item_blueprint.route("/item/<pid>/bitStream/<datastream>/", methods=['POST', 'GET'])
 def item_datastream(pid,datastream):
 
 	'''

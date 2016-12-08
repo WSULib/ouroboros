@@ -5,7 +5,7 @@ import localConfig
 import json
 
 # flask proper
-from flask import render_template, request, session, redirect, make_response, Response
+from flask import render_template, request, session, redirect, make_response, Response, Blueprint
 
 # WSUDOR_API_app
 from WSUDOR_API import cache
@@ -13,6 +13,8 @@ from WSUDOR_API import WSUDOR_API_app
 import WSUDOR_ContentTypes
 from WSUDOR_Manager import redisHandles, fedora_handle
 from functions.packagedFunctions import singleObjectPackage
+
+iiif_manifest_blueprint = Blueprint('iiif_manifest_v1', __name__)
 
 
 # small function to skip caching, reads from localConfig.py
@@ -24,7 +26,7 @@ def skipCache():
 #########################################################################################################
 
 # object manifest
-@WSUDOR_API_app.route("/%s/<identifier>" % (localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
+@iiif_manifest_blueprint.route("/%s/<identifier>" % (localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
 def iiif_manifest(identifier):
 
 	'''
@@ -51,7 +53,7 @@ def iiif_manifest(identifier):
 
 
 # annotation list
-@WSUDOR_API_app.route("/%s/list/<identifier>.json" % (localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
+@iiif_manifest_blueprint.route("/%s/list/<identifier>.json" % (localConfig.IIIF_MANIFEST_PREFIX), methods=['POST', 'GET'])
 def iiif_annotation_list(identifier):
 
 	getParams = {each:request.values.getlist(each) for each in request.values}

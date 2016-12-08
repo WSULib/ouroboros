@@ -8,9 +8,11 @@ def gen_api_prefix(API_VERSION=API_VERSION):
 from WSUDOR_API import WSUDOR_API_app
 
 # import local views and handlers
-import views, bitStream, lorisProxy
+import views, bitStream, lorisProxy, item, iiif_manifest
 
 # register blueprints
 WSUDOR_API_app.register_blueprint(views.views_blueprint, url_prefix=gen_api_prefix())
 WSUDOR_API_app.register_blueprint(bitStream.bitStream_blueprint, url_prefix=gen_api_prefix())
 WSUDOR_API_app.register_blueprint(lorisProxy.lorisProxy_blueprint, url_prefix=gen_api_prefix())
+WSUDOR_API_app.register_blueprint(item.item_blueprint, url_prefix=gen_api_prefix())
+WSUDOR_API_app.register_blueprint(iiif_manifest.iiif_manifest_blueprint, url_prefix=gen_api_prefix())

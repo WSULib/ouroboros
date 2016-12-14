@@ -1,6 +1,8 @@
 # Prod CONFIGURATION
 ###################
 
+import os
+
 # Public Facing Host
 PUBLIC_HOST = "192.168.42.5"
 
@@ -25,7 +27,7 @@ WSUDOR_MANAGER_PORT = 5004
 # WSUAPI - Primary API for front-end
 WSUDOR_API_FIRE = True
 WSUDOR_API_LISTENER_PORT = 61617
-WSUDOR_API_PREFIX = "WSUAPI"
+WSUDOR_API_PREFIX = 'api' # make sure this matches configurations in apache for WSUDOR_API_PREFIX variable
 API_SKIP_CACHE = True
 API_CACHE_TIMEOUT = 600
 

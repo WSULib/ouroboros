@@ -11,6 +11,9 @@ from flask import Response, jsonify
 import fileinput
 import xmlrpclib
 import os
+from lxml import etree
+import re
+import eulfedora
 # from itsdangerous import URLSafeTimedSerializer
 
 # session data secret key
@@ -229,6 +232,7 @@ class ingest_workspace_object(db.Model):
     object_title = db.Column(db.String(4096))
     DMDID = db.Column(db.String(4096))
     AMDID = db.Column(db.String(4096))
+    premis_events = db.Column(db.Text(4294967295))
     file_id = db.Column(db.String(255))
     ASpaceID = db.Column(db.String(255))
     struct_map = db.Column(db.Text(4294967295))
@@ -538,11 +542,90 @@ class createSupervisorProcess(object):
 
 
 
+########################################################################
+# PREMIS
+########################################################################
+
+class PREMISClient(object):
+
+    '''
+    This client will be used to initialize and add PREMIS 
+    events to a PREMIS datastream.
+
+    Initialize empty, or with PID (assuming 'PREMIS' ds_id)
+
+    example PREMIS events from METS:
+    https://gist.github.com/ghukill/844f218bd95afef60c51ba19058e5c38
+    '''
+
+    def __init__(self, pid=False, ds_id='PREMIS'):
+
+        self.pid = pid
+        self.ohandle = False
+        self.premis_ds = False
+        self.premis_tree = None
+
+        # if pid provided, attempt to retrieve PREMIS
+        if pid:
+            self.ohandle = fedora_handle.get_object(pid)
+            if ds_id in self.ohandle.ds_list:
+                self.premis_ds = self.ohandle.getDatastreamObject('PREMIS')
+                self.premis_root = self.premis_ds.content.node
+                self.premis_tree = self.premis_root.getroottree()
+            else:
+                print "%s datastream not found, initializing blank PREMIS node" % ds_id
+
+        # if no pre-exisintg PREMIS datastream, init new one
+        if not self.premis_ds:
+            ns = {
+                "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xsd": "http://www.w3.org/2001/XMLSchema",
+                "premis": "info:lc/xmlns/premis-v2",
+            }
+            self.premis_root = etree.Element('premis', nsmap=ns)
+            self.premis_tree = etree.ElementTree(self.premis_root)
 
 
+    def add_event_xml(self, event):
+        
+        '''
+        accept XML string or etree element, add to PREMIS datastream
+        '''
+
+        # parse string or element
+        if type(event) == str or type(event) == unicode:
+
+            try:
+                prepped_event = etree.fromstring(event)
+            except:
+                print "could not parse element from string, attempting to inject xsi declaration after first blank space"
+                event = re.sub(r' ', ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ', event, 1) # trailing 1 allows only one replace
+                prepped_event = etree.fromstring(event)
+
+        if type(event) == etree._Element:
+            prepped_event = event
+
+        self.premis_root.append(prepped_event)
 
 
+    def update(self):
 
+        # update
+        if self.premis_ds:
+            self.premis_ds.content = self.as_string(pretty_print=False)
+            self.premis_ds.save()
+
+        # init and save
+        else:
+            self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M')
+            self.premis_ds.label = "PREMIS"
+            self.premis_ds.content = self.as_string(pretty_print=False)
+            self.premis_ds.save()
+
+
+    def as_string(self, pretty_print=2):
+        
+        return etree.tostring(self.premis_tree, pretty_print=pretty_print)
 
 
 

@@ -114,7 +114,7 @@ def job(job_id):
 	# aem enriched
 	if 'aem_enriched' in request.args and request.args['aem_enriched'] == "True":
 		session['aem_enriched'] = True
-	if 'aem_enriched' in request.args and request.args['aem_enriched'] == "False":
+	elif 'aem_enriched' in request.args and request.args['aem_enriched'] == "False":
 		session['aem_enriched'] = False
 	else:
 		utilities.sessionVarClean(session,'aem_enriched')
@@ -188,6 +188,16 @@ def objectDetails(job_id,ingest_id):
 
 	# render
 	return render_template("objectDetails.html", o=o, bag_tree=bag_tree)
+
+
+# row objMeta
+@ingestWorkspace.route('/ingestWorkspace/objectDetails/<job_id>/<ingest_id>/objMeta.json', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def objectDetails_objMeta(job_id, ingest_id):
+
+	# get object handle from DB
+	o = models.ingest_workspace_object.query.filter_by(job_id=job_id,ingest_id=ingest_id).first()
+	return jsonify(json.loads(o.objMeta))
 
 
 
@@ -301,13 +311,12 @@ def jobjson(job_id):
 
 
 #################################################################################
-# View SQL row data
+# Row Data
 #################################################################################
 @ingestWorkspace.route('/ingestWorkspace/viewSQLData/<table>/<id>/<column>/<mimetype>', methods=['POST', 'GET'])
 @roles.auth(['admin'])
 def viewSQLData(table,id,column,mimetype):
 	return "Coming soon"
-
 
 
 #################################################################################
@@ -451,6 +460,9 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 			fhand.close()		
 			job_package['MODS_temp_filename'] = temp_filename
 
+			# not storing PREMIS events yet
+			job_package['premis_events'] = None
+
 		except:
 			print "ERROR"
 			print traceback.print_exc()
@@ -515,15 +527,39 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 		job_package['DMDID'] = None
 		job_package['object_title'] = fs.label
 
-		# set AMDID and file_id
-		try:
-			print "amdSec ids:", fs.admids
-			job_package['AMDID'] = fs.admids[0]
-		except:
-			job_package['AMDID'] = None
+		# set dynamic PID (may get updated)
+		###############################################################################################
+		# set identifier with filename
+		pid_suffix = job_package['collection_identifier']+fs.label.replace(".","_")
+		pid = "wayne:%s" % (pid_suffix)
+		job_package['pid'] = pid
+		###############################################################################################
+
+		# set file_id
 		job_package['file_id'] = fs.file_id()
+
+		# parse amdSec and PREMIS events
+		if len(fs.admids) > 0:
+			print "amdSec ids:", fs.admids
+			job_package['AMDID'] = fs.admids[0]			
+			amdSec = mets.tree.xpath("//mets:amdSec[@ID='%s']" % (job_package['AMDID']), namespaces=mets.tree.getroot().nsmap)[0]
+			events_list = []
+			premis_events = amdSec.getchildren()
+			for event in premis_events:
+				events_list.append(etree.tostring(event.getchildren()[0].getchildren()[0].getchildren()[0]))
+			premis_events_json = json.dumps(events_list)
+			job_package['premis_events'] = premis_events_json
+		else:
+			job_package['AMDID'] = None
+			job_package['premis_events'] = None
+
 		
 		print "StructMap part ID: %s" % job_package['DMDID']
+
+		'''
+		It's possible we shouldn't write this entire struct_map to celery job?
+		Grab in worker below?
+		'''
 
 		# store structMap section as python dictionary
 		sm_dict = xmltodict.parse(etree.tostring(fs.serialize_structmap()))
@@ -583,15 +619,19 @@ def createJob_worker(job_package):
 		id_prefix = ''
 
 	# this may or may not be true - bag creation should update this...
-	derived_pid = 'wayne:%s%s' % (id_prefix,job_package['DMDID'])
+	if 'pid' in job_package and job_package['pid'] != None:
+		derived_pid = job_package['pid']
+	else:
+		derived_pid = 'wayne:%s%s' % (id_prefix,job_package['DMDID'])
 
-		# insert with SQLAlchemy Core
+	# insert with SQLAlchemy Core
 	db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
 		'job_id': job_package['job_id'],	    
 		'object_type': job_package['object_type'],
 		'object_title': job_package['object_title'],
 		'DMDID': job_package['DMDID'],
 		'AMDID': job_package['AMDID'],
+		'premis_events': job_package['premis_events'],
 		'file_id': job_package['file_id'],
 		'pid': derived_pid,
 		'ingest_id': job_package['ingest_id'],
@@ -802,7 +842,7 @@ def ingestBag_factory(job_package):
 	print job_package
 
 	# get form data
-	form_data = job_package['form_data']	
+	form_data = job_package['form_data']
 
 	# set new task_name, for the worker below
 	job_package['custom_task_name'] = 'bagIngest_worker'
@@ -818,7 +858,7 @@ def ingestBag_factory(job_package):
 	
 	# insert into MySQL as ingest_workspace_object rows
 	step = 1
-	time.sleep(2)
+	time.sleep(.5)
 	for row in object_rows:
 
 		print "Preparing to ingest ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
@@ -834,15 +874,21 @@ def ingestBag_factory(job_package):
 			job_package['bag_dir'] = o.bag_path
 		else:
 			job_package['bag_dir'] = False
-		
-		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
-		task_id = result.id
 
-		# Set handle in Redis
-		redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (step))
-			
-		# update incrementer for total assigned
-		jobs.jobUpdateAssignedCount(job_package['job_num'])
+		# check if enriched or permitted to ingest anyway
+		if o.aem_enriched or 'ingest_non_enriched' in form_data:
+		
+			result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
+			task_id = result.id
+
+			# Set handle in Redis
+			redisHandles.r_job_handle.set("%s" % (task_id), "FIRED,%s" % (step))
+				
+			# update incrementer for total assigned
+			jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		else:
+			print "eitiher object not-enriched, or permission not granted to ingest non-enriched"
 
 		# bump step
 		step += 1
@@ -1032,6 +1078,7 @@ def aem_factory(job_package):
 	# get dmd parts
 	dmd_parts = [element for element in METSroot.findall('{http://www.loc.gov/METS/}dmdSec')]
 	dmd_index = { element.attrib['ID']:element for element in dmd_parts }
+	print dmd_index
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
@@ -1044,6 +1091,8 @@ def aem_factory(job_package):
 		
 		print "Enriching struct_map div %s / %s" % (step, len(sm_parts))
 		job_package['step'] = step
+
+		# try:
 
 		# include Struct Map and DMD section in job package
 
@@ -1087,6 +1136,11 @@ def aem_factory(job_package):
 			
 		# update incrementer for total assigned
 		jobs.jobUpdateAssignedCount(job_package['job_num'])
+
+		# except:
+
+		# 	print "##############################################"
+		# 	print "an error was had enriching %s" % etree.tostring(sm_part)
 
 		# bump step
 		step += 1
@@ -1137,14 +1191,9 @@ def aem_worker(job_package):
 		print "creating new object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
 
 		# check of Intellectual object already created, if so, delete
-		# derive pid
-		if sm_part_type == 'collection':
-			id_prefix = 'collection'
-		else:
-			id_prefix = ''
-		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
+		derived_pid = 'wayne:%s%s' % (j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
 		'''
-		mets:dmdSec IDs cannot start with an integer, hence the 'aem_prefix" from above
+		mets:dmdSec IDs cannot start with an integer
 		'''
 		o = models.ingest_workspace_object.query.filter_by(job=j,pid=derived_pid).first()
 
@@ -1171,25 +1220,16 @@ def aem_worker(job_package):
 	else:
 		print "updating descriptive information for %s / %s" % (job_package['DMDID'], job_package['object_title'])
 
-		# derive PID
-		# determine pid
-		if sm_part_type == 'collection':
-			id_prefix = 'collection'
-		else:
-			id_prefix = ''
-		derived_pid = 'wayne:%s%s%s' % (id_prefix, j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
-
-		# temporary shim, strip perceived file extension from derived PID
-		file_extension_suffixes = [
-			'_pdf','_PDF','_docx','_DOCX'	
-		]
-		for suffix in file_extension_suffixes:
-			derived_pid = derived_pid.replace(suffix,'')
-
-		print "derived pid: %s" % derived_pid
-
 		# grab row
-		o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
+		if sm_part_type == 'document':
+			print "detected document type"
+			o = models.ingest_workspace_object.query.filter_by(job=j, file_id=job_package['DMDID']).first()			
+
+		if sm_part_type == 'file':
+			print "detected intellectual file type"
+			derived_pid = 'wayne:%s%s' % (j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1].replace(".","_"))
+			print "derived pid: %s" % derived_pid
+			o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
 
 		if o:
 
@@ -1252,8 +1292,10 @@ def rowQueryBuild(job_id, session):
 	if "aem_enriched" in session:
 		print "adding aem enriched filter"
 		if session['aem_enriched']:
+			print "filter: enriched"
 			query = query.filter(or_(models.ingest_workspace_object.aem_enriched != None, models.ingest_workspace_object.aem_enriched != "0" ))
 		if not session['aem_enriched']:
+			print "filter: NOT enriched"
 			query = query.filter(or_(models.ingest_workspace_object.aem_enriched == None, models.ingest_workspace_object.aem_enriched == "0" ))
 
 	# return query object

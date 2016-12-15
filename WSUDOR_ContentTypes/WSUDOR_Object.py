@@ -372,11 +372,14 @@ class WSUDOR_GenObject(object):
 		If stored, return.
 
 		Improvement: need to provide method for updating
+
+		Also, needs to include components...
+
 		'''
 
 		# check Redis for object size dictionary
 		r_response = redisHandles.r_catchall.get(self.pid)
-		if r_response != None and not update:
+		if r_response != None:
 			print "object size dictionary located and retrieved from Redis"
 			return ast.literal_eval(r_response)
 
@@ -392,6 +395,17 @@ class WSUDOR_GenObject(object):
 				ds_size = ds_handle.size
 				tot_size += ds_size
 				size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+			# loop through constituents and add as well
+			if len(self.constituents) > 0:
+				constituent_objects_size = 0
+				for obj in self.constituents:
+					for ds in obj.ds_list:
+						ds_handle = obj.getDatastreamObject(ds)
+						ds_size = ds_handle.size
+						constituent_objects_size += ds_size
+				size_dict['constituent_objects'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+				tot_size += constituent_objects_size
 
 			size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
 

@@ -37,8 +37,6 @@ class BitStream(object):
 		self.unique_id = hashlib.md5(PID+DS).hexdigest()		
 		
 		# auth, key, token access
-		# self.key = request.args.get('key', False)
-		# self.token = request.args.get('token', False)
 		self.key = key
 		self.token = token
 		self.return_token = None
@@ -235,13 +233,26 @@ class BitStream(object):
 			# generate tokens for each datastream using BitStream instance
 			for DS in obj_handle.ds_list:
 
-				bs = cls(PID, DS, key=key, token='request')
-				response_dict[DS] = {
-					"token":bs.msg['token'],
-					"url":bs.msg['url']
-				}
+				try:
+
+					bs = cls(PID, DS, key=key, token='request')
+					response_dict[DS] = {
+						"token":bs.msg['token'],
+						"url":bs.msg['url']
+					}
+
+				except:
+					
+					print "could not generate bitstream for %s" % DS
+					response_dict[DS] = {
+						'msg': "could not generate bitstream for %s" % DS
+					}
 
 			return response_dict
+
+		else:
+			print "bitstream key not recognized"
+			return False
 
 
 # bitStream

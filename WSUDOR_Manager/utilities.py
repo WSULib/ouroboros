@@ -166,6 +166,20 @@ for k, v in opinionated_mimes.items():
 		mimetypes.types_map[v] = k
 
 
+# def thumbForMime(mimetype):
+	
+# 	# return thumbnail URL from WSUDOR_Thumbnails
+
+# 	if mimetype == 'application/pdf':
+# 		ds = 'PDF'
+
+# 	else:
+# 		ds = 'Unknown'
+
+# 	# return thumbnail URL
+# 	return 'http://%s/item/wayne:WSUDOR_Thumbnails/bitStream/%s?key=%s' % (localConfig.APP_HOST, ds, localConfig.BITSTREAM_KEY)
+
+
 # OPINIONATED MIMETYPES for CONTENT TYPES
 #########################################################################################################
 mime_CM_hash = {

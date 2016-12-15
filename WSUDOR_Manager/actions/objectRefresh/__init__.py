@@ -32,7 +32,6 @@ objectRefresh = Blueprint('objectRefresh', __name__, template_folder='templates'
 
 # main view
 @objectRefresh.route('/objectRefresh/<PID>', methods=['POST', 'GET'])
-@roles.auth(['admin','metadata'])
 def index(PID):
 
 	'''

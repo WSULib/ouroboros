@@ -34,6 +34,7 @@ from WSUDOR_Manager import redisHandles
 from WSUDOR_Manager import login_manager
 from WSUDOR_Manager import WSUDOR_ContentTypes
 from WSUDOR_ContentTypes import *
+from WSUDOR_API.bitStream import BitStream
 import utilities
 
 # flask-security
@@ -1696,29 +1697,6 @@ def wcts(wct):
 
 
 
-
-
-# EXPERIMENTAL SERVICES
-####################################################################################
-# stream bits from Fedora through WSUDOR_Manager
-# @app.route("/strDS/<PID>/<DS>", methods=['POST', 'GET'])
-# def strDS(PID,DS):
-#   obj_handle = fedora_handle.get_object(PID)
-#   obj_ds_handle = obj_handle.getDatastreamObject(DS)
-
-#   # chunked, generator
-#   def stream():
-#       step = 1024
-#       pointer = 0
-#       for chunk in range(0, len(obj_ds_handle.content), step):
-#           yield obj_ds_handle.content[chunk:chunk+step]
-
-#   return Response(stream(), mimetype=obj_ds_handle.mimetype)
-
-#   # straight pipe, thinking maybe download first?
-#   # return Response(obj_ds_handle.content, mimetype=obj_ds_handle.mimetype)
-
-
 # preview solr document values (a la eulindexer / indexdata functions from eulfedora)
 @app.route("/solrDoc/<pid>", methods=['POST', 'GET'])
 @roles.auth(['admin','metadata'])
@@ -1767,6 +1745,88 @@ def solrReaduxDoc(pid, action):
 		resp = make_response(json_string)
 		resp.headers['Content-Type'] = 'application/json'
 		return resp
+
+
+
+# Advanced Access / Object Admin
+####################################################################################
+
+# wct investigator
+@app.route("/admin_object_overview/<pid>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata','view'])
+def objAccess(pid):
+
+	object_package = {}
+
+	# WSUDOR handle
+	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
+
+	# General Metadata
+	solr_params = {'q':utilities.escapeSolrArg(pid), 'rows':1}
+	solr_results = solr_handle.search(**solr_params)
+	if solr_results.total_results == 0:
+		return "Selected objects don't appear to exist."
+	solr_package = solr_results.documents[0]
+	object_package['solr_package'] = solr_package
+
+	# COMPONENTS
+	object_package['components_package'] = []
+	riquery = fedora_handle.risearch.spo_search(subject=None, predicate="info:fedora/fedora-system:def/relations-external#isMemberOf", object="info:fedora/"+pid)
+	for s,p,o in riquery:
+		object_package['components_package'].append(s.encode('utf-8'))
+	if len(object_package['components_package']) == 0:
+		object_package.pop('components_package')
+
+	# RDF RELATIONSHIPS
+	riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+pid, predicate=None, object=None)
+
+	# parse
+	riquery_filtered = []
+	for s,p,o in riquery:
+		riquery_filtered.append((p,o))
+	riquery_filtered.sort()
+	object_package['rdf_package'] = riquery_filtered
+
+	# DATASTREAMS
+	ds_list = obj_handle.ohandle.ds_list
+	object_package['datastream_package'] = ds_list
+
+	# Object size of datastreams
+	if 'update' in request.args:
+		size_dict = obj_handle.update_objSizeDict()
+	else:	
+		size_dict = obj_handle.objSizeDict
+	object_package['size_dict'] = size_dict
+	object_package['size_dict_json'] = json.dumps(size_dict)
+
+	# OAI
+	OAI_dict = {}
+	#identifer
+	try:
+		riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+pid, predicate="http://www.openarchives.org/OAI/2.0/itemID", object=None)
+		OAI_ID = riquery.objects().next().encode('utf-8')
+		OAI_dict['ID'] = OAI_ID
+	except:
+		print "No OAI Identifier found."
+
+	# sets
+	OAI_dict['sets'] = []
+	try:
+		riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+pid, predicate="http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", object=None)
+		for each in riquery.objects():
+			OAI_dict['sets'].append(each)
+	except:
+		print "No OAI sets found."
+
+	object_package['OAI_package'] = OAI_dict
+	print object_package['OAI_package']
+
+	# bitStream tokens
+	object_package['bitStream_tokens'] = BitStream.genAllTokens(pid, localConfig.BITSTREAM_KEY)
+
+	# RENDER
+	return render_template("admin_object_access.html", pid=pid, object_package=object_package, localConfig=localConfig)
+
 
 
 

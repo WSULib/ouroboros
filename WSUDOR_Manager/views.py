@@ -34,7 +34,7 @@ from WSUDOR_Manager import redisHandles
 from WSUDOR_Manager import login_manager
 from WSUDOR_Manager import WSUDOR_ContentTypes
 from WSUDOR_ContentTypes import *
-from WSUDOR_API.bitStream import BitStream
+from WSUDOR_API.v1.bitStream import BitStream
 import utilities
 
 # flask-security

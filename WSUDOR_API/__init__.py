@@ -1,11 +1,16 @@
 # root file, app instantiator
 
+import urllib
+
 import localConfig
 
 # modules / packages import
-from flask import Flask, render_template, g
+from flask import Flask, render_template, g, redirect, jsonify, request
 from flask.ext.login import LoginManager
 from flask.ext.cache import Cache
+
+from werkzeug.routing import BaseConverter
+
 
 # http://flask.pocoo.org/snippets/35/
 class ReverseProxied(object):
@@ -49,6 +54,36 @@ WSUDOR_API_app.secret_key = 'WSUDOR_API'
 
 # Flask-Cache for API
 cache = Cache(WSUDOR_API_app, config={'CACHE_TYPE': 'simple'})
+
+# capture default API calls and redirect
+class RegexConverter(BaseConverter):
+	def __init__(self, url_map, *items):
+		super(RegexConverter, self).__init__(url_map)
+		self.regex = items[0]
+WSUDOR_API_app.url_map.converters['regex'] = RegexConverter
+
+@WSUDOR_API_app.route('/%s/v<regex("[0-9]"):version_number><regex(".*"):url_suffix>' % localConfig.WSUDOR_API_PREFIX, methods=['GET', 'POST'])
+def example(version_number,url_suffix):
+
+	# build url
+	protocol = request.url.split(":")[0]
+	default_api_target = '%s://%s/%s%s' % (protocol, localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, url_suffix)
+
+	if request.method == 'GET':
+		# target url		
+		default_api_target += "?%s" % urllib.urlencode(request.args.items())
+		return redirect(default_api_target, code=307)
+
+	if request.method == 'POST':
+
+		# return message to user to use default /api route
+		return jsonify({
+			'msg':'It looks as though you are sending a POST request to the current, default API version: %s.  Try /api instead of /api/v%s.  The base URL for this request, and a possible GET alternative are provided.' % (version_number,version_number),
+			'api_version_request':version_number,
+			'request_method':request.method,
+			'api_url_base':default_api_target,
+			'GET_alternative':'%s?%s' % (default_api_target, urllib.urlencode(request.form.to_dict()).replace('%253A',':'))
+		})
 
 # import api versions
 import v1, v2

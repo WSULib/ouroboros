@@ -2,7 +2,10 @@ import localConfig
 
 API_VERSION = 1
 def gen_api_prefix(API_VERSION=API_VERSION):
-	return "/%(APP_PREFIX)s/v%(API_VERSION)d" % {'APP_PREFIX':localConfig.WSUDOR_API_PREFIX.lstrip('/'), 'API_VERSION':API_VERSION}
+	if API_VERSION == localConfig.API_DEFAULT_VERSION:
+		return "/%(APP_PREFIX)s" % {'APP_PREFIX':localConfig.WSUDOR_API_PREFIX.lstrip('/')}
+	else:
+		return "/%(APP_PREFIX)s/v%(API_VERSION)d" % {'APP_PREFIX':localConfig.WSUDOR_API_PREFIX.lstrip('/'), 'API_VERSION':API_VERSION}
 
 # import umbrella API app
 from WSUDOR_API import WSUDOR_API_app

@@ -33,8 +33,11 @@ import localConfig
 solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates')
 
 
+'''
+As this needs to run via curl command, removing roles temporarily.
+'''
 @solrIndexer_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
-@roles.auth(['admin','metadata'])
+# @roles.auth(['admin','metadata'])
 def updateSolr(update_type):	
 
 	# real or emulated solr events

@@ -74,7 +74,8 @@ class Identify(Resource):
 
 		# init ResponseObject
 		response = ResponseObject(status_code=200, body={
-			'identify':'WSUDOR API'	
+			'identify':'WSUDOR API',
+			'documentation':'https://github.com/WSULib/ouroboros/blob/v2/WSUDOR_API/v2/README.md'
 		})
 		return response.generate_response()
 

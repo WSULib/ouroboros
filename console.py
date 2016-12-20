@@ -102,7 +102,6 @@ def tableWipe():
 	for user in localConfig.DEFAULT_ADMIN_USERS:
 		user = models.User(
 			user['username'],
-			None, #clientHash
 			user['role'],
 			user['displayName']
 		)

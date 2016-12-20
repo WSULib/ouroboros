@@ -15,6 +15,8 @@ from flask_restful import abort, fields, reqparse, Resource
 # WSUDOR_Manager
 from WSUDOR_ContentTypes import WSUDOR_Object
 from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager import db
+from WSUDOR_Manager.models import User
 
 # API
 from inc.bitStream import BitStream
@@ -464,21 +466,61 @@ class CollectionSearch(Resource):
 		}
 		return response.generate_response()
 
+
+# Users
+#################################################################################
+class UserWhoami(Resource):
+
+	def get(self, username):
+
+		'''
+		expecting username, returns Ouroboros account info
+		'''
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		exists = db.session.query(db.exists().where(User.username == username)).scalar()
+
+		if exists:
+
+			user = User.get(username)
+
+			# build response
+			response.status_code =200
+			response.body = {
+					'username':username,
+					'exists':True,
+					'roles':user.role
+				}
+
+		else:
+
+			# build response
+			response.status_code =404
+			response.body = {
+					'username':username,
+					'exists':False,
+				}
+
+		# return response		
+		return response.generate_response()
+
 		
 # Testing
 #################################################################################
 class HelloWorld(Resource):
 
-    def get(self, name):
+	def get(self, name):
 
-    	'''
-    	expecting variable based on route from views.py
-    	also, triggers abort() if match
-    	'''
+		'''
+		expecting variable based on route from views.py
+		also, triggers abort() if match
+		'''
 
-    	if name.lower() == 'shoppinghorse':
-    		abort(400, message='ANYONE but ShoppingHorse...')
-        return {'hello': name}
+		if name.lower() == 'shoppinghorse':
+			abort(400, message='ANYONE but ShoppingHorse...')
+		return {'hello': name}
 
 
 class ArgParsing(Resource):

@@ -34,6 +34,9 @@ api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/annotation_list', end
 api.add_resource(models.Search, '/search', endpoint='search')
 api.add_resource(models.CollectionSearch, '/collection/<string:pid>/search', endpoint='collection_search')
 
+# Users
+api.add_resource(models.UserWhoami, '/user/<string:username>/whoami', endpoint='user_whoami')
+
 # TESTING
 api.add_resource(models.HelloWorld, '/hello/<string:name>', endpoint='helloworld')
 api.add_resource(models.ArgParsing, '/goober', endpoint='goober_integrity')

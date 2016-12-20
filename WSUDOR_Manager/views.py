@@ -373,122 +373,6 @@ def load_user(id):
 ##########################
 # WSUDOR BASED LOGIN
 ##########################
-# @app.route("/login", methods=["GET", "POST"])
-# def login():
-
-# 	'''
-# 	1) check if WSUDOR cookie exists, if not, redirect to WSUDOR login page
-# 	2) if exists, check if user created
-# 		- if not, create
-# 		- if exists, login
-# 	'''
-
-# 	# check for WSUDOR cookie
-# 	if "WSUDOR" in request.cookies:
-
-# 		# parse cookie
-# 		unquoted_cookie_string = urllib.unquote(request.cookies['WSUDOR'])
-# 		wsudor_cookie = json.loads(unquoted_cookie_string)
-
-# 		# get credentials
-# 		username = wsudor_cookie['username_WSUDOR']
-# 		displayName = wsudor_cookie['displayName']
-# 		clientHash = wsudor_cookie['clientHash']		
-# 		logged_in = wsudor_cookie['loggedIn_WSUDOR']
-
-# 		# check if user exists
-# 		exists = db.session.query(db.exists().where(User.username == username)).scalar()
-
-# 		# user found in database, compare with cookie credentials
-# 		if exists:
-
-# 			# get user
-# 			user = User.get(username)
-
-# 			# confirm clientHash
-# 			'''
-# 			If clientHash is None in DB, an account was just made for this user but they had not logged in yet.
-# 			Quickly check WSUDOR users database and confirm that clientHash provided at this moment from the client,
-# 			matches the clientHash stored in the DB.
-# 			'''
-
-# 			# Ouroboros DB has clientHash already
-# 			if user.clientHash:
-# 				# check match
-# 				ch_check = clientHash == user.clientHash
-
-# 			if not user.clientHash:
-
-# 				print "account found for %s, but clientHash not found, must be first login" % username
-
-# 				# retrieve clientHash from WSUDOR user DB
-# 				# query solr for user credentials
-# 				user_search = solrHandles.solr_user_handle.search(**{'q':'id:%s' % username})
-# 				if user_search.total_results == 1:
-# 					print "user found in WSUDOR DB, continuing check"
-# 					user_record = user_search.documents[0]
-# 					# check clientHash match
-# 					ch_check = clientHash == user_record['user_hash'][0]
-
-# 					# if checks out, first time login, update Ouroboros DB now
-# 					if ch_check:						
-# 						user.clientHash = clientHash
-# 						user.displayName = displayName
-# 						db.session.commit()
-
-# 				else:
-# 					print "user not found in WSUDOR User DB"
-# 					return jsonify({'msg':'Sorry %s, an error was had locating the account for "%s".  Please try logging in again.' % (displayName, username)})
-
-
-# 			# depending on clientHash check (ch_check), login or turn away
-# 			if ch_check:
-# 				# login
-# 				user = User.get(username)
-# 				login_user(user, remember=True)
-
-# 				# Login to Fedora with eulfedora and set session variables
-# 				utilities.login(username)
-# 				session['username'] = username
-
-# 				# Rtail
-# 				try:
-# 					sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-# 					sup_info = {}
-# 					sup_info['rtail-server'] = sup_server.supervisor.getProcessInfo('rtail-server')
-# 					if sup_info['rtail-server']['statename'] == "RUNNING":
-
-# 						# Make sure to start the user's own log streaming
-# 						supervisor_name = 'rtail-celery-%s' % session['username']
-# 						supervisor_process = '''[program:rtail-celery-%(username)s]
-# command=/bin/bash -c "tail -F /var/log/celery-%(username)s.err.log | /usr/local/bin/rtail --id celery-%(username)s"
-# user = ouroboros
-# autostart=true
-# autorestart=true
-# stopasgroup=true
-# killasgroup=true''' % {'username':session['username']}
-# 						# create Log streamer for user
-# 						print "streaming activity log for %s celery worker " % session['username']
-# 						stream_cw = models.createSupervisorProcess(supervisor_name,supervisor_process, "rtail")
-# 						stream_cw.start()
-# 				except:
-# 					print "Rtail-server not running; therefore, not creating a log streamer for current user"
-
-# 				# Go to page
-# 				return redirect(request.args.get('next') or url_for('index'))
-
-# 			if not ch_check:
-# 				# turn away
-# 				return jsonify({'msg':'Sorry %s, the credentials in your cookie -- a hash of your username and password -- do not match.  Please try again.' % (displayName, username)})					
-# 		else:
-# 			print "user not found, informing client"
-# 			return jsonify({'msg':'Sorry %s, an account has not yet been created for "%s".  Please contact an administrator to have an Ouroboros account created.' % (displayName, username)})
-
-# 	# if WSUDOR cookie not found, redirect to login
-# 	else:
-# 		return redirect(localConfig.LOGIN_URL)
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -561,46 +445,28 @@ def login():
 				return redirect(request.args.get('next') or url_for('index'))
 
 			else:
-				return jsonify({'msg':'Sorry, an account has not yet been created for "%s".  Please contact an administrator to have an Ouroboros account created.' % (username)})
+				return jsonify({
+						'msg':'Sorry, an Ouroboros account has not yet been created for "%s".  Please contact an administrator to have an account created.' % (username),
+						'login_url':localConfig.LOGIN_URL
+					})
 
 		# code 404, no active session found
 		elif wsudorauth_check_status_code == 400:
-			return jsonify({'msg':'Sorry, a session id was not found in your WSUDOR cookie.'})
+			return jsonify({
+					'msg':'Sorry, a session id was not found in your WSUDOR cookie.',
+					'login_url':localConfig.LOGIN_URL
+				})
 
 		# code 404, no active session found
 		elif wsudorauth_check_status_code == 404:
-			return jsonify({'msg':'Sorry, an active session was not found for %s.' % (session_id)})			 
+			return jsonify({
+					'msg':'Sorry, an active session was not found for %s.' % (session_id),
+					'login_url':localConfig.LOGIN_URL
+				})
 
 	# if WSUDOR cookie not found, redirect to login
 	else:
 		return redirect(localConfig.LOGIN_URL)
-
-
-@app.route("/logintest", methods=["GET", "POST"])
-def logintest():
-
-	# check for WSUDOR cookie
-	if "WSUDOR" in request.cookies:
-
-		# parse cookie
-		session_id = urllib.unquote(request.cookies['WSUDOR'])
-
-		# ping wsudorauth
-		'''
-		best way to do this?
-			- HTTP request
-			- other?
-		'''
-		r = requests.get('http://192.168.42.5:8000/session_check/%s' % session_id ).json()
-
-		return json.dumps(r)
-
-
-	else:
-
-		print "nothing to do."
-
-
 
 
 @app.route('/logout')
@@ -635,7 +501,6 @@ def createUser():
 		roles = request.form.getlist('role')
 		user = User(
 			request.form['username'],
-			None,
 			roles,
 			request.form['username'],
 		)

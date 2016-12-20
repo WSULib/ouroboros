@@ -388,7 +388,7 @@ def login():
 			- HTTP request
 			- other?
 		'''
-		r = requests.get('http://192.168.42.5:8000/session_check/%s' % session_id )
+		r = requests.get('%s/wsudorauth/session_check/%s' % (localConfig.WSUDORAUTH_BASE_URL, session_id) )
 		wsudorauth_check_status_code = r.status_code
 		wsudorauth_check_data = json.loads(r.content)
 

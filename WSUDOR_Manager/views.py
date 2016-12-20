@@ -83,7 +83,8 @@ def index():
 		return redirect("userPage")
 	else:
 		username = "User not set."
-		return render_template("index.html", username=username)
+		return redirect("login")
+		# return render_template("index.html", username=username)
 
 
 @app.route("/about")
@@ -560,7 +561,7 @@ def login():
 				return redirect(request.args.get('next') or url_for('index'))
 
 			else:
-				return jsonify({'msg':'Sorry %s, an account has not yet been created for "%s".  Please contact an administrator to have an Ouroboros account created.' % (displayName, username)})
+				return jsonify({'msg':'Sorry, an account has not yet been created for "%s".  Please contact an administrator to have an Ouroboros account created.' % (username)})
 
 		# code 404, no active session found
 		elif wsudorauth_check_status_code == 400:

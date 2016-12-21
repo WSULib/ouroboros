@@ -49,7 +49,9 @@
   * `/user/[USERNAME]/whoami`
   * *Method*: `GET`
   * *Description*:
-    * Accepts username, checks Ouroboros's user database, returns information if found (username, Ouroboros roles, etc.)
+    * Expects `USERNAME`, then checks Ouroboros's user database
+      * if found, returns `200` status and information about user, including roles
+      * else, returns `404` status and `exists=False`
   * *Sample response*:<br>
 ```
 {

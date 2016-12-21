@@ -30,6 +30,9 @@ api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>
 api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif', endpoint='item_iiif') # iiif manifest for item
 api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/annotation_list', endpoint='item_iiif_annotation_list', defaults={'annotation_list': True}) # iiif annotation list for item
 
+# Collection
+api.add_resource(models.ItemMetadata, '/collection/<string:pid>', endpoint='collection_metadata') # collection metadata∞
+
 # Search
 api.add_resource(models.Search, '/search', endpoint='search')
 api.add_resource(models.CollectionSearch, '/collection/<string:pid>/search', endpoint='collection_search')

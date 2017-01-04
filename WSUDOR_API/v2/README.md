@@ -41,6 +41,12 @@
 
 ### Collections
 
+**All Collections metadata**<br>
+  * `/collections`
+  * *Method*: `GET`
+  * *Description*:
+    * returns metadata about all collections
+
 ### Search
 
 ### Users

@@ -31,6 +31,7 @@ api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif', endpoint='item_iiif
 api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/annotation_list', endpoint='item_iiif_annotation_list', defaults={'annotation_list': True}) # iiif annotation list for item
 
 # Collection
+api.add_resource(models.Collections, '/collections', endpoint='collections')
 api.add_resource(models.ItemMetadata, '/collection/<string:pid>', endpoint='collection_metadata') # collection metadata∞
 
 # Search

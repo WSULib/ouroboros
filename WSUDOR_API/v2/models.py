@@ -467,6 +467,37 @@ class CollectionSearch(Resource):
 		return response.generate_response()
 
 
+# Collections
+#################################################################################
+class Collections(Resource):
+
+	'''
+	desc: returns information about all collections
+	'''
+
+	def get(self):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# build SolrSearch object
+		solr_search = SolrSearch()
+
+		# add collection pid to fq
+		solr_search.params['fq'] = []
+		solr_search.params['fq'].append('rels_hasContentModel:info\:fedora/CM\:Collection')
+
+		# execute query
+		solr_search.execute_search()
+
+		# build response
+		response.status_code =200
+		response.body = {
+			'solr_results': solr_search.search_results.raw_content
+		}
+		return response.generate_response()
+
+
 # Users
 #################################################################################
 class UserWhoami(Resource):

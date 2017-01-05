@@ -19,6 +19,7 @@ from WSUDOR_Manager import db
 from WSUDOR_Manager.models import User
 
 # API
+import utilities
 from inc.bitStream import BitStream
 from inc.lorisProxy import loris_image, loris_info
 from inc.iiif_manifest import iiif_manifest, iiif_annotation_list
@@ -365,6 +366,11 @@ class Search(Resource):
 		if 'id' not in self.params['fl']:
 			self.params['fl'].append('id')
 
+		# escape query string
+		# re: https://lucene.apache.org/core/2_9_4/queryparsersyntax.html		
+		if not self.skip_escape:
+			self.params['q'] = utilities.escapeSolrArg(self.params['q'])
+
 		# DEBUG
 		# print self.params
 
@@ -391,7 +397,11 @@ class Search(Resource):
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
 		parser.add_argument('wt', type=str, help='expecting string for return format (e.g. json, xml, csv)')
 		parser.add_argument('skip_defaults', type=flask_restful.inputs.boolean, help='true / false: if set false, will not load default solr params', default=False)
+		parser.add_argument('skip_escape', type=flask_restful.inputs.boolean, help='true / false: if set true, will skip escaping of special characters', default=False)
 		args = parser.parse_args()
+
+		# set skip_escape
+		self.skip_escape = args['skip_escape']
 
 		# pop select fields from args
 		self.skip_defaults = args['skip_defaults']
@@ -402,6 +412,7 @@ class Search(Resource):
 
 
 	def execute_search(self, include_item_metadata=True):
+		print self.params # DEBUG
 		self.search_results = solr_handle.search(**self.params)
 		if include_item_metadata:
 			self.interleave_item_metadata()
@@ -409,8 +420,9 @@ class Search(Resource):
 
 	def interleave_item_metadata(self):
 		# inteleave single item metadata URLs
-		for doc in self.search_results.raw_content['response']['docs']:
-			doc['item_metadata'] = 'http://%s/%s/item/%s' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, doc['id'])
+		if self.search_results.raw_content['response']['numFound'] > 0:
+			for doc in self.search_results.raw_content['response']['docs']:
+				doc['item_metadata'] = 'http://%s/%s/item/%s' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, doc['id'])
 
 
 	# generic search GET request

@@ -490,7 +490,7 @@ class Collections(Search):
 		return response.generate_response()
 
 
-class CollectionSearch(Resource):
+class CollectionSearch(Search):
 
 	'''
 	desc: collection search class, solr search within a single collection
@@ -502,46 +502,20 @@ class CollectionSearch(Resource):
 		# init ResponseObject
 		response = ResponseObject()
 
-		# build SolrSearch object
-		solr_search = SolrSearch()
-
 		# add collection pid to fq
-		if 'fq' not in solr_search.params:
-			solr_search.params['fq'] = []
-		solr_search.params['fq'].append('rels_isMemberOfCollection:info\:fedora/%s' % pid.replace(":","\:"))
+		if 'fq' not in self.params:
+			self.params['fq'] = []
+		self.params['fq'].append('rels_isMemberOfCollection:info\:fedora/%s' % pid.replace(":","\:"))
 
 		# execute query
-		solr_search.execute_search()
+		self.execute_search()
 
 		# build response
 		response.status_code =200
 		response.body = {
-			'solr_results': solr_search.search_results.raw_content
+			'solr_results': self.search_results.raw_content
 		}
 		return response.generate_response()
-
-	# def get(self, pid):
-
-	# 	# init ResponseObject
-	# 	response = ResponseObject()
-
-	# 	# build SolrSearch object
-	# 	solr_search = SolrSearch()
-
-	# 	# add collection pid to fq
-	# 	if 'fq' not in solr_search.params:
-	# 		solr_search.params['fq'] = []
-	# 	solr_search.params['fq'].append('rels_isMemberOfCollection:info\:fedora/%s' % pid.replace(":","\:"))
-
-	# 	# execute query
-	# 	solr_search.execute_search()
-
-	# 	# build response
-	# 	response.status_code =200
-	# 	response.body = {
-	# 		'solr_results': solr_search.search_results.raw_content
-	# 	}
-	# 	return response.generate_response()
 
 
 # Users

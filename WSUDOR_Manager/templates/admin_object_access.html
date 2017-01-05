@@ -27,7 +27,7 @@
 		<table id="solr_table" style="font-size:90%;" class="table">
 			<tr>
 				<td><strong>thumbnail:</strong></td>
-				<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/digitalcollections/item?id={{pid}}"><img class="img-rounded" src="http://{{localConfig.APP_HOST}}/item/{{pid}}/thumbnail"/></a></td>
+				<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/item/{{pid}}"><img class="img-rounded" src="http://{{localConfig.APP_HOST}}/item/{{pid}}/thumbnail"/></a></td>
 			</tr>
 			{% set displayed_fields = ['dc_description','dc_date','dc_rights'] %}			
 			{% for field in displayed_fields %}

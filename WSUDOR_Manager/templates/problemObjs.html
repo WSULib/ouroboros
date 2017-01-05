@@ -72,7 +72,7 @@ $(document).ready(function () {
   {% with prefix, pid = obj.PID.split(':') %}
   <!-- Card -->
   <div class="card" id={{pid}}-{{obj.id}}>
-    <a target="_blank" href="//{{APP_HOST}}/digitalcollections/item?id={{obj.PID}}"><img class="card-img-top img-thumbnail" src="//{{APP_HOST}}/fedora/objects/{{obj.PID}}/datastreams/THUMBNAIL/content" alt="{{obj.PID}}"></a>
+    <a target="_blank" href="//{{APP_HOST}}/item/{{obj.PID}}"><img class="card-img-top img-thumbnail" src="//{{APP_HOST}}/fedora/objects/{{obj.PID}}/datastreams/THUMBNAIL/content" alt="{{obj.PID}}"></a>
 <p class="card-text" style="padding-left:4px;"><small class="text-muted">{{obj.PID}}</small></p>
     <div class="card-block" style="padding-left:4px;" id={{pid}}-{{obj.id}}>
       <h4 class="card-title">{{obj.solr_package['dc_title'][0]}}</h4>

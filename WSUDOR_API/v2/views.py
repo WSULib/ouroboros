@@ -32,11 +32,11 @@ api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/annotation_list', end
 
 # Collection
 api.add_resource(models.Collections, '/collections', endpoint='collections')
-api.add_resource(models.ItemMetadata, '/collection/<string:pid>', endpoint='collection_metadata') # collection metadata∞
+api.add_resource(models.CollectionMetadata, '/collection/<string:pid>', endpoint='collection_metadata') # collection metadata∞
+api.add_resource(models.CollectionSearch, '/collection/<string:pid>/search', endpoint='collection_search')
 
 # Search
 api.add_resource(models.Search, '/search', endpoint='search')
-api.add_resource(models.CollectionSearch, '/collection/<string:pid>/search', endpoint='collection_search')
 
 # Users
 api.add_resource(models.UserWhoami, '/user/<string:username>/whoami', endpoint='user_whoami')

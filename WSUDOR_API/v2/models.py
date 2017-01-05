@@ -95,20 +95,7 @@ class ItemMetadata(Resource):
 	def __init__(self, *args, **kwargs):
 		self.content_type_specific = []
 
-
-	def get(self, pid):
-
-		# init ResponseObject
-		response = ResponseObject()
-
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
-
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)	
+	def get_item_metadata(self, obj):
 
 		# determine content-type
 		try:
@@ -124,9 +111,8 @@ class ItemMetadata(Resource):
 			})
 
 		# build response
-		response.status_code =200
-		response.body = {
-			'pid': pid,
+		return {
+			'pid': obj.pid,
 			'content_type': ct,
 			'solr_doc': obj.SolrDoc.asDictionary(),
 			'collections': obj.isMemberOfCollections,
@@ -134,6 +120,25 @@ class ItemMetadata(Resource):
 			'hierarchical_tree': obj.hierarchicalTree,
 			'content_type_specific': self.content_type_specific
 		}
+
+
+	def get(self, pid):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
+
+		# if found, build and respond
+		response.status_code = 200
+		response.body = self.get_item_metadata(obj)
 		return response.generate_response()
 
 
@@ -320,7 +325,7 @@ class ItemIIIF(Resource):
 
 # Search
 #################################################################################
-class SolrSearch(object):
+class Search(Resource):
 
 	'''
 	Class for capturing request args and setting container for search params
@@ -362,7 +367,7 @@ class SolrSearch(object):
 			self.params['fl'].append('id')
 
 		# DEBUG
-		print self.params
+		# print self.params
 
 		# flip on facets of fields requested
 		if 'facet.field' in self.params and len(self.params['facet.field']) > 0:
@@ -406,14 +411,63 @@ class SolrSearch(object):
 	def interleave_item_metadata(self):
 		# inteleave single item metadata URLs
 		for doc in self.search_results.raw_content['response']['docs']:
-			doc['item_metadata'] = 'http://%s/WSUAPI/item/%s' % (localConfig.APP_HOST,doc['id'])
+			doc['item_metadata'] = 'http://%s/%s/item/%s' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, doc['id'])
 
 
+	# generic search GET request
+	def get(self):
 
-class Search(Resource):
+		# init ResponseObject
+		response = ResponseObject()
+
+		# execute query
+		self.execute_search()
+
+		# build response
+		response.status_code =200
+		response.body = {
+			'solr_results': self.search_results.raw_content
+		}
+		return response.generate_response()
+
+
+# Collections
+#################################################################################
+class CollectionMetadata(ItemMetadata):
 
 	'''
-	desc: primary search class, prepared to handle general search
+	desc: returns full metadata information for collection item
+	expects: PID of item to retrieve
+	'''
+
+	def get(self, pid):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
+
+		# if found, build and respond
+		response.status_code = 200
+		response.body = self.get_item_metadata(obj)
+
+		# include link for collection search
+		response.body['collection_search'] = 'http://%s/%s/collection/%s/search' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, pid)
+
+		return response.generate_response()
+
+
+class Collections(Search):
+
+	'''
+	desc: returns information about all collections
 	'''
 
 	def get(self):
@@ -421,25 +475,25 @@ class Search(Resource):
 		# init ResponseObject
 		response = ResponseObject()
 
-		# build SolrSearch object
-		solr_search = SolrSearch()
+		# add collection pid to fq
+		self.params['fq'] = []
+		self.params['fq'].append('rels_hasContentModel:info\:fedora/CM\:Collection')
 
 		# execute query
-		solr_search.execute_search()
+		self.execute_search()
 
 		# build response
 		response.status_code =200
 		response.body = {
-			'solr_results': solr_search.search_results.raw_content
+			'solr_results': self.search_results.raw_content
 		}
 		return response.generate_response()
-
 
 
 class CollectionSearch(Resource):
 
 	'''
-	desc: collection search class, prepared to search within a single collection
+	desc: collection search class, solr search within a single collection
 	expects: collection pid
 	'''
 
@@ -466,36 +520,28 @@ class CollectionSearch(Resource):
 		}
 		return response.generate_response()
 
+	# def get(self, pid):
 
-# Collections
-#################################################################################
-class Collections(Resource):
+	# 	# init ResponseObject
+	# 	response = ResponseObject()
 
-	'''
-	desc: returns information about all collections
-	'''
+	# 	# build SolrSearch object
+	# 	solr_search = SolrSearch()
 
-	def get(self):
+	# 	# add collection pid to fq
+	# 	if 'fq' not in solr_search.params:
+	# 		solr_search.params['fq'] = []
+	# 	solr_search.params['fq'].append('rels_isMemberOfCollection:info\:fedora/%s' % pid.replace(":","\:"))
 
-		# init ResponseObject
-		response = ResponseObject()
+	# 	# execute query
+	# 	solr_search.execute_search()
 
-		# build SolrSearch object
-		solr_search = SolrSearch()
-
-		# add collection pid to fq
-		solr_search.params['fq'] = []
-		solr_search.params['fq'].append('rels_hasContentModel:info\:fedora/CM\:Collection')
-
-		# execute query
-		solr_search.execute_search()
-
-		# build response
-		response.status_code =200
-		response.body = {
-			'solr_results': solr_search.search_results.raw_content
-		}
-		return response.generate_response()
+	# 	# build response
+	# 	response.status_code =200
+	# 	response.body = {
+	# 		'solr_results': solr_search.search_results.raw_content
+	# 	}
+	# 	return response.generate_response()
 
 
 # Users

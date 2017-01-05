@@ -489,8 +489,10 @@ class WSUDOR_GenObject(object):
 		'''
 		returns list of collections object belongs to
 		'''
-		
-		return self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+		if 'rels_isMemberOfCollection' in self.SolrDoc.asDictionary():
+			return self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+		else:
+			return False
 
 
 	# learning objects

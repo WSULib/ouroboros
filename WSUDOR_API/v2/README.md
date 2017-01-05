@@ -96,9 +96,9 @@
         * format for solr response, options include: `json`, `xml`, `csv`, and more
       * `skip_defaults`: `false`
         * If true, all defaults suggested here are removed, sets solr parameters to basically nothing.  Not recommended save advanced queries
-      * `field_skip_escape`: `false` 
+      * `field_escape`: `false`, `[]` 
         * **repeatable**
-        * accepts specific solr field to escape, e.g. `field_skip_escape:q` would escape only the `q` field in the query, while `field_skip_escape:q&field_skip_escape:fq` would escape all `fq` as well.
+        * accepts specific solr field to skip character escaping, e.g. `field_skip_escape:q` would skip escaping for the `q` field in the query, while `field_skip_escape:q&field_skip_escape:fq` would skip escaping for all `fq` parameters as well.
 
 
 

@@ -331,24 +331,23 @@ class Search(Resource):
 	Class for capturing request args and setting container for search params
 	'''
 
-	# order from https://wiki.apache.org/solr/CommonQueryParameters
-	# expose this configuration to localConfig.py?
-	default_params = { 
-		'q': '*:*',
-		'sort': None,
-		'start': 0,
-		'rows': 10,
-		'fq': [],
-		'fl': [ "id", "mods*", "dc*", "rels*", "obj*", "last_modified"],
-		'facet': False,
-		'facet.mincount': 1,
-		'facet.limit': -1,
-		'facet.field': [],
-		'wt': 'json',
-	}
-
-
 	def __init__(self):
+
+		# order from https://wiki.apache.org/solr/CommonQueryParameters
+		# expose this configuration to localConfig.py?
+		self.default_params = { 
+			'q': '*:*',
+			'sort': None,
+			'start': 0,
+			'rows': 10,
+			'fq': [],
+			'fl': [ "id", "mods*", "dc*", "rels*", "obj*", "last_modified"],
+			'facet': False,
+			'facet.mincount': 1,
+			'facet.limit': -1,
+			'facet.field': [],
+			'wt': 'json',
+		}
 
 		self.params = {}
 

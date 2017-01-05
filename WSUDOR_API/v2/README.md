@@ -93,7 +93,7 @@ http://HOST/api/search?q=id:wayne\:vmc14515&skip_escape=true
 This opens up the door for quite advanced queries such as date ranges for when the object was created (ingested) in WSUDOR:
 
 ```
-http://HOST/api/search?q=obj_modifiedDate:[NOW-1MONTH TO NOW]
+http://HOST/api/search?q=obj_modifiedDate:[NOW-1MONTH TO NOW]&skip_escape=true
 ```
 
 

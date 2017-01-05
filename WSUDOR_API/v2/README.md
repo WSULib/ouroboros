@@ -47,15 +47,68 @@
   * *Description*:
     * returns metadata about all collections
 
+**Single Collection metadata**<br>
+  * `/collection/<pid>`
+  * *Method*: `GET`
+  * *Description*:
+    * returns metadata about a single collection
+
+**Search within a collection**<br>
+  * `/collection/<pid>/search`
+  * *Method*: `GET`
+  * *Description*:
+    * performs a normal search (with same syntax), confined to items within a given collection
+
 ### Search
+
+**Search**<br>
+  * `/search?[args]`
+  * *Method*: `GET`
+  * *Description*:
+    * Generic, full search endpoint.
+    * Responds to quite a few get parameters, including the following and their defaults:
+      * `q`: `*:*`
+        * accepts string query, with optional advanced solr syntax
+        * escape special characters (see below)
+      * `sort`: None
+        * order to sort by, can provide name of solr field such as `dc_date`
+      * `start`: 0
+        * cursor for return, page 3 with 10 results per page would be `20`
+      * `rows`: 10
+        * how many records to return per page
+      * `fq`: `[]``
+        * **repeatable**
+        * filter query: used primarily for facets, or otherwise refining search
+      * `fl`: `[ "id", "mods*", "dc*", "rels*", "obj*", "last_modified"]`
+        * **repeatable**
+        * solr fields to return in response
+        * e.g. to override and return only PIDs of items, `fl=id`
+      * `facet`: `false`
+        * whether or not to include facets
+      * `facet.mincount`: `1`
+        * minimum number of documents that satisfy facet to be returned in facets
+      * `facet.limit`: `-1`
+        * number of facets per solr field returned (`-1` is unlimited)
+      * `facet.field`: `[]`
+        * **repeatable**
+        * solr fields to return as facets 
+      * `wt`: `json`
+        * format for solr response, options include: `json`, `xml`, `csv`, and more
+      * `skip_defaults`: `false`
+        * If true, all defaults suggested here are removed, sets solr parameters to basically nothing.  Not recommended save advanced queries
+      * `field_skip_escape`: `false` 
+        * **repeatable**
+        * accepts specific solr field to escape, e.g. `field_skip_escape:q` would escape only the `q` field in the query, while `field_skip_escape:q&field_skip_escape:fq` would escape all `fq` as well.
+
+
 
 ### Users
 
 **Root / Identify**<br>
-  * `/user/[USERNAME]/whoami`
+  * `/user/<username>/whoami`
   * *Method*: `GET`
   * *Description*:
-    * Expects `USERNAME`, then checks Ouroboros's user database
+    * Expects `username`, then checks Ouroboros's user database
       * if found, returns `200` status and information about user, including roles
       * else, returns `404` status and `exists=False`
   * *Sample response*:<br>

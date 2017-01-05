@@ -366,10 +366,14 @@ class Search(Resource):
 		if 'id' not in self.params['fl']:
 			self.params['fl'].append('id')
 
-		# escape query string
+		# escapes select fields in query
 		# re: https://lucene.apache.org/core/2_9_4/queryparsersyntax.html		
-		if not self.skip_escape:
-			self.params['q'] = utilities.escapeSolrArg(self.params['q'])
+		if self.field_skip_escape:
+			for field in self.field_skip_escape:
+				if type(self.params[field]) in [str,int]:
+					self.params[field] = utilities.escapeSolrArg(self.params[field])
+				elif type(self.params[field]) == list:
+					self.params[field] = [ utilities.escapeSolrArg(value) for value in self.params[field] ]
 
 		# DEBUG
 		# print self.params
@@ -397,11 +401,11 @@ class Search(Resource):
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
 		parser.add_argument('wt', type=str, help='expecting string for return format (e.g. json, xml, csv)')
 		parser.add_argument('skip_defaults', type=flask_restful.inputs.boolean, help='true / false: if set false, will not load default solr params', default=False)
-		parser.add_argument('skip_escape', type=flask_restful.inputs.boolean, help='true / false: if set true, will skip escaping of special characters', default=False)
+		parser.add_argument('field_skip_escape', type=str, action='append', help='solr field to skip escaping on, e.g. "id" or "dc_title" (multiple)', default=False)
 		args = parser.parse_args()
 
-		# set skip_escape
-		self.skip_escape = args['skip_escape']
+		# set field_skip_escape
+		self.field_skip_escape = args['field_skip_escape']
 
 		# pop select fields from args
 		self.skip_defaults = args['skip_defaults']

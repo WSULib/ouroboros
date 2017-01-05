@@ -72,6 +72,29 @@
 }
 ```
 
+### Search
+
+In a general sense, search is performed by querying Solr.  This is performed with the python binding, [mysolr](https://pypi.python.org/pypi/mysolr/) (which, ominously, appears to be deprecated as of 1/5/2016).
+
+#### Character Escaping
+
+Querying solr for the diverse range of possible query strings, coupled with particular characters and syntax for more advanced queries, makes for some complexity with regards to character escaping.  Solr uses the following special characters for query syntax: `+ - && || ! ( ) { } [ ] ^ " ~ * ? : \`.  However, it's possible -- likely -- that these will end up in query strings as well.
+
+Because this API powers multiple search interfaces, of which we have little control over the incoming search strings, first priority is to make sure the vast majority of queries perform successfully.  To this end, queries containg the special characters above are escaped with some helper functions in [utilities.py](utilities.py).
+
+However, using these special characters for advanced Solr searching is still possible through the API by including the flag, `skip_escape=true` in an API call.  This skips escaping, and trundles through exactly as entered.  The only catch, the client is required to manually escape any strings themselves.
+
+e.g. to search the `id` field for the PID, `wayne:vnc14515` would have the following syntax:
+
+```
+http://HOST/api/search?q=id:wayne\:vmc14515&skip_escape=true
+```
+
+This opens up the door for quite advanced queries such as date ranges for when the object was created (ingested) in WSUDOR:
+
+```
+http://HOST/api/search?q=obj_modifiedDate:[NOW-1MONTH TO NOW]
+```
 
 
 

@@ -366,14 +366,19 @@ class Search(Resource):
 		if 'id' not in self.params['fl']:
 			self.params['fl'].append('id')
 
-		# escapes select fields in query
-		# re: https://lucene.apache.org/core/2_9_4/queryparsersyntax.html		
-		if self.field_skip_escape:
-			for field in self.field_skip_escape:
-				if type(self.params[field]) in [str,int]:
-					self.params[field] = utilities.escapeSolrArg(self.params[field])
-				elif type(self.params[field]) == list:
-					self.params[field] = [ utilities.escapeSolrArg(value) for value in self.params[field] ]
+		# query escaping
+		# re: https://lucene.apache.org/core/2_9_4/queryparsersyntax.html
+		'''
+		default behavior is to escape 'q' entirely, and 'fq' only after first, requisite ':'
+		however, this can be overridden by the presence of 'field_skip_escape' for specific fields
+		'''		
+		# escaping 'q'
+		if 'q' not in self.field_skip_escape:
+			# consider special case for "*" wildcards?
+			self.params['q'] = utilities.escapeSolrArg(self.params['q'])
+		if 'fq' not in self.field_skip_escape:
+			self.params['fq'] = [ '%s:%s' % ( utilities.escapeSolrArg(value.split(':')[0]), utilities.escapeSolrArg( ''.join(value.split(':')[1:]) ) ) for value in self.params['fq'] ]
+
 
 		# DEBUG
 		# print self.params
@@ -401,7 +406,7 @@ class Search(Resource):
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
 		parser.add_argument('wt', type=str, help='expecting string for return format (e.g. json, xml, csv)')
 		parser.add_argument('skip_defaults', type=flask_restful.inputs.boolean, help='true / false: if set false, will not load default solr params', default=False)
-		parser.add_argument('field_skip_escape', type=str, action='append', help='solr field to skip escaping on, e.g. "id" or "dc_title" (multiple)', default=False)
+		parser.add_argument('field_skip_escape', type=str, action='append', help='specific solr field to skip escaping on, e.g. "id" or "dc_title" (multiple)', default=[])
 		args = parser.parse_args()
 
 		# set field_skip_escape
@@ -417,9 +422,11 @@ class Search(Resource):
 
 	def execute_search(self, include_item_metadata=True):
 		print self.params # DEBUG
-		self.search_results = solr_handle.search(**self.params)
-		if include_item_metadata:
-			self.interleave_item_metadata()
+		self.search_results = solr_handle.search(**self.params)		
+		print self.search_results.raw_content
+		if self.search_results.status == 200:
+			if include_item_metadata:
+				self.interleave_item_metadata()
 
 
 	def interleave_item_metadata(self):
@@ -439,7 +446,7 @@ class Search(Resource):
 		self.execute_search()
 
 		# build response
-		response.status_code =200
+		response.status_code = 200
 		response.body = {
 			'solr_results': self.search_results.raw_content
 		}
@@ -516,6 +523,11 @@ class CollectionSearch(Search):
 
 		# init ResponseObject
 		response = ResponseObject()
+
+		# get object
+		obj = WSUDOR_Object(pid)
+		if not obj:
+			abort(404, message='%s not found' % pid)
 
 		# add collection pid to fq
 		if 'fq' not in self.params:

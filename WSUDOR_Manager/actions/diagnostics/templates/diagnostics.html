@@ -1,0 +1,17 @@
+{% include 'header.html' %}
+
+<script src="{{url_for('static', filename='chartjsv2/Chart.js')}}"></script>
+
+<div class="row">
+	<div class="col-md-12">
+		<h2>System Diagnostics</h2>
+		<ul>
+			<li><a href="/{{APP_PREFIX}}/tasks/diagnostics/front_end_postman">Front-End tests with Postman and Newman</a></li>
+		</ul>		
+	</div>
+</div>
+
+
+
+
+{% include 'footer.html' %}

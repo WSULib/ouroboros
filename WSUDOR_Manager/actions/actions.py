@@ -59,6 +59,10 @@ app.register_blueprint(createObj, url_prefix=tasks_URL_prefix)
 from createObjectIndex import createObjectIndex
 app.register_blueprint(createObjectIndex, url_prefix=tasks_URL_prefix)
 
+#diagnostics
+from diagnostics import diagnostics, front_end_postman_factory, front_end_postman_worker
+app.register_blueprint(diagnostics, url_prefix=tasks_URL_prefix)
+
 #DCfromMODS
 from DCfromMODS import DCfromMODS, DCfromMODS_worker, DCfromMODS_single
 app.register_blueprint(DCfromMODS, url_prefix=tasks_URL_prefix)

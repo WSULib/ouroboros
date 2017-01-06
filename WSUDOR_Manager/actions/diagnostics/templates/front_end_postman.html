@@ -1,0 +1,41 @@
+{% include 'header.html' %}
+
+<script src="{{url_for('static', filename='chartjsv2/Chart.js')}}"></script>
+
+<div class="row">
+	<div class="col-md-12">
+		<h2>Front-End tests with Postman and Newman</h2>		
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/front_end_postman_factory">
+			
+			<div class="col-md-3">
+
+				<!-- Report Name -->
+				<div class="form-group">
+					<label class="control-label">Report Name:</label>
+					<p>Name for Postman Report (defaults to timestamp)</p>
+					<input class="form-control" type="text" name="report_name" placeholder="e.g. new_route_test, high_load_test, feeling_lucky">
+				</div>
+
+				<!-- Iterations -->
+				<div class="form-group">
+					<label class="control-label">Iterations:</label>
+					<p>This is how many times the routes defined in Postman will run</p>
+					<input class="form-control" type="text" name="iterations" placeholder="e.g. 10, 20, 100">
+				</div>
+
+				<div class="form-group">
+					<input type="submit" class="btn btn-success" value="Run!">
+				</div>
+
+			</div>
+
+		</form>
+	</div>
+</div>
+
+{% include 'footer.html' %}

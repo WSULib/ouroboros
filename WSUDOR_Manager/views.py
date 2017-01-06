@@ -796,8 +796,13 @@ def userJobs():
 
 		# check if pending
 		elif job_assign_count == job_est_count and job_complete_count == 0:
-			status_package['job_status'] = "pending"
-			job.status = "pending"
+			# special case for single item jobs
+			if int(job_est_count) == 1:
+				status_package['job_status'] = "running"
+				job.status = "running"
+			else:
+				status_package['job_status'] = "pending"
+				job.status = "pending"		
 
 		# check if completed
 		elif job_complete_count == job_est_count:

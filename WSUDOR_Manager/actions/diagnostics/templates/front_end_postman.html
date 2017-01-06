@@ -1,7 +1,5 @@
 {% include 'header.html' %}
 
-<script src="{{url_for('static', filename='chartjsv2/Chart.js')}}"></script>
-
 <div class="row">
 	<div class="col-md-12">
 		<h2>Front-End tests with Postman and Newman</h2>		
@@ -10,6 +8,7 @@
 
 <div class="row">
 	<div class="col-md-12">
+		<h3>Run Postman Report</h3>
 		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/custom_loop/front_end_postman_factory">
 			
 			<div class="col-md-3">
@@ -35,6 +34,17 @@
 			</div>
 
 		</form>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<h3>Finished Postman Report</h3>
+		<ul>
+			{% for report_name in reports %}
+				<li><a href="/{{APP_PREFIX}}/tasks/diagnostics/front_end_postman/view_report/{{report_name}}">{{report_name}}</a></li>
+			{% endfor %}
+		</ul>
 	</div>
 </div>
 

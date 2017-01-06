@@ -12,17 +12,23 @@
 	<div class="col-md-12" style="position:relative; width:1200px; height:800px;">
 		<canvas id="response_times"></canvas>
 		<script>
+		var randomColorGenerator = function () { 
+		    return '#' + (Math.random().toString(16) + '0000000').slice(2, 8); 
+		};
+
 		var ctx = document.getElementById("response_times");
-		var line_data = {{ line_data|tojson }};
-		var data = {
-		    labels: ["January", "February", "March", "April", "May", "June", "July"],
-		    datasets: [
-		        {
-		            label: "Response Times",
+
+		// get data from flask, turn into multiple datasets
+		var datasets = [];
+		{% for test in executions %}
+			var c1 = randomColorGenerator();
+			var c2 = randomColorGenerator();
+			var dataset = {
+		            label: "{{test.name}}",
 		            fill: false,
 		            lineTension: 0.1,
-		            backgroundColor: "rgba(75,192,192,0.4)",
-		            borderColor: "rgba(75,192,192,1)",
+		            backgroundColor: c1,
+		            borderColor: c2,
 		            borderCapStyle: 'butt',
 		            borderDash: [],
 		            borderDashOffset: 0.0,
@@ -36,32 +42,16 @@
 		            pointHoverBorderWidth: 2,
 		            pointRadius: 1,
 		            pointHitRadius: 10,
-		            data: line_data, // using passed data
+		            data: {{test.data}}, // using passed data
 		            spanGaps: false,
-		        },
-		        // {
-		        //     label: "Response Times",
-		        //     fill: false,
-		        //     lineTension: 0.1,
-		        //     backgroundColor: "rgba(75,192,192,0.4)",
-		        //     borderColor: "rgba(75,192,192,1)",
-		        //     borderCapStyle: 'butt',
-		        //     borderDash: [],
-		        //     borderDashOffset: 0.0,
-		        //     borderJoinStyle: 'miter',
-		        //     pointBorderColor: "rgba(75,192,192,1)",
-		        //     pointBackgroundColor: "#fff",
-		        //     pointBorderWidth: 1,
-		        //     pointHoverRadius: 5,
-		        //     pointHoverBackgroundColor: "rgba(75,192,192,1)",
-		        //     pointHoverBorderColor: "rgba(220,220,220,1)",
-		        //     pointHoverBorderWidth: 2,
-		        //     pointRadius: 1,
-		        //     pointHitRadius: 10,
-		        //     data: [43, 23, 34, 65, 43, 65, 43],
-		        //     spanGaps: false,
-		        // }
-		    ]
+		        }
+	        datasets.push(dataset);
+		{% endfor %}
+		console.log(datasets);
+		
+		var data = {
+		    labels: ["January", "February", "March", "April", "May", "June", "July"],
+		    datasets: datasets,
 		};
 		var options = {
 			scales: {

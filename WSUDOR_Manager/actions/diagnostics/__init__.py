@@ -113,12 +113,42 @@ def front_end_postman_view(report_name):
 		report_json = json.loads(f.read())
 
 	# parse results and prepare for graph
+	executions = r['run']['executions']
+
+	'''
+	"executions" is a list of "tests"
+	name = test['item']['name']
+	responseTime = test['response']['responseTime']
+
+	Need to sort these by name, then create a list of responseTimes associated with each name
+	'''
+
+	
+
+
 
 	# DEBUG
-	line_data = [34, 43, 65, 23, 76, 32, 34]
+	import random
+	def randoData():		
+		return [int(random.random() * 1000) for x in xrange(7)]
+	executions = [ {'name':'test_line','data':randoData()} for x in xrange(20) ]
+
 
 	# render
-	return render_template("front_end_postman_view_report.html", line_data=line_data)
+	return render_template("front_end_postman_view_report.html", executions=executions)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

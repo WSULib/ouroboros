@@ -20,7 +20,7 @@
 
 		// get data from flask, turn into multiple datasets
 		var datasets = [];
-		{% for test in executions %}
+		{% for test in data_payload.tests %}
 			var c1 = randomColorGenerator();
 			var c2 = randomColorGenerator();
 			var dataset = {
@@ -50,7 +50,7 @@
 		console.log(datasets);
 		
 		var data = {
-		    labels: ["January", "February", "March", "April", "May", "June", "July"],
+		    labels: {{data_payload.labels|tojson}},
 		    datasets: datasets,
 		};
 		var options = {

@@ -5,6 +5,7 @@ import sys
 import os
 import datetime
 import time
+from collections import OrderedDict
 from flask import Blueprint, render_template, redirect, abort, request
 from flask.ext.login import login_required
 
@@ -20,8 +21,8 @@ diagnostics = Blueprint('diagnostics', __name__, template_folder='templates', st
 
 
 @diagnostics.route('/diagnostics', methods=['GET', 'POST'])
-@login_required
-@roles.auth(['admin','metadata'])
+# @login_required
+# @roles.auth(['admin','metadata'])
 def index():	
 
 	# render
@@ -30,8 +31,8 @@ def index():
 
 
 @diagnostics.route('/diagnostics/front_end_postman', methods=['GET', 'POST'])
-@login_required
-@roles.auth(['admin','metadata'])
+# @login_required
+# @roles.auth(['admin','metadata'])
 def front_end_postman():	
 
 	'''
@@ -73,7 +74,7 @@ def front_end_postman_factory(job_package):
 
 
 @celery.task(name="front_end_postman_worker")
-@roles.auth(['admin','metadata'], is_celery=True)
+# @roles.auth(['admin','metadata'], is_celery=True)
 def front_end_postman_worker(job_package):
 
 	'''
@@ -103,8 +104,8 @@ def front_end_postman_worker(job_package):
 
 
 @diagnostics.route('/diagnostics/front_end_postman/view_report/<report_name>', methods=['GET', 'POST'])
-@login_required
-@roles.auth(['admin','metadata'])
+# @login_required
+# @roles.auth(['admin','metadata'])
 def front_end_postman_view(report_name):
 
 	# load report
@@ -112,8 +113,11 @@ def front_end_postman_view(report_name):
 	with open('/tmp/Ouroboros/%s' % report_name) as f:
 		report_json = json.loads(f.read())
 
+	# data_payload
+	data_payload = {}
+
 	# parse results and prepare for graph
-	executions = r['run']['executions']
+	executions = report_json['run']['executions']
 
 	'''
 	"executions" is a list of "tests"
@@ -123,19 +127,36 @@ def front_end_postman_view(report_name):
 	Need to sort these by name, then create a list of responseTimes associated with each name
 	'''
 
-	
+	# sort tests and append to OrderedDictionary
+	sorted_tests = OrderedDict()
+	for test in executions:
+		name = test['item']['name']
+		responseTime = test['response']['responseTime']
+		# if not in dictionary, add with name as key
+		if test['item']['name'] not in sorted_tests.keys():
+			print "adding %s" % name
+			sorted_tests[name] = {
+				'name':name,
+				'data':[]
+			}
+		# add responseTime to test dictionary
+		sorted_tests[name]['data'].append(responseTime)
+	# append each test
+	data_payload['tests'] = [sorted_tests[test] for test in sorted_tests]
 
+	# prep labels based on length first test data points
+	data_payload['labels'] = ["n%s" % x for x in xrange(len(data_payload['tests'][0]['data']))]
 
 
 	# DEBUG
-	import random
-	def randoData():		
-		return [int(random.random() * 1000) for x in xrange(7)]
-	executions = [ {'name':'test_line','data':randoData()} for x in xrange(20) ]
+	# import random
+	# def randoData():		
+	# 	return [int(random.random() * 1000) for x in xrange(7)]
+	# data_payload = [ {'name':'test_line','data':randoData()} for x in xrange(10) ]
 
 
 	# render
-	return render_template("front_end_postman_view_report.html", executions=executions)
+	return render_template("front_end_postman_view_report.html", data_payload=data_payload)
 
 
 

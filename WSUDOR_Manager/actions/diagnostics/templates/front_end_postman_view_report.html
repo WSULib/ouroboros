@@ -22,13 +22,12 @@
 		var datasets = [];
 		{% for test in data_payload.tests %}
 			var c1 = randomColorGenerator();
-			var c2 = randomColorGenerator();
 			var dataset = {
 		            label: "{{test.name}}",
 		            fill: false,
 		            lineTension: 0.1,
 		            backgroundColor: c1,
-		            borderColor: c2,
+		            borderColor: c1,
 		            borderCapStyle: 'butt',
 		            borderDash: [],
 		            borderDashOffset: 0.0,

@@ -119,84 +119,84 @@ def serverWide():
 	return render_template("manageOAI_serverWide.html",collection_tups=collection_tups,APP_HOST=localConfig.APP_HOST)
 
 
-# @manageOAI.route('/manageOAI/objectRelated', methods=['POST', 'GET'])
-# @utilities.objects_needed
-# def objectRelated():
+@manageOAI.route('/manageOAI/objectRelated', methods=['POST', 'GET'])
+@utilities.objects_needed
+def objectRelated():
 
-	# from WSUDOR_Manager import forms
+	from WSUDOR_Manager import forms
 
-	# '''
-	# Query to see what will show up in REPOX:
-	# SELECT rcItem.identifier AS pid FROM rcItem INNER JOIN rcRecord ON rcItem.itemKey = rcRecord.itemKey INNER JOIN rcMembership ON rcMembership.recordKey = rcRecord.recordKey INNER JOIN rcSet ON rcSet.setKey = rcMembership.setKey INNER JOIN rcFormat ON rcFormat.formatKey = rcRecord.formatKey WHERE rcFormat.mdPrefix = 'mods' AND rcSet.setSpec = 'set:wayne:collectionDPLAOAI';
-	# '''
+	'''
+	Query to see what will show up in REPOX:
+	SELECT rcItem.identifier AS pid FROM rcItem INNER JOIN rcRecord ON rcItem.itemKey = rcRecord.itemKey INNER JOIN rcMembership ON rcMembership.recordKey = rcRecord.recordKey INNER JOIN rcSet ON rcSet.setKey = rcMembership.setKey INNER JOIN rcFormat ON rcFormat.formatKey = rcRecord.formatKey WHERE rcFormat.mdPrefix = 'mods' AND rcSet.setSpec = 'set:wayne:collectionDPLAOAI';
+	'''
 
-	# # get PIDs	
-	# PIDs = getSelPIDs()
+	# get PIDs	
+	PIDs = getSelPIDs()
 
-	# # shared_relationships (in this instance, the PID of collection objects these assert membership to)	
-	# shared_relationships = []
+	# shared_relationships (in this instance, the PID of collection objects these assert membership to)	
+	shared_relationships = []
 
-	# # function for shared query between whole and chunked queries
-	# def risearchQuery(list_of_PIDs):
-	# 	# construct where statement for query
-	# 	where_statement = ""
-	# 	for PID in list_of_PIDs:
-	# 		if PID != None:				
-	# 			where_statement += "<fedora:{PID}> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet> $object . $object <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $object <http://www.openarchives.org/OAI/2.0/setName> $setName .".format(PID=PID)
-	# 	query_statement = "select $object $setSpec $setName from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
-	# 	base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
-	# 	payload = {
-	# 		"lang" : "sparql",
-	# 		"query" : query_statement,
-	# 		"flush" : "false",
-	# 		"type" : "tuples",
-	# 		"format" : "JSON"
-	# 	}
-	# 	r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
-	# 	risearch = json.loads(r.text)
-	# 	return risearch	
+	# function for shared query between whole and chunked queries
+	def risearchQuery(list_of_PIDs):
+		# construct where statement for query
+		where_statement = ""
+		for PID in list_of_PIDs:
+			if PID != None:				
+				where_statement += "<fedora:{PID}> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet> $object . $object <http://www.openarchives.org/OAI/2.0/setSpec> $setSpec . $object <http://www.openarchives.org/OAI/2.0/setName> $setName .".format(PID=PID)
+		query_statement = "select $object $setSpec $setName from <#ri> where {{ {where_statement} }}".format(where_statement=where_statement)		
+		base_URL = "http://{FEDORA_USER}:{FEDORA_PASSWORD}@localhost/fedora/risearch".format(FEDORA_USER=FEDORA_USER,FEDORA_PASSWORD=FEDORA_PASSWORD)
+		payload = {
+			"lang" : "sparql",
+			"query" : query_statement,
+			"flush" : "false",
+			"type" : "tuples",
+			"format" : "JSON"
+		}
+		r = requests.post(base_URL, auth=HTTPBasicAuth(FEDORA_USER, FEDORA_PASSWORD), data=payload )
+		risearch = json.loads(r.text)
+		return risearch	
 
-	# # if more than 100 PIDs, chunk into sub-queries
-	# if len(PIDs) > 100:
-	# 	def grouper(iterable, chunksize, fillvalue=None):
-	# 		from itertools import izip_longest
-	# 		args = [iter(iterable)] * chunksize
-	# 		return izip_longest(*args, fillvalue=fillvalue)
+	# if more than 100 PIDs, chunk into sub-queries
+	if len(PIDs) > 100:
+		def grouper(iterable, chunksize, fillvalue=None):
+			from itertools import izip_longest
+			args = [iter(iterable)] * chunksize
+			return izip_longest(*args, fillvalue=fillvalue)
 
-	# 	chunks =  grouper(PIDs,100)
+		chunks =  grouper(PIDs,100)
 
-	# 	for chunk in chunks:
+		for chunk in chunks:
 
-	# 		# perform query
-	# 		risearch = risearchQuery(chunk)
+			# perform query
+			risearch = risearchQuery(chunk)
 
-	# 		chunk_list = []			
-	# 		for each in risearch['results']:
-	# 			tup = (each['object'].split("/")[1],each['setSpec'], each['setName'])
-	# 			chunk_list.append(tup)
-	# 		try:
-	# 			curr_set = set.intersection(curr_set,set(chunk_list))
-	# 		except:
-	# 			curr_set = set(chunk_list)
+			chunk_list = []			
+			for each in risearch['results']:
+				tup = (each['object'].split("/")[1],each['setSpec'], each['setName'])
+				chunk_list.append(tup)
+			try:
+				curr_set = set.intersection(curr_set,set(chunk_list))
+			except:
+				curr_set = set(chunk_list)
 
-	# 	print curr_set
-	# 	shared_relationships = curr_set		
+		print curr_set
+		shared_relationships = curr_set		
 
-	# else:		
-	# 	# perform query
-	# 	risearch = risearchQuery(PIDs)
-	# 	shared_relationships = [ (each['object'].split("/")[1],each['setSpec'], each['setName']) for each in risearch['results'] ]
+	else:		
+		# perform query
+		risearch = risearchQuery(PIDs)
+		shared_relationships = [ (each['object'].split("/")[1],each['setSpec'], each['setName']) for each in risearch['results'] ]
 
-	# print shared_relationships
+	print shared_relationships
 
-	# # finally, find all currently available / defined sets	
-	# form = forms.OAI_sets()
-	# active_sets = utilities.returnOAISets('dropdown')
-	# total_sets = len(active_sets)
+	# finally, find all currently available / defined sets	
+	form = forms.OAI_sets()
+	active_sets = utilities.returnOAISets('dropdown')
+	total_sets = len(active_sets)
 
-	# return render_template("manageOAI_objectRelated.html",shared_relationships=shared_relationships,form=form,active_sets=active_sets,total_sets=total_sets)
+	return render_template("manageOAI_objectRelated.html",shared_relationships=shared_relationships,form=form,active_sets=active_sets,total_sets=total_sets)
 
-	# return render_template("manageOAI_objectRelated.html")
+	return render_template("manageOAI_objectRelated.html")
 
 
 # generate OAI identifiers for objects

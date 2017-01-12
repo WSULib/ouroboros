@@ -4,6 +4,7 @@ from WSUDOR_Manager import jobs
 
 # python
 import os
+import time
 
 print '''
                 ::+:/`
@@ -148,7 +149,60 @@ def getIngestWorkspaceRows(job_num):
 	print "returning tuple of (job_handle, job_rows)"
 	return (iwjob,iwrows)
 	
-	
+def getSeedObjects(target_repo):
+	seed_pids = [
+		# vmc  (single image)
+		'wayne:collectionvmc',
+		'wayne:vmc15687',
+		'wayne:vmc14515',
+		# van riper (complex)
+		'wayne:collectionVanRiperLetters',
+		'wayne:MSS-001-006-005',
+		# ramsey (ebooks)
+		'wayne:collectionRamsey',
+		'wayne:Almanackfo1887b4801574x',
+		# lincoln (learning objects)
+		'wayne:collectionLincolnLetters',
+		'wayne:LearningObject_1b20d1e4-b67b-4e6b-93e5-502b5614178d',
+		'wayne:LearningObject_File_d1ddc9e9-032a-4479-a5b1-5c0728700ed9',
+		'wayne:LincolnLettersFHC205771',
+		# Swanger (hierarchical)
+		'wayne:collectionSwanger',
+		'wayne:Swanger1777Series3',
+		'wayne:Swanger1777_8_10',
+		'wayne:Swanger1777_8_10_03',
+		'wayne:Swanger1777_8_11',
+		'wayne:Swanger1777_8_11_01',
+		'wayne:Swanger1777Series2',
+		'wayne:Swanger1777_1_40',
+		'wayne:Swanger1777_1_40_01'
+	]
+
+	# get objects and index
+	for index, pid in enumerate(seed_pids):
+		try:
+			print "##############################################################################"
+			print "working on %s / %s" % (index, len(seed_pids))
+			print "##############################################################################"
+			remote_get = getRemoteObject(target_repo,pid)
+			if remote_get:
+				while True:
+					obj_test = fedora_handle.get_object(pid)
+					if obj_test.exists == True:
+						break
+					else:
+						time.sleep(.5)
+				obj = w(pid)
+				obj.objectRefresh()
+			else:
+				raise Exception
+		except:
+			print "-------------------------------------------------------------------------------"
+			print "FAILURE: %s" % pid
+			print "-------------------------------------------------------------------------------"
+
+	print 'finis.'
+
 	
 	
 	

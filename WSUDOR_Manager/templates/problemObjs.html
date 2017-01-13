@@ -121,19 +121,25 @@ $(document).ready(function () {
                 <div class="form-group">
                     <label for="email" class="control-label emailLabel col-lg-4 control-label">To</label>
                     <div class="col-lg-8">
-                        <input id="email" type="text" name="recipient_email" placeholder="recipient's email" readonly required>
+                        <input id="email" type="text" name="to" placeholder="recipient's email" readonly required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="name" class="control-label nameLabel col-lg-4 control-label">From</label>
                     <div class="col-lg-8">
-                        <input id="name" type="text" name="your_email" placeholder="Enter your email address" required>
+                        <input id="name" type="text" name="from" placeholder="Enter your email address" required>
                     </div>
+                </div>
+                <div class="form-group">
+                  <label for="subject" class="control-label subjectLabel col-lg-4 control-label">Subject</label>
+                  <div class="col-lg-8">
+                      <input id="subject" name="subject" value="WSU Digital Collections" required>
+                  </div>
                 </div>
                 <div class="form-group">
                     <label for="message" class="control-label messageLabel col-lg-4 control-label">Message</label>
                     <div class="col-lg-8">
-                        <textarea id="message" name="message" placeholder="Your message" required style="margin: 0px; width: 372px; height: 332px;"></textarea>
+                        <textarea id="message" name="msg" placeholder="Your message" required style="margin: 0px; width: 372px; height: 332px;"></textarea>
                     </div>
                 </div>
                 <button type="submit" form="form_email" class="btn btn-info pull-right">Send Message</button>

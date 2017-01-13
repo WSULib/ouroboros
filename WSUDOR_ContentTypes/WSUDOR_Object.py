@@ -452,6 +452,19 @@ class WSUDOR_GenObject(object):
 		return fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri)
 
 
+	# isMemberOfCollection
+	@helpers.LazyProperty
+	def isMemberOfCollections(self):
+
+		'''
+		returns list of collections object belongs to
+		'''
+		if 'rels_isMemberOfCollection' in self.SolrDoc.asDictionary():
+			return self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+		else:
+			return False
+
+
 
 	# object triples
 	@helpers.LazyProperty
@@ -1463,7 +1476,7 @@ class WSUDOR_GenObject(object):
 
 		# affiliate with collection set(s)
 		try:
-			collections = self.previewSolrDict()['rels_isMemberOfCollection']
+			collections = self.isMemberOfCollections
 			for collection in collections:
 				print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
 				print "registered with collection %s" % collection

@@ -39,7 +39,6 @@
 						<li><a href="/{{APP_PREFIX}}/tasks/iiifManifest">IIIF Manifest Management</a></li>
 						<li><a href="/{{APP_PREFIX}}/tasks/checkJP2">Check JP2 Integrity</a></li>
 						<li><a href="/{{APP_PREFIX}}/tasks/checksum">Checksum Objects</a></li>
-						<li><a href="/{{APP_PREFIX}}/genericMethod">Run Generic WSUDOR Object Method</a></li>
 						<li><a href="/{{APP_PREFIX}}/tasks/addDS">Add Datastream</a></li>
 						<li><a href="/{{APP_PREFIX}}/tasks/editDSXMLAdv">XPath & Regex XML editing</a></li>
 						<li><a href="/{{APP_PREFIX}}/tasks/editDSMime/0">Edit DS Mime/Type</span></a></li>		
@@ -52,6 +51,7 @@
 						<li><a href="/{{APP_PREFIX}}/tasks/createObj">Create Generic Object</a></li>
 						<li><a href="/{{APP_PREFIX}}/tasks/learningObj">Create Learning Object</a></li>
 						<li><a href="/{{APP_PREFIX}}/fireTask/obj_loop/genericMethod_worker?method_name=regenJP2">Regen JP2</a></li>
+						<li><a href="/{{APP_PREFIX}}/fireTask/obj_loop/genericMethod_worker?method_name=registerOAI">Register objects with OAI server</a></li>
 					</ul>
 
 				</div>	
@@ -78,6 +78,12 @@
 						<li><a href="/{{APP_PREFIX}}/flushPIDLock">Release all Objects from "PID Lock"</a></li>
 						<li><a href="/{{APP_PREFIX}}/flushCeleryTasks">Flush Jobs (clears Celery tasks in Redis DB)</a></li>
 					</ul>
+
+					<h3>Generic WSUDOR_Object Method</h3>
+					<ul>
+						<li><a href="/{{APP_PREFIX}}/genericMethod">Run Generic WSUDOR Object Method</a></li>
+					</ul>
+
 
 				</div>
 

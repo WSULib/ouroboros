@@ -771,18 +771,11 @@ class WSUDOR_GenObject(object):
 			except:
 				print "failed on generating IIIF manifest"
 
+		# register with OAI
+		self.registerOAI()
+
 		# the following methods are not needed when objects are "passing through"
 		if indexObject:
-			# generate OAI identifier
-			print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid))
-
-			# affiliate with collection set
-			try:
-				collections = self.previewSolrDict()['rels_isMemberOfCollection']
-				for collection in collections:
-					print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
-			except:
-				print "could not affiliate with collection"
 
 			# Index in Solr (can override from command by setting self.index_on_ingest to False)
 			if self.index_on_ingest != False:
@@ -1660,6 +1653,22 @@ class WSUDOR_GenObject(object):
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive","True")
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitiveContent","True")
 		return True
+
+
+	# add OAI identifers and set memberships
+	def registerOAI(self):
+		# generate OAI identifier
+		print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid))
+		print "created OAI identifier"
+
+		# affiliate with collection set(s)
+		try:
+			collections = self.isMemberOfCollections
+			for collection in collections:
+				print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
+				print "registered with collection %s" % collection
+		except:
+			print "could not affiliate with collection"
 
 
 

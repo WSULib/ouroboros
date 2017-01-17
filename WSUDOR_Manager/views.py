@@ -271,13 +271,8 @@ killasgroup=true'''
 
 
 @app.route('/email', methods=['GET','POST'])
-# Simple method to email; presumes you have a unix email smtp program like postfix installed and tested
-# Uses external smtp mail server to send email; avoids use of internal email programs like postfix
-# Looking for a POST request with parameters/values for 'subject', 'msg', 'from', and 'to'
-# @login_required
-# @roles.auth(['admin'])
 def email():
-    # resp = make_respones("", 500)
+# Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', and 'to'
 
     # if (localConfig.EMAIL_PASSPHRASE === request.args.get('passphrase')):
     #     data = {'from':request.args.get('from'), 'to':request.args.get('to'), 'subject':request.args.get('subject'), 'msg':request.args.get('msg')}
@@ -286,12 +281,16 @@ def email():
     #     if email.send(data):
     #         resp = make_response("", 200)
     #     else:
-    #         resp = make_response("", 500)
+    #         resp = abort(500)
     
     # return resp
-    data = {'from': request.form.get('from'), 'to': request.form.get('to'), 'subject': request.form.get('subject'), 'msg': request.form.get('msg')}
-    f = request.args.get('from')
-    resp = make_response(f, 200)
+    # data = {'from': request.form.get('from'), 'to': request.form.get('to'), 'subject': request.form.get('subject'), 'msg': request.form.get('msg')}
+    # return request.form.get
+    # print request.get_data(False, True, True)
+    print request.data
+    print request.headers
+    print request.form
+    resp = make_response(request.form.get('from', "stuff"), 200)
     # email = utilities.Email()
 
     # if email.send(data):

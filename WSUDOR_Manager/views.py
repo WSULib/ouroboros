@@ -1308,6 +1308,8 @@ def PIDSolr():
 	username = session['username']
 
 	# get form
+	print "############################"
+	print request.form
 	form = forms.solrSearch(request.form)
 
 	# collection selection

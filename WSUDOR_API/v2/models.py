@@ -399,7 +399,7 @@ class Search(Resource):
 		# parse args
 		parser.add_argument('q', type=str, help='expecting solr search string')
 		parser.add_argument('fq', type=str, action='append', help='expecting filter query (fq) (multiple)')
-		parser.add_argument('fq[]', type=str, action='append', help='expecting filter query (fq) (multiple) - bracket form')		
+		parser.add_argument('fq[]', type=str, action='append', help='expecting filter query (fq) (multiple) - bracket form')
 		parser.add_argument('facet.field', type=str, action='append', help='expecting field to return as facet (multiple)')
 		parser.add_argument('facet.field[]', type=str, action='append', help='expecting field to return as facet (multiple) - bracket form')
 		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
@@ -421,6 +421,12 @@ class Search(Resource):
 		self.args = dict( (k, v) for k, v in args.iteritems() if v != None )
 
 		# for fields with optional '[]'' suffix, remove
+		'''
+		Consider removing: with custom query parser on front-end, we can be strict with API
+		that it only accepts non-bracketed repeating fields.
+		Also, bracketed fields above...
+		Or, keep for maximum flexibility, and not that many potential repeating fields
+		'''
 		for k,v in self.args.iteritems():
 			if k.endswith('[]'):
 				logging.info("stripping '[]' suffix from pair: %s / %s" % (k,v))
@@ -429,7 +435,7 @@ class Search(Resource):
 		logging.info(self.args)
 
 		# if q = '', remove, falls back on default "*:*"
-		if self.args['q'] == '':
+		if 'q' in self.args.keys() and self.args['q'] == '':
 			del self.args['q']
 
 

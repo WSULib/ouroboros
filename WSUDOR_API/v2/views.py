@@ -4,6 +4,9 @@
 # Ouroboros config
 import localConfig
 
+# Logging
+from WSUDOR_API import logging
+
 # WSUDOR_API_app
 # from WSUDOR_API import api
 import models

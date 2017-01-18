@@ -7,6 +7,9 @@ import time
 # Ouroboros config
 import localConfig
 
+# Logging
+from WSUDOR_API import logging
+
 # modules
 from flask import redirect
 import flask_restful
@@ -102,7 +105,7 @@ class ItemMetadata(Resource):
 		try:
 			ct = obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
 		except:
-			print "could not determine content type, setting None"
+			logging.info("could not determine content type, setting None")
 			ct = None
 
 		# run content-type api additions
@@ -379,10 +382,6 @@ class Search(Resource):
 		if 'fq' not in self.field_skip_escape:
 			self.params['fq'] = [ '%s:%s' % ( utilities.escapeSolrArg(value.split(':')[0]), utilities.escapeSolrArg( ''.join(value.split(':')[1:]) ) ) for value in self.params['fq'] ]
 
-
-		# DEBUG
-		# print self.params
-
 		# flip on facets of fields requested
 		if 'facet.field' in self.params and len(self.params['facet.field']) > 0:
 			self.params['facet'] = True
@@ -421,9 +420,9 @@ class Search(Resource):
 
 
 	def execute_search(self, include_item_metadata=True):
-		print self.params # DEBUG
+		logging.info(self.params)
 		self.search_results = solr_handle.search(**self.params)		
-		print self.search_results.raw_content
+		logging.debug(self.search_results.raw_content)
 		if self.search_results.status == 200:
 			if include_item_metadata:
 				self.interleave_item_metadata()

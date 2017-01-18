@@ -4,12 +4,17 @@ import urllib
 
 import localConfig
 
+# setup logging for WSUDOR_API
+import logging
+
 # modules / packages import
 from flask import Flask, render_template, g, redirect, jsonify, request
 from flask.ext.login import LoginManager
 from flask.ext.cache import Cache
 
 from werkzeug.routing import BaseConverter
+
+
 
 
 # http://flask.pocoo.org/snippets/35/

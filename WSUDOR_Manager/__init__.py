@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-import logging
 
 # modules / packages import
 from flask import Flask, render_template, g
@@ -13,6 +12,8 @@ from localConfig import *
 from eulfedora.server import Repository
 from celery import Celery
 import xmlrpclib
+
+import logging
 
 # sniff out context
 if len(sys.argv) == 1:

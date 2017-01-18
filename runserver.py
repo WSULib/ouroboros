@@ -103,7 +103,7 @@ class fedoraConsumerWorker(object):
 
 
 # twisted liseners
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=LOGGING_LEVEL)
 
 # WSUDOR_Manager
 WSUDOR_Manager_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUDOR_Manager_app)

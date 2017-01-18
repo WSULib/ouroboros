@@ -1,5 +1,9 @@
 # These rules all independent, order of
 # escaping doesn't matter
+'''
+Consider skipping "-" dash, as it can be used for 
+saying "NOT" in solr query
+'''
 escapeRules = {'+': r'\+',
 			   '-': r'\-',
 			   '&': r'\&',

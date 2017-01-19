@@ -238,16 +238,18 @@ class Email():
             msg['Subject'] = data['subject']
             msg['From'] = data['from']
             msg['To'] = data['to']
+            data['pid'] = data['pid'] if data['pid'] is None else "\n\n PID: %s" % data['pid']
+            data['msg'] = data['msg'] if data['pid'] is None else data['msg'] + data['pid']
             text = """%s""" % data['msg']
             msg.attach(MIMEText(text, 'plain'))
 
             try:
                 s = smtplib.SMTP(EMAIL_SERVER, EMAIL_SERVER_PORT)
                 s.sendmail(data['from'], data['to'], msg.as_string())
-                # s.ehlo()
-                # s.starttls()
-                # s.ehlo()
-                # s.login(EMAIL_USERNAME, EMAIL_PASSWORD)
+                s.ehlo()
+                s.starttls()
+                s.ehlo()
+                s.login(EMAIL_USERNAME, EMAIL_PASSWORD)
                 s.quit()
                 return True
             except Exception, e:

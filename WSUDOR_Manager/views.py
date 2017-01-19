@@ -272,35 +272,19 @@ killasgroup=true'''
 
 @app.route('/email', methods=['GET','POST'])
 def email():
-# Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', and 'to'
+# Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', 'to', and 'pid'
 
-    # if (localConfig.EMAIL_PASSPHRASE === request.args.get('passphrase')):
-    #     data = {'from':request.args.get('from'), 'to':request.args.get('to'), 'subject':request.args.get('subject'), 'msg':request.args.get('msg')}
-    #     email = utilities.Email()
-
-    #     if email.send(data):
-    #         resp = make_response("", 200)
-    #     else:
-    #         resp = abort(500)
+    if (localConfig.EMAIL_PASSPHRASE == request.form.get('passphrase')):
+        data = {'from':request.form.get('from'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid')}
+        email = utilities.Email()
+        if email.send(data):
+            resp = make_response("email sent", 200)
+        else:
+            resp = make_response("email failed", 500)
+    else:
+        resp = make_response("failed passphrase", 400)
     
-    # return resp
-    # data = {'from': request.form.get('from'), 'to': request.form.get('to'), 'subject': request.form.get('subject'), 'msg': request.form.get('msg')}
-    # return request.form.get
-    # print request.get_data(False, True, True)
-    print request.data
-    print request.headers
-    print request.form
-    resp = make_response(request.form.get('from', "stuff"), 200)
-    # email = utilities.Email()
-
-    # if email.send(data):
-    #     resp = make_response("stuffasdf", 200)
-    # else:
-    #     abort(500)
     return resp
-
-
-    # return redirect("problemObjs")
 
 # MAJOR SUB-SECTIONS
 #########################################################################################################

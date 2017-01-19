@@ -272,10 +272,10 @@ killasgroup=true'''
 
 @app.route('/email', methods=['GET','POST'])
 def email():
-# Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', 'to', and 'pid'
+# Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', 'to', (and optionally) 'pid'
 
     if (localConfig.EMAIL_PASSPHRASE == request.form.get('passphrase')):
-        data = {'from':request.form.get('from'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid')}
+        data = {'from':request.form.get('from'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None)}
         email = utilities.Email()
         if email.send(data):
             resp = make_response("email sent", 200)

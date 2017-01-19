@@ -1671,6 +1671,10 @@ class WSUDOR_GenObject(object):
 			print "could not affiliate with collection"
 
 
+    # send Object to Problem Object staging space (i.e. in user_pids table)
+   	def reportProb(self):
+   		return "stuff"
+
 
 	################################################################
 	# Consider moving

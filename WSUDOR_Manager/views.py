@@ -275,10 +275,15 @@ def email():
 # Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', 'to', (and optionally) 'pid'
 
     if (localConfig.EMAIL_PASSPHRASE == request.form.get('passphrase')):
-        data = {'from':request.form.get('from'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None)}
+        data = {'from':request.form.get('from'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
         email = utilities.Email()
         if email.send(data):
-            resp = make_response("email sent", 200)
+            if data['contact_type'] == "rap" and data['pid']:
+                # WSUDOR handle
+                obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(data['pid'])
+                stuff = obj_handle.reportProb(data)
+                resp = make_response(stuff, 200)
+            # resp = make_response("email sent", 200)
         else:
             resp = make_response("email failed", 500)
     else:

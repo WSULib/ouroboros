@@ -381,7 +381,7 @@ class Search(Resource):
 			if self.params['q'] != "*:*":
 				self.params['q'] = utilities.escapeSolrArg(self.params['q'])
 		if 'fq' not in self.field_skip_escape:
-			self.params['fq'] = [ '%s:%s' % ( utilities.escapeSolrArg(value.split(':')[0]), utilities.escapeSolrArg( ''.join(value.split(':')[1:]) ) ) for value in self.params['fq'] ]
+			self.params['fq'] = [ '%s:%s' % ( utilities.escapeSolrArg(value.split(':')[0]), utilities.escapeSolrArg( ':'.join(value.split(':')[1:]) ) ) for value in self.params['fq'] ]
 
 		# flip on facets of fields requested
 		if 'facet.field' in self.params and len(self.params['facet.field']) > 0:
@@ -400,6 +400,7 @@ class Search(Resource):
 		parser.add_argument('q', type=str, help='expecting solr search string')
 		parser.add_argument('fq', type=str, action='append', help='expecting filter query (fq) (multiple)')
 		parser.add_argument('fq[]', type=str, action='append', help='expecting filter query (fq) (multiple) - bracket form')
+		parser.add_argument('fl', type=str, action='append', help='expecting field limiter (fl) (multiple)')
 		parser.add_argument('facet.field', type=str, action='append', help='expecting field to return as facet (multiple)')
 		parser.add_argument('facet.field[]', type=str, action='append', help='expecting field to return as facet (multiple) - bracket form')
 		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
@@ -409,6 +410,10 @@ class Search(Resource):
 		parser.add_argument('skip_defaults', type=flask_restful.inputs.boolean, help='true / false: if set false, will not load default solr params', default=False)
 		parser.add_argument('field_skip_escape', type=str, action='append', help='specific solr field to skip escaping on, e.g. "id" or "dc_title" (multiple)', default=[])
 		args = parser.parse_args()
+
+		# log incoming API args
+		logging.info("Incoming args from search request:")
+		logging.info(args)
 
 		# set field_skip_escape
 		self.field_skip_escape = args['field_skip_escape']
@@ -432,6 +437,9 @@ class Search(Resource):
 				logging.info("stripping '[]' suffix from pair: %s / %s" % (k,v))
 				self.args[k.rstrip('[]')] = v
 				del self.args[k]
+
+		# log post processing
+		logging.info("Post-Processing args from search request:")
 		logging.info(self.args)
 
 		# if q = '', remove, falls back on default "*:*"
@@ -440,6 +448,7 @@ class Search(Resource):
 
 
 	def execute_search(self, include_item_metadata=True):
+		logging.info("Merged parameters for search request:")
 		logging.info(self.params)
 		self.search_results = solr_handle.search(**self.params)		
 		logging.debug(self.search_results.raw_content)

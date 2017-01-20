@@ -273,22 +273,30 @@ killasgroup=true'''
 @app.route('/email', methods=['GET','POST'])
 def email():
 # Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', 'to', (and optionally) 'pid'
-
+    
+    # Auth check - make sure email request is from a valid source
     if (localConfig.EMAIL_PASSPHRASE == request.form.get('passphrase')):
         data = {'from':request.form.get('from'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
+
+        # Sub-section: if this is reporting a problem, then let's run the reportProb module before sending an email
+        if data['contact_type'] == "rap" and data['pid']:
+            # WSUDOR handle
+            obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(data['pid'])
+            if not obj_handle:
+                data['msg'] = data[msg] + "\n\n WSUDOR System Note: Could not find specified Object (%s) in system." % data['pid']
+            else:
+                if not obj_handle.reportProb(data):
+                    data['msg'] = data[msg] + "\n\n WSUDOR System Note: Could not add specified Object (%s) to the Report a Problem Queue" % data['pid']
+
+        # Send an email
         email = utilities.Email()
         if email.send(data):
-            if data['contact_type'] == "rap" and data['pid']:
-                # WSUDOR handle
-                obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(data['pid'])
-                stuff = obj_handle.reportProb(data)
-                resp = make_response(stuff, 200)
-            # resp = make_response("email sent", 200)
+            resp = make_response("email sent", 200)
         else:
             resp = make_response("email failed", 500)
     else:
         resp = make_response("failed passphrase", 400)
-    
+
     return resp
 
 # MAJOR SUB-SECTIONS

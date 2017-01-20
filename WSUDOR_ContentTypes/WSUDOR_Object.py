@@ -43,7 +43,7 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import fedoraHandles
-from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities
+from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db
 
 # derivatives
 from inc.derivatives import Derivative
@@ -1672,8 +1672,24 @@ class WSUDOR_GenObject(object):
 
 
     # send Object to Problem Object staging space (i.e. in user_pids table)
-   	def reportProb(self):
-   		return "stuff"
+   	def reportProb(self, data):
+		try:
+			probData = dict(data)
+			PID = probData['pid']
+			probData.pop('pid')
+			probData.pop('to')
+			probData['email'] = probData.pop('from')
+			probData['name'] = ''
+			probData['message'] = probData.pop('msg')
+			form_notes = json.dumps(probData)
+			problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs",form_notes)
+			db.session.add(problemPID)
+			db.session.commit()
+			response = True
+		except:
+			response = False
+
+		return response
 
 
 	################################################################

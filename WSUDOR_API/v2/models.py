@@ -378,9 +378,10 @@ class Search(Resource):
 		# escaping 'q'
 		if 'q' not in self.field_skip_escape:
 			# consider special case for "*" wildcards?
-			self.params['q'] = utilities.escapeSolrArg(self.params['q'])
+			if self.params['q'] != "*:*":
+				self.params['q'] = utilities.escapeSolrArg(self.params['q'])
 		if 'fq' not in self.field_skip_escape:
-			self.params['fq'] = [ '%s:%s' % ( utilities.escapeSolrArg(value.split(':')[0]), utilities.escapeSolrArg( ''.join(value.split(':')[1:]) ) ) for value in self.params['fq'] ]
+			self.params['fq'] = [ '%s:%s' % ( utilities.escapeSolrArg(value.split(':')[0]), utilities.escapeSolrArg( ':'.join(value.split(':')[1:]) ) ) for value in self.params['fq'] ]
 
 		# flip on facets of fields requested
 		if 'facet.field' in self.params and len(self.params['facet.field']) > 0:
@@ -398,8 +399,10 @@ class Search(Resource):
 		# parse args
 		parser.add_argument('q', type=str, help='expecting solr search string')
 		parser.add_argument('fq', type=str, action='append', help='expecting filter query (fq) (multiple)')
+		parser.add_argument('fq[]', type=str, action='append', help='expecting filter query (fq) (multiple) - bracket form')
 		parser.add_argument('fl', type=str, action='append', help='expecting field limiter (fl) (multiple)')
 		parser.add_argument('facet.field', type=str, action='append', help='expecting field to return as facet (multiple)')
+		parser.add_argument('facet.field[]', type=str, action='append', help='expecting field to return as facet (multiple) - bracket form')
 		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
 		parser.add_argument('rows', type=int, help='expecting integer for number of rows to return')
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
@@ -407,6 +410,10 @@ class Search(Resource):
 		parser.add_argument('skip_defaults', type=flask_restful.inputs.boolean, help='true / false: if set false, will not load default solr params', default=False)
 		parser.add_argument('field_skip_escape', type=str, action='append', help='specific solr field to skip escaping on, e.g. "id" or "dc_title" (multiple)', default=[])
 		args = parser.parse_args()
+
+		# log incoming API args
+		logging.info("Incoming args from search request:")
+		logging.info(args)
 
 		# set field_skip_escape
 		self.field_skip_escape = args['field_skip_escape']
@@ -416,10 +423,32 @@ class Search(Resource):
 		del args['skip_defaults']
 
 		# remove None values from args
-		self.args = dict((k, v) for k, v in args.iteritems() if v != None)
+		self.args = dict( (k, v) for k, v in args.iteritems() if v != None )
+
+		# for fields with optional '[]'' suffix, remove
+		'''
+		Consider removing: with custom query parser on front-end, we can be strict with API
+		that it only accepts non-bracketed repeating fields.
+		Also, bracketed fields above...
+		Or, keep for maximum flexibility, and not that many potential repeating fields
+		'''
+		for k,v in self.args.iteritems():
+			if k.endswith('[]'):
+				logging.info("stripping '[]' suffix from pair: %s / %s" % (k,v))
+				self.args[k.rstrip('[]')] = v
+				del self.args[k]
+
+		# log post processing
+		logging.info("Post-Processing args from search request:")
+		logging.info(self.args)
+
+		# if q = '', remove, falls back on default "*:*"
+		if 'q' in self.args.keys() and self.args['q'] == '':
+			del self.args['q']
 
 
 	def execute_search(self, include_item_metadata=True):
+		logging.info("Merged parameters for search request:")
 		logging.info(self.params)
 		self.search_results = solr_handle.search(**self.params)		
 		logging.debug(self.search_results.raw_content)

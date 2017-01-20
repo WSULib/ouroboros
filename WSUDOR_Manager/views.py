@@ -1299,8 +1299,12 @@ def PIDSolr():
     # get username from session
     username = session['username']
 
-    # get form
+
+	# get form
+    print "############################"
+    print request.form
     form = forms.solrSearch(request.form)
+
 
     # collection selection
     coll_query = {'q':"rels_hasContentModel:*Collection", 'fl':["id","dc_title"], 'rows':1000}

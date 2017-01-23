@@ -360,7 +360,10 @@ class Search(Resource):
 				"dc_language",
 				"dc_publisher"
 			],
+			'facet.sort': 'count', # default facet sorting to count
+			'f.facet_mods_year.facet.sort': 'index', # sort mods_year by index (year)
 			'wt': 'json',
+			# 'json.nl': 'arrarr'
 		}
 
 		self.params = {}
@@ -482,6 +485,20 @@ class Search(Resource):
 				doc['item_metadata'] = 'http://%s/%s/item/%s' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, doc['id'])
 
 
+	def process_facets(self):
+		'''
+		When Solr writes to JSON, it can return a variety of arrangements.  Unfortunately,
+		mysolr does not handle the `arrarr` mapping which would be most convenient and align with
+		desired use cases on the front-end.
+
+		This shim converts the "flat" style response to a list of tuples, that can be dropped
+		into templates and iterated over with ease
+		'''
+		facet_fields = self.search_results.raw_content['facet_counts']['facet_fields']
+		for facet in facet_fields:
+			facet_fields[facet] = [tuple(facet_fields[facet][i:i+2]) for i in range(0, len(facet_fields[facet]), 2)]
+
+
 	# generic search GET request
 	def get(self):
 
@@ -490,6 +507,9 @@ class Search(Resource):
 
 		# execute query
 		self.execute_search()
+
+		# fix facets
+		self.process_facets()
 
 		# build response
 		response.status_code = 200

@@ -109,10 +109,11 @@ class ItemMetadata(Resource):
 			ct = None
 
 		# run content-type api additions
-		for f in obj.public_api_additions:
-			self.content_type_specific.append({
-				f.__name__:f() # name of content_type function: function output
-			})
+		if hasattr(obj,'public_api_additions'):
+			for f in obj.public_api_additions:
+				self.content_type_specific.append({
+					f.__name__:f() # name of content_type function: function output
+				})
 
 		# build response
 		return {
@@ -346,10 +347,19 @@ class Search(Resource):
 			'rows': 10,
 			'fq': [],
 			'fl': [ "id", "mods*", "dc*", "rels*", "obj*", "last_modified"],
-			'facet': False,
+			'facet': True,
 			'facet.mincount': 1,
 			'facet.limit': -1,
-			'facet.field': [],
+			'facet.field': [
+				"rels_hasContentModel",
+				"rels_isMemberOfCollection",  	
+				"facet_mods_year",
+				"dc_subject",
+				"dc_creator",
+				"dc_coverage",
+				"dc_language",
+				"dc_publisher"
+			],
 			'wt': 'json',
 		}
 
@@ -385,7 +395,12 @@ class Search(Resource):
 
 		# flip on facets of fields requested
 		if 'facet.field' in self.params and len(self.params['facet.field']) > 0:
-			self.params['facet'] = True
+			self.params['facet'] = True		
+
+		# limit to isDiscoverable unless overridden
+		if self.isDiscoverable:
+			logging.debug("limiting to isDiscoverable")
+			self.params['fq'].append('rels_isDiscoverable:"info\:fedora/True"')
 
 
 	def capture_request_args(self):
@@ -397,6 +412,8 @@ class Search(Resource):
 		parser = reqparse.RequestParser(bundle_errors=True)
 
 		# parse args
+
+		# solr-based
 		parser.add_argument('q', type=str, help='expecting solr search string')
 		parser.add_argument('fq', type=str, action='append', help='expecting filter query (fq) (multiple)')
 		parser.add_argument('fq[]', type=str, action='append', help='expecting filter query (fq) (multiple) - bracket form')
@@ -407,6 +424,9 @@ class Search(Resource):
 		parser.add_argument('rows', type=int, help='expecting integer for number of rows to return')
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
 		parser.add_argument('wt', type=str, help='expecting string for return format (e.g. json, xml, csv)')
+
+		# custom
+		parser.add_argument('isDiscoverable', type=flask_restful.inputs.boolean, help='if true, only rels_isDiscoverable:info:fedora/True are returned (default True)', default=True)
 		parser.add_argument('skip_defaults', type=flask_restful.inputs.boolean, help='true / false: if set false, will not load default solr params', default=False)
 		parser.add_argument('field_skip_escape', type=str, action='append', help='specific solr field to skip escaping on, e.g. "id" or "dc_title" (multiple)', default=[])
 		args = parser.parse_args()
@@ -415,12 +435,10 @@ class Search(Resource):
 		logging.info("Incoming args from search request:")
 		logging.info(args)
 
-		# set field_skip_escape
-		self.field_skip_escape = args['field_skip_escape']
-
-		# pop select fields from args
-		self.skip_defaults = args['skip_defaults']
-		del args['skip_defaults']
+		# set and pop custom fields
+		for custom_field in ['skip_defaults','isDiscoverable','field_skip_escape']:
+			setattr(self, custom_field, args[custom_field])
+			del args[custom_field]
 
 		# remove None values from args
 		self.args = dict( (k, v) for k, v in args.iteritems() if v != None )

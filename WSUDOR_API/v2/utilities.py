@@ -20,7 +20,7 @@ escapeRules = {'+': r'\+',
 			   '*': r'\*',
 			   '?': r'\?',
 			   ':': r'\:',
-			   '"': r'\"',
+			   # '"': r'\"', # skip escaping double quote
 			   ';': r'\;',
 			   ' ': r'\ '}
 

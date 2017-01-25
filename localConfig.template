@@ -1,8 +1,6 @@
 # Prod CONFIGURATION
 ###################
 
-import os
-
 # Logging
 import logging
 LOGGING_LEVEL = logging.INFO

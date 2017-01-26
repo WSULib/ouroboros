@@ -967,7 +967,7 @@ class WSUDOR_GenObject(object):
 		# derive Dublin Core
 		self.DCfromMODS()
 
-		return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly)
+		return actions.solrIndexer.solrIndexer('modifyObject', self.pid, human_hash=False, printOnly=printOnly)
 
 
 	def previewSolrDict(self):

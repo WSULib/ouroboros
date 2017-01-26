@@ -344,15 +344,17 @@ class Search(Resource):
 			'q': '*:*',
 			'sort': None,
 			'start': 0,
-			'rows': 10,
+			'rows': 20,
 			'fq': [],
-			'fl': [ "id", "mods*", "dc*", "rels*", "obj*", "last_modified"],
+			'fl': [ "id", "mods*", "dc*", "rels*", "human*", "obj*", "last_modified"],
 			'facet': True,
 			'facet.mincount': 1,
 			'facet.limit': -1,
 			'facet.field': [
 				"rels_hasContentModel",
 				"rels_isMemberOfCollection",  	
+				"human_hasContentModel",
+				"human_isMemberOfCollection",
 				"facet_mods_year",
 				"dc_subject",
 				"dc_creator",
@@ -363,7 +365,6 @@ class Search(Resource):
 			'facet.sort': 'count', # default facet sorting to count
 			'f.facet_mods_year.facet.sort': 'index', # sort mods_year by index (year)
 			'wt': 'json',
-			# 'json.nl': 'arrarr'
 		}
 
 		self.params = {}
@@ -476,6 +477,8 @@ class Search(Resource):
 		if self.search_results.status == 200:
 			if include_item_metadata:
 				self.interleave_item_metadata()
+			# fix facets
+			self.process_facets()
 
 
 	def interleave_item_metadata(self):
@@ -508,15 +511,56 @@ class Search(Resource):
 		# execute query
 		self.execute_search()
 
-		# fix facets
-		self.process_facets()
-
 		# build response
 		response.status_code = 200
 		response.body = {
 			'solr_results': self.search_results.raw_content
 		}
 		return response.generate_response()
+
+
+class SearchLimiters(Search):
+
+	'''
+	desc: returns limiters for advanced search interfaces
+	includes
+		- Collections, Content Types
+	'''
+
+	def get(self):
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# add collection pid to fq
+		self.params = { 
+			'q': '*:*',
+			'start': 0,
+			'rows': 0,
+			'fq': [],
+			'facet': True,
+			'facet.mincount': 1,
+			'facet.limit': -1,
+			'facet.field': [
+				"human_hasContentModel",
+				"human_isMemberOfCollection",
+				"dc_language"
+			],
+			'facet.sort': 'index', # default facet sorting to index
+			# 'f.facet_mods_year.facet.sort': 'index', # sort mods_year by index (year)
+			'wt': 'json',
+		}
+
+		# execute query
+		self.execute_search()
+
+		# build response
+		response.status_code =200
+		response.body = {
+			'solr_results': self.search_results.raw_content
+		}
+		return response.generate_response()
+
 
 
 # Collections

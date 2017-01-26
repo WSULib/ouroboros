@@ -40,6 +40,7 @@ api.add_resource(models.CollectionSearch, '/collection/<string:pid>/search', end
 
 # Search
 api.add_resource(models.Search, '/search', endpoint='search')
+api.add_resource(models.SearchLimiters, '/search_limiters', endpoint='search_limiters')
 
 # Users
 api.add_resource(models.UserWhoami, '/user/<string:username>/whoami', endpoint='user_whoami')

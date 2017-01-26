@@ -33,12 +33,25 @@ import localConfig
 solrIndexer_blue = Blueprint('solrIndexer', __name__, template_folder='templates')
 
 
+
+
 '''
 As this needs to run via curl command, removing roles temporarily.
 '''
 @solrIndexer_blue.route("/updateSolr/<update_type>", methods=['POST', 'GET'])
 # @roles.auth(['admin','metadata'])
 def updateSolr(update_type):	
+
+
+	# Experimental: build human_hash
+	'''
+	Whenever updateSolr() is run, which has the potential of iterating over one or thousands of PIDs,
+	query Solr and generate a map of human titles to PIDs for select fields.  This is used during the 
+	index process to set human readable fields with the prefix: human_*
+
+	For example, 'info:fedora/wayne:collectionvmc' = 'Virtual Motor City Collection'
+	'''
+	human_hash = gen_human_hash()
 
 	# real or emulated solr events
 	if update_type == "fullIndex":
@@ -48,7 +61,7 @@ def updateSolr(update_type):
 		else:
 			# fire only with confirmation
 			if "choice" in request.form and request.form['choice'] == "confirm" and request.form['confirm_string'].lower() == 'confirm':		
-				index_handle = solrIndexer.delay('fullIndex', None)
+				index_handle = solrIndexer.delay('fullIndex', None, human_hash=human_hash)
 			else:
 				print 'skipping fullIndex'
 				return redirect('/tasks/updateSolr/select')
@@ -56,13 +69,15 @@ def updateSolr(update_type):
 
 	if update_type == "timestamp":
 		print "Updating by timestamp"	
-		index_handle = solrIndexer.delay('timestampIndex', None)
+		index_handle = solrIndexer.delay('timestampIndex', None, human_hash=human_hash)
+
 
 	if update_type == "userObjects":
 		print "Updating by userObjects"	
 		PIDs = jobs.getSelPIDs()
 		for PID in PIDs:
-			index_handle = solrIndexer.delay('modifyObject', PID)	
+			index_handle = solrIndexer.delay('modifyObject', PID, human_hash=human_hash)	
+
 
 	# purge and reindex fedobjs (SLOW)
 	if update_type == "purgeAndFullIndex":
@@ -80,7 +95,7 @@ def updateSolr(update_type):
 				if 'fedobjs' in solr_handle.base_url:
 					solr_handle.delete_by_query('*:*',commit=False)
 				# run full index	
-				index_handle = solrIndexer.delay('fullIndex', None)
+				index_handle = solrIndexer.delay('fullIndex', None, human_hash=human_hash)
 
 			else:
 				print 'skipping purge and index'
@@ -113,9 +128,10 @@ def updateSolr(update_type):
 class SolrIndexerWorker(object):
 
 	# init worker with built-in timers
-	def __init__(self, printOnly):
+	def __init__(self, printOnly, human_hash):
 		self.startTime = int(time.time())
 		self.printOnly = printOnly
+		self.human_hash = human_hash
 
 	@property
 	def endTime(self):
@@ -138,7 +154,6 @@ class SolrIndexerWorker(object):
 			return doc_handle.doc.last_modified
 		else:
 			return False
-
 
 	
 	def getToUpdate(self, lastFedoraIndexDate):
@@ -254,6 +269,29 @@ class SolrIndexerWorker(object):
 		#######################################################################################
 		# Here, we have the opportunity to do some cleanup, addition, and finagling of fields.
 		#######################################################################################
+
+		print self.human_hash
+
+		# derive human readable fields, 'human_*'
+		collections = getattr(obj_handle.SolrDoc.doc, 'rels_isMemberOfCollection', False)
+		if collections:
+			print "deriving human collection names"
+			print collections
+			for pid in collections:
+				pid = pid.split("/")[1]
+				if pid in self.human_hash['collections']:
+					setattr(obj_handle.SolrDoc.doc, "human_isMemberOfCollection", self.human_hash['collections'][pid] )
+
+
+		content_types = getattr(obj_handle.SolrDoc.doc, 'rels_hasContentModel', False)
+		if content_types:
+			print "deriving human content types"
+			print content_types
+			for pid in content_types:
+				pid = pid.split("/")[1]
+				if pid in self.human_hash['content_types']:
+					setattr(obj_handle.SolrDoc.doc, "human_hasContentModel", self.human_hash['content_types'][pid] )
+
 		
 		if self.printOnly == True:
 			# print and return dicitonary, but do NOT update, commit, or replicate
@@ -290,7 +328,7 @@ class SolrIndexerWorker(object):
 
 
 @celery.task()
-def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
+def solrIndexer(fedEvent, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
 	print "solrIndexer running"
 
@@ -305,8 +343,12 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 	outputs['transformExcepts'] = './reports/'+now+'_transformExcepts.csv'
 	outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
 
-	# init worker, always with printOnly parameter, defaulting to localConfig unless explicitly set 
-	worker = SolrIndexerWorker(printOnly=printOnly)
+	# init worker, always with printOnly parameter, defaulting to localConfig unless explicitly set
+	if not human_hash:
+		print "human_hash not found, generating..."
+		human_hash = gen_human_hash()
+
+	worker = SolrIndexerWorker(printOnly, human_hash)
 
 	# determine action based on fedEvent
 	# Index single item per fedEvent
@@ -394,6 +436,14 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 	# finally, commit all changes
 	print "committing changes"
 	solr_handle.commit()
+
+
+def gen_human_hash():
+	print "preparing 'human_hash' values..."
+	return {
+		'collections': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:Collection','fl':'id dc_title','rows':1000}).documents },
+		'content_types': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:ContentModel','fl':'id dc_title','rows':1000}).documents }
+	}
 
 
 if __name__ == '__main__':

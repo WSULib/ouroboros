@@ -1,8 +1,6 @@
 # Prod CONFIGURATION
 ###################
 
-import os
-
 # Logging
 import logging
 LOGGING_LEVEL = logging.INFO
@@ -123,6 +121,13 @@ USER_ACCOUNT_SALT = "Wayne State University Digital Object Repository"
 
 # ouroboros sudo password
 USER_SUDO_PASSWORD = 'ouroboros'
+
+# smtp email user and password
+EMAIL_USERNAME = 'username@domain'
+EMAIL_PASSWORD = 'password'
+EMAIL_PASSPHRASE = "it's a big secret"
+EMAIL_SERVER = 'smtp server location'
+EMAIL_SERVER_PORT = PORT
 
 # users & login
 WSUDORAUTH_BASE_URL = 'http://%s' % APP_HOST # can be ssl, but only on production with valid SSL certificate

@@ -407,9 +407,9 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			parts_imageDict[image] = {
 				'ds_id':image,
-				'thumbnail' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "info:fedora/%s/%s" % (self.pid, image)).next(),
-				'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "info:fedora/%s/%s" % (self.pid, image)).next(),
-				'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "info:fedora/%s/%s" % (self.pid, image)).next()
+				'thumbnail' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isThumbnailOf", "info:fedora/%s/%s" % (self.pid, image)).next().split("/")[-1],
+				'preview' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isPreviewOf", "info:fedora/%s/%s" % (self.pid, image)).next().split("/")[-1],
+				'jp2' : fedora_handle.risearch.get_subjects("info:fedora/fedora-system:def/relations-internal#isJP2Of", "info:fedora/%s/%s" % (self.pid, image)).next().split("/")[-1]
 			}
 
 			# check for order and assign

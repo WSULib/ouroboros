@@ -1,7 +1,7 @@
 setuptools
 Flask==0.10.1
 Flask-Cache==0.13.1
-Flask-Login
+Flask-Login==0.4.0
 Flask-SQLAlchemy==2.1
 Flask-WTF==0.9.5
 Paste==1.7.5.1
@@ -16,15 +16,15 @@ beautifulsoup4==4.5.1
 celery==3.1.11
 coverage==3.7.1
 decorator==3.3.2
-flask-restful
+flask-restful==0.3.5
 fuzzywuzzy==0.2
 ipython
 lockfile==0.10.2
 mysolr==0.8.2
-ply
+ply==3.9
 pydub==0.9.5
 python-ldap==2.4.13
-rdflib
+rdflib==4.2.1
 redis==2.10.1
 requests==2.8.1
 responses==0.3.0

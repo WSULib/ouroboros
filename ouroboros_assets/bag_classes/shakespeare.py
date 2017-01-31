@@ -70,7 +70,7 @@ class BagClass(object):
 		print self.full_identifier
 
 		# generate PID
-		self.pid = "wayne:%s%s" % (self.collection_identifier, self.full_identifier)
+		self.pid = "wayne:%s" % (self.full_identifier)
 		self.object_row.pid = self.pid
 
 		# write MODS

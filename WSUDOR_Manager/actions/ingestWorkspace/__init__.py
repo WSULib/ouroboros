@@ -278,7 +278,7 @@ def jobjson(job_id):
 			if bag_validation_dict['verdict']:
 				return "<span style='color:green;'>Valid</span>"	
 			else:
-				return "<span style='color:red;'>Invalid</span>"	
+				return "<span style='color:red;'>Invalid</span>"
 
 	# defining columns
 	columns = []	

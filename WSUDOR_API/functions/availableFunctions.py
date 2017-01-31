@@ -1292,7 +1292,7 @@ def authUser(getParams):
 	###############################################################
 
 	# set ldap location, protocol version, and referrals
-	l = ldap.initialize("ldaps://directory.wayne.edu:636")
+	l = ldap.initialize("ldap://directory.wayne.edu:389")
 	l.protocol_version = ldap.VERSION3
 	l.set_option(ldap.OPT_REFERRALS, 0)
 

@@ -31,7 +31,7 @@ def objectState_worker(job_package):
 	print form_data
 
 	# in confirmation present, change state
-	if form_data['confirm_string'] == "CONFIRM":
+	if form_data['confirm_string'].lower() == "confirm":
 
 		# grab target state
 		target_state = form_data['target_state']

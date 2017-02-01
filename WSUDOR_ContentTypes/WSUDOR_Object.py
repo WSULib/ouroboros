@@ -1152,8 +1152,11 @@ class WSUDOR_GenObject(object):
 		# check constituents		
 		if len(self.constituents) > 0:
 			for constituent in self.constituents:
-				for ds in constituent.ds_list:
-					self._removeDatastreamFromLorisCache(constituent.pid, ds)
+				try:
+					for ds in constituent.ds_list:
+						self._removeDatastreamFromLorisCache(constituent.pid, ds)
+				except:
+					print "could not remove constituent %s from cache, possible already purged" % constituent
 
 		return True
 

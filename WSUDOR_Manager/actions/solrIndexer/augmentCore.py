@@ -32,6 +32,10 @@ def augmentCore(PID):
 			if str(obj) == "info:fedora/CM:WSUebook":	
 				print "Firing ebook augment"		
 				ebookText(PID)
+				print "Creating readux virtual objects"
+				obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PID)
+				obj_handle.regenReaduxVirtualObjects()
+
 
 			# hierarchicalfiles
 			if str(obj) == "info:fedora/CM:Document":			

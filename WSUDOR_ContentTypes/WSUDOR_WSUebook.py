@@ -326,9 +326,13 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# purge children
 		for page in self.pages_from_rels:
-			page = self.pages_from_rels[page]
-			print "purging:",page.label
-			fedora_handle.purge_object(page)
+			try:
+				page = self.pages_from_rels[page]
+				print "purging constituent:", page.label
+				obj = WSUDOR_ContentTypes.WSUDOR_Object(page.pid)
+				obj.purge(override_state=True)
+			except:
+				print "could not remove constituent: %s" % obj.pid
 
 		return True
 

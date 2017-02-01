@@ -49,20 +49,16 @@ def purgeObject_worker(job_package):
 	obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
 
 	# check object state
-	print obj_handle.ohandle.state
-	if obj_handle.ohandle.state != "D":
-		return "Skipping, object state not 'Deleted (D)'"
+	if obj_handle.ohandle.state != "D":		
+		print "Skipping, object state not 'Deleted (D)'"
+		raise Exception("Skipping, object state not 'Deleted (D)'")
 
-	print "purging Constituents if present"
-	if getattr(obj_handle, 'purgeConstituents', None):
-		obj_handle.purgeConstituents()
-	
-	# else, purge object from Fedora (object will be pulled via Messenging service)
-	result = fedora_handle.purge_object(obj_handle.pid)
-	return "%s purge result: %s" % (obj_handle.pid, result)
+	else:
+		# else, purge object 
+		result = obj_handle.purge()
+		return "%s purge result: %s" % (obj_handle.pid, result)
 
-	# remove from Solr
-	solr_handle.delete_by_key(obj_handle.pid)
+		
 
 
 

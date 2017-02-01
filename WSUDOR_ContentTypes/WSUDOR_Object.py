@@ -1692,6 +1692,33 @@ class WSUDOR_GenObject(object):
 		return response
 
 
+	# Solr Indexing
+	def purge(self, override_state=False):
+
+		if self.ohandle.state != "D" and override_state == False:
+			raise Exception("Skipping, object state not 'Deleted (D)'")
+
+		else:
+
+			# purge constituent objets
+			print "purging Constituents if present"
+			if getattr(self, 'purgeConstituents', None):
+				self.purgeConstituents()
+
+			# remove from Loris and Varnish cache
+			self.removeObjFromCache()
+
+			# remove from Solr
+			print "purging from solr"
+			solr_handle.delete_by_key(self.pid)
+
+			# purge object
+			print "purging from fedora"
+			fedora_handle.purge_object(self.pid)
+
+			return True
+
+
 	################################################################
 	# Consider moving
 	################################################################

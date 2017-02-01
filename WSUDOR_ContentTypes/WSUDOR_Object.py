@@ -1316,18 +1316,22 @@ class WSUDOR_GenObject(object):
 		return results
 
 
-	# ban image from varnish cache
-	def _removeObjFromVarnishCache(self):
+	# remove from Loris cache
+	def _removeObjFromLorisCache(self):
 
-		# main pid
-		os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % self.pid)
+		for ds in self.ohandle.ds_list:
+			self._removeDatastreamFromLorisCache(self.pid, ds)
 
-		# check constituents
+		# check constituents		
 		if len(self.constituents) > 0:
 			for constituent in self.constituents:
-				os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % constituent.pid)
+				try:
+					for ds in constituent.ds_list:
+						self._removeDatastreamFromLorisCache(constituent.pid, ds)
+				except:
+					print "could not remove constituent %s from cache, possible already purged" % constituent
 
-		return  True
+		return True
 
 
 	# remove from Loris cache

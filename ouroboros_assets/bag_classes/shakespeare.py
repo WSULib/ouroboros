@@ -109,11 +109,13 @@ class BagClass(object):
 		print "creating symlinks and writing to objMeta"
 		print "looking in %s" % self.files_location
 
-		# get binary_files location
+		# get binary_files location, based on pid
 		if self.files_location.endswith('/'):
 			d = self.files_location[:-1]
 		else:
 			d = self.files_location
+		# tack on pid as directory
+		d += "/" + self.full_identifier
 
 		binary_files = [ binary for binary in os.listdir(d) ]
 		binary_files.sort() #sort

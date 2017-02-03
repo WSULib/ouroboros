@@ -180,7 +180,10 @@ def objectDetails(job_id,ingest_id):
 	o = models.ingest_workspace_object.query.filter_by(job_id=job_id,ingest_id=ingest_id).first()
 
 	# parse objMeta
-	objMeta = json.loads(o.objMeta)
+	if o.objMeta is not None:
+		objMeta = json.loads(o.objMeta)
+	else:
+		objMeta = None
 	
 	# attempt directory listing of bag_path
 	if o.bag_path != None:

@@ -175,7 +175,12 @@ def bagIngest_worker(job_package):
 	if 'overwrite' in job_package['form_data']:
 		print "purging object if exists"
 		if fedora_handle.get_object(bag_handle.pid).exists:
-			fedora_handle.purge_object(bag_handle.pid)
+			try:
+				obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_handle.pid)
+				obj_handle.purge(override_state=True)
+			except:
+				print "falling back on raw fedora object purge"
+				fedora_handle.purge_object(bag_handle.pid)
 
 	# push to remote
 	if 'push_remote' in job_package['form_data']:

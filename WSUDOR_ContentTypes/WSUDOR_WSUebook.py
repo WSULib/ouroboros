@@ -107,6 +107,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 
 		count = 1
+		if 'cover_placeholder' in self.objMeta.keys() and self.objMeta['cover_placeholder']:
+			count += 1
 		seq_pages = {}
 		for page in self.pages_from_objMeta.keys():
 			page_info = self.pages_from_objMeta[page]
@@ -125,6 +127,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		returns assumed missing pages based on numbering
 		'''
 		page_nums = self.pages_from_objMeta.keys()
+		missing_pages_set = set(page_nums).symmetric_difference(xrange(page_nums[0], page_nums[-1] + 1))
+
+		# add page 1 if not present
+		if 1 not in missing_pages_set and 1 not in page_nums:
+			missing_pages_set.add(1)
+
+		return missing_pages_set
+
+
+	# MISSING pages from normalized pages
+	@helpers.LazyProperty
+	def normalized_missing_pages_from_objMeta(self):
+
+		'''
+		returns assumed missing pages based on numbering
+		'''
+		page_nums = self.normalized_pages_from_objMeta.keys()
 		missing_pages_set = set(page_nums).symmetric_difference(xrange(page_nums[0], page_nums[-1] + 1))
 
 		# add page 1 if not present
@@ -279,6 +298,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# PAGES
 			########################################################################################################
+			# iterate through anticipated missing pages and create missing page objects
+			for page_num in self.normalized_missing_pages_from_objMeta:
+				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+				page_obj.ingestMissingPage(self, page_num)
 			# iterate through pages and create page objects
 			for page_num in self.normalized_pages_from_objMeta:
 				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
@@ -287,8 +310,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 			# write generic thumbnail and preview
+			print "writing generic thumb and preview"
 			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/jpeg", control_group="M")
-			rep_handle.ds_location = "http://localhost/fedora/objects/%s_Page_%s/datastreams/THUMBNAIL/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'].split("_")[-1])
+			rep_page_num = int(self.objMeta['isRepresentedBy'].split("_")[-1])
+			if "cover_placeholder" in self.objMeta and self.objMeta['cover_placeholder']:
+				rep_page_num += 1
+			rep_handle.ds_location = "http://localhost/fedora/objects/%s_Page_%s/datastreams/THUMBNAIL/content" % (self.ohandle.pid, rep_page_num)
 			rep_handle.label = "THUMBNAIL"
 			rep_handle.save()
 
@@ -432,7 +459,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 
 		# self.pages_from_rels
-		for page_num in self.pages_from_rels:			
+		for page_num in self.pages_from_rels:
 
 			# open wsudor handle
 			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])

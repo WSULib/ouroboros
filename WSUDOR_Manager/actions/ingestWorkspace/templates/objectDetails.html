@@ -20,7 +20,7 @@
 
 	<!-- tab nav -->
 	<div class="col-md-12">
-		<h2>Object Details - {{objMeta.label}}</h2>		
+		<h2>Object Details - {{o.object_title}}</h2>		
 		<!-- Nav tabs -->
 		<ul class="nav nav-tabs" role="tablist">
 			<li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">General</a></li>
@@ -169,7 +169,7 @@
 
 				<div class="row">
 					<div class="col-md-12">
-						<h3>General</h3>
+						<h3>Modify</h3>
 						<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/object/delete/{{o.job.id}}/{{o.ingest_id}}"><button class="btn btn-danger">Delete Object from Workspace!?</button></a></p>
 					</div>
 				</div>
@@ -178,15 +178,25 @@
 					<div class="col-md-12">
 						<h3>Content-Type Specific</h3>
 
-						<div class="col-md-6 well">
-							<h4>Cover Placeholder</h4>
-							<p>This option allows you to toggle whether or not the book will be ingested with a placeholder for the cover (first page).  When books are scanned beginning with the right-hand page of a book, and not the cover or left-hand page, it disrupts any downstream attempts at displaying opposing pages.  Adding this cover placeholder will bump all pages up one, resulting in a book with accurate page opposition.</p>
-							<p>Curren status: {% if 'cover_placeholder' in objMeta and objMeta.cover_placeholder%}<span style="color:green; font-weight: bold;">True</span>{% else %}<span style="color:red; font-weight: bold;">False</span>{% endif %}
-							<!-- ebook -->
-							{% if objMeta.content_type == 'WSUDOR_WSUebook' %}
-								<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/object/modify/{{o.job.id}}/{{o.ingest_id}}/toggle_cover_placeholder"><button class="btn btn-warning">Togggle Cover Placeholder</button></a></p>	
+							{% if objMeta != None %}
+
+								<!-- ebook -->
+								{% if objMeta.content_type == 'WSUDOR_WSUebook' %}
+									<div class="col-md-6 well">
+									<h4>Cover Placeholder</h4>
+									<p>This option allows you to toggle whether or not the book will be ingested with a placeholder for the cover (first page).  When books are scanned beginning with the right-hand page of a book, and not the cover or left-hand page, it disrupts any downstream attempts at displaying opposing pages.  Adding this cover placeholder will bump all pages up one, resulting in a book with accurate page opposition.</p>
+									<p>Curren status: {% if 'cover_placeholder' in objMeta and objMeta.cover_placeholder%}<span style="color:green; font-weight: bold;">True</span>{% else %}<span style="color:red; font-weight: bold;">False</span>{% endif %}</p>
+										<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/object/modify/{{o.job.id}}/{{o.ingest_id}}/toggle_cover_placeholder"><button class="btn btn-warning">Togggle Cover Placeholder</button></a></p>	
+								</div>
+								{% endif %}
+
+							{% else %}
+							<div class="col-md-6 well">
+								<p>This object does not have objMeta, so we don't know the content type yet.  You might still need to create a bag for this object....</p>
+							</div>
+
 							{% endif %}
-						</div>
+
 					</div>
 				</div>
 

@@ -1487,7 +1487,7 @@ class WSUDOR_GenObject(object):
 			print "could not affiliate with collection"
 
 
-	# Solr Indexing
+	# purge object
 	def purge(self, override_state=False):
 
 		if self.ohandle.state != "D" and override_state == False:

@@ -69,10 +69,11 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.book_obj = book_obj
 
 		# using parent book, get datastreams from objMeta
-		page_dict = self.book_obj.pages_from_objMeta[page_num]
+		page_dict = self.book_obj.normalized_pages_from_objMeta[page_num]
 
 		# new pid
 		npid = "wayne:%s_Page_%s" % (self.book_obj.pid.split(":")[1], page_num)
+		print "Page pid: %s" % npid
 
 		# creating new self	
 		self.ohandle = fedora_handle.get_object(npid)
@@ -93,21 +94,17 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		policy_handle.label = "POLICY"
 		policy_handle.save()				
 
-		# generic hash of target ids
-		target_ids = {
-			'IMAGE':'IMAGE_%d' % page_num,
-			'HTML':'HTML_%d' % page_num,
-			'ALTOXML':'ALTOXML_%d' % page_num
-		}
-
 		# for each file type in pages dict, pass page obj and process
 		for ds in page_dict:
 
 			if ds['ds_id'].startswith('IMAGE'):
+				print "processing image..."
 				self.processImage(ds)
 			if ds['ds_id'].startswith('HTML'):
+				print "processing HTML..."
 				self.processHTML(ds)
 			if ds['ds_id'].startswith('ALTOXML'):
+				print "processing ALTO..."
 				self.processALTOXML(ds)
 
 		# write RDF relationships

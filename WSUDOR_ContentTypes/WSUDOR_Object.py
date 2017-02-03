@@ -1709,6 +1709,10 @@ class WSUDOR_GenObject(object):
 			if getattr(self, 'purgeConstituents', None):
 				self.purgeConstituents()
 
+			# purge Readux virtual objects if present
+			if hasattr('purgeReaduxVirtualObjects',self):
+				self.purgeReaduxVirtualObjects()
+
 			# remove from Loris and Varnish cache
 			self.removeObjFromCache()
 

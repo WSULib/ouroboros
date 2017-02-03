@@ -212,7 +212,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			draw = ImageDraw.Draw(im)
 
 			# write text 
-			txt = "[Page %s Intentionally Left Blank]" % (page_num)
+			txt = "[ Cover Intentionally Left Blank ]"
 			fontsize = 1  # starting font size
 			# portion of image width you want text width to be
 			img_fraction = 0.50

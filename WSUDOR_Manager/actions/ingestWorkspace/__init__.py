@@ -178,6 +178,9 @@ def objectDetails(job_id,ingest_id):
 
 	# get object handle from DB
 	o = models.ingest_workspace_object.query.filter_by(job_id=job_id,ingest_id=ingest_id).first()
+
+	# parse objMeta
+	objMeta = json.loads(o.objMeta)
 	
 	# attempt directory listing of bag_path
 	if o.bag_path != None:
@@ -187,7 +190,7 @@ def objectDetails(job_id,ingest_id):
 		bag_tree = False	
 
 	# render
-	return render_template("objectDetails.html", o=o, bag_tree=bag_tree)
+	return render_template("objectDetails.html", o=o, objMeta=objMeta, bag_tree=bag_tree)
 
 
 # row objMeta
@@ -241,6 +244,44 @@ def deleteObject(job_id,ingest_id):
 	os.system('rm -r /home/ouroboros/ingest_jobs/ingest_job_%s' % job_id)
 
 	return redirect('/%s/tasks/ingestWorkspace/job/%s' % (localConfig.APP_PREFIX, job_id))
+
+
+#################################################################################
+# Modify Rows from Details
+#################################################################################
+
+# object row delete
+@ingestWorkspace.route('/ingestWorkspace/object/modify/<job_id>/<ingest_id>/toggle_cover_placeholder', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def toggle_cover_placeholder(job_id,ingest_id):
+
+	# clean job
+	print "removing object"
+	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+	o = models.ingest_workspace_object.query.filter_by(job=j, ingest_id=ingest_id).first()
+	
+	# get 
+	om = models.ObjMeta(**json.loads(o.objMeta))
+
+	# if true, set false
+	if 'cover_placeholder' in om.__dict__ and om.cover_placeholder:
+		print "cover placeholder is currently TRUE, setting to FALSE"
+		om.cover_placeholder = False
+		o.objMeta = om.toJSON()
+
+	elif 'cover_placeholder' not in om.__dict__ or not om.cover_placeholder:
+		print "cover placeholder is currently FALSE, setting to TRUE"
+		om.cover_placeholder = True
+		o.objMeta = om.toJSON()
+
+	# rewrite on disk
+	om.writeToFile(o.bag_path+"/data/objMeta.json")
+	
+	# commit
+	db.session.commit()		
+
+	return redirect('/%s/tasks/ingestWorkspace/objectDetails/%s/%s' % (localConfig.APP_PREFIX, job_id, ingest_id))
+
 
 
 #################################################################################

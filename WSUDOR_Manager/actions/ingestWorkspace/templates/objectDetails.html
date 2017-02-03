@@ -17,99 +17,184 @@
 
 <!-- metadata -->
 <div class="row">
-	<div class="col-md-3">
-		<h2>Object Details</h2>
-		<ul>
-			<li><a href="#MODS">MODS</a></li>
-			<li><a href="#struct_meta">METS Structure Map</a></li>
-			<li><a href="#objMeta">objMeta</a></li>
-			<li><a href="#bag_tree">Bag Tree Structure on Disk</a></li>
-			<li><a href="#bag_validation">Bag Validation results</a></li>			
+
+	<!-- tab nav -->
+	<div class="col-md-12">
+		<h2>Object Details - {{objMeta.label}}</h2>		
+		<!-- Nav tabs -->
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" class="active"><a href="#general" aria-controls="general" role="tab" data-toggle="tab">General</a></li>
+			<li role="presentation"><a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">Preview</a></li>
+			<li role="presentation"><a href="#modify" aria-controls="modify" role="tab" data-toggle="tab">Modify</a></li>
 		</ul>
-		<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/object/delete/{{o.job.id}}/{{o.ingest_id}}"><button class="btn btn-danger">Delete Object from Workspace!?</button></a></p>
 	</div>
-</div>
 
-<!-- MODS -->
-<div class="row">
-	<a name="MODS"></a>
-	<div class="col-md-12 panel panel-default trunc">
-		<h3>MODS</h3>		
-		<pre><code class="language-xml">{{o.MODS}}</code></pre>
+	<div class="col-md-12 tab-content">
 
-	</div>
-</div>
+		<div role="tabpanel" class="col-md-6 tab-pane fade in active" id="general">
 
-<!-- struct_map -->
-<div class="row">
-	<a name="struct_meta"></a>
-	<div class="col-md-12 panel panel-default trunc">
-		<h3>METS structMap section</h3>
-		<p>METS XML --> Python dictionary (via xmltodict) --> JSON</p>
-		<pre><code class="highlight" id="structMap_pp"></code></pre>
-		<script type="text/javascript">			
-			var db_content = '{{o.struct_map|safe}}';
-			if (db_content == "None") {
-				$("#structMap_pp").html("False");	
-			}
-			else {
-				var structMap_JSON = JSON.parse(db_content);
-				var str = JSON.stringify(structMap_JSON, null, 2);
-				$("#structMap_pp").html(str);
-			}
-		</script>
+			<div class="panel-body">
 
-	</div>
-</div>
+				<div class="row">
+					<div class="col-md-12">
+						<table class="table">
+							<tr>
+								<td><strong>Label</strong></td>
+								<td>{{objMeta.label}}</td>
+							</tr>
+							<tr>
+								<td><strong>PID</strong></td>
+								<td>{{o.pid}}</td>
+							</tr>
+							<tr>
+								<td><strong>Content ype</strong></td>
+								<td>{{objMeta.content_type}}</td>
+							</tr>
+							<tr>
+								<td><strong>Bag path</strong></td>
+								<td>{{o.bag_path}}</td>
+							</tr>
+						</table>
+					</div>
+				</div>
 
-<!-- objMeta -->
-<div class="row">
-	<a name="objMeta"></a>
-	<div class="col-md-12 panel panel-default trunc">
-		<h3>objMeta JSON</h3>		
-		<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/objectDetails/{{o.job.id}}/{{o.ingest_id}}/objMeta.json"><button class="btn btn-success">objMeta JSON</button></a></p>
-		<pre><code class="highlight" id="objMeta_pp"></code></pre>
-		<script type="text/javascript">
-			var db_content = '{{o.objMeta|safe}}';
-			if (db_content == "None") {
-				$("#objMeta_pp").html("False");	
-			}
-			else {
-				var structMap_JSON = JSON.parse(db_content);
-				var str = JSON.stringify(structMap_JSON, null, 2);
-				$("#objMeta_pp").html(str);
-			}
-		</script>
-	</div>
-</div>
+			</div>
 
-<!-- bag_path structure -->
-<div class="row">
-	<a name="bag_tree"></a>
-	<div class="col-md-12 panel panel-default trunc">
-		<h3>Bag Tree Structure on Disk</h3>
-		<pre><code class="highlight" id="bag_tree">{{bag_tree|safe}}</code></pre>		
-	</div>
-</div>
+		</div>
 
-<!-- bag validation results -->
-<div class="row">
-	<a name="bag_tree"></a>
-	<div class="col-md-12 panel panel-default trunc">
-		<h3>Bag Validation</h3>
-		<pre><code class="highlight" id="bag_validation"></code></pre>
-		<script type="text/javascript">			
-			var db_content = '{{o.bag_validation_dict|safe}}';
-			if (db_content == "None") {
-				$("#bag_validation").html("False");	
-			}
-			else {
-				var structMap_JSON = JSON.parse(db_content);
-				var str = JSON.stringify(structMap_JSON, null, 2);
-				$("#bag_validation").html(str);
-			}
-		</script>		
-	</div>
+		<div role="tabpanel" class="col-md-12 tab-pane fade" id="preview">
+			<div class="panel-body">
+
+				<div class="row">
+					<div class="col-md-12">
+						<p>Jump to section:</p>
+						<ul>
+							<li><a href="#MODS">MODS</a></li>
+							<li><a href="#struct_meta">METS Structure Map</a></li>
+							<li><a href="#objMeta">objMeta</a></li>
+							<li><a href="#bag_tree">Bag Tree Structure on Disk</a></li>
+							<li><a href="#bag_validation">Bag Validation results</a></li>			
+						</ul>
+					</div>
+				</div>
+
+				<!-- MODS -->
+				<div class="row">
+					<a name="MODS"></a>
+					<div class="col-md-12 panel panel-default trunc">
+						<h3>MODS</h3>		
+						<pre><code class="language-xml">{{o.MODS}}</code></pre>
+
+					</div>
+				</div>
+
+				<!-- struct_map -->
+				<div class="row">
+					<a name="struct_meta"></a>
+					<div class="col-md-12 panel panel-default trunc">
+						<h3>METS structMap section</h3>
+						<p>METS XML --> Python dictionary (via xmltodict) --> JSON</p>
+						<pre><code class="highlight" id="structMap_pp"></code></pre>
+						<script type="text/javascript">			
+							var db_content = '{{o.struct_map|safe}}';
+							if (db_content == "None") {
+								$("#structMap_pp").html("False");	
+							}
+							else {
+								var structMap_JSON = JSON.parse(db_content);
+								var str = JSON.stringify(structMap_JSON, null, 2);
+								$("#structMap_pp").html(str);
+							}
+						</script>
+
+					</div>
+				</div>
+
+				<!-- objMeta -->
+				<div class="row">
+					<a name="objMeta"></a>
+					<div class="col-md-12 panel panel-default trunc">
+						<h3>objMeta JSON</h3>		
+						<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/objectDetails/{{o.job.id}}/{{o.ingest_id}}/objMeta.json"><button class="btn btn-success">objMeta JSON</button></a></p>
+						<pre><code class="highlight" id="objMeta_pp"></code></pre>
+						<script type="text/javascript">
+							var db_content = '{{o.objMeta|safe}}';
+							if (db_content == "None") {
+								$("#objMeta_pp").html("False");	
+							}
+							else {
+								var structMap_JSON = JSON.parse(db_content);
+								var str = JSON.stringify(structMap_JSON, null, 2);
+								$("#objMeta_pp").html(str);
+							}
+						</script>
+					</div>
+				</div>
+
+				<!-- bag_path structure -->
+				<div class="row">
+					<a name="bag_tree"></a>
+					<div class="col-md-12 panel panel-default trunc">
+						<h3>Bag Tree Structure on Disk</h3>
+						<pre><code class="highlight" id="bag_tree">{{bag_tree|safe}}</code></pre>		
+					</div>
+				</div>
+
+				<!-- bag validation results -->
+				<div class="row">
+					<a name="bag_tree"></a>
+					<div class="col-md-12 panel panel-default trunc">
+						<h3>Bag Validation</h3>
+						<pre><code class="highlight" id="bag_validation"></code></pre>
+						<script type="text/javascript">			
+							var db_content = '{{o.bag_validation_dict|safe}}';
+							if (db_content == "None") {
+								$("#bag_validation").html("False");	
+							}
+							else {
+								var structMap_JSON = JSON.parse(db_content);
+								var str = JSON.stringify(structMap_JSON, null, 2);
+								$("#bag_validation").html(str);
+							}
+						</script>		
+					</div>
+				</div>
+			</div>
+
+		</div> <!-- end preview -->
+
+		<div role="tabpanel" class="col-md-12 tab-pane fade" id="modify">
+
+			<div class="panel-body">
+
+				<div class="row">
+					<div class="col-md-12">
+						<h3>General</h3>
+						<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/object/delete/{{o.job.id}}/{{o.ingest_id}}"><button class="btn btn-danger">Delete Object from Workspace!?</button></a></p>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-md-12">
+						<h3>Content-Type Specific</h3>
+
+						<div class="col-md-6 well">
+							<h4>Cover Placeholder</h4>
+							<p>This option allows you to toggle whether or not the book will be ingested with a placeholder for the cover (first page).  When books are scanned beginning with the right-hand page of a book, and not the cover or left-hand page, it disrupts any downstream attempts at displaying opposing pages.  Adding this cover placeholder will bump all pages up one, resulting in a book with accurate page opposition.</p>
+							<p>Curren status: {% if 'cover_placeholder' in objMeta and objMeta.cover_placeholder%}<span style="color:green; font-weight: bold;">True</span>{% else %}<span style="color:red; font-weight: bold;">False</span>{% endif %}
+							<!-- ebook -->
+							{% if objMeta.content_type == 'WSUDOR_WSUebook' %}
+								<p><a href="/{{APP_PREFIX}}/tasks/ingestWorkspace/object/modify/{{o.job.id}}/{{o.ingest_id}}/toggle_cover_placeholder"><button class="btn btn-warning">Togggle Cover Placeholder</button></a></p>	
+							{% endif %}
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+		</div>
+
+	</div> <!-- end tab content -->
 </div>
 
 

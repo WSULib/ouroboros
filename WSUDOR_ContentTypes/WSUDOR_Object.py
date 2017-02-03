@@ -1696,7 +1696,7 @@ class WSUDOR_GenObject(object):
 		return response
 
 
-	# Solr Indexing
+	# purge object
 	def purge(self, override_state=False):
 
 		if self.ohandle.state != "D" and override_state == False:

@@ -98,6 +98,25 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return pages
 
 
+	# pages from objMeta class
+	@helpers.LazyProperty
+	def normalized_pages_from_objMeta(self):
+
+		'''
+		Returns dictionary with order as key, list of assocated datastreams as val, normalized to begin at one and not skip numbers
+		'''
+
+		count = 1
+		seq_pages = {}
+		for page in self.pages_from_objMeta.keys():
+			page_info = self.pages_from_objMeta[page]
+			for ds in page_info:
+				ds['order'] = count
+			seq_pages[count] = page_info
+			count += 1
+		return seq_pages
+
+
 	# MISSING pages from objMeta class
 	@helpers.LazyProperty
 	def missing_pages_from_objMeta(self):
@@ -262,7 +281,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			########################################################################################################
 
 			# iterate through pages and create page objects
-			for page_num in self.pages_from_objMeta:
+			for page_num in self.normalized_pages_from_objMeta:
 				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
 				page_obj.ingest(self, page_num)
 

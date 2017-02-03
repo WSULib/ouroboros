@@ -31,6 +31,16 @@
 					</select> 
 				</div>
 
+				<!-- Rendered Model -->
+				<div class="form-group">
+					<label class="control-label" for="dest_repo">Preferred Content Type (how rendered on front-end):</label> 
+					<select class="form-control input-sm" id="dest_repo" name="pref_CM">
+						{% for CM in CMs %}
+							<option value="{{CM}}">WSUDOR_{{CM}}</option>
+						{% endfor %}
+					</select> 
+				</div>
+
 				<!-- Policy -->
 				<div class="form-group">
 					<label class="control-label" for="dest_repo">Select Policy:</label> 

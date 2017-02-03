@@ -65,8 +65,8 @@ def createObj_worker():
 			"object": "info:fedora/%s" % (form_data['policy'])
 		},
 		{
-			"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
-			"object": "info:fedora/%s" % (form_data['policy'])
+			"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel",
+			"object": "info:fedora/CM:%s" % (form_data['pref_CM'])
 		}	
 	]
 

@@ -17,6 +17,7 @@ from flask_restful import abort, fields, reqparse, Resource
 
 # WSUDOR_Manager
 from WSUDOR_ContentTypes import WSUDOR_Object
+from WSUDOR_Manager import fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager import db
 from WSUDOR_Manager.models import User
@@ -89,7 +90,35 @@ class Identify(Resource):
 
 # Items
 #################################################################################
-class ItemMetadata(Resource):
+class Item(Resource):
+
+	'''
+	desc: generic item class extended by others
+	expects: 
+		PID of item to retrieve
+		skip_load = if True, will only check for existence in Fedora, not load WSUDOR Object (slower)
+	'''
+
+	def __init__(self, pid, skip_load=False):
+
+		# abort if no pid
+		if not pid:
+			abort(400, message='please provide a pid')
+
+		# get object
+		if skip_load:
+			logging.debug("skipping WSUDOR object load, checking instance in Fedora")
+			self.obj = fedora_handle.get_object(pid).exists
+			if not self.obj:
+				abort(404, message='%s not found in Fedora' % pid)
+		else:
+			logging.debug("loading as WSUDOR object")
+			self.obj = WSUDOR_Object(pid)
+			if not self.obj:
+				abort(404, message='%s not found' % pid)
+
+
+class ItemMetadata(Item):
 
 	'''
 	desc: returns full metadata information for a single item
@@ -99,73 +128,63 @@ class ItemMetadata(Resource):
 	def __init__(self, *args, **kwargs):
 		self.content_type_specific = {}
 
-	def get_item_metadata(self, obj):
+
+	def get(self, pid):
+
+		# init Item
+		super( ItemMetadata, self ).__init__(pid)
+
+		# init ResponseObject
+		response = ResponseObject()
 
 		# determine content-type
 		try:
-			ct = obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
+			ct = self.obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
 		except:
 			logging.info("could not determine content type, setting None")
 			ct = None
 
 		# run content-type api additions
-		if hasattr(obj,'public_api_additions'):
-			for f in obj.public_api_additions:
+		if hasattr(self.obj,'public_api_additions'):
+			for f in self.obj.public_api_additions:
 				# name of content_type function: function output
 				self.content_type_specific[f.__name__] = f()
 
+		# build and respond
+		response.status_code = 200
+
 		# build response
-		return {
-			'pid': obj.pid,
+		response.body = {
+			'pid': self.obj.pid,
 			'content_type': ct,
-			'solr_doc': obj.SolrDoc.asDictionary(),
-			'collections': obj.isMemberOfCollections,
-			'learning_objects': obj.hasLearningObjects,
-			'hierarchical_tree': obj.hierarchicalTree,
+			'solr_doc': self.obj.SolrDoc.asDictionary(),
+			'collections': self.obj.isMemberOfCollections,
+			'learning_objects': self.obj.hasLearningObjects,
+			'hierarchical_tree': self.obj.hierarchicalTree,
 			'content_type_specific': self.content_type_specific
 		}
 
-
-	def get(self, pid):
-
-		# init ResponseObject
-		response = ResponseObject()
-
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
-
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)
-
-		# if found, build and respond
-		response.status_code = 200
-		response.body = self.get_item_metadata(obj)
+		# return		
 		return response.generate_response()
 
 
-class ItemFile(Resource):
+class ItemFile(Item):
 
 	'''
 	desc: returns full metadata information for a single item
 	expects: PID of item to retrieve
 	'''
 
+	def __init__(self, *args, **kwargs):
+		pass
+
 	def get(self, pid, datastream):
+
+		# init Item
+		super( ItemFile, self ).__init__(pid,skip_load=True)
 
 		# init ResponseObject
 		response = ResponseObject()
-
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
-
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)
 
 		# init parser
 		parser = reqparse.RequestParser(bundle_errors=True)
@@ -181,7 +200,45 @@ class ItemFile(Resource):
 		return bs.stream()
 
 
-class ItemThumbnail(Resource):
+class ItemThumbnail(Item):
+
+	'''
+	desc: Return thumbnail for item
+	expecting: pid, delivery_mechanism
+	'''
+
+	def __init__(self,**kwargs):
+		self.delivery_mechanism = kwargs['delivery_mechanism']
+
+	def get(self, pid):
+
+		# init Item
+		super( ItemThumbnail, self ).__init__(pid,skip_load=True)
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# init parser
+		parser = reqparse.RequestParser(bundle_errors=True)
+
+		# BitStream
+		if self.delivery_mechanism.lower() == 'bitstream':
+			bs = BitStream(pid, 'THUMBNAIL')
+			return bs.stream()
+
+		# Loris
+		if self.delivery_mechanism.lower() == 'loris':
+			return loris_image(
+				image_id = 'fedora:%s|THUMBNAIL' % pid,
+				region = 'full',
+				size = 'full',
+				rotation = '0',
+				quality = 'default',
+				format = 'png'
+			)
+
+
+class ItemPreview(Resource):
 
 	'''
 	desc: Return thumbnail for item
@@ -225,59 +282,22 @@ class ItemThumbnail(Resource):
 			)
 
 
-# class ItemLoris(Resource):
-
-# 	'''
-# 	desc: Returns datastream via loris	
-# 	'''
-
-# 	def get(self, pid, datastream, region, size, rotation, quality, format):
-
-# 		# init ResponseObject
-# 		response = ResponseObject()
-
-# 		# abort if no pid
-# 		if not pid:
-# 			abort(400, message='please provide a pid')
-
-# 		# get object
-# 		obj = WSUDOR_Object(pid)
-# 		if not obj:
-# 			abort(404, message='%s not found' % pid)
-
-# 		# init parser
-# 		parser = reqparse.RequestParser(bundle_errors=True)
-
-# 		# Loris
-# 		return loris_image(
-# 			image_id = 'fedora:%s|%s' % (pid,datastream),
-# 			region = region,
-# 			size = size,
-# 			rotation = rotation,
-# 			quality = quality,
-# 			format = format
-# 		)
-
-
-class ItemLoris(Resource):
+class ItemLoris(Item):
 
 	'''
 	desc: Returns datastream via loris	
 	'''
 
+	def __init__(self, *args, **kwargs):
+		pass
+
 	def get(self, pid, datastream, region=None, size=None, rotation=None, quality=None, format=None):
+
+		# init Item
+		super( ItemLoris, self ).__init__(pid,skip_load=True)
 
 		# init ResponseObject
 		response = ResponseObject()
-
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
-
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)
 
 		# set image id
 		image_id = 'fedora:%s|%s' % (pid,datastream)
@@ -299,32 +319,28 @@ class ItemLoris(Resource):
 			)
 
 
-class ItemIIIF(Resource):
+class ItemIIIF(Item):
 
 	'''
 	desc: Returns datastream via loris	
 	'''
 
+	def __init__(self, *args, **kwargs):
+		pass
+
 	def get(self, pid, annotation_list=False):
+
+		# init Item
+		super( ItemIIIF, self ).__init__(pid,skip_load=True)
 
 		# init ResponseObject
 		response = ResponseObject()
-
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
-
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)
 
 		if annotation_list:
 			return iiif_annotation_list(pid)
 
 		else:
 			return iiif_manifest(pid)
-
 
 
 # Search

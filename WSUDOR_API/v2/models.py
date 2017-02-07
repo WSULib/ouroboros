@@ -122,6 +122,36 @@ class Item(Resource):
 			logging.info('skipping item check and load')
 
 
+	def get_item_metadata(self):
+
+		# determine content-type
+		try:
+			ct = self.obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
+		except:
+			logging.info("could not determine content type, setting None")
+			ct = None
+
+		# run content-type api additions
+		if hasattr(self.obj,'public_api_additions'):
+			self.content_type_specific = {}
+			for f in self.obj.public_api_additions:
+				# name of content_type function: function output
+				self.content_type_specific[f.__name__] = f()
+		else:
+			self.content_type_specific = {}
+
+		# build response
+		return {
+			'pid': self.obj.pid,
+			'content_type': ct,
+			'solr_doc': self.obj.SolrDoc.asDictionary(),
+			'collections': self.obj.isMemberOfCollections,
+			'learning_objects': self.obj.hasLearningObjects,
+			'hierarchical_tree': self.obj.hierarchicalTree,
+			'content_type_specific': self.content_type_specific
+		}
+
+
 class ItemMetadata(Item):
 
 	'''
@@ -141,34 +171,33 @@ class ItemMetadata(Item):
 		# init ResponseObject
 		response = ResponseObject()
 
-		# determine content-type
-		try:
-			ct = self.obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
-		except:
-			logging.info("could not determine content type, setting None")
-			ct = None
+		# # determine content-type
+		# try:
+		# 	ct = self.obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
+		# except:
+		# 	logging.info("could not determine content type, setting None")
+		# 	ct = None
 
-		# run content-type api additions
-		if hasattr(self.obj,'public_api_additions'):
-			for f in self.obj.public_api_additions:
-				# name of content_type function: function output
-				self.content_type_specific[f.__name__] = f()
+		# # run content-type api additions
+		# if hasattr(self.obj,'public_api_additions'):
+		# 	for f in self.obj.public_api_additions:
+		# 		# name of content_type function: function output
+		# 		self.content_type_specific[f.__name__] = f()
+
+		# # build response
+		# response.body = {
+		# 	'pid': self.obj.pid,
+		# 	'content_type': ct,
+		# 	'solr_doc': self.obj.SolrDoc.asDictionary(),
+		# 	'collections': self.obj.isMemberOfCollections,
+		# 	'learning_objects': self.obj.hasLearningObjects,
+		# 	'hierarchical_tree': self.obj.hierarchicalTree,
+		# 	'content_type_specific': self.content_type_specific
+		# }
 
 		# build and respond
 		response.status_code = 200
-
-		# build response
-		response.body = {
-			'pid': self.obj.pid,
-			'content_type': ct,
-			'solr_doc': self.obj.SolrDoc.asDictionary(),
-			'collections': self.obj.isMemberOfCollections,
-			'learning_objects': self.obj.hasLearningObjects,
-			'hierarchical_tree': self.obj.hierarchicalTree,
-			'content_type_specific': self.content_type_specific
-		}
-
-		# return		
+		response.body = self.get_item_metadata()
 		return response.generate_response()
 
 
@@ -559,30 +588,27 @@ class SearchLimiters(Search):
 
 # Collections
 #################################################################################
-class CollectionMetadata(ItemMetadata):
+class CollectionMetadata(Item):
 
 	'''
 	desc: returns full metadata information for collection item
 	expects: PID of item to retrieve
 	'''
 
+	def __init__(self, *args, **kwargs):
+		pass
+
 	def get(self, pid):
+
+		# init Item
+		super( CollectionMetadata, self ).__init__(pid)
 
 		# init ResponseObject
 		response = ResponseObject()
 
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
-
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)
-
 		# if found, build and respond
 		response.status_code = 200
-		response.body = self.get_item_metadata(obj)
+		response.body = self.get_item_metadata()
 
 		# include link for collection search
 		response.body['collection_search'] = 'http://%s/%s/collection/%s/search' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, pid)

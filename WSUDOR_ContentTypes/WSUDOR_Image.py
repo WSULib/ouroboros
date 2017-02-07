@@ -437,6 +437,18 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return parts_imageDict
 
 
+	# create dictionary comprehensive of all associated images
+	def previewImage(self):
+
+		'''
+		Return image/loris params for API to render
+			- pid, datastream, region, size, rotation, quality, format
+		'''
+
+		image_parts = self.imageParts()
+		return (self.pid, image_parts['sorted'][0]['preview'], 'full', 'full', 0, 'default', 'jpg')
+
+
 
 
 # helpers

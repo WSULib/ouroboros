@@ -96,26 +96,30 @@ class Item(Resource):
 	desc: generic item class extended by others
 	expects: 
 		PID of item to retrieve
+		skip_check = if True, will skip checking or loading object entirely
 		skip_load = if True, will only check for existence in Fedora, not load WSUDOR Object (slower)
 	'''
 
-	def __init__(self, pid, skip_load=False):
+	def __init__(self, pid, skip_check=False, skip_load=False):
 
 		# abort if no pid
 		if not pid:
 			abort(400, message='please provide a pid')
 
-		# get object
-		if skip_load:
-			logging.debug("skipping WSUDOR object load, checking instance in Fedora")
-			self.obj = fedora_handle.get_object(pid).exists
-			if not self.obj:
-				abort(404, message='%s not found in Fedora' % pid)
+		# get object if not yet set
+		if not skip_check:
+			if skip_load:
+				logging.info("skipping WSUDOR object load, checking instance in Fedora")
+				self.obj = fedora_handle.get_object(pid).exists
+				if not self.obj:
+					abort(404, message='%s not found in Fedora' % pid)
+			else:
+				logging.info("loading as WSUDOR object")
+				self.obj = WSUDOR_Object(pid)
+				if not self.obj:
+					abort(404, message='%s not found' % pid)
 		else:
-			logging.debug("loading as WSUDOR object")
-			self.obj = WSUDOR_Object(pid)
-			if not self.obj:
-				abort(404, message='%s not found' % pid)
+			logging.info('skipping item check and load')
 
 
 class ItemMetadata(Item):
@@ -218,9 +222,6 @@ class ItemThumbnail(Item):
 		# init ResponseObject
 		response = ResponseObject()
 
-		# init parser
-		parser = reqparse.RequestParser(bundle_errors=True)
-
 		# BitStream
 		if self.delivery_mechanism.lower() == 'bitstream':
 			bs = BitStream(pid, 'THUMBNAIL')
@@ -238,7 +239,7 @@ class ItemThumbnail(Item):
 			)
 
 
-class ItemPreview(Resource):
+class ItemPreview(Item):
 
 	'''
 	desc: Return thumbnail for item
@@ -250,36 +251,14 @@ class ItemPreview(Resource):
 
 	def get(self, pid):
 
-		# init ResponseObject
-		response = ResponseObject()
+		# init Item
+		super( ItemPreview, self ).__init__(pid)
 
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
+		# get image/loris params from object's preview() method
+		loris_args = self.obj.previewImage()
 
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)
-
-		# init parser
-		parser = reqparse.RequestParser(bundle_errors=True)
-
-		# BitStream
-		if self.delivery_mechanism.lower() == 'bitstream':
-			bs = BitStream(pid, 'THUMBNAIL')
-			return bs.stream()
-
-		# Loris
-		if self.delivery_mechanism.lower() == 'loris':
-			return loris_image(
-				image_id = 'fedora:%s|THUMBNAIL' % pid,
-				region = 'full',
-				size = 'full',
-				rotation = '0',
-				quality = 'default',
-				format = 'png'
-			)
+		# use ItemLoris to return bits
+		return ItemLoris().get(*loris_args)
 
 
 class ItemLoris(Item):
@@ -294,7 +273,7 @@ class ItemLoris(Item):
 	def get(self, pid, datastream, region=None, size=None, rotation=None, quality=None, format=None):
 
 		# init Item
-		super( ItemLoris, self ).__init__(pid,skip_load=True)
+		super( ItemLoris, self ).__init__(pid, skip_load=True)
 
 		# init ResponseObject
 		response = ResponseObject()

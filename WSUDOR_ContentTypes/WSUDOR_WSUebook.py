@@ -191,6 +191,17 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return set(self.missing_pages_from_rels) - set(self.missing_pages_from_objMeta)
 
 
+	# method to return page that book is represented by
+	@helpers.LazyProperty
+	def representative_page(self):
+		try:
+			page_num = int(self.objMeta['isRepresentedBy'].split("_")[-1])
+			return self.pages_from_rels[page_num]
+		except:
+			logging.debug("could not determine representative page, defaulting page 1")
+			return self.pages_from_rels[1]
+
+
 	# perform ingestTest
 	def validIngestBag(self):
 
@@ -625,6 +636,20 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# finis
 		print "total time elapsed: %s seconds" % str(time.time()-stime)
 		return True
+
+
+	# create dictionary comprehensive of all associated images
+	def previewImage(self):
+
+		'''
+		Return image/loris params for API to render
+			- pid, datastream, region, size, rotation, quality, format
+		'''
+
+		# get page represented by
+		page = self.representative_page
+		
+		return (page.pid, 'JP2', 'full', '!960,960', 0, 'default', 'jpg')
 
 
 	#############################################################################

@@ -320,6 +320,17 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return manifest.toString()
 
 
+	# create dictionary comprehensive of all associated images
+	def previewImage(self):
+
+		'''
+		Return image/loris params for API to render
+			- pid, datastream, region, size, rotation, quality, format
+		'''
+
+		return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
+
+
 	#############################################################################
 	# associated Readux style virtual objects
 	#############################################################################

@@ -97,7 +97,7 @@ class ItemMetadata(Resource):
 	'''
 
 	def __init__(self, *args, **kwargs):
-		self.content_type_specific = []
+		self.content_type_specific = {}
 
 	def get_item_metadata(self, obj):
 
@@ -111,9 +111,8 @@ class ItemMetadata(Resource):
 		# run content-type api additions
 		if hasattr(obj,'public_api_additions'):
 			for f in obj.public_api_additions:
-				self.content_type_specific.append({
-					f.__name__:f() # name of content_type function: function output
-				})
+				# name of content_type function: function output
+				self.content_type_specific[f.__name__] = f()
 
 		# build response
 		return {
@@ -226,38 +225,38 @@ class ItemThumbnail(Resource):
 			)
 
 
-class ItemLoris(Resource):
+# class ItemLoris(Resource):
 
-	'''
-	desc: Returns datastream via loris	
-	'''
+# 	'''
+# 	desc: Returns datastream via loris	
+# 	'''
 
-	def get(self, pid, datastream, region, size, rotation, quality, format):
+# 	def get(self, pid, datastream, region, size, rotation, quality, format):
 
-		# init ResponseObject
-		response = ResponseObject()
+# 		# init ResponseObject
+# 		response = ResponseObject()
 
-		# abort if no pid
-		if not pid:
-			abort(400, message='please provide a pid')
+# 		# abort if no pid
+# 		if not pid:
+# 			abort(400, message='please provide a pid')
 
-		# get object
-		obj = WSUDOR_Object(pid)
-		if not obj:
-			abort(404, message='%s not found' % pid)
+# 		# get object
+# 		obj = WSUDOR_Object(pid)
+# 		if not obj:
+# 			abort(404, message='%s not found' % pid)
 
-		# init parser
-		parser = reqparse.RequestParser(bundle_errors=True)
+# 		# init parser
+# 		parser = reqparse.RequestParser(bundle_errors=True)
 
-		# Loris
-		return loris_image(
-			image_id = 'fedora:%s|%s' % (pid,datastream),
-			region = region,
-			size = size,
-			rotation = rotation,
-			quality = quality,
-			format = format
-		)
+# 		# Loris
+# 		return loris_image(
+# 			image_id = 'fedora:%s|%s' % (pid,datastream),
+# 			region = region,
+# 			size = size,
+# 			rotation = rotation,
+# 			quality = quality,
+# 			format = format
+# 		)
 
 
 class ItemLoris(Resource):

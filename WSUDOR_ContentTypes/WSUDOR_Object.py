@@ -1710,7 +1710,7 @@ class WSUDOR_GenObject(object):
 				self.purgeConstituents()
 
 			# purge Readux virtual objects if present
-			if hasattr('purgeReaduxVirtualObjects',self):
+			if hasattr(self, 'purgeReaduxVirtualObjects'):
 				self.purgeReaduxVirtualObjects()
 
 			# remove from Loris and Varnish cache

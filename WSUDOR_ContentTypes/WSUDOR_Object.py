@@ -1727,6 +1727,16 @@ class WSUDOR_GenObject(object):
 			return True
 
 
+	# default previewImage return
+	def previewImage(self):
+
+		'''
+		Return image/loris params for API to render
+			- pid, datastream, region, size, rotation, quality, format
+		'''
+		return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
+
+
 	################################################################
 	# Consider moving
 	################################################################

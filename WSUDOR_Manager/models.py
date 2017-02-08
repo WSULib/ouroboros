@@ -14,6 +14,8 @@ import os
 from lxml import etree
 import re
 import eulfedora
+import json
+import requests
 # from itsdangerous import URLSafeTimedSerializer
 
 # session data secret key
@@ -626,7 +628,158 @@ class PREMISClient(object):
         return etree.tostring(self.premis_tree, pretty_print=pretty_print)
 
 
+########################################################################
+# Archival Hierarchy
+########################################################################
 
+class ObjHierarchy(object):
+
+    '''
+    This class uses Mulgara's native ITQL search syntax as it is much faster.
+    Possible to switch to SPARQL if necessary.
+
+    NOTE: currently this only works when objects have only one `hasParent`
+    '''
+
+
+    def __init__(self,pid,is_root=False):
+        self.pid = pid
+        self.parents = False
+        self.siblings = False
+        self.ancestors = []
+        self.hierarchy = False
+        self.ohandle = False
+
+
+    def get_parents(self):
+        '''
+        Gets parent, returns (pid, title)
+        '''
+        # parent
+        baseURL = "http://localhost/fedora/risearch"
+        risearch_query = '''
+        select $parent_pid $parent_title from <#ri> where
+            <info:fedora/%s> 
+            <wsudor:hasParent> 
+            $parent_pid
+        and 
+            $parent_pid
+            <dc:title>
+            $parent_title    
+        order by $parent_title
+
+        ''' % (self.pid)
+        risearch_params = {
+            'type': 'tuples',
+            'lang': 'itql',
+            'format': 'json',
+            'limit':'',
+            'dt': 'on',
+            'query': risearch_query
+        }
+        r = fedora_handle.api.session.get(baseURL, params=risearch_params)
+        # strip risearch namespace "info:fedora"
+        parents_jsonString = r.text.replace('info:fedora/','')
+        results = json.loads(parents_jsonString)
+
+        # parse
+        if len(results['results']) > 1:
+            self.parents = [ parent for parent in results['results'] ]
+            return self.parents
+        elif len(results['results']) == 1:
+            self.parents = results['results'][0]
+            return self.parents
+        else:
+            return False
+
+
+    def get_ancestors(self):
+        '''
+        Gets ancestors recursively, append to list
+        '''
+        def recurisve_ancestor(pid):
+            p = ObjHierarchy(pid).get_parents()
+            if p:
+                self.ancestors.append(p)
+                return recurisve_ancestor(p['parent_pid'])
+            else:
+                return self.ancestors
+        
+        recurisve_ancestor(self.pid)
+        return self.ancestors
+
+
+
+    def get_siblings(self):
+        '''
+        Gets all siblings
+        '''
+        # siblings
+        baseURL = "http://localhost/fedora/risearch"
+        risearch_query = '''
+        select $sibling $siblingTitle from <#ri> where 
+            <info:fedora/%s> 
+            <wsudor:hasParent> 
+            $parent
+        and 
+            $sibling
+            <wsudor:hasParent>
+            $parent
+        and 
+            $sibling
+            <dc:title>
+            $siblingTitle
+        order by $siblingTitle
+
+        ''' % (self.pid)
+        risearch_params = {
+            'type': 'tuples',
+            'lang': 'itql',
+            'format': 'json',
+            'limit':'',
+            'dt': 'on',
+            'query': risearch_query
+        }
+
+        r = fedora_handle.api.session.get(baseURL, params=risearch_params)
+        # strip risearch namespace "info:fedora"
+        sibling_jsonString = r.text.replace('info:fedora/','')
+        sibling_dict = json.loads(sibling_jsonString)
+
+        # reomve current PID from siblings
+        for idx, val in enumerate(sibling_dict['results']):
+            if val['sibling'] == self.pid:
+                del sibling_dict['results'][idx]
+        self.siblings = sibling_dict['results']
+        return self.siblings
+
+
+    def get_full_tree(self):
+        pass
+
+
+    def save_hierarchy(self):
+        '''
+        This method queries ancestors and siblings, writes to JSON
+        datastream of object
+        '''
+        self.hierarchy = {
+            'ancestors':self.get_ancestors(),
+            'siblings':self.get_siblings()
+        }
+        self.ohandle = fedora_handle.get_object(self.pid)
+        ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "HIERARCHY", "HIERARCHY", mimetype="application/json", control_group="M")
+        ds_handle.label = "HIERARCHY"
+        ds_handle.content = json.dumps(self.hierarchy)
+        ds_handle.save()
+        return self.hierarchy
+
+
+    def load_hierarchy(self):
+        self.ohandle = fedora_handle.get_object(self.pid)
+        ds_handle = self.ohandle.getDatastreamObject('HIERARCHY')
+        self.hierarchy = json.loads(ds_handle.content)
+        return self.hierarchy
 
 
 

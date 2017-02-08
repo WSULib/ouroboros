@@ -659,15 +659,15 @@ class ObjHierarchy(object):
         # parent
         baseURL = "http://localhost/fedora/risearch"
         risearch_query = '''
-        select $parent_pid $parent_title from <#ri> where
+        select $pid $title from <#ri> where
             <info:fedora/%s> 
             <wsudor:hasParent> 
-            $parent_pid
+            $pid
         and 
-            $parent_pid
+            $pid
             <dc:title>
-            $parent_title    
-        order by $parent_title
+            $title    
+        order by $title
 
         ''' % (self.pid)
         risearch_params = {
@@ -702,7 +702,7 @@ class ObjHierarchy(object):
             p = ObjHierarchy(pid).get_parents()
             if p:
                 self.ancestors.append(p)
-                return recurisve_ancestor(p['parent_pid'])
+                return recurisve_ancestor(p['pid'])
             else:
                 return self.ancestors
         
@@ -717,19 +717,19 @@ class ObjHierarchy(object):
         # siblings
         baseURL = "http://localhost/fedora/risearch"
         risearch_query = '''
-        select $sibling $siblingTitle from <#ri> where 
+        select $pid $title from <#ri> where 
             <info:fedora/%s> 
             <wsudor:hasParent> 
             $parent
         and 
-            $sibling
+            $pid
             <wsudor:hasParent>
             $parent
         and 
-            $sibling
+            $pid
             <dc:title>
-            $siblingTitle
-        order by $siblingTitle
+            $title
+        order by $title
 
         ''' % (self.pid)
         risearch_params = {
@@ -748,24 +748,25 @@ class ObjHierarchy(object):
 
         # reomve current PID from siblings
         for idx, val in enumerate(sibling_dict['results']):
-            if val['sibling'] == self.pid:
+            if val['pid'] == self.pid:
                 del sibling_dict['results'][idx]
         self.siblings = sibling_dict['results']
         return self.siblings
+
 
     def get_children(self):
         # children
         baseURL = "http://localhost/fedora/risearch"
         risearch_query = '''
-        select $child $childTitle from <#ri> where 
-            $child
+        select $pid $title from <#ri> where 
+            $pid
             <wsudor:hasParent> 
             <info:fedora/%s> 
         and
-            $child
+            $pid
             <dc:title>
-            $childTitle
-        order by $childTitle
+            $title
+        order by $title
 
         ''' % (self.pid)
         risearch_params = {

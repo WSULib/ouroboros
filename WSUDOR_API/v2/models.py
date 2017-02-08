@@ -360,7 +360,7 @@ class ItemHierarchy(Item):
 	def __init__(self, *args, **kwargs):
 		pass
 
-	def get(self, pid, annotation_list=False):
+	def get(self, pid, include_uris=True):
 
 		# init Item
 		super( ItemHierarchy, self ).__init__(pid)
@@ -371,6 +371,12 @@ class ItemHierarchy(Item):
 		# load hierarchy
 		hierarchy = self.obj.object_hierarchy()
 
+		# insert links for each node
+		if include_uris:
+			for k in hierarchy.keys():
+				for o in hierarchy[k]:
+					o['uri'] = 'http://%s/%s/item/%s/hierarchy' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, o['pid'])
+				
 		# build and respond
 		response.status_code = 200
 		response.body = hierarchy

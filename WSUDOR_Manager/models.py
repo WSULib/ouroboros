@@ -644,9 +644,10 @@ class ObjHierarchy(object):
 
     def __init__(self,pid, is_root=False):
         self.pid = pid
+        self.ancestors = []
         self.parents = False
         self.siblings = False
-        self.ancestors = []
+        self.children = False
         self.hierarchy = False
         self.ohandle = False
 
@@ -709,7 +710,6 @@ class ObjHierarchy(object):
         return self.ancestors
 
 
-
     def get_siblings(self):
         '''
         Gets all siblings
@@ -753,6 +753,37 @@ class ObjHierarchy(object):
         self.siblings = sibling_dict['results']
         return self.siblings
 
+    def get_children(self):
+        # children
+        baseURL = "http://localhost/fedora/risearch"
+        risearch_query = '''
+        select $child $childTitle from <#ri> where 
+            $child
+            <wsudor:hasParent> 
+            <info:fedora/%s> 
+        and
+            $child
+            <dc:title>
+            $childTitle
+        order by $childTitle
+
+        ''' % (self.pid)
+        risearch_params = {
+            'type': 'tuples',
+            'lang': 'itql',
+            'format': 'json',
+            'limit':'',
+            'dt': 'on',
+            'query': risearch_query
+        }
+
+        r = fedora_handle.api.session.get(baseURL, params=risearch_params)
+        # strip risearch namespace "info:fedora"
+        child_jsonString = r.text.replace('info:fedora/','')
+        child_dict = json.loads(child_jsonString)
+        self.children = child_dict['results']
+        return self.children
+
 
     def get_full_tree(self):
         pass
@@ -765,7 +796,8 @@ class ObjHierarchy(object):
         '''
         self.hierarchy = {
             'ancestors':self.get_ancestors(),
-            'siblings':self.get_siblings()
+            'siblings':self.get_siblings(),
+            'children':self.get_children()
         }
         self.ohandle = fedora_handle.get_object(self.pid)
         ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "HIERARCHY", "HIERARCHY", mimetype="application/json", control_group="M")
@@ -775,9 +807,9 @@ class ObjHierarchy(object):
         return self.hierarchy
 
 
-    def load_hierarchy(self):
+    def load_hierarchy(self, overwrite=False):
         self.ohandle = fedora_handle.get_object(self.pid)
-        if 'HIERARCHY' in self.ohandle.ds_list:
+        if 'HIERARCHY' in self.ohandle.ds_list and not overwrite:
             ds_handle = self.ohandle.getDatastreamObject('HIERARCHY')
             self.hierarchy = json.loads(ds_handle.content)
         else:

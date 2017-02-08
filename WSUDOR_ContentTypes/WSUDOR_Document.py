@@ -197,7 +197,17 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					thumb_handle.label = "%s_THUMBNAIL" % (ds['label'])
 					thumb_handle.content = open(temp_filename)
 					thumb_handle.save()
-					os.system('rm %s' % (temp_filename))		
+					os.system('rm %s' % (temp_filename))
+
+					print "Creating derivative preview from PDF"
+					# thumb if incoming file as pdf							
+					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+					os.system('convert -thumbnail 960x960 -background white %s[0] %s' % (file_path, temp_filename))
+					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_PREVIEW" % (ds['ds_id']), "%s_PREVIEW" % (ds['label']), mimetype="image/jpeg", control_group='M')
+					thumb_handle.label = "%s_PREVIEW" % (ds['label'])
+					thumb_handle.content = open(temp_filename)
+					thumb_handle.save()
+					os.system('rm %s' % (temp_filename))
 
 
 				# create derivative FILE datastream with appropriate converter
@@ -232,7 +242,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 				# write generic thumbnail for what should be SINGLE file per object
-				for gen_type in ['THUMBNAIL']:
+				for gen_type in ['THUMBNAIL','PREVIEW']:
 					rep_handle = eulfedora.models.DatastreamObject(self.ohandle, gen_type, gen_type, mimetype="image/jpeg", control_group="M")
 					rep_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s_%s/content" % (self.ohandle.pid, self.objMeta['isRepresentedBy'], gen_type)
 					rep_handle.label = gen_type
@@ -257,6 +267,26 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	def genIIIFManifest(self, iiif_manifest_factory_instance, identifier, getParams):
 
 		pass
+
+
+	# ingest image type
+	def genPreview(self):
+
+		# writing FILE datastream
+		deriv_PDF = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
+		with open(deriv_PDF, 'w') as f:
+			file_handle = self.ohandle.getDatastreamObject('FILE')
+			f.write(file_handle.content)
+
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+		os.system('convert -thumbnail 960x960 -background white %s[0] %s' % (deriv_PDF, temp_filename))
+		preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "PREVIEW", "PREVIEW", mimetype="image/jpeg", control_group='M')
+		preview_handle.label = "PREVIEW"
+		preview_handle.content = open(temp_filename)
+		preview_handle.save()
+		os.system('rm %s' % (temp_filename))
+		os.system('rm %s' % (deriv_PDF))
+
 
 
 

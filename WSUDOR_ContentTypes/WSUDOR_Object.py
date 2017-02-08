@@ -1310,7 +1310,7 @@ class WSUDOR_GenObject(object):
 		results['loris'] = self._removeObjFromLorisCache()
 
 		# remove from Varnish
-		results['varnish'] = self._removeObjFromVarnishCache()
+		# results['varnish'] = self._removeObjFromVarnishCache()
 
 		# return results dictionary
 		return results

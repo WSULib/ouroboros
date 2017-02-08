@@ -642,7 +642,7 @@ class ObjHierarchy(object):
     '''
 
 
-    def __init__(self,pid,is_root=False):
+    def __init__(self,pid, is_root=False):
         self.pid = pid
         self.parents = False
         self.siblings = False
@@ -777,8 +777,11 @@ class ObjHierarchy(object):
 
     def load_hierarchy(self):
         self.ohandle = fedora_handle.get_object(self.pid)
-        ds_handle = self.ohandle.getDatastreamObject('HIERARCHY')
-        self.hierarchy = json.loads(ds_handle.content)
+        if 'HIERARCHY' in self.ohandle.ds_list:
+            ds_handle = self.ohandle.getDatastreamObject('HIERARCHY')
+            self.hierarchy = json.loads(ds_handle.content)
+        else:
+            self.hierarchy = self.save_hierarchy()
         return self.hierarchy
 
 

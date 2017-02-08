@@ -26,7 +26,7 @@ import localConfig
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers
+from WSUDOR_Manager import redisHandles, helpers, models
 
 
 class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -296,12 +296,6 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			- pid, datastream, region, size, rotation, quality, format
 		'''
 		return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
-
-
-
-
-
-
 
 
 

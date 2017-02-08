@@ -1737,6 +1737,15 @@ class WSUDOR_GenObject(object):
 		return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
 
 
+	# default previewImage return
+	def object_hierarchy(self):
+
+		'''
+		Returns object hierarchy from models.ObjHierarchy
+		'''
+		return models.ObjHierarchy(self.pid).load_hierarchy()
+
+
 	################################################################
 	# Consider moving
 	################################################################

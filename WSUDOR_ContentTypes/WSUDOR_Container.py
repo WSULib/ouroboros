@@ -26,7 +26,7 @@ import localConfig
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers
+from WSUDOR_Manager import redisHandles, helpers, models
 
 
 class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):

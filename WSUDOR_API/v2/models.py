@@ -351,6 +351,32 @@ class ItemIIIF(Item):
 			return iiif_manifest(pid)
 
 
+class ItemHierarchy(Item):
+
+	'''
+	desc: Returns datastream via loris	
+	'''
+
+	def __init__(self, *args, **kwargs):
+		pass
+
+	def get(self, pid, annotation_list=False):
+
+		# init Item
+		super( ItemHierarchy, self ).__init__(pid)
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# load hierarchy
+		hierarchy = self.obj.object_hierarchy()
+
+		# build and respond
+		response.status_code = 200
+		response.body = hierarchy
+		return response.generate_response()
+
+
 # Search
 #################################################################################
 class Search(Resource):

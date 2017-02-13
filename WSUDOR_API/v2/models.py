@@ -662,6 +662,7 @@ class Collections(Search):
 		# add collection pid to fq
 		self.params['fq'] = []
 		self.params['fq'].append('rels_hasContentModel:info\:fedora/CM\:Collection')
+		self.params['fq'].append('rels_isPrimaryCollection:True')
 
 		# execute query
 		self.execute_search()

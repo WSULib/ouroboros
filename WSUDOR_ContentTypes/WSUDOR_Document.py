@@ -49,7 +49,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		}
 
 		# content-type methods run and returned to API
-		self.public_api_additions = []
+		self.public_api_additions = [self.object_hierarchy]
 
 
 	# perform ingestTest

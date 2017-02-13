@@ -808,7 +808,7 @@ class ObjHierarchy(object):
         return self.hierarchy
 
 
-    def load_hierarchy(self, overwrite=False):
+    def load_hierarchy(self, overwrite=True):
         self.ohandle = fedora_handle.get_object(self.pid)
         if 'HIERARCHY' in self.ohandle.ds_list and not overwrite:
             ds_handle = self.ohandle.getDatastreamObject('HIERARCHY')

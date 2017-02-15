@@ -1307,12 +1307,8 @@ def PIDSolr():
     # get username from session
     username = session['username']
 
-
 	# get form
-    print "############################"
-    print request.form
     form = forms.solrSearch(request.form)
-
 
     # collection selection
     coll_query = {'q':"rels_hasContentModel:*Collection", 'fl':["id","dc_title"], 'rows':1000}
@@ -1368,7 +1364,10 @@ def PIDSolr():
         for each in q_results.documents:
             try:
                 PID = each['id'].encode('ascii','ignore')
-                dc_title = each['dc_title'][0].encode('ascii','ignore')
+                try:
+                    dc_title = each['dc_title'][0].encode('ascii','ignore')
+                except:
+                    dc_title = "None"
                 data.append([PID,dc_title])
             except:
                 print "Could not render:",each['id'] #unicdoe solr id

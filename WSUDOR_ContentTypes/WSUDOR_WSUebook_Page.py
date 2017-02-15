@@ -111,6 +111,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# write RDF relationships
 		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")
+		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel", "info:fedora/CM:WSUebook_Page")
 		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isConstituentOf", "info:fedora/%s" % self.book_obj.ohandle.pid)
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder", page_num)
 

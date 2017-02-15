@@ -170,30 +170,6 @@ class ItemMetadata(Item):
 		# init ResponseObject
 		response = ResponseObject()
 
-		# # determine content-type
-		# try:
-		# 	ct = self.obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
-		# except:
-		# 	logging.info("could not determine content type, setting None")
-		# 	ct = None
-
-		# # run content-type api additions
-		# if hasattr(self.obj,'public_api_additions'):
-		# 	for f in self.obj.public_api_additions:
-		# 		# name of content_type function: function output
-		# 		self.content_type_specific[f.__name__] = f()
-
-		# # build response
-		# response.body = {
-		# 	'pid': self.obj.pid,
-		# 	'content_type': ct,
-		# 	'solr_doc': self.obj.SolrDoc.asDictionary(),
-		# 	'collections': self.obj.isMemberOfCollections,
-		# 	'learning_objects': self.obj.hasLearningObjects,
-		# 	'hierarchical_tree': self.obj.hierarchicalTree,
-		# 	'content_type_specific': self.content_type_specific
-		# }
-
 		# build and respond
 		response.status_code = 200
 		response.body = self.get_item_metadata()

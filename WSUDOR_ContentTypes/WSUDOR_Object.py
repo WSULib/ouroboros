@@ -1592,12 +1592,12 @@ class WSUDOR_GenObject(object):
 
 
 	# return object hierarchy
-	def object_hierarchy(self):
+	def object_hierarchy(self, overwrite=False):
 
 		'''
 		Returns object hierarchy from models.ObjHierarchy
 		'''
-		return models.ObjHierarchy(self.pid, self.SolrDoc.asDictionary()['dc_title'][0]).load_hierarchy(overwrite=True)
+		return models.ObjHierarchy(self.pid, self.SolrDoc.asDictionary()['dc_title'][0]).load_hierarchy(overwrite=overwrite)
 
 
 	################################################################

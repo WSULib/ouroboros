@@ -147,7 +147,6 @@ class Item(Resource):
 			'solr_doc': self.obj.SolrDoc.asDictionary(),
 			'collections': self.obj.isMemberOfCollections,
 			'learning_objects': self.obj.hasLearningObjects,
-			'hierarchical_tree': self.obj.hierarchicalTree,
 			'content_type_specific': self.content_type_specific
 		}
 

@@ -29,9 +29,6 @@ from WSUDOR_Manager import redisHandles
 # import WSUDOR_ContentTypes
 import WSUDOR_ContentTypes
 
-# import manifest factory instance
-from inc.manifest_factory import iiif_manifest_factory_instance
-
 # import API functions
 import WSUDOR_API
 

@@ -35,9 +35,6 @@ from WSUDOR_Manager import redisHandles, helpers, utilities
 # localconfig
 import localConfig
 
-# import manifest factory instance
-from inc.manifest_factory import iiif_manifest_factory_instance
-
 # derivatives
 # from inc.derivatives import JP2DerivativeMaker
 from inc import derivatives

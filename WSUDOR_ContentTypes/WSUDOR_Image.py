@@ -29,10 +29,6 @@ from WSUDOR_Manager import redisHandles, helpers
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
-# import manifest factory instance
-from inc.manifest_factory import iiif_manifest_factory_instance
-
-
 import localConfig
 
 

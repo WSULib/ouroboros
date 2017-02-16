@@ -344,15 +344,9 @@ class ItemCanvasIIIF(Item):
 		response = ResponseObject()
 
 		# temp response
-		response.body['msg'] = "Canvas URIs not quite ready..."
+		response.body['msg'] = "We are not yet providing dereferencable Canvas URIs."
 		response.status_code = 200	
 		return response.generate_response()
-
-		# if annotation_list:
-		# 	return iiif_annotation_list(pid)
-
-		# else:
-		# 	return iiif_manifest(pid)
 
 
 class ItemHierarchy(Item):

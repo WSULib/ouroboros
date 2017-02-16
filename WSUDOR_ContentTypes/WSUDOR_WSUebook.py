@@ -435,9 +435,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# create root mani obj
 		try:
-			manifest = iiif_manifest_factory_instance.manifest( label=solr_doc['mods_title_ms'][0] )
+			manifest = self.iiif_factory.manifest( ident="manifest.json", label=solr_doc['mods_title_ms'][0] )
 		except:
-			manifest = iiif_manifest_factory_instance.manifest( label="Unknown Title" )
+			manifest = self.iiif_factory.manifest( ident="manifest.json", label="Unknown Title" )
 		manifest.viewingDirection = "left-to-right"
 
 		# build metadata

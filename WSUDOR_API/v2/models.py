@@ -326,6 +326,35 @@ class ItemIIIF(Item):
 			return iiif_manifest(pid)
 
 
+class ItemCanvasIIIF(Item):
+
+	'''
+	desc: Returns datastream via loris	
+	'''
+
+	def __init__(self, *args, **kwargs):
+		pass
+
+	def get(self, pid, canvas, annotation_list=False):
+
+		# init Item
+		super( ItemCanvasIIIF, self ).__init__(pid,skip_load=True)
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# temp response
+		response.body['msg'] = "Canvas URIs not quite ready..."
+		response.status_code = 200	
+		return response.generate_response()
+
+		# if annotation_list:
+		# 	return iiif_annotation_list(pid)
+
+		# else:
+		# 	return iiif_manifest(pid)
+
+
 class ItemHierarchy(Item):
 
 	'''

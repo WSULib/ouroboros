@@ -63,7 +63,7 @@ PROAI_CACHE_LOCATION = '/var/lib/tomcat7/webapps/oaiprovider/cache'
 # LORIS & IIIF
 IIIF_MANIFEST_PREFIX = "iiif_manifest"
 IIIF_MANIFEST_TARGET_HOST = APP_HOST
-LORIS_API_ENDPOINT = "http://localhost:6081/loris_local/"
+LORIS_API_ENDPOINT = "http://localhost/loris_local/"
 LORIS_STREAM_CHUNK_SIZE = 2048
 LORIS_HTTP_CACHE = "/var/cache/loris2/fedora_source"
 

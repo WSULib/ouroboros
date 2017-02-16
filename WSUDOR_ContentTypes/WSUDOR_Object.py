@@ -53,6 +53,9 @@ from inc.derivatives.image import ImageDerivative
 from jpylyzer import jpylyzer
 from jpylyzer import etpatch
 
+# iiif-prezi
+from iiif_prezi.factory import ManifestFactory
+
 
 
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
@@ -183,7 +186,8 @@ class WSUDOR_GenObject(object):
 	############################################################################################################
 	def __init__(self, object_type=False, content_type=False, payload=False, orig_payload=False):
 
-		self.index_on_ingest = True,
+		self.index_on_ingest = True
+
 		self.struct_requirements = {
 			"WSUDOR_GenObject":{
 				"datastreams":[
@@ -214,6 +218,7 @@ class WSUDOR_GenObject(object):
 				]
 			}
 		}
+
 		self.orig_payload = orig_payload
 
 		# WSUDOR or BagIt archive for the object returned
@@ -263,6 +268,23 @@ class WSUDOR_GenObject(object):
 		except Exception,e:
 			print traceback.format_exc()
 			print e
+
+
+		# initiate IIIF Manifest Factory
+		self.iiif_factory = ManifestFactory()
+		# Where the resources live on the web
+		self.iiif_factory.set_base_prezi_uri("https://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+		# Where the resources live on disk
+		self.iiif_factory.set_base_prezi_dir("/tmp")
+
+		# Default Image API information
+		self.iiif_factory.set_base_image_uri("https://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+		self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
+
+		# 'warn' will print warnings, default level
+		# 'error' will turn off warnings
+		# 'error_on_warning' will make warnings into errors
+		self.iiif_factory.set_debug("warn")
 
 
 
@@ -1598,6 +1620,7 @@ class WSUDOR_GenObject(object):
 		Returns object hierarchy from models.ObjHierarchy
 		'''
 		return models.ObjHierarchy(self.pid, self.SolrDoc.asDictionary()['dc_title'][0]).load_hierarchy(overwrite=overwrite)
+
 
 
 	################################################################

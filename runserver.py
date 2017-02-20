@@ -12,12 +12,15 @@ from stompest.config import StompConfig
 from stompest.protocol import StompSpec
 import json
 import logging
+import subprocess
+# from subprocess import check_output, CalledProcessError
 
 # for Ouroboros pid management
 import os
 import atexit
 import lockfile
 import xmlrpclib
+import time
 
 # local
 from localConfig import *
@@ -34,7 +37,22 @@ from WSUDOR_API import WSUDOR_API_app
 def pidfileCreate():
 	print "creating pidfile"
 
-	with open("/var/run/ouroboros/%s.pid" % (APP_NAME),"w") as fhand:
+	pidfile = "/var/run/ouroboros/%s.pid" % (APP_NAME)
+
+	if os.path.exists("/var/run/ouroboros/%s.pid" % (APP_NAME)):
+		print "pidlock found, investigating..."
+		
+		# get instances of "runserver.py"
+		try:
+			output = subprocess.check_output(('lsof', '-i', ':%s' % WSUDOR_MANAGER_PORT))
+			print "something is already running on %s" % WSUDOR_MANAGER_PORT
+			raise Exception("aborting")
+		except subprocess.CalledProcessError:
+			print "could not find other running instances of ouroboros, removing pidlock and continuing..."
+			os.system("rm /var/run/ouroboros/*")
+			time.sleep(2)			
+
+	with open(pidfile,"w") as fhand:
 		fhand.write(str(os.getpid()))
 	ouroboros_pidlock = lockfile.LockFile("/var/run/ouroboros/%s.pid" % (APP_NAME))
 	ouroboros_pidlock.acquire()
@@ -46,8 +64,10 @@ def pidfileRemove():
 	os.system("rm /var/run/ouroboros/%s.pid" % (APP_NAME))
 
 
-# Ouroboros pidfile ##############################################################
+# Ouroboros shutdown ##############################################################
 def shutdown():
+	print "received kill command, attempting to shutdown gracefully..."
+
 	# remove PID
 	pidfileRemove()
 
@@ -62,6 +82,8 @@ def shutdown():
 			sup_server.supervisor.stopProcessGroup(process_group)
 			sup_server.supervisor.removeProcessGroup(process_group)
 			os.system('rm /etc/supervisor/conf.d/%s' % conf)
+
+	print "<-- Ouroboros says thanks for playing -->"
 
 
 # mainRouter class for all components not in Flask apps #########################################################
@@ -116,8 +138,8 @@ WSUDOR_API_site = Site(WSUDOR_API_resource)
 if __name__ == '__main__':
 
 	# write PID to /var/run
-	atexit.register(shutdown)
 	ouroboros_pidlock = pidfileCreate()
+	atexit.register(shutdown)
 
 	# WSUDOR Manager
 	if WSUDOR_MANAGER_FIRE == True:

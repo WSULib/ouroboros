@@ -6,13 +6,14 @@ from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 
 # handles events in Fedora Commons as reported by JSM
-def fedoraConsumer(self,**kwargs):			
+def fedoraConsumer(self, **kwargs):			
 	
-	msg = kwargs['msg']		
+	msg = kwargs['msg']
 
 	# create dictionary from XML string
 	try:
 		msgDict = xmltodict.parse(msg)
+		print msgDict
 
 		# pull info
 		fedEvent = msgDict['entry']['title']['#text']			

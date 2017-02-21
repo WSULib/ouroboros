@@ -13,7 +13,6 @@ def fedoraConsumer(self, **kwargs):
 	# create dictionary from XML string
 	try:
 		msgDict = xmltodict.parse(msg)
-		print msgDict
 
 		# pull info
 		fedEvent = msgDict['entry']['title']['#text']			
@@ -34,7 +33,6 @@ def fedoraConsumer(self, **kwargs):
 		if fedEvent.startswith("purge"):
 			PID = msgDict['entry']['category'][0]['@term']		
 			print "Object PID:", PID
-			
 			pruneSolr_worker.delay(None,PID=PID)
 
 		# ingest

@@ -18,7 +18,7 @@ from flask_restful import abort, fields, reqparse, Resource
 # WSUDOR_Manager
 from WSUDOR_ContentTypes import WSUDOR_Object
 from WSUDOR_Manager import fedora_handle
-from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.solrHandles import solr_search_handle
 from WSUDOR_Manager import db
 from WSUDOR_Manager.models import User
 

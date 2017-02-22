@@ -87,9 +87,9 @@ def shutdown():
 
 
 # mainRouter class for all components not in Flask apps #########################################################
-class mainRouter:
+# class mainRouter:
 	#fedoraConsumer
-	from fedoraConsumer import fedoraConsumer
+# from fedoraConsumer import fedoraConsumer
 
 
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
@@ -97,10 +97,12 @@ class mainRouter:
 Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),
 routes 'fedEvents' to fedoraConsumer()
 '''
+from fedoraConsumer import fedoraConsumer
 class fedoraConsumerWorker(object):
 
 	QUEUE = "/topic/fedora.apim.update"
 	ERROR_QUEUE = '/queue/testConsumerError'
+
 
 	def __init__(self, config=None):
 		if config is None:
@@ -120,9 +122,8 @@ class fedoraConsumerWorker(object):
 		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
 
 	def consume(self, client, frame):
-		#send to clearkRouter
-		worker = mainRouter()
-		worker.fedoraConsumer(msg=frame.body)
+		fc = fedoraConsumer(frame)
+		fc.act()
 
 
 # twisted liseners

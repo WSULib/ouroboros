@@ -113,7 +113,7 @@ class CeleryWorker(object):
 		print "adding celery conf file"
 		# fire the suprevisor celery worker process
 		celery_process = '''[program:celery-%(username)s]
-command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=%(CELERY_CONCURRENCY)s -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
+command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=10 -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
 directory=/opt/ouroboros
 user = ouroboros
 autostart=true

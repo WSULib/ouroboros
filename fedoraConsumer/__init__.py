@@ -9,6 +9,7 @@ from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 def fedoraConsumer(self, **kwargs):			
 	
 	msg = kwargs['msg']
+	print msg
 
 	# create dictionary from XML string
 	try:

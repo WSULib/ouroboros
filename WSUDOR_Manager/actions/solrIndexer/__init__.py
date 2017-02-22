@@ -192,7 +192,7 @@ class SolrIndexerWorker(object):
 		if obj_handle == False:
 			return False
 
-		# re-derive Dublin Core metadata
+		# re-derive Dublin Core metadata if MODS has changed
 		try:
 			obj_handle.DCfromMODS()
 		except:

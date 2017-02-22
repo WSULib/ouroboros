@@ -16,6 +16,7 @@ from flask import Blueprint, render_template, redirect, abort, url_for, session
 # handles
 from WSUDOR_Manager import roles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
+import WSUDOR_ContentTypes
 
 
 DCfromMODS = Blueprint('DCfromMODS', __name__, template_folder='templates', static_folder="static")
@@ -37,61 +38,19 @@ def single(PID):
 	return DCfromMODS_single(PID)
 
 
-@roles.auth(['admin','metadata'])
 def DCfromMODS_single(PID):	
 
-	ohandle = fedora_handle.get_object(PID)
-
-	# retrieve MODS		
-	MODS_handle = ohandle.getDatastreamObject('MODS')		
-	XMLroot = etree.fromstring(MODS_handle.content.serialize())
-
-	# 2) transform downloaded MODS to DC with LOC stylesheet
-	print "XSLT Transforming: %s" % (PID)
-	# Saxon transformation
-	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
-	xslt_tree = etree.parse(XSLhand)
-	transform = etree.XSLT(xslt_tree)
-	DC = transform(XMLroot)
-
-	# 2.5) scrub duplicate, identical elements from DC
-	DC = utilities.delDuplicateElements(DC)		
-
-	# 3) save to DC datastream
-	DS_handle = ohandle.getDatastreamObject("DC")
-	DS_handle.content = str(DC)
-	derive_results = DS_handle.save()
-	print "DCfromMODS result:",derive_results
-	return derive_results
+	obj = WSUDOR_ContentTypes.WSUDOR_Object(PID)
+	return obj.DCfromMODS()
 
 
-@roles.auth(['admin','metadata'])
 def DCfromMODS_worker(job_package):
 
 	PID = job_package['PID']
-	ohandle = fedora_handle.get_object(PID)
+	obj = WSUDOR_ContentTypes.WSUDOR_Object(PID)
+	return obj.DCfromMODS()
 
-	# retrieve MODS		
-	MODS_handle = ohandle.getDatastreamObject('MODS')		
-	XMLroot = etree.fromstring(MODS_handle.content.serialize())
-
-	# 2) transform downloaded MODS to DC with LOC stylesheet
-	print "XSLT Transforming: %s" % (PID)
-	# Saxon transformation
-	XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')		
-	xslt_tree = etree.parse(XSLhand)
-	transform = etree.XSLT(xslt_tree)
-	DC = transform(XMLroot)
-
-	# 2.5) scrub duplicate, identical elements from DC
-	DC = utilities.delDuplicateElements(DC)		
-
-	# 3) save to DC datastream
-	DS_handle = ohandle.getDatastreamObject("DC")
-	DS_handle.content = str(DC)
-	derive_results = DS_handle.save()
-	print "DCfromMODS result:",derive_results
-	return derive_results
+	
 
 
 

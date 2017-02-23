@@ -1538,6 +1538,35 @@ def routeIndexer():
 
     return json.dumps(list(endpoints))
 
+
+# PID check for user
+@app.route("/selectObjects/<task>", methods=['POST', 'GET'])
+@login_required
+@roles.auth(['admin','metadata','view'])
+def selectObjects(task):
+
+    return render_template("selectObjects.html", task=task, localConfig=localConfig)
+
+
+@app.route("/selectObjects/solr.json", methods=['POST', 'GET'])
+@login_required
+@roles.auth(['admin','metadata','view'])
+def solr_json():
+
+    '''
+    return json for datatables, form solr
+    '''
+
+    sdt = models.SolrDT(solr_handle, request.json)
+    
+    # returns what is needed by DataTable
+    return jsonify(sdt.DToutput)
+
+
+
+
+
+
 # WSUDOR MANAGEMENT
 ####################################################################################
 

@@ -1,0 +1,86 @@
+
+{% include 'header.html' %}
+
+<!-- header -->
+<div class="row">
+    <div class="col-md-12">
+        <h2>Object Select</h2>
+        <p>This area will help you find, and then select, objects to work on in Ouroboros.</p>
+    </div>
+</div>
+
+<!-- main -->
+<div class="row">
+
+    <!-- tab navigation -->
+    <div class="col-md-12">        
+        <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" {% if task == 'find' %}class="active"{% endif %}><a href="#find" aria-controls="find" role="tab" data-toggle="tab">Find</a></li>
+            <li role="presentation" {% if task == 'select' %}class="active"{% endif %}><a href="#select" aria-controls="select" role="tab" data-toggle="tab">Select</a></li>
+        </ul>
+    </div>
+
+    <!-- tab content -->
+    <div class="col-md-12 tab-content">
+
+        <!-- find objects -->
+        <div role="tabpanel" class="col-md-12 tab-pane fade in {% if task == 'find' %}active{% endif %}" id="find">
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div>
+                        <!-- 1.10.12, if needed -->
+                        <!--<script type="text/javascript" src="http://metadata.library.wayne.edu/oaiglow/inc/datatables/jquery.dataTables.min.js"></script>-->
+                        <table id="object_table" class="display" cellspacing="0" width="100%" style="font-size:100%;">
+                            <thead></thead>  
+                            <tbody></tbody>          
+                        </table>
+                    </div>
+
+                    <script type="text/javascript" charset="utf-8">
+                        $(document).ready(function(){
+                          var table = $('#object_table').DataTable({
+                            "processing": true,
+                            "serverSide": true,
+                            "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                            "ajax": {
+                                contentType: "application/json",
+                                type: "POST",
+                                url: "/{{APP_PREFIX}}/selectObjects/solr.json",           
+                                data: function ( d ) {
+                                  return JSON.stringify( d );
+                                }
+                            },
+                            "columns": [              
+                                { "name": "pid", "title": "PID" },
+                                { "name": "title", "title": "Title" },
+                                { "name": "description", "title": "Description" },                                
+                                { 
+                                    "name": "actions",
+                                    "title": "Actions",
+                                    "class": "text_centered",
+                                    "render": function (data, type, row, meta) {
+                                        return '<a target="_blank" href="#" class="button">Record View</a>';
+                                    }
+                                }
+                            ],
+                            "pageLength": 5
+                          });  
+                        });
+                    </script>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- select objects -->
+        <div role="tabpanel" class="col-md-12 tab-pane fade in {% if task == 'select' %}active{% endif %}" id="select">
+            <h2>Selecting Objects!!!</h2>
+        </div>
+
+    </div>
+
+</div>
+
+{% include 'footer.html' %}

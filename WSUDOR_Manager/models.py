@@ -18,6 +18,8 @@ import json
 import requests
 # from itsdangerous import URLSafeTimedSerializer
 
+from WSUDOR_Manager import logging
+
 # session data secret key
 ####################################
 app.secret_key = 'WSUDOR'
@@ -819,7 +821,144 @@ class ObjHierarchy(object):
 		return self.hierarchy
 
 
-   
+##################################################################   
+# Solr / dataTables connector
+##################################################################
+# Inspired by: https://github.com/Pegase745/sqlalchemy-datatables
+
+
+class DT(object):
+
+	'''
+	Scaffolding for DT response
+	'''
+
+	def __init__(self):
+		self.draw = None,
+		self.recordsTotal = None,
+		self.recordsFiltered = None,
+		self.data = []
+
+
+class SolrDT(object):
+
+	'''
+	Order of operations:
+		- init 
+		- query
+		- filter / slice / order / etc.
+		- build response
+		- return json
+	'''
+
+	def __init__(self, solr_handle, DTinput):
+
+		logging.info("initializing SolrDT connector")
+
+		# solr handle
+		self.solr_handle = solr_handle
+
+		# dictionary INPUT DataTables ajax
+		self.DTinput = DTinput
+		logging.info(self.DTinput)
+
+		# dictionary OUTPUT to DataTables
+		self.DToutput = DT().__dict__
+		self.DToutput['draw'] = DTinput['draw']
+
+		# query and build response
+		self.build_response()
+
+
+	# def filter(self):
+	# 	logging.debug('applying filters...')
+
+	# 	'''
+	# 	searching title, abstract, and identifier columns
+	# 	'''
+
+	# 	search_string = self.DTinput['search']['value']
+	# 	if search_string != '':
+	# 		self.query = self.query.where(
+	# 			(self.peewee_model.title.contains(search_string)) |
+	# 			(self.peewee_model.abstract.contains(search_string)) |
+	# 			(self.peewee_model.identifier.contains(search_string)) |
+	# 			(self.peewee_model.raw.contains(search_string))
+	# 		)
+
+
+	# def sort(self):
+		
+	# 	'''
+	# 	Iterate through order_by columns
+	# 	'''
+		
+	# 	logging.debug('sorting...')
+
+	# 	# get sort column
+	# 	for order in self.DTinput['order']:
+	# 		order_by_column = getattr(self.peewee_model,self.columns[order['column']])
+	# 		order_by_dir = order['dir']
+	# 		logging.debug('ordering by %s, %s' % (order_by_column, order_by_dir))
+	# 		if order_by_dir == 'asc':
+	# 			self.query = self.query.order_by(order_by_column.asc())
+	# 		if order_by_dir == 'desc':
+	# 			self.query = self.query.order_by(order_by_column.desc())
+			
+
+
+	# def paginate(self):
+
+	# 	logging.debug('paginating...')
+
+	# 	# using offset (start) and limit (length)
+	# 	self.query_slice = self.query.offset(self.DTinput['start']).limit(self.DTinput['length'])
+
+
+	def build_response(self):
+
+		logging.info('building query...')
+
+		# total count
+		ts = self.solr_handle.search(**{'q':'*:*'})
+
+		# update DToutput
+		self.DToutput['recordsTotal'] = ts.total_results
+
+		# apply filtering
+		# self.filter()
+		# self.sort()
+		# self.paginate()
+
+		# build DToutput
+		self.DToutput['recordsFiltered'] = ts.total_results
+
+		# iterate through rows
+		logging.info('iterate through result set, add to response...')
+		for doc in ts.documents:
+
+			ordered_fields = [
+				doc['id']
+			]
+
+			if 'dc_title' in doc.keys():
+				ordered_fields.append(doc['dc_title'])
+			else:
+				ordered_fields.append("[Unknown Title]")
+
+			if 'dc_description' in doc.keys():
+				ordered_fields.append(doc['dc_description'])
+			else:
+				ordered_fields.append("[Unknown Description]")
+
+			# return as list of values for DT
+			self.DToutput['data'].append(ordered_fields)
+
+
+	def to_json(self):
+
+		return json.dumps(self.DToutput)
+
 
 
 

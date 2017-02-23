@@ -87,19 +87,23 @@ def shutdown():
 
 
 # mainRouter class for all components not in Flask apps #########################################################
-class mainRouter:
+# class mainRouter:
 	#fedoraConsumer
-	from fedoraConsumer import fedoraConsumer
+# from fedoraConsumer import fedoraConsumer
 
 
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
-Prod: Connected to JSM Messaging service on :FEDCONSUMER_PORT (usually 61616),
+Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),
 routes 'fedEvents' to fedoraConsumer()
-Dev: Disabled
 '''
+from fedoraConsumer import fedoraConsumer
 class fedoraConsumerWorker(object):
+
 	QUEUE = "/topic/fedora.apim.update"
+	ERROR_QUEUE = '/queue/testConsumerError'
+
+
 	def __init__(self, config=None):
 		if config is None:
 			config = StompConfig('tcp://localhost:%s' % (FEDCONSUMER_PORT))
@@ -107,10 +111,10 @@ class fedoraConsumerWorker(object):
 
 	@defer.inlineCallbacks
 	def run(self):
-		client = yield Stomp(self.config).connect()
+		client = Stomp(self.config)
+		yield client.connect()
 		headers = {
 			# client-individual mode is necessary for concurrent processing
-			# (requires ActiveMQ >= 5.2)
 			StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
 			# the maximal number of messages the broker will let you work on at the same time
 			'activemq.prefetchSize': '100',
@@ -118,10 +122,8 @@ class fedoraConsumerWorker(object):
 		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
 
 	def consume(self, client, frame):
-		#send to clearkRouter
-		worker = mainRouter()
-		worker.fedoraConsumer(msg=frame.body)
-
+		fc = fedoraConsumer(frame)
+		fc.act()
 
 
 # twisted liseners
@@ -154,7 +156,8 @@ if __name__ == '__main__':
 	# fedConsumer
 	if FEDCONSUMER_FIRE == True:
 		print "Starting JSM listener..."
-		fedoraConsumerWorker().run()
+		f = fedoraConsumerWorker()
+		f.run()
 
 
 	print '''

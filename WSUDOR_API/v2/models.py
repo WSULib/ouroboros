@@ -18,7 +18,7 @@ from flask_restful import abort, fields, reqparse, Resource
 # WSUDOR_Manager
 from WSUDOR_ContentTypes import WSUDOR_Object
 from WSUDOR_Manager import fedora_handle
-from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.solrHandles import solr_search_handle
 from WSUDOR_Manager import db
 from WSUDOR_Manager.models import User
 
@@ -525,7 +525,7 @@ class Search(Resource):
 	def execute_search(self, include_item_metadata=True):
 		logging.info("Merged parameters for search request:")
 		logging.info(self.params)
-		self.search_results = solr_handle.search(**self.params)		
+		self.search_results = solr_search_handle.search(**self.params)		
 		logging.debug(self.search_results.raw_content)
 		if self.search_results.status == 200:
 			if include_item_metadata:

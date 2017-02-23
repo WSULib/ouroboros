@@ -192,7 +192,7 @@ class SolrIndexerWorker(object):
 		if obj_handle == False:
 			return False
 
-		# re-derive Dublin Core metadata
+		# re-derive Dublin Core metadata if MODS has changed
 		try:
 			obj_handle.DCfromMODS()
 		except:
@@ -328,9 +328,9 @@ class SolrIndexerWorker(object):
 
 
 @celery.task()
-def solrIndexer(fedEvent, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
+def solrIndexer(index_type, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 
-	print "solrIndexer running"
+	print "solrIndexer running for index_type %s" % index_type
 
 	# simple function to clean PID from /risearch
 	def cleanPID(PID):
@@ -350,9 +350,9 @@ def solrIndexer(fedEvent, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_DE
 
 	worker = SolrIndexerWorker(printOnly, human_hash)
 
-	# determine action based on fedEvent
-	# Index single item per fedEvent
-	if fedEvent == "modifyDatastreamByValue" or fedEvent == "ingest" or fedEvent == "modifyObject":
+	# determine action based on index_type
+	# Index single item per index_type
+	if index_type in ["ingest", "modifyObject","fedoraConsumerIndex"]:
 
 		print "Updating / Indexing",PID
 		# index PIDs in Solr
@@ -370,7 +370,7 @@ def solrIndexer(fedEvent, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_DE
 
 
 	# timestamp based
-	if fedEvent == "timestampIndex":
+	if index_type == "timestampIndex":
 
 		print "Indexing all Fedora items that have been modified since last solrIndexer run"
 		
@@ -399,7 +399,7 @@ def solrIndexer(fedEvent, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_DE
 
 
 	# fullindex
-	if fedEvent == "fullIndex":
+	if index_type == "fullIndex":
 		print "Indexing ALL Fedora items."
 		
 		# generate list of PIDs to update
@@ -427,7 +427,7 @@ def solrIndexer(fedEvent, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_DE
 		
 
 	# Remove Object from Solr Index on Purge
-	if fedEvent == "purgeObject":
+	if index_type == "purgeObject":
 		print "Removing the following from Solr Index",PID		
 		worker.removeFOXMLinSolr(PID)
 		return True

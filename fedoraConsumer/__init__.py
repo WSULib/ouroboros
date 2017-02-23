@@ -1,52 +1,83 @@
 import xmltodict, json
-from localConfig import *
+import localConfig
 
 # index to Solr
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 
 # handles events in Fedora Commons as reported by JSM
-def fedoraConsumer(self,**kwargs):			
-	
-	msg = kwargs['msg']		
+class fedoraConsumer(object):
 
-	# create dictionary from XML string
-	try:
-		msgDict = xmltodict.parse(msg)
+	def __init__(self, frame):
 
-		# pull info
-		fedEvent = msgDict['entry']['title']['#text']			
+		self.frame = frame
+		self.headers = frame.headers
+		self.methodName = self.headers['methodName']
+		self.pid = self.headers['pid']
+		self.ds = False
+		self.body = frame.body
+		self.parsed_body = xmltodict.parse(self.body)
+		self.title = self.parsed_body['entry']['title']['#text']
+		self.categories = self.parsed_body['entry']['category']
 
-		# print fedEvent
-		print "Action:",fedEvent
+		# method type
+		if self.methodName.startswith('add'):
+			self.methodType = 'add'
+		if self.methodName.startswith('modify'):
+			self.methodType = 'modify'
+		elif self.methodName.startswith('purge'):
+			self.methodType = 'purge'
+		else:
+			self.methodType = False
 
-		# modify / add	
-		if fedEvent.startswith("modify") or fedEvent.startswith("add"):
-			PID = msgDict['entry']['category'][0]['@term']		
-			print "Object PID:", PID
 
-			# index to Solr if SOLR_AUTOINDEX is True
-			if SOLR_AUTOINDEX == True:
-				solrIndexer.delay(fedEvent,PID)
+	def act(self):
 
-		# purge
-		if fedEvent.startswith("purge"):
-			PID = msgDict['entry']['category'][0]['@term']		
-			print "Object PID:", PID
-			
-			pruneSolr_worker.delay(None,PID=PID)
+		print "Fedora message: %s, consumed for: %s" % (self.methodName, self.pid)
 
-		# ingest
-		if fedEvent.startswith('ingest'):
-			PID = msgDict['entry']['content']['#text']
-			print "Object PID:", PID
+		# debug
+		# print self.headers
+		# print self.body
+		
+		# capture modifications to datastream
+		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
+			self._determine_ds()
+			if localConfig.SOLR_AUTOINDEX and self.ds != "DC":
+				self.index_object()
 
-			# index to Solr if SOLR_AUTOINDEX is True
-			if SOLR_AUTOINDEX == True:
-				solrIndexer.delay(fedEvent,PID)
+		# capture ingests
+		if self.methodName in ['ingest']:
+			if localConfig.SOLR_AUTOINDEX:
+				self.index_object()
 
-	except Exception,e:
-		print "Actions based on fedEvent failed or were not performed."
-		print str(e)
+		# capture purge
+		if self.methodName in ['purgeObject']:
+			if localConfig.SOLR_AUTOINDEX:
+				self.purge_object()
+
+
+	def _determine_ds(self):
+		'''
+		Small function to determine which datastream was acted on
+		'''
+		self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
+		print "datastream %s was acted on" % self.ds
+		return self.ds
+
+
+	def index_object(self):
+		return solrIndexer.delay("fedoraConsumerIndex", self.pid)
+
+
+	def purge_object(self):
+		return pruneSolr_worker.delay(None,PID=self.pid)
+
+
+
+
+
+
+
+
 
 

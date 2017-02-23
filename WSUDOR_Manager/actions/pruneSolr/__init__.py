@@ -64,7 +64,7 @@ def pruneSolr_factory(job_package):
 
 
 @celery.task(name="pruneSolr_worker")
-@roles.auth(['admin','metadata'], is_celery=True)
+# @roles.auth(['admin','metadata'], is_celery=True)
 def pruneSolr_worker(job_package, PID=False):
 
 	if PID:

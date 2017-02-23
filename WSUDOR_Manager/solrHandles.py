@@ -7,12 +7,14 @@ import localConfig
 
 # Core used for search and retrieval (e.g. powers front-end API)
 # single, primary search core
-solr_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_SEARCH_CORE), version=4)
+solr_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_MANAGE_CORE), version=4)
+# single, primary management core
+solr_search_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_SEARCH_CORE), version=4)
 # Core used for bookreader fulltext
-solr_bookreader_handle = Solr('http://localhost/solr4/%s' % (localConfig.SOLR_BOOKREADER_CORE), version=4)
+solr_bookreader_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_BOOKREADER_CORE), version=4)
 # Core used for WSUDOR user accounts
-solr_user_handle = Solr('http://localhost/solr4/users', version=4)
+solr_user_handle = Solr('http://%s/solr4/users' % (localConfig.SOLR_HOST), version=4)
 
 
 def onDemand(core):
-    return Solr('http://localhost/solr4/%s' % (core), version=4)
+    return Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, core), version=4)

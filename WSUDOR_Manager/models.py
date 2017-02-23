@@ -880,21 +880,12 @@ class SolrDT(object):
 		self.build_response()
 
 
-	# def filter(self):
-	# 	logging.debug('applying filters...')
+	def filter(self):
+		logging.debug('applying filters...')
 
-	# 	'''
-	# 	searching title, abstract, and identifier columns
-	# 	'''
-
-	# 	search_string = self.DTinput['search']['value']
-	# 	if search_string != '':
-	# 		self.query = self.query.where(
-	# 			(self.peewee_model.title.contains(search_string)) |
-	# 			(self.peewee_model.abstract.contains(search_string)) |
-	# 			(self.peewee_model.identifier.contains(search_string)) |
-	# 			(self.peewee_model.raw.contains(search_string))
-	# 		)
+		# apply search term as "q"
+		if self.DTinput['search']['value'] != '':
+			self.search_params['q'] = self.DTinput['search']['value']
 
 
 	# def sort(self):
@@ -937,8 +928,7 @@ class SolrDT(object):
 		self.DToutput['recordsTotal'] = ts.total_results
 
 		# run sub-functions that tailor the default_params
-		# apply filtering
-		# self.filter()
+		self.filter()
 		# self.sort()
 		self.paginate()
 

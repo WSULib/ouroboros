@@ -957,14 +957,14 @@ class SolrDT(object):
 			]
 
 			if 'dc_title' in doc.keys():
-				ordered_fields.append(doc['dc_title'])
+				ordered_fields.append(self.truncate(480, doc['dc_title'][0]))
 			else:
-				ordered_fields.append("[Unknown Title]")
+				ordered_fields.append("None")
 
 			if 'dc_description' in doc.keys():
-				ordered_fields.append(doc['dc_description'])
+				ordered_fields.append(self.truncate(480, doc['dc_description'][0]))
 			else:
-				ordered_fields.append("[Unknown Description]")
+				ordered_fields.append("None")
 
 			# return as list of values for DT
 			self.DToutput['data'].append(ordered_fields)
@@ -973,6 +973,13 @@ class SolrDT(object):
 	def to_json(self):
 
 		return json.dumps(self.DToutput)
+
+	def truncate(self, chars, input):
+		
+		if len(input) > chars:
+			return "%s..." % input[0:chars]
+		else:
+			return input
 
 
 

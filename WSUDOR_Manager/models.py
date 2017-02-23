@@ -866,6 +866,16 @@ class SolrDT(object):
 		self.DToutput = DT().__dict__
 		self.DToutput['draw'] = DTinput['draw']
 
+		self.search_params = { 
+			'q': '*:*',
+			'sort': None,
+			'start': 0,
+			'rows': 10,
+			'fq': [],
+			'fl': [ "id", "mods*", "dc*", "rels*", "human*", "obj*", "last_modified"],
+			'wt': 'json'
+		}
+
 		# query and build response
 		self.build_response()
 
@@ -907,12 +917,13 @@ class SolrDT(object):
 			
 
 
-	# def paginate(self):
+	def paginate(self):
 
-	# 	logging.debug('paginating...')
+		logging.debug('paginating...')
 
-	# 	# using offset (start) and limit (length)
-	# 	self.query_slice = self.query.offset(self.DTinput['start']).limit(self.DTinput['length'])
+		# update start
+		self.search_params['start'] = self.DTinput['start']
+		self.search_params['rows'] = self.DTinput['length']
 
 
 	def build_response(self):
@@ -925,17 +936,21 @@ class SolrDT(object):
 		# update DToutput
 		self.DToutput['recordsTotal'] = ts.total_results
 
+		# run sub-functions that tailor the default_params
 		# apply filtering
 		# self.filter()
 		# self.sort()
-		# self.paginate()
+		self.paginate()
+
+		# excecute search
+		s = self.solr_handle.search(**self.search_params)
 
 		# build DToutput
-		self.DToutput['recordsFiltered'] = ts.total_results
+		self.DToutput['recordsFiltered'] = s.total_results
 
 		# iterate through rows
 		logging.info('iterate through result set, add to response...')
-		for doc in ts.documents:
+		for doc in s.documents:
 
 			ordered_fields = [
 				doc['id']

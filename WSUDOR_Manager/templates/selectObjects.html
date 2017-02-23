@@ -42,7 +42,7 @@
                           var table = $('#object_table').DataTable({
                             "processing": true,
                             "serverSide": true,
-                            "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                            "lengthMenu": [[5, 10, 25, 50, 100, 1000], [5, 10, 25, 50, 100, 1000]],
                             "ajax": {
                                 contentType: "application/json",
                                 type: "POST",
@@ -64,7 +64,7 @@
                                     }
                                 }
                             ],
-                            "pageLength": 5
+                            "pageLength": 10
                           });  
                         });
                     </script>

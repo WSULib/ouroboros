@@ -152,7 +152,7 @@ def getIngestWorkspaceRows(job_num):
 	
 def getSeedObjects(target_repo):
 	seed_pids = [
-		# vmc  (single image)
+		# vmc (single image)
 		'wayne:collectionvmc',
 		'wayne:vmc15687',
 		'wayne:vmc14515',

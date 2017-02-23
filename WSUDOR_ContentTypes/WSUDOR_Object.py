@@ -273,12 +273,12 @@ class WSUDOR_GenObject(object):
 		# initiate IIIF Manifest Factory
 		self.iiif_factory = ManifestFactory()
 		# Where the resources live on the web
-		self.iiif_factory.set_base_prezi_uri("https://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+		self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
 		# Where the resources live on disk
 		self.iiif_factory.set_base_prezi_dir("/tmp")
 
 		# Default Image API information
-		self.iiif_factory.set_base_image_uri("https://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+		self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
 		self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
 
 		# 'warn' will print warnings, default level

@@ -31,6 +31,9 @@ from WSUDOR_Manager import app as WSUDOR_Manager_app
 # import WSUDOR_API app
 from WSUDOR_API import WSUDOR_API_app
 
+# import main indexer
+from WSUDOR_Indexer import WSUDOR_Indexer
+
 
 # Ouroboros pidfile ##############################################################
 # function to create/remove Ouroboros pidfile
@@ -97,8 +100,7 @@ def shutdown():
 Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),
 routes 'fedEvents' to fedoraConsumer()
 '''
-from fedoraConsumer import fedoraConsumer
-class fedoraConsumerWorker(object):
+class IndexerWorker(object):
 
 	QUEUE = "/topic/fedora.apim.update"
 	ERROR_QUEUE = '/queue/testConsumerError'
@@ -122,8 +124,8 @@ class fedoraConsumerWorker(object):
 		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
 
 	def consume(self, client, frame):
-		fc = fedoraConsumer(frame)
-		fc.act()
+		indexer = WSUDOR_Indexer(frame)
+		indexer.act()
 
 
 # twisted liseners
@@ -156,8 +158,8 @@ if __name__ == '__main__':
 	# fedConsumer
 	if FEDCONSUMER_FIRE == True:
 		print "Starting JSM listener..."
-		f = fedoraConsumerWorker()
-		f.run()
+		indexer = IndexerWorker()
+		indexer.run()
 
 
 	print '''

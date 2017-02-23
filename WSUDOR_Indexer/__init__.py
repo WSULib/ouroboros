@@ -6,7 +6,7 @@ from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 
 # handles events in Fedora Commons as reported by JSM
-class fedoraConsumer(object):
+class WSUDOR_Indexer(object):
 
 	def __init__(self, frame):
 

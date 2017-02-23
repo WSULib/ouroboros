@@ -114,7 +114,7 @@ def tailUserCelery(user):
 
 
 # function to grab single object from remote repository
-def getRemoteObject(repo, PID, index=True, skip_constituents=False):
+def getRemoteObject(repo, PID, skip_constituents=False):
 	
 	sync_list = [PID]
 	
@@ -135,6 +135,8 @@ def getRemoteObject(repo, PID, index=True, skip_constituents=False):
 	for i,pid in enumerate(sync_list):
 		print "retrieving %s, %d/%d..." % (pid,i,len(sync_list))
 		print eulfedora.syncutil.sync_object(dest_repo_handle.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
+
+	return True
 	
 	
 # function to clone object datastream by datastream
@@ -179,26 +181,34 @@ def getSeedObjects(target_repo):
 
 	# get objects and index
 	for index, pid in enumerate(seed_pids):
+		# try:
+		print "##############################################################################"
+		print "working on %s / %s" % (index, len(seed_pids))
+		print "##############################################################################"
 		try:
-			print "##############################################################################"
-			print "working on %s / %s" % (index, len(seed_pids))
-			print "##############################################################################"
 			remote_get = getRemoteObject(target_repo,pid)
-			if remote_get:
-				while True:
-					obj_test = fedora_handle.get_object(pid)
-					if obj_test.exists == True:
-						break
-					else:
-						time.sleep(.5)
-				obj = w(pid)
-				obj.objectRefresh()
-			else:
-				raise Exception
+
+			try:
+				if remote_get:
+					while True:
+						obj_test = fedora_handle.get_object(pid)
+						if obj_test.exists == True:
+							break
+						else:
+							time.sleep(.5)
+					obj = w(pid)
+					try:
+						obj.objectRefresh()
+					except:
+						print "could not index %s" % pid
+				else:
+					raise Exception
+			except:
+				print "-------------------------------------------------------------------------------"
+				print "FAILURE: %s" % pid
+				print "-------------------------------------------------------------------------------"
 		except:
-			print "-------------------------------------------------------------------------------"
-			print "FAILURE: %s" % pid
-			print "-------------------------------------------------------------------------------"
+			print "Could not get remote object: %s" % pid
 
 	print 'finis.'
 

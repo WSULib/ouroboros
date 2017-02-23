@@ -378,7 +378,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				obj = WSUDOR_ContentTypes.WSUDOR_Object(page.pid)
 				obj.purge(override_state=True)
 			except:
-				print "could not remove constituent: %s" % obj.pid
+				print "could not remove constituent: %s" % page
 
 		return True
 

@@ -38,11 +38,11 @@ class WSUDOR_Indexer(object):
 		# debug
 		# print self.headers
 		# print self.body
-		
+
 		# capture modifications to datastream
 		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
 			self._determine_ds()
-			if localConfig.SOLR_AUTOINDEX and self.ds != "DC":
+			if localConfig.SOLR_AUTOINDEX and self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
 				self.index_object()
 
 		# capture ingests

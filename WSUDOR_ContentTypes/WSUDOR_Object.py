@@ -1621,7 +1621,21 @@ class WSUDOR_GenObject(object):
 		'''
 		return models.ObjHierarchy(self.pid, self.SolrDoc.asDictionary()['dc_title'][0]).load_hierarchy(overwrite=overwrite)
 
-
+	# return timeline
+	def timeline(self):
+		pass
+		# from dateutil import parser
+		# http://stackoverflow.com/questions/5166842/sort-dates-in-python-array
+		# condition check
+		# results in status = status
+		# append to dictionary
+		# daDict = {
+		# 	"creation" : str(fedora_handle.get_object("wayne:LincolnLettersFHC205771").getProfile().created), 
+		# 	"last_modified_fedora" : str(fedora_handle.get_object("wayne:LincolnLettersFHC205771").getProfile().modified),
+		# 	"last_modified_solr" : str(),
+		# 	"cached_in_varnish" : str("curl -"),
+		# 	"status" : status
+		# }
 
 	################################################################
 	# Consider moving

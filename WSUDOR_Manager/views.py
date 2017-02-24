@@ -1539,11 +1539,13 @@ def routeIndexer():
     return json.dumps(list(endpoints))
 
 
+
 # PID check for user
+@app.route("/selectObjects", methods=['POST', 'GET'])
 @app.route("/selectObjects/<task>", methods=['POST', 'GET'])
 @login_required
 @roles.auth(['admin','metadata','view'])
-def selectObjects(task):
+def selectObjects(task='find'):
 
     return render_template("selectObjects.html", task=task, localConfig=localConfig)
 

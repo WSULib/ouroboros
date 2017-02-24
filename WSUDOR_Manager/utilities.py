@@ -23,12 +23,12 @@ import smtplib
 
 def login(username):
 
-        print "Logging in..."
+    print "Logging in..."
 
-        # fire user celery worker
-        print "firing user celery worker for: %s" % username
-        cw = models.CeleryWorker(username)
-        cw.start()      
+    # fire user celery worker
+    print "firing user celery worker for: %s" % username
+    cw = models.CeleryWorker(username)
+    cw.start()      
 
 
 escapeRules = {'+': r'\+',

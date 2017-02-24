@@ -892,9 +892,16 @@ class SolrDT(object):
 	def filter(self):
 		logging.debug('applying filters...')
 
-		# apply search term as "q"
+		# apply search term as "q" if found in DTinput['search']['value']
 		if self.DTinput['search']['value'] != '':
 			self.search_params['q'] = self.DTinput['search']['value']
+
+		# iterate through columns, look for facet filter
+		for column in self.DTinput['columns']:
+			if column['search']['value'] != '':
+				fq_filter = "%s:%s" % ( column['name'], column['search']['value'].replace(" ","\\ ") )
+				logging.info('adding facet filter: %s' % fq_filter)
+				self.search_params['fq'].append(fq_filter.encode("utf-8"))
 
 
 	def sort(self):
@@ -942,6 +949,9 @@ class SolrDT(object):
 		self.filter()
 		self.sort()
 		self.paginate()
+
+		# debug
+		logging.info(self.search_params)
 
 		# excecute search
 		s = self.solr_handle.search(**self.search_params)
@@ -1000,6 +1010,7 @@ class SolrDT(object):
 	def to_json(self):
 
 		return json.dumps(self.DToutput)
+
 
 	def truncate(self, chars, input):
 		

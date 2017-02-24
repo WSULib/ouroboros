@@ -26,7 +26,7 @@
     <div class="col-md-12">        
         <ul class="nav nav-tabs" role="tablist">
             <li role="presentation" {% if task == 'find' %}class="active"{% endif %}><a href="#find" aria-controls="find" role="tab" data-toggle="tab">Find</a></li>
-            <li role="presentation" {% if task == 'select' %}class="active"{% endif %}><a href="#select" aria-controls="select" role="tab" data-toggle="tab">Select</a></li>
+            <li role="presentation" {% if task == 'select' %}class="active"{% endif %}><a href="#select" aria-controls="select" role="tab" data-toggle="tab" onclick='table_handle.draw();'>Select</a></li>
         </ul>
     </div>
 
@@ -213,9 +213,13 @@
 
                         // bind search results to button click
                         $(document).ready(function(){
-                            $('#add_object_search').ajaxForm(function() { 
-                                console.log("add_object_search form submitted")
-                            });
+                            var search_options = {                                
+                                success: function(responseText, statusText, xhr, $form){
+                                    console.log(responseText);
+                                    $("#status_msg").html("<p style='color:green;'>"+responseText+"</p>");
+                                }
+                            }
+                            $('#add_object_search').ajaxForm(search_options);                            
                         });
 
 
@@ -376,8 +380,6 @@
                         table_handle.draw( false );         
                     });
                 }
-                
-                
             }
 
             // delete row
@@ -398,7 +400,11 @@
             // fire
             $(document).ready(function(){
                 paintTable("{{username}}","{{localConfig.DATATABLES_HANDLE}}");
-            });    
+            });
+
+
+
+
         </script>
 
         </div>

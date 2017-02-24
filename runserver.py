@@ -89,12 +89,6 @@ def shutdown():
 	print "<-- Ouroboros says thanks for playing -->"
 
 
-# mainRouter class for all components not in Flask apps #########################################################
-# class mainRouter:
-	#fedoraConsumer
-# from fedoraConsumer import fedoraConsumer
-
-
 # Fedora Commons Messaging STOMP protocol consumer ##############################################################
 '''
 Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),

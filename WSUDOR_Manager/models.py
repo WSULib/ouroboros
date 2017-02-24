@@ -838,6 +838,7 @@ class DT(object):
 		self.recordsTotal = None,
 		self.recordsFiltered = None,
 		self.data = []
+		self.facets = []
 
 
 class SolrDT(object):
@@ -872,8 +873,16 @@ class SolrDT(object):
 			'start': 0,
 			'rows': 10,
 			'fq': [],
-			'fl': [ "id", "mods*", "dc*", "rels*", "human*", "obj*", "last_modified"],
-			'wt': 'json'
+			'fl': [ "id", "dc*", "rels*", "human*", "obj*", "last_modified"],
+			'wt': 'json',
+			'facet': True,
+			'facet.mincount': 1,
+			'facet.limit': -1,
+			'facet.field': [
+				"human_hasContentModel",
+				"human_isMemberOfCollection"
+			],
+			'facet.sort': 'index',
 		}
 
 		# query and build response
@@ -888,24 +897,26 @@ class SolrDT(object):
 			self.search_params['q'] = self.DTinput['search']['value']
 
 
-	# def sort(self):
+	def sort(self):
 		
-	# 	'''
-	# 	Iterate through order_by columns
-	# 	'''
-		
-	# 	logging.debug('sorting...')
+		logging.debug('sorting...')
+		'''
+		'''
 
-	# 	# get sort column
-	# 	for order in self.DTinput['order']:
-	# 		order_by_column = getattr(self.peewee_model,self.columns[order['column']])
-	# 		order_by_dir = order['dir']
-	# 		logging.debug('ordering by %s, %s' % (order_by_column, order_by_dir))
-	# 		if order_by_dir == 'asc':
-	# 			self.query = self.query.order_by(order_by_column.asc())
-	# 		if order_by_dir == 'desc':
-	# 			self.query = self.query.order_by(order_by_column.desc())
-			
+		sort_fields = []
+
+		# get sort column
+		for order in self.DTinput['order']:
+			sort_field = self.DTinput['columns'][order['column']]['name']
+			sort_dir = order['dir']
+			sort_syntax = "%s %s" % (sort_field, sort_dir)
+			logging.info("adding sort: %s" % (sort_syntax))
+			sort_fields.append(sort_syntax)
+			concat_sort_string = ", ".join(sort_fields)
+			logging.info(concat_sort_string)
+
+		# add to search_params
+		self.search_params['sort'] = concat_sort_string
 
 
 	def paginate(self):
@@ -929,7 +940,7 @@ class SolrDT(object):
 
 		# run sub-functions that tailor the default_params
 		self.filter()
-		# self.sort()
+		self.sort()
 		self.paginate()
 
 		# excecute search
@@ -938,26 +949,47 @@ class SolrDT(object):
 		# build DToutput
 		self.DToutput['recordsFiltered'] = s.total_results
 
-		# iterate through rows
-		logging.info('iterate through result set, add to response...')
-		for doc in s.documents:
+		# iterate through rows and add to 'data'
+		if self.DToutput['recordsFiltered'] > 0:
+			logging.info('iterate through result set, add to response...')
+			for doc in s.documents:
 
-			ordered_fields = [
-				doc['id']
-			]
+				ordered_fields = [
+					doc['id']
+				]
 
-			if 'dc_title' in doc.keys():
-				ordered_fields.append(self.truncate(480, doc['dc_title'][0]))
-			else:
-				ordered_fields.append("None")
+				# title
+				if 'dc_title' in doc.keys():
+					ordered_fields.append(self.truncate(480, doc['dc_title'][0]))
+				else:
+					ordered_fields.append("None")
 
-			if 'dc_description' in doc.keys():
-				ordered_fields.append(self.truncate(480, doc['dc_description'][0]))
-			else:
-				ordered_fields.append("None")
+				# description
+				if 'dc_description' in doc.keys():
+					ordered_fields.append(self.truncate(480, doc['dc_description'][0]))
+				else:
+					ordered_fields.append("None")
 
-			# return as list of values for DT
-			self.DToutput['data'].append(ordered_fields)
+				# collection
+				if 'human_isMemberOfCollection' in doc.keys():
+					ordered_fields.append( ", ".join(doc['human_isMemberOfCollection']) )
+				else:
+					ordered_fields.append("None")
+
+				# collection
+				if 'human_hasContentModel' in doc.keys():
+					ordered_fields.append( ", ".join(doc['human_hasContentModel']) )
+				else:
+					ordered_fields.append("None")
+
+				# return as list of values for DT
+				self.DToutput['data'].append(ordered_fields)
+
+			# add facet information
+			self.DToutput['facets'] = s.facets['facet_fields']
+
+		else:
+			logging.info('none found for search parameters...')
 
 
 	def to_json(self):

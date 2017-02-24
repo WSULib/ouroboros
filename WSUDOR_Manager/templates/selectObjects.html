@@ -41,7 +41,15 @@
                 <div style="margin-top:20px;" class="col-md-12">
                     <div>                        
                         <table id="object_table" class="display" cellspacing="0" width="100%" style="font-size:100%;">
-                            <thead></thead>  
+                            <thead></thead>
+                            <tfoot>
+                                <tr>
+                                    <th>id</th>
+                                    <th>dc_title_sorting</th>
+                                    <th>dc_description</th>
+                                    <th>human_isMemberOfCollection</th>
+                                    <th>human_hasContentModel</th>
+                                    <th>actions</th>
                             <tbody></tbody>          
                         </table>
                     </div>
@@ -96,10 +104,48 @@
                                 }
                             ],
                             "pageLength": 10,
-                            "fnInitComplete": function(oSettings, json) {
-                              console.log("table has finished loading, finishing up...");
-                              console.log(json);
-                              finish_rendering(json);
+                            // "fnInitComplete": function(oSettings, json) {
+                            //   console.log("table has finished loading, finishing up...");
+                            //   console.log(json);
+                            //   finish_rendering(json);
+                            // },
+                            initComplete: function (oSettings, json) {
+                                var columns = table.settings().init().columns;
+                                this.api().columns().every( function (index) {
+                                    var column = this;
+
+                                    column_name = columns[index].name;
+                                    console.log(column_name);
+                                    facet_handle = json.facets[column_name]
+                                    console.log(facet_handle);
+
+                                    if (facet_handle !== undefined){
+
+                                        console.log("let's make one for",column_name);
+
+                                        var select = $('<select><option value="Select to Filter"></option></select>')
+                                            .appendTo( $(column.footer()).empty() )
+                                            .on( 'change', function () {
+                                                var val = $(this).val()
+                                                                     
+                                                column
+                                                    .search( val ? val : '', true, false )
+                                                    .draw();
+                                            } );
+
+                                        // column.data().unique().sort().each( function ( d, j ) {
+                                        //     select.append( '<option value="'+d+'">'+d+'</option>' )
+                                        // } );
+
+                                        for (var property in facet_handle) {
+                                            if (facet_handle.hasOwnProperty(property)) {
+                                                select.append( '<option value="'+property+'">' + property + ' (' + facet_handle[property] + ')</option>' );
+                                            }
+                                        }
+
+                                    }
+
+                                } );
                             }
                           });  
 
@@ -113,7 +159,17 @@
                                 // dropdown for collections
                                 if ($(this).text() == "Collection"){
                                     console.log("creating collections dropdown...");
-                                    $(this).append("<br>"+facet_to_dropdown('human_isMemberOfCollection', json));
+                                    $(this).append("<br>"+facet_to_dropdown('human_isMemberOfCollection', json))
+                                    .on( 'change', function () {
+                                        alert("changed!");
+                                        var val = $.fn.dataTable.util.escapeRegex(
+                                            $(this).val()
+                                        );
+                 
+                                        table.column
+                                            .search( val ? '^'+val+'$' : '', true, false )
+                                            .draw();
+                                    } );
                                 }
 
                                 // dropdown for content-type
@@ -130,7 +186,7 @@
                             facet_handle = json.facets[facet]
                             console.log(facet_handle);
 
-                            select_string = '<select>';
+                            select_string = '<select class="dropdown_filter">';
 
                             for (var property in facet_handle) {
                                 if (facet_handle.hasOwnProperty(property)) {

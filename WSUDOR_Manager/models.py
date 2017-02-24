@@ -982,8 +982,13 @@ class SolrDT(object):
 				else:
 					ordered_fields.append("None")
 
+				# return placeholder for actions
+				ordered_fields.append("None")
+
 				# return as list of values for DT
 				self.DToutput['data'].append(ordered_fields)
+
+
 
 			# add facet information
 			self.DToutput['facets'] = s.facets['facet_fields']

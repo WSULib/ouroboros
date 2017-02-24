@@ -1563,7 +1563,88 @@ def solr_json():
     return jsonify(sdt.DToutput)
 
 
+@app.route("/selectObjects/add_object_single", methods=['POST', 'GET'])
+@login_required
+@roles.auth(['admin','metadata','view'])
+def add_object_single():
 
+
+    # get username from session
+    username = session['username']
+
+    # get params
+    PID = request.args.get('pid')
+    tag_group = request.args.get('tag_group')
+    if tag_group == '':
+        tag_group = 'None'
+    else:
+        tag_group = tag_group.encode('utf-8')
+    print "adding single pid:",PID,"tag group:",tag_group
+
+    # add PID to MySQL
+    PIDs = [PID]
+
+    # deselect all PIDs
+    db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': False})
+
+    # get PIDs group_name
+    group_name = tag_group
+
+    # add PIDs to SQL
+    jobs.sendUserPIDs(username, PIDs, group_name)
+
+    # commit
+    db.session.commit()
+
+    return json.dumps({
+        "msg":"single object added",
+        "pid":PID,
+        "tag_group":tag_group
+        })
+
+
+@app.route("/selectObjects/add_object_search", methods=['POST', 'GET'])
+@login_required
+@roles.auth(['admin','metadata','view'])
+def add_object_search():
+
+    # get username from session
+    username = session['username']
+
+    # rehydrate search_params
+    search_params = json.loads(request.form['search_params'])
+    print search_params
+
+    # get tag name
+    tag_group = request.form['tag_group']
+    if tag_group == '':
+        tag_group = 'None'
+    else:
+        tag_group = tag_group.encode('utf-8')
+
+    # excecute search
+    search_params['fl'] = ['id']
+    c = solr_handle.search_cursor(**search_params)
+
+    # iterate through paginated results   
+    total_size = 0 
+    chunk_size = 1000
+    print "iterating through results as cursor, with chunk size",chunk_size
+    for chunk in c.fetch(rows=chunk_size):
+        t_pid_list = []
+        for doc in chunk.documents:
+            t_pid_list.append(doc['id'])
+        jobs.sendUserPIDs(username, t_pid_list, tag_group)
+        total_size += len(t_pid_list)
+
+    # commit
+    db.session.commit()
+
+    return json.dumps({
+        "msg":"search results added",
+        "total_added":total_size,
+        "tag_group":tag_group
+        })
 
 
 

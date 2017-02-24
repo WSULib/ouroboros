@@ -4,11 +4,18 @@
 <!-- 1.10.12, if needed -->
 <script type="text/javascript" src="http://metadata.library.wayne.edu/oaiglow/inc/datatables/jquery.dataTables.min.js"></script>
 
+
 <!-- header -->
 <div class="row">
     <div class="col-md-12">
         <h2>Object Select</h2>
-        <p>This area will help you find, and then select, objects to work on in Ouroboros.</p>
+        <p>This area will help you find, and then select, objects to work on in Ouroboros.  The overall workflow is as follows:
+            <ol>
+                <li>Find objects: Use the table under the "find" tab to locate groups of objects through search and filtering</li>
+                <li>Save objects to workspace: Send found objects to your workspace either individually, or in batch, with the option of giving them tags</li>
+                <li>Select objects to work on: Navigate to your workspace under the "Select" tab to actively select objects to work on</li>
+            </ol>
+        </p>
     </div>
 </div>
 
@@ -29,12 +36,33 @@
         <!-- find objects -->
         <div role="tabpanel" class="col-md-12 tab-pane fade in {% if task == 'find' %}active{% endif %}" id="find">
 
-            <div class="row">
-                <div style="margin-top:20px;" class="col-md-12">
-                    <ul>
-                        <li>Sorting: click a column to sort, or hold "shift" to sort by multiple fields</li>
-                    </ul>
+            <div style="margin-top:20px;" class="row">
+                <div class="col-md-3">
+                    <form class="form-horizontal" id="add_object_search" role="form" method="POST" action="/{{APP_PREFIX}}/selectObjects/add_object_search" enctype="multipart/form-data">
+                        <div class="col-md-12">              
+
+                            <!-- Group / Tag -->
+                            <div class="form-group">
+                                <label class="control-label">Tag:</label>
+                                <p>Optionally, add tags when sending objects to workspace to group them later.</p>
+                                <input id="tag_group" class="form-control" type="text" name="tag_group" placeholder="e.g. all_images, to_reindex, vmc">
+                            </div>
+
+                             <!-- Send objects to workspace -->
+                            <div class="form-group">
+                                <input id="search_params" type="hidden" name="search_params" value="">                                
+                                <input type="submit" class="btn btn-success" value="Send Search Results to Workspace">
+                            </div>
+
+                        </div>
+                    </form>
                 </div>
+
+                <div class="col-md-3">
+                    <h4>Status:</h4>
+                    <div id="status_msg"></div>
+                </div>
+
             </div>
 
             <div class="row">
@@ -99,59 +127,97 @@
                                     "class": "text_centered",
                                     "orderable": false,
                                     "render": function (data, type, row, meta) {
-                                        return '<a style="margin-right:10px;" target="_blank" href="/item/'+row[0]+'" class="button"><button class="btn btn-success btn-sm">View</button></a><a target="_blank" href="/{{APP_PREFIX}}/selectObjects/add_object/'+row[0]+'" class="button"><button class="btn btn-warning btn-sm">Send to Workspace</button></a>';
+                                        return '<a style="margin-right:10px;" target="_blank" href="/item/'+row[0]+'" class="button"><button class="btn btn-warning btn-sm">View</button></a><form class="add_object_single" action="/{{APP_PREFIX}}/selectObjects/add_object_single" style="display:inline;"><input type="hidden" value="'+row[0]+'" name="pid"><input type="hidden" value="" name="tag_group"><input type="submit" class="btn btn-success btn-sm" value="Send Object to Workspace"></form>';
                                     }
                                 }
                             ],
                             "pageLength": 10,
-                            // "fnInitComplete": function(oSettings, json) {
-                            //   console.log("table has finished loading, finishing up...");
-                            //   console.log(json);
-                            //   finish_rendering(json);
-                            // },
+                            drawCallback: post_draw,
                             initComplete: function (oSettings, json) {
+
+                                // render repository level filters
+                                var target_columns = ['human_isMemberOfCollection', 'human_hasContentModel']
                                 var columns = table.settings().init().columns;
                                 this.api().columns().every( function (index) {
                                     var column = this;
 
                                     column_name = columns[index].name;
-                                    console.log(column_name);
-                                    facet_handle = json.facets[column_name]
-                                    console.log(facet_handle);
+                                    if (target_columns.includes(column_name)) {
 
-                                    if (facet_handle !== undefined){
+                                        facet_handle = json.facets[column_name]
 
-                                        console.log("let's make one for",column_name);
+                                        if (facet_handle !== undefined){
 
-                                        var select = $('<select><option value="">All</option></select>')
-                                            .appendTo( $(column.footer()).empty() )
-                                            .on( 'change', function () {
-                                                var val = $(this).val()
-                                                                     
-                                                column
-                                                    .search( val ? val : '', true, false )
-                                                    .draw();
-                                            } );
+                                            var select = $('<select><option value="">All</option></select>')
+                                                .appendTo( $(column.footer()).empty() )
+                                                .on( 'change', function () {
+                                                    var val = $(this).val()
+                                                                         
+                                                    column
+                                                        .search( val ? val : '', true, false )
+                                                        .draw();
+                                                } );
 
-                                        for (var property in facet_handle) {
-                                            if (facet_handle.hasOwnProperty(property)) {
-                                                select.append( '<option value="'+property+'">' + property + ' (' + facet_handle[property] + ')</option>' );
+                                            for (var property in facet_handle) {
+                                                if (facet_handle.hasOwnProperty(property)) {
+                                                    select.append( '<option value="'+property+'">' + property + '</option>' );
+                                                }
                                             }
+
                                         }
-
                                     }
+                                    else {
+                                        $(column.footer()).empty();
+                                    }
+                                });
 
-                                } );
+                                // fire finish_rendering
+                                finish_rendering();
+
                             }
                           });  
 
+                            function finish_rendering(json) {
+                                console.log("anything else we'd like to do?");
+                            }
+
                         });
 
-                        function finish_rendering(json) {
+                        function post_draw(settings){
+                            
+                            console.log(settings);
 
-                            console.log("anything else we'd like to do?");
+                            // update form connectors
+                            var single_options = {
+                                beforeSubmit: function(arr, $form, options) {                                         
+                                    var current_tag_group = $("#tag_group").val();
+                                    console.log("current tag group is:",current_tag_group);
+                                    for (var i = 0; i < arr.length; i++) {
+                                        if (arr[i].name == "tag_group"){
+                                            arr[i].value = current_tag_group;
+                                        }
+                                    }
+                                },
+                                success: function(responseText, statusText, xhr, $form){
+                                    console.log(responseText);
+                                    $("#status_msg").html("<p style='color:green;'>"+responseText+"</p>");
+                                }
+                            }
+                            $('.add_object_single').ajaxForm(single_options);
 
+                            // update search_params in add_object_search
+                            search_params_json = JSON.stringify(settings.json.search_params);
+                            console.log(search_params_json);
+                            $("#search_params").val(search_params_json)
                         }
+
+                        // bind search results to button click
+                        $(document).ready(function(){
+                            $('#add_object_search').ajaxForm(function() { 
+                                console.log("add_object_search form submitted")
+                            });
+                        });
+
 
                     </script>
 
@@ -162,7 +228,179 @@
 
         <!-- select objects -->
         <div role="tabpanel" class="col-md-12 tab-pane fade in {% if task == 'select' %}active{% endif %}" id="select">
-            <h2>Selecting Objects!!!</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h2>Actions</h2>
+                    <p>Below, select and deselect currently active objects in your Workspace.  When running batch jobs, all "active" objects in your workspace will be included in the queue.</p>
+                    <ul>
+                        <li><a href="#" onclick="PIDmanageAction('s_all'); return false;">Select All</a></li>      
+                        <li><a href="#" onclick="PIDmanageAction('s_none'); return false;">Select None</a></li>    
+                        <li><a href="#" onclick="PIDmanageAction('s_toggle'); return false;">Toggle All</a></li>  
+                       
+                        <li>        
+                            Toggle Group:
+                            <select id="group_name" name="group_name" onchange="PIDmanageAction('group_toggle'); return false;">
+                                <option>Select a group...</option>
+                                {% for group_name in group_names %}
+                                    <option value="{{group_name}}">{{group_name}}</option>
+                                {% endfor %}
+                            </select>        
+                        </li>
+                        <li><a href="#" onclick="PIDmanageAction('s_del'); return false;">Remove Selected Objects from Workspace</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="selection_table" class="row" style="margin-top:20px;">
+                <div class="col-md-12">
+                    <select id="group_filter" name="group_filter" onchange="filterGroup();">
+                        <option value="">Filter by group...</option>
+                        {% for group_name in group_names %}
+                            <option value="{{group_name}}">{{group_name}}</option>
+                        {% endfor %}
+                    </select>
+                    <table id="PIDtable" class="display" cellspacing="0" width="100%">
+                        <thead>
+                            <tr>            
+                                <th>id</th>
+                                <th>PID</th>
+                                <th>username</th>    
+                                <th>status</th>
+                                <th id="group_name_col">group</th>
+                                <th>actions</th>                  
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>            
+                                <th>id</th>
+                                <th>PID</th>
+                                <th>username</th>    
+                                <th>status</th>
+                                <th>group</th>
+                                <th>actions</th>                  
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+            // JS for creating tables based on user selectedPIDs
+            var table_handle = "";
+
+            function paintTable(username,DT_target){
+
+                table_handle = $('#PIDtable').DataTable( {      
+                    "serverSide": true,                     
+                    "ajax": DT_target,      
+                    "columns": [
+                        {   "searchable": true, 
+                            "name":"id" 
+                        },
+                        {   "searchable": true, 
+                            "name":"PID" 
+                        },
+                        {   "searchable": true, 
+                            "name":"username",
+                            "visible":false         
+                        },          
+                        {
+                            "name":"status",
+                            "visible":true
+                        },
+                        {   "searchable": true, 
+                            "name":"group"                      
+                        },
+                        {
+                            "name":"actions",
+                            "title":"actions",              
+                            "render":function (data,type,row){                                      
+                                return "<a href='#' onclick='del_row("+row[0]+"); return false;'>remove</a>";
+                            }               
+                        }       
+                      ],
+                    searchCols: [
+                        null,
+                        null,           
+                        { sSearch: username },
+                        null,
+                        null,
+                        null
+                    ],      
+                    "rowCallback": function( row, data, displayIndex ) {
+                        if ( data[3] == 1 ) {               
+                            $(row).addClass('selected');                
+                        }
+                    },
+                    start:1
+                } );
+                
+
+                // row select toggle
+                $('#PIDtable tbody').on('click', 'tr', function () {        
+                    var id = $(this).children()[0].innerHTML;       
+                    $.ajax({
+                        url: "/{{APP_PREFIX}}/PIDRowUpdate/"+id+"/update_status/toggle",         
+                        }).done(function() {
+                        $(this).toggleClass('selected');
+                        table_handle.draw( false ); // false parameter keeps current page
+                    });
+                } );
+             
+            }
+
+            function PIDmanageAction(action){
+
+
+                if (action == "group_toggle"){      
+                    data = {"group_name":$("#group_name").val()}
+                    console.log(data);
+                    $.ajax({
+                        url: "/{{APP_PREFIX}}/PIDmanageAction/"+action,      
+                        type:"POST",
+                        data:data           
+                        })
+                    .done(function(response) {
+                        console.log(response);      
+                        table_handle.draw( false );         
+                    });
+                }
+                
+                else {
+                    $.ajax({
+                        url: "/{{APP_PREFIX}}/PIDmanageAction/"+action,                  
+                        })
+                    .done(function(response) {
+                        console.log(response);      
+                        table_handle.draw( false );         
+                    });
+                }
+                
+                
+            }
+
+            // delete row
+            function del_row(id){   
+                $.ajax({
+                    url: "/{{APP_PREFIX}}/PIDRowUpdate/"+id+"/delete/delete",
+                    }).done(function() {
+                        $(this).toggleClass('selected');
+                        table_handle.draw();            
+                    });
+            }   
+
+            // filter by gruop
+            function filterGroup(){
+                table_handle.column(4).search($("#group_filter").val()).draw(false);
+            }
+
+            // fire
+            $(document).ready(function(){
+                paintTable("{{username}}","{{localConfig.DATATABLES_HANDLE}}");
+            });    
+        </script>
+
         </div>
 
     </div>

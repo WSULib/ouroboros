@@ -428,6 +428,8 @@ class SolrSearchDoc(object):
 	def asDictionary(self):
 		return self.doc.__dict__
 
+
+
 # class for Generic Supervisor creation
 class createSupervisorProcess(object):
 
@@ -839,6 +841,7 @@ class DT(object):
 		self.recordsFiltered = None,
 		self.data = []
 		self.facets = []
+		self.search_params = None
 
 
 class SolrDT(object):
@@ -1002,6 +1005,9 @@ class SolrDT(object):
 
 			# add facet information
 			self.DToutput['facets'] = s.facets['facet_fields']
+
+			# add search_params
+			self.DToutput['search_params'] = self.search_params
 
 		else:
 			logging.info('none found for search parameters...')

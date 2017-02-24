@@ -93,6 +93,9 @@ def shutdown():
 '''
 Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),
 routes 'fedEvents' to fedoraConsumer()
+
+This needs some kind of listener if Tomcat (Fedora) goes down, it needs to reconnect...
+
 '''
 class IndexerWorker(object):
 

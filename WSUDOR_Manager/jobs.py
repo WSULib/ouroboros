@@ -92,7 +92,7 @@ def jobRemove_worker(job_num):
 def sendUserPIDs(username,PIDs,group_name):
 	stime = time.time()	
 	''' expecting username and list of PIDs'''
-	print "Storing selected PIDs for %s" % (username)
+	# print "Storing selected PIDs for %s" % (username)
 
 	# insert into table via list comprehension
 	values_groups = [(each.encode('ascii'), username.encode('ascii'), False, group_name) for each in PIDs]
@@ -100,10 +100,10 @@ def sendUserPIDs(username,PIDs,group_name):
 	db.session.execute("INSERT INTO user_pids (PID,username,status,group_name) VALUES %s" % (values_groups_string));
 	db.session.commit()	
 
-	print "PIDs stored"		
+	# print "PIDs stored"		
 	etime = time.time()
 	ttime = (etime - stime) * 1000
-	print "Took this long to add PIDs to SQL",ttime,"ms"
+	print "Added PIDs to SQL",ttime,"ms"
 
 
 # PID removal

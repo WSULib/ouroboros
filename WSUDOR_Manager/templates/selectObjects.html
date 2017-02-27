@@ -241,7 +241,7 @@
                             Toggle Group:
                             <select id="toggle_group" class="object_groups" name="group_name" onchange="PIDmanageAction('group_toggle'); $(this).prop('selectedIndex',0); return false;"></select>        
                         </li>
-                        <li><a href="#" onclick="PIDmanageAction('s_del'); return false;">Remove Selected Objects from Workspace</a></li>
+                        <li><a href="#" onclick="PIDmanageAction('s_del'); setTimeout(function(){console.log('waiting...'); populateGroups(); }, 500); return false;">Remove Selected Objects from Workspace</a></li>
                     </ul>
                 </div>
             </div>
@@ -323,27 +323,7 @@
                         }
                     },
                     start:1,
-                    drawCallback: workspace_post_draw,
-                    // initComplete: function () {
-                    //     this.api().columns().every( function () {
-                    //         var column = this;
-                    //         var select = $('<select><option value=""></option></select>')
-                    //             .appendTo( $(column.footer()).empty() )
-                    //             .on( 'change', function () {
-                    //                 var val = $.fn.dataTable.util.escapeRegex(
-                    //                     $(this).val()
-                    //                 );
-             
-                    //                 column
-                    //                     .search( val ? val : '', true, false )
-                    //                     .draw();
-                    //             } );
-             
-                    //         column.data().unique().sort().each( function ( d, j ) {
-                    //             select.append( '<option value="'+d+'">'+d+'</option>' )
-                    //         } );
-                    //     } );
-                    // }
+                    drawCallback: workspace_post_draw
                 } );
 
                 // row select toggle

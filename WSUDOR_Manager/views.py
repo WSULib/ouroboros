@@ -1298,90 +1298,90 @@ def PIDRowUpdate(id,action,status):
     return "PID updated."
 
 
-# PID selection via Solr
-@app.route("/PIDSolr", methods=['POST', 'GET'])
-@roles.auth(['admin','metadata','view'])
-@login_required
-def PIDSolr():
+# # PID selection via Solr
+# @app.route("/PIDSolr", methods=['POST', 'GET'])
+# @roles.auth(['admin','metadata','view'])
+# @login_required
+# def PIDSolr():
 
-    # get username from session
-    username = session['username']
+#     # get username from session
+#     username = session['username']
 
-	# get form
-    form = forms.solrSearch(request.form)
+# 	# get form
+#     form = forms.solrSearch(request.form)
 
-    # collection selection
-    coll_query = {'q':"rels_hasContentModel:*Collection", 'fl':["id","dc_title"], 'rows':1000}
-    coll_results = solr_handle.search(**coll_query)
-    coll_docs = coll_results.documents
+#     # collection selection
+#     coll_query = {'q':"rels_hasContentModel:*Collection", 'fl':["id","dc_title"], 'rows':1000}
+#     coll_results = solr_handle.search(**coll_query)
+#     coll_docs = coll_results.documents
 
-    # check for title, give generic if not present
-    for each in coll_docs:
-        if 'dc_title' not in each:
-            each['dc_title'] = [ 'Unknown Collection Title' + each['id'].encode('ascii','ignore') ]
+#     # check for title, give generic if not present
+#     for each in coll_docs:
+#         if 'dc_title' not in each:
+#             each['dc_title'] = [ 'Unknown Collection Title' + each['id'].encode('ascii','ignore') ]
 
-    form.collection_object.choices = [(each['id'].encode('ascii','ignore'), each['dc_title'][0].encode('ascii','ignore')) for each in coll_docs]
-    form.collection_object.choices.insert(0,("","All Collections"))
+#     form.collection_object.choices = [(each['id'].encode('ascii','ignore'), each['dc_title'][0].encode('ascii','ignore')) for each in coll_docs]
+#     form.collection_object.choices.insert(0,("","All Collections"))
 
-    # content model
-    cm_query = {'q':'*', 'facet' : 'true', 'facet.field' : 'rels_hasContentModel'}
-    cm_results = solr_handle.search(**cm_query)
-    form.content_model.choices = [(each, each.split(":")[-1]) for each in cm_results.facets['facet_fields']['rels_hasContentModel']]
-    form.content_model.choices.insert(0,("","All Content Types"))
+#     # content model
+#     cm_query = {'q':'*', 'facet' : 'true', 'facet.field' : 'rels_hasContentModel'}
+#     cm_results = solr_handle.search(**cm_query)
+#     form.content_model.choices = [(each, each.split(":")[-1]) for each in cm_results.facets['facet_fields']['rels_hasContentModel']]
+#     form.content_model.choices.insert(0,("","All Content Types"))
 
-    # perform search
-    if request.method == 'POST':
+#     # perform search
+#     if request.method == 'POST':
 
-        # build base with native Solr queries
-        query = {'q':form.q.data, 'fq':[form.fq.data], 'fl':[form.fl.data], 'rows':100000}
+#         # build base with native Solr queries
+#         query = {'q':form.q.data, 'fq':[form.fq.data], 'fl':[form.fl.data], 'rows':100000}
 
-        # Fedora RELS-EXT
-        # collection selection
-        if form.collection_object.data:
-            print "Collection refinement:",form.collection_object.data
-            escaped_coll = form.collection_object.data.replace(":","\:")
-            query['fq'].append("rels_isMemberOfCollection:info\:fedora/"+escaped_coll)
-
-
-        # content model / type selection
-        if form.content_model.data:
-            print "Content Model refinement:",form.content_model.data
-            escaped_cm = form.content_model.data.replace(":","\:")
-            query['fq'].append("rels_hasContentModel:"+escaped_cm)
+#         # Fedora RELS-EXT
+#         # collection selection
+#         if form.collection_object.data:
+#             print "Collection refinement:",form.collection_object.data
+#             escaped_coll = form.collection_object.data.replace(":","\:")
+#             query['fq'].append("rels_isMemberOfCollection:info\:fedora/"+escaped_coll)
 
 
+#         # content model / type selection
+#         if form.content_model.data:
+#             print "Content Model refinement:",form.content_model.data
+#             escaped_cm = form.content_model.data.replace(":","\:")
+#             query['fq'].append("rels_hasContentModel:"+escaped_cm)
 
-        # issue query
-        print query
-        stime = time.time()
-        q_results = solr_handle.search(**query)
-        etime = time.time()
-        ttime = (etime - stime) * 1000
-        print "Solr Query took:",ttime,"ms"
-        output_dict = {}
-        data = []
-        stime = time.time()
-        for each in q_results.documents:
-            try:
-                PID = each['id'].encode('ascii','ignore')
-                try:
-                    dc_title = each['dc_title'][0].encode('ascii','ignore')
-                except:
-                    dc_title = "None"
-                data.append([PID,dc_title])
-            except:
-                print "Could not render:",each['id'] #unicdoe solr id
-        etime = time.time()
-        ttime = (etime - stime) * 1000
-        print "Solr Munging for DataTables took::",ttime,"ms"
 
-        output_dict['data'] = data
-        json_output = json.dumps(data)
 
-        return render_template("PIDSolr.html",username=username, form=form, q_results=q_results, json_output=json_output, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
+#         # issue query
+#         print query
+#         stime = time.time()
+#         q_results = solr_handle.search(**query)
+#         etime = time.time()
+#         ttime = (etime - stime) * 1000
+#         print "Solr Query took:",ttime,"ms"
+#         output_dict = {}
+#         data = []
+#         stime = time.time()
+#         for each in q_results.documents:
+#             try:
+#                 PID = each['id'].encode('ascii','ignore')
+#                 try:
+#                     dc_title = each['dc_title'][0].encode('ascii','ignore')
+#                 except:
+#                     dc_title = "None"
+#                 data.append([PID,dc_title])
+#             except:
+#                 print "Could not render:",each['id'] #unicdoe solr id
+#         etime = time.time()
+#         ttime = (etime - stime) * 1000
+#         print "Solr Munging for DataTables took::",ttime,"ms"
 
-    # pass the current PIDs to page as list
-    return render_template("PIDSolr.html",username=username, form=form, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
+#         output_dict['data'] = data
+#         json_output = json.dumps(data)
+
+#         return render_template("PIDSolr.html",username=username, form=form, q_results=q_results, json_output=json_output, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
+
+#     # pass the current PIDs to page as list
+#     return render_template("PIDSolr.html",username=username, form=form, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
 
 
 # PID check for user
@@ -1648,6 +1648,23 @@ def add_object_search():
         "tag_group":tag_group
         })
 
+
+@app.route("/selectObjects/workspace.json", methods=['POST', 'GET'])
+@login_required
+@roles.auth(['admin','metadata','view'])
+def workspace_json():
+
+    # get username from session
+    username = session['username']
+
+    # gen group list
+    user_pid_groups = db.session.query(models.user_pids).filter(models.user_pids.username == username).group_by("group_name")
+    group_names = [ each.group_name.encode('ascii','ignore') for each in user_pid_groups ]
+    print group_names
+
+    return jsonify({
+        'groups':group_names
+    })
 
 
 # WSUDOR MANAGEMENT

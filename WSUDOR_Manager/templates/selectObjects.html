@@ -1,10 +1,6 @@
 
 {% include 'header.html' %}
 
-<!-- 1.10.12, if needed -->
-<script type="text/javascript" src="http://metadata.library.wayne.edu/oaiglow/inc/datatables/jquery.dataTables.min.js"></script>
-
-
 <!-- header -->
 <div class="row">
     <div class="col-md-12">
@@ -233,9 +229,8 @@
         <!-- select objects -->
         <div role="tabpanel" class="col-md-12 tab-pane fade in {% if task == 'select' %}active{% endif %}" id="select">
             
-            <div class="row">
-                <div class="col-md-6">
-                    <h2>Actions</h2>
+            <div style="margin-top:20px;" class="row">
+                <div class="col-md-12">
                     <p>Below, select and deselect currently active objects in your Workspace.  When running batch jobs, all "active" objects in your workspace will be included in the queue.</p>
                     <ul>
                         <li><a href="#" onclick="PIDmanageAction('s_all'); return false;">Select All</a></li>      
@@ -244,12 +239,7 @@
                        
                         <li>        
                             Toggle Group:
-                            <select id="group_name" name="group_name" onchange="PIDmanageAction('group_toggle'); return false;">
-                                <option>Select a group...</option>
-                                {% for group_name in group_names %}
-                                    <option value="{{group_name}}">{{group_name}}</option>
-                                {% endfor %}
-                            </select>        
+                            <select id="toggle_group" class="object_groups" name="group_name" onchange="PIDmanageAction('group_toggle'); $(this).prop('selectedIndex',0); return false;"></select>        
                         </li>
                         <li><a href="#" onclick="PIDmanageAction('s_del'); return false;">Remove Selected Objects from Workspace</a></li>
                     </ul>
@@ -258,12 +248,7 @@
 
             <div id="selection_table" class="row" style="margin-top:20px;">
                 <div class="col-md-12">
-                    <select id="group_filter" name="group_filter" onchange="filterGroup();">
-                        <option value="">Filter by group...</option>
-                        {% for group_name in group_names %}
-                            <option value="{{group_name}}">{{group_name}}</option>
-                        {% endfor %}
-                    </select>
+                    <select id="filter_group" class="object_groups" name="group_filter" onchange="filterGroup();"></select>
                     <table id="PIDtable" class="display" cellspacing="0" width="100%">
                         <thead>
                             <tr>            
@@ -337,9 +322,29 @@
                             $(row).addClass('selected');                
                         }
                     },
-                    start:1
+                    start:1,
+                    drawCallback: workspace_post_draw,
+                    // initComplete: function () {
+                    //     this.api().columns().every( function () {
+                    //         var column = this;
+                    //         var select = $('<select><option value=""></option></select>')
+                    //             .appendTo( $(column.footer()).empty() )
+                    //             .on( 'change', function () {
+                    //                 var val = $.fn.dataTable.util.escapeRegex(
+                    //                     $(this).val()
+                    //                 );
+             
+                    //                 column
+                    //                     .search( val ? val : '', true, false )
+                    //                     .draw();
+                    //             } );
+             
+                    //         column.data().unique().sort().each( function ( d, j ) {
+                    //             select.append( '<option value="'+d+'">'+d+'</option>' )
+                    //         } );
+                    //     } );
+                    // }
                 } );
-                
 
                 // row select toggle
                 $('#PIDtable tbody').on('click', 'tr', function () {        
@@ -356,9 +361,8 @@
 
             function PIDmanageAction(action){
 
-
                 if (action == "group_toggle"){      
-                    data = {"group_name":$("#group_name").val()}
+                    data = {"group_name":$("#toggle_group").val()}
                     console.log(data);
                     $.ajax({
                         url: "/{{APP_PREFIX}}/PIDmanageAction/"+action,      
@@ -388,22 +392,61 @@
                     url: "/{{APP_PREFIX}}/PIDRowUpdate/"+id+"/delete/delete",
                     }).done(function() {
                         $(this).toggleClass('selected');
-                        table_handle.draw();            
+                        table_handle.draw();
                     });
             }   
 
             // filter by gruop
             function filterGroup(){
-                table_handle.column(4).search($("#group_filter").val()).draw(false);
+                table_handle.column(4).search($("#filter_group").val()).draw(false);
             }
 
             // fire
             $(document).ready(function(){
+
+                // original table draw
                 paintTable("{{username}}","{{localConfig.DATATABLES_HANDLE}}");
+
+                // populate groups everywhere
+                populateGroups();
+
+                // listener for tab being selected
+                 $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                    var target = $(e.target).attr("href");
+                    console.log(target);
+                    if ((target == '#select')) {
+                        console.log('updating userworkspace');
+                        // redraw table
+                        table_handle.draw();
+                        // populate groups everywhere
+                        populateGroups();
+                    }
+                });
+
             });
 
+            function populateGroups(){
 
+                $.ajax({
+                  url: "/{{APP_PREFIX}}/selectObjects/workspace.json",
+                  context: document.body
+                }).done(function(data) {
+                  $.each($(".object_groups"), function() {
+                    $(this).empty();
+                    this.append(new Option("Select a group...",''));
+                    for (var i = 0; i < data.groups.length; i++) {
+                        $(this).append(new Option(data.groups[i], data.groups[i]));
+                    };
+                  });
 
+                });
+
+            }
+
+            function workspace_post_draw(settings){
+                // populate groups everywhere
+                // populateGroups();
+            }
 
         </script>
 

@@ -24,6 +24,9 @@ from collections import deque
 import struct
 from PIL import Image
 import logging
+import ssl
+import operator
+from dateutil import parser
 
 # library for working with LOC BagIt standard
 import bagit
@@ -1623,19 +1626,41 @@ class WSUDOR_GenObject(object):
 
 	# return timeline
 	def timeline(self):
-		pass
-		# from dateutil import parser
-		# http://stackoverflow.com/questions/5166842/sort-dates-in-python-array
-		# condition check
-		# results in status = status
-		# append to dictionary
-		# daDict = {
-		# 	"creation" : str(fedora_handle.get_object("wayne:LincolnLettersFHC205771").getProfile().created), 
-		# 	"last_modified_fedora" : str(fedora_handle.get_object("wayne:LincolnLettersFHC205771").getProfile().modified),
-		# 	"last_modified_solr" : str(),
-		# 	"cached_in_varnish" : str("curl -"),
-		# 	"status" : status
-		# }
+
+		# get dates
+		initial_ingest = str(fedora_handle.get_object(self.pid).getProfile().created)
+		fedora = str(fedora_handle.get_object(self.pid).getProfile().modified)
+		search_string = self.pid.replace(":","\:")
+		solr = solr_handle.search(**{"q":search_string}).documents[0]['solr_modifiedDate']
+		varnish = urlopen("https://localhost/item/" + self.pid, context=ssl._create_unverified_context()).headers['date']
+		# standardize dates
+		initial_ingest = parser.parse(initial_ingest).ctime()
+		fedora = parser.parse(fedora).ctime()
+		solr = parser.parse(solr).ctime()
+		varnish = parser.parse(varnish).ctime()
+		# organize dates
+		timeline = {
+			"initial_ingest" : initial_ingest, 
+			"fedora" : fedora,
+			"solr" : solr,
+			"varnish" : varnish,
+		}
+		timeline = sorted(timeline.items(), key=operator.itemgetter(1), reverse=True)
+		# check order
+		preferred_order = hashlib.md5("initial_ingest"+"fedora"+"solr"+"varnish").digest()
+		actual_order = hashlib.md5(timeline[0][0]+timeline[1][0]+timeline[2][0]+timeline[3][0]).digest()
+		if preferred_order == actual_order:
+			health = True
+			message = "Nothing to Report. Everything looks good."
+		else:
+			health = False
+			message = "Something is amiss. Cache or index might need to be updated."
+		# append messages
+		# timeline.append(("healthy", health))
+		# timeline.append(("message", message))
+		# output activity dates for fedora, solr, and varnish along with a message about caching/indexing status
+		timeline = {"events" : timeline, "healthy" : health, "message" : message}
+		return timeline
 
 	################################################################
 	# Consider moving

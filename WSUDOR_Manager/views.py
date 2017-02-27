@@ -1176,6 +1176,9 @@ def objPreview(PIDnum):
     object_package['OAI_package'] = OAI_dict
     print object_package['OAI_package']
 
+    # timeline
+    object_package['timeline'] = obj_handle.timeline()
+
     # RENDER
     return render_template("objPreview.html", PIDnum=(int(PIDnum)+1), PIDlet=PIDlet, object_package=object_package, localConfig=localConfig)
 

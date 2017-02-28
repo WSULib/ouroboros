@@ -1627,39 +1627,65 @@ class WSUDOR_GenObject(object):
 	# return timeline
 	def timeline(self):
 
-		# get dates
-		initial_ingest = str(fedora_handle.get_object(self.pid).getProfile().created)
-		fedora = str(fedora_handle.get_object(self.pid).getProfile().modified)
-		search_string = self.pid.replace(":","\:")
-		solr = solr_handle.search(**{"q":search_string}).documents[0]['solr_modifiedDate']
-		varnish = urlopen("https://localhost/item/" + self.pid, context=ssl._create_unverified_context()).headers['date']
-		# standardize dates
-		initial_ingest = parser.parse(initial_ingest).ctime()
-		fedora = parser.parse(fedora).ctime()
-		solr = parser.parse(solr).ctime()
-		varnish = parser.parse(varnish).ctime()
-		# organize dates
-		timeline = {
-			"initial_ingest" : initial_ingest, 
-			"fedora" : fedora,
-			"solr" : solr,
-			"varnish" : varnish,
-		}
-		timeline = sorted(timeline.items(), key=operator.itemgetter(1), reverse=True)
+		# closure to organize the timeline creation process
+		def _initialize_timeline(self):
+			# get dates
+			initial_ingest = str(fedora_handle.get_object(self.pid).getProfile().created)
+			fedora = str(fedora_handle.get_object(self.pid).getProfile().modified)
+			search_string = self.pid.replace(":","\:")
+			solr = solr_handle.search(**{"q":search_string}).documents[0]['solr_modifiedDate']
+			varnish = urlopen("https://localhost/item/" + self.pid, context=ssl._create_unverified_context()).headers['date']
+			# standardize dates
+			initial_ingest = parser.parse(initial_ingest).ctime()
+			fedora = parser.parse(fedora).ctime()
+			solr = parser.parse(solr).ctime()
+			varnish = parser.parse(varnish).ctime()
+			# organize dates
+			timeline = OrderedDict([("i", initial_ingest), ("f", fedora), ("s", solr), ("v", varnish)])
+			# return ordered list of tuples in reverse by according to its values (aka timestamps)
+			timeline = sorted(timeline.items, key=lambda x: x[1], reverse=True)
+			return timeline
+
+		def _check_order(timeline):
+			# check order
+			preferred_order = hashlib.md5(str(['i', 'f', 's', 'v'])).digest()
+			actual_order = hashlib.md5(str(timeline.keys)).digest()
+			if preferred_order == actual_order:
+				health = True
+				message = "Nothing to Report. Everything looks good."
+			else:
+				health = False
+				message = "Something is amiss. Cache or index might need to be updated."
+			# append messages
+
+			# output activity dates for fedora, solr, and varnish along with a message about caching/indexing status
+			timeline = {"events" : timeline, "healthy" : health, "message" : message}
+			return timeline
+
+		def _give_front_end_names(timeline):
+			def initial_ingest():
+				pass
+			def fedora_modified():
+				pass
+			def solr():
+				pass
+			def varnish():
+				pass
+
+
+
+			return "stuff"
+
+		# make basic timeline structure
+		timeline = _initialize_timeline(self)
+
 		# check order
-		preferred_order = hashlib.md5("initial_ingest"+"fedora"+"solr"+"varnish").digest()
-		actual_order = hashlib.md5(timeline[0][0]+timeline[1][0]+timeline[2][0]+timeline[3][0]).digest()
-		if preferred_order == actual_order:
-			health = True
-			message = "Nothing to Report. Everything looks good."
-		else:
-			health = False
-			message = "Something is amiss. Cache or index might need to be updated."
-		# append messages
-		# timeline.append(("healthy", health))
-		# timeline.append(("message", message))
+		timeline = _check_order(timeline)
+		print timeline
+		# handle Naming for front-end timeline
+		# handled = _give_front_end_names(checked)
+
 		# output activity dates for fedora, solr, and varnish along with a message about caching/indexing status
-		timeline = {"events" : timeline, "healthy" : health, "message" : message}
 		return timeline
 
 	################################################################

@@ -2,8 +2,6 @@
 <!-- Imports -->
 <script type="text/javascript" src="{{ url_for('static',filename='chartjs/Chart.js')}}"></script>
 
-
-
 <div class="row">
 		<div class="col-md-12">		
 			{% include "PIDiterator.html" %}
@@ -45,7 +43,6 @@
     <!-- Page header -->
     <!-- <div class="page-header"> -->
         <h2>Object Timeline</h2>
-        {{object_package}}
     <!-- </div> -->
     <!-- /Page header -->
 
@@ -57,12 +54,35 @@
 
         <!-- Separator -->
         <div class="separator text-muted">
-            <time>2015-06-30 20:29:27.374000+00:00</time>
+            <time>{{object_package['timeline']['events'][0][1]}}</time>
+        </div>
+        <!-- /Separator -->
+   
+     <!-- Panel -->
+        <article class="panel panel-primary">
+    
+            <!-- Icon -->
+            <div class="panel-heading icon">
+                <i class="glyphicon glyphicon-plus"></i>
+            </div>
+            <!-- /Icon -->
+
+            <!-- Heading -->
+            <div class="panel-heading">
+                <h2 class="panel-title">{{object_package['timeline']['events'][0][0]}}</h2>
+            </div>
+
+        </article>
+        <!-- /Panel -->
+
+        <!-- Separator -->
+        <div class="separator text-muted">
+            <time>{{object_package['timeline']['events'][1][1]}}</time>
         </div>
         <!-- /Separator -->
     
      <!-- Panel -->
-        <article class="panel panel-primary">
+        <article class="panel panel-info">
     
             <!-- Icon -->
             <div class="panel-heading icon">
@@ -72,44 +92,35 @@
     
             <!-- Heading -->
             <div class="panel-heading">
-                <h2 class="panel-title">Ingested Into Repository</h2>
-            </div>
-            <!-- /Heading -->
-                <ul class="list-group">
-                <li class="list-group-item">Last Modified: <time>2017-02-24 13:12:56.677000+00:00</time></li>
-            </ul>
-            <!-- Body -->
-<!--             <div class="panel-body">
-                2017-02-24 15:23:56.677000+00:00
-            </div> -->
-            <!-- /Body -->
-   
+                <h2 class="panel-title">{{object_package['timeline']['events'][1][0]}}</h2>
+            </div> 
     
         </article>
         <!-- /Panel -->
 
+
     
         <!-- Panel -->
-        <article class="panel panel-default panel-outline">
+        <!-- <article class="panel panel-default panel-outline"> -->
     
             <!-- Icon -->
-            <div class="panel-heading icon">
-                <i class="glyphicon glyphicon-picture"></i>
-            </div>
+            <!-- <div class="panel-heading icon"> -->
+                <!-- <i class="glyphicon glyphicon-picture"></i> -->
+            <!-- </div> -->
             <!-- /Icon -->
     
             <!-- Body -->
-            <div class="panel-body">
-            	<a target="_blank" href="http://{{localConfig.APP_HOST}}/item/{{PIDlet.cPID}}"><img class="img-responsive img-rounded" src="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a>
-            </div>
+            <!-- <div class="panel-body"> -->
+            	<!-- <a target="_blank" href="http://{{localConfig.APP_HOST}}/item/{{PIDlet.cPID}}"><img class="img-responsive img-rounded" src="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a> -->
+            <!-- </div> -->
             <!-- /Body -->
     
-        </article>
+        <!-- </article> -->
         <!-- /Panel -->
 
         <!-- Separator -->
         <div class="separator text-muted">
-            <time>2017-02-24 13:13:56.677000+00:00</time>
+            <time>{{object_package['timeline']['events'][2][1]}}</time>
         </div>
         <!-- /Separator -->
     
@@ -124,7 +135,7 @@
     
             <!-- Heading -->
             <div class="panel-heading">
-                <h2 class="panel-title">Cached in Varnish</h2>
+                <h2 class="panel-title">{{object_package['timeline']['events'][2][0]}}</h2>
             </div>
             <!-- /Heading -->   
   
@@ -133,7 +144,7 @@
     
         <!-- Separator -->
         <div class="separator text-muted">
-            <time>2017-02-24 15:23:56.677000+00:00</time>
+            <time>{{object_package['timeline']['events'][3][1]}}</time>
         </div>
         <!-- /Separator -->
     
@@ -148,7 +159,7 @@
     
             <!-- Heading -->
             <div class="panel-heading">
-                <h2 class="panel-title">Indexed in Solr</h2>
+                <h2 class="panel-title">{{object_package['timeline']['events'][3][0]}}</h2>
             </div>
             <!-- /Heading -->   
   
@@ -156,7 +167,7 @@
         <!-- /Panel -->
     
         <!-- Panel -->
-        <article class="panel panel-primary panel-outline">
+        <article id="timeline-temp" data-health="{{object_package['timeline']['healthy']}}" class="panel panel-primary panel-outline">
     
             <!-- Icon -->
             <div class="panel-heading icon">
@@ -166,7 +177,7 @@
     
             <!-- Body -->
             <div class="panel-body">
-                Nothing to report. Looking good.
+                {{object_package['timeline']['message']}}
             </div>
             <!-- /Body -->
     
@@ -506,6 +517,14 @@
 }
 </style>
 
+<script>
+var health = $('#timeline-temp').data()['health'];
+if (health === "False") {
+	var info = document.querySelector('#timeline-temp')
+	info.classList.add("panel-danger");
+	info.classList.remove("panel-primary");
+}
+</script>
 
 <!-- <div class="row">
 	<div class="col-md-12">

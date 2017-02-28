@@ -212,10 +212,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"failed_tests":[]
 		}
 
-		# check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
-		ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
-		if self.objMeta['isRepresentedBy'] not in ds_ids:
-			report_failure(("isRepresentedBy_check","%s is not in %s" % (self.objMeta['isRepresentedBy'], ds_ids)))
+		# # check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
+		# ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
+		# if self.objMeta['isRepresentedBy'] not in ds_ids:
+		# 	report_failure(("isRepresentedBy_check","%s is not in %s" % (self.objMeta['isRepresentedBy'], ds_ids)))
 
 		# check that content_type is a valid ContentType
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():

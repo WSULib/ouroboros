@@ -108,18 +108,24 @@ class CeleryWorker(object):
 	
 	def __init__(self,username):
 		self.username = username
+		if self.username == 'celery':
+			print "celery for indexer, setting concurrency to 10"
+			self.celery_concurrency = 10
+		else:
+			print "celery instance for %s, setting concurrency to %s" % (self.username, localConfig.CELERY_CONCURRENCY)
+			self.celery_concurrency = localConfig.CELERY_CONCURRENCY
 
 	def _writeConfFile(self):
 		print "adding celery conf file"
 		# fire the suprevisor celery worker process
 		celery_process = '''[program:celery-%(username)s]
-command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=10 -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
+command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=%(celery_concurrency)s -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
 directory=/opt/ouroboros
 user = ouroboros
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/celery-%(username)s.err.log
-stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.username, 'CELERY_CONCURRENCY':localConfig.CELERY_CONCURRENCY}
+stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.username, 'celery_concurrency':self.celery_concurrency}
 
 		filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
 		if not os.path.exists(filename):

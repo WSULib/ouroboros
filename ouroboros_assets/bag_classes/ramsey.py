@@ -173,9 +173,10 @@ class BagClass(object):
 		'''
 		Sort list of page numbers, use lowest.
 		'''		
-		page_num_list.sort()
-		print "Setting is represented to page num %s, ds_id %s" % page_num_list[0]
-		self.objMeta_handle.isRepresentedBy = page_num_list[0][1]
+		# page_num_list.sort()
+		# print "Setting is represented to page num %s, ds_id %s" % page_num_list[0]
+		# self.objMeta_handle.isRepresentedBy = page_num_list[0][1]
+		self.objMeta_handle.isRepresentedBy = "IMAGE_1"
 
 		# write known relationships
 		self.objMeta_handle.object_relationships = [				

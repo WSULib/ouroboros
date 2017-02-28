@@ -270,21 +270,24 @@ class WSUDOR_GenObject(object):
 			print e
 
 
-		# initiate IIIF Manifest Factory
-		self.iiif_factory = ManifestFactory()
-		# Where the resources live on the web
-		self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
-		# Where the resources live on disk
-		self.iiif_factory.set_base_prezi_dir("/tmp")
+		try:
+			# initiate IIIF Manifest Factory
+			self.iiif_factory = ManifestFactory()
+			# Where the resources live on the web
+			self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+			# Where the resources live on disk
+			self.iiif_factory.set_base_prezi_dir("/tmp")
 
-		# Default Image API information
-		self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
-		self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
+			# Default Image API information
+			self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+			self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
 
-		# 'warn' will print warnings, default level
-		# 'error' will turn off warnings
-		# 'error_on_warning' will make warnings into errors
-		self.iiif_factory.set_debug("warn")
+			# 'warn' will print warnings, default level
+			# 'error' will turn off warnings
+			# 'error_on_warning' will make warnings into errors
+			self.iiif_factory.set_debug("warn")
+		except:
+			self.iiif_factory = False
 
 
 

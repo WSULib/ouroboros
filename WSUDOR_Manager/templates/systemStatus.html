@@ -107,37 +107,4 @@
 
 <hr>
 
-<div class="row">
-
-	<div class="col-md-12">
-		<h2>Rtail Logs</h2>
-		{% for key, value in sup_info.rtail.iteritems() %}
-				<div class="col-md-6">
-					<h3>{{ key }}</h3>
-					<pre><code class="highlight" id="{{key}}"></code></pre>
-					<script type="text/javascript">
-						var cw = '{{ value|safe }}';
-						console.log(cw)
-						if (cw == "False") {
-							$("#{{key}}").html("not active.");	
-						}
-						else {
-							var cw_JSON = JSON.parse(cw)
-							var str = JSON.stringify(cw_JSON, null, 2);
-							$("#{{key}}").html(str);
-						}
-					</script>
-					{% if value|safe == 'False' %}
-						<a href="/{{APP_PREFIX}}/systemStatus/cw/{{key}}/start"><button class="btn btn-success">Start</button></a>
-					{% else %}
-						<a href="/{{APP_PREFIX}}/systemStatus/cw/{{key}}/restart"><button class="btn btn-warning">Restart</button></a>
-					{% endif %}
-						<a href="/{{APP_PREFIX}}/systemStatus/cw/{{key}}/stop"><button class="btn btn-danger">Stop</button></a>
-				</div>
-		{% endfor %}
-
-	</div>
-
-</div>
-
 {% include 'footer.html' %}

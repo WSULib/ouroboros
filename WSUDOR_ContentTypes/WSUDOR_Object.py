@@ -24,6 +24,9 @@ from collections import deque
 import struct
 from PIL import Image
 import logging
+import ssl
+import operator
+from dateutil import parser
 
 # library for working with LOC BagIt standard
 import bagit
@@ -61,1605 +64,1686 @@ from iiif_prezi.factory import ManifestFactory
 # class factory, returns WSUDOR_GenObject as extended by specific ContentType
 def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 
-	'''
-	Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
-	'''
+    '''
+    Function to determine ContentType, then fire the appropriate subclass to WSUDOR_GenObject
+    '''
 
-	try:
-		# Future WSUDOR object, BagIt object
-		if object_type == "bag":
+    try:
+        # Future WSUDOR object, BagIt object
+        if object_type == "bag":
 
-			# prepare new working dir & recall original
-			working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
-			print "object_type is bag, creating working dir at", working_dir
-			orig_payload = payload
+            # prepare new working dir & recall original
+            working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
+            print "object_type is bag, creating working dir at", working_dir
+            orig_payload = payload
 
-			'''
-			# determine if directory or archive file
-			# if dir, copy to, if archive, decompress and copy
-			# set 'working_dir' to new location in /tmp/Ouroboros
-			'''
-			if os.path.isdir(payload):
-				print "directory detected, symlinking"
-				# shutil.copytree(payload,working_dir)
-				os.symlink(payload, working_dir)
-
-
-			# tar file or gz
-			elif payload.endswith(('.tar','.gz')):
-				print "tar / gz detected, decompressing"
-				tar_handle = tarfile.open(payload,'r')
-				tar_handle.extractall(path=working_dir)
-				payload = working_dir
-
-			elif payload.endswith('zip'):
-				print "zip file detected, unzipping"
-				with zipfile.ZipFile(payload, 'r') as z:
-					z.extractall(working_dir)
-
-			# if the working dir has a sub-dir, assume that's the object directory proper
-			if len(os.listdir(working_dir)) == 1 and os.path.isdir("/".join((working_dir, os.listdir(working_dir)[0]))):
-				print "we got a sub-dir"
-				payload = "/".join((working_dir,os.listdir(working_dir)[0]))
-			else:
-				payload = working_dir
-			print "payload is:",payload
-
-			# read objMeta.json
-			path = payload + '/data/objMeta.json'
-			fhand = open(path,'r')
-			objMeta = json.loads(fhand.read())
-			# only need content_type
-			content_type = objMeta['content_type']
+            '''
+            # determine if directory or archive file
+            # if dir, copy to, if archive, decompress and copy
+            # set 'working_dir' to new location in /tmp/Ouroboros
+            '''
+            if os.path.isdir(payload):
+                print "directory detected, symlinking"
+                # shutil.copytree(payload,working_dir)
+                os.symlink(payload, working_dir)
 
 
-		# Active, WSUDOR object
-		if object_type == "WSUDOR":
+            # tar file or gz
+            elif payload.endswith(('.tar','.gz')):
+                print "tar / gz detected, decompressing"
+                tar_handle = tarfile.open(payload,'r')
+                tar_handle.extractall(path=working_dir)
+                payload = working_dir
 
-			# check if payload actual eulfedora object or string literal, in latter case, attempt to open eul object
-			if type(payload) != eulfedora.models.DigitalObject:
-				payload = fedora_handle.get_object(payload)
+            elif payload.endswith('zip'):
+                print "zip file detected, unzipping"
+                with zipfile.ZipFile(payload, 'r') as z:
+                    z.extractall(working_dir)
 
-			if payload.exists == False:
-				print "Object does not exist, cannot instantiate as WSUDOR type object."
-				return False
+            # if the working dir has a sub-dir, assume that's the object directory proper
+            if len(os.listdir(working_dir)) == 1 and os.path.isdir("/".join((working_dir, os.listdir(working_dir)[0]))):
+                print "we got a sub-dir"
+                payload = "/".join((working_dir,os.listdir(working_dir)[0]))
+            else:
+                payload = working_dir
+            print "payload is:",payload
 
-			# GET WSUDOR_X object content_model
-			'''
-			This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off
-			to use, "Image".  Then, we append that to "WSUDOR_" to get ContentTypes such as "WSUDOR_Image", or "WSUDOR_Collection", etc.
-			'''
-			try:
-				content_types = list(payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel'))
-				if len(content_types) <= 1:
-					content_type = content_types[0].split(":")[-1]
-				else:
-					try:
-						# use preferredContentModel relationship to disambiguate
-						pref_type = list(payload.risearch.get_objects(payload.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel'))
-						pref_type = pref_type[0].split(":")[-1]
-						content_type = pref_type
-					except:
-						print "More than one hasContentModel found, but no preferredContentModel.  Aborting."
-						return False
+            # read objMeta.json
+            path = payload + '/data/objMeta.json'
+            fhand = open(path,'r')
+            objMeta = json.loads(fhand.read())
+            # only need content_type
+            content_type = objMeta['content_type']
 
-				content_type = "WSUDOR_"+str(content_type)
 
-			# fallback, grab straight from OBJMETA datastream / only fires for v2 objects
-			except:
-				if "OBJMETA" in payload.ds_list:
-					print "Race conditions detected, grabbing content_type from objMeta"
-					objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
-					content_type = objmeta['content_type']
+        # Active, WSUDOR object
+        if object_type == "WSUDOR":
 
-		# print "Our content type is:",content_type
+            # check if payload actual eulfedora object or string literal, in latter case, attempt to open eul object
+            if type(payload) != eulfedora.models.DigitalObject:
+                payload = fedora_handle.get_object(payload)
 
-	except Exception,e:
-		print traceback.format_exc()
-		print e
-		return False
+            if payload.exists == False:
+                print "Object does not exist, cannot instantiate as WSUDOR type object."
+                return False
 
-	# need check if valid subclass of WSUDOR_GenObject
-	try:
-		return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload, orig_payload = orig_payload)
-	except:
-		print "Could not find appropriate ContentType, returning False."
-		return False
+            # GET WSUDOR_X object content_model
+            '''
+            This is an important pivot.  We're taking the old ContentModel syntax: "info:fedora/CM:Image", and slicing only the last component off
+            to use, "Image".  Then, we append that to "WSUDOR_" to get ContentTypes such as "WSUDOR_Image", or "WSUDOR_Collection", etc.
+            '''
+            try:
+                content_types = list(payload.risearch.get_objects(payload.uri,'info:fedora/fedora-system:def/relations-external#hasContentModel'))
+                if len(content_types) <= 1:
+                    content_type = content_types[0].split(":")[-1]
+                else:
+                    try:
+                        # use preferredContentModel relationship to disambiguate
+                        pref_type = list(payload.risearch.get_objects(payload.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel'))
+                        pref_type = pref_type[0].split(":")[-1]
+                        content_type = pref_type
+                    except:
+                        print "More than one hasContentModel found, but no preferredContentModel.  Aborting."
+                        return False
+
+                content_type = "WSUDOR_"+str(content_type)
+
+            # fallback, grab straight from OBJMETA datastream / only fires for v2 objects
+            except:
+                if "OBJMETA" in payload.ds_list:
+                    print "Race conditions detected, grabbing content_type from objMeta"
+                    objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
+                    content_type = objmeta['content_type']
+
+        # print "Our content type is:",content_type
+
+    except Exception,e:
+        print traceback.format_exc()
+        print e
+        return False
+
+    # need check if valid subclass of WSUDOR_GenObject
+    try:
+        return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload, orig_payload = orig_payload)
+    except:
+        print "Could not find appropriate ContentType, returning False."
+        return False
 
 
 
 # WSUDOR Generic Object class (designed to be extended by ContentTypes)
 class WSUDOR_GenObject(object):
 
-	'''
-	This class represents an object already present, or destined, for Ouroboros.
-	"object_type" is required for discerning between the two.
-
-	object_type = 'WSUDOR'
-		- object is present in WSUDOR, actions include management and export
-
-	object_type = 'bag'
-		- object is present outside of WSUDOR, actions include primarily ingest and validation
-	'''
-
-	# init
-	############################################################################################################
-	def __init__(self, object_type=False, content_type=False, payload=False, orig_payload=False):
-
-		self.index_on_ingest = True
-
-		self.struct_requirements = {
-			"WSUDOR_GenObject":{
-				"datastreams":[
-					{
-						"id":"THUMBNAIL",
-						"purpose":"Thumbnail of image",
-						"mimetype":"image/jpeg"
-					},
-					{
-						"id":"MODS",
-						"purpose":"Descriptive MODS",
-						"mimetype":"text/xml"
-					},
-					{
-						"id":"RELS-EXT",
-						"purpose":"RDF relationships",
-						"mimetype":"application/rdf+xml"
-					},
-					{
-						"id":"POLICY",
-						"purpose":"XACML Policy",
-						"mimetype":"text/xml"
-					}
-				],
-				"external_relationships":[
-					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
-					"http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy"
-				]
-			}
-		}
-
-		self.orig_payload = orig_payload
-
-		# WSUDOR or BagIt archive for the object returned
-		try:
-
-			# Future WSUDOR object, BagIt object
-			if object_type == "bag":
-				self.object_type = object_type
-
-				# read objMeta.json
-				path = payload + '/data/objMeta.json'
-				fhand = open(path,'r')
-				self.objMeta = json.loads(fhand.read())
-				print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
-
-				# instantiate bag propoerties
-				self.pid = self.objMeta['id']
-				self.label = self.objMeta['label']
-				self.content_type = content_type # use content_type as derived from WSUDOR_Object factory
-
-				# placeholder for future ohandle
-				self.ohandle = None
-
-				# BagIt methods
-				self.Bag = bagit.Bag(payload)
-				self.temp_payload = self.Bag.path
-
-
-			# Active, WSUDOR object
-			if object_type == "WSUDOR":
-
-				# check if payload actual eulfedora object or string literal
-				if type(payload) != eulfedora.models.DigitalObject:
-					payload = fedora_handle.get_object(payload)
-
-				# instantiate WSUDOR propoerties
-				self.object_type = object_type
-				self.pid = payload.pid
-				self.pid_suffix = payload.pid.split(":")[1]
-				self.content_type = content_type
-				self.ohandle = payload
-				# only fires for v2 objects
-				if "OBJMETA" in self.ohandle.ds_list:
-					self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
-
-
-		except Exception,e:
-			print traceback.format_exc()
-			print e
-
-
-		try:
-			# initiate IIIF Manifest Factory
-			self.iiif_factory = ManifestFactory()
-			# Where the resources live on the web
-			self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
-			# Where the resources live on disk
-			self.iiif_factory.set_base_prezi_dir("/tmp")
-
-			# Default Image API information
-			self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
-			self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
-
-			# 'warn' will print warnings, default level
-			# 'error' will turn off warnings
-			# 'error_on_warning' will make warnings into errors
-			self.iiif_factory.set_debug("warn")
-		except:
-			self.iiif_factory = False
-
-
-
-	# Lazy Loaded properties
-	############################################################################################################
-	'''
-	These properties use helpers.LazyProperty decorator, to avoid loading them if not called.
-	'''
-
-	# MODS metadata
-	@helpers.LazyProperty
-	def MODS_XML(self):
-		return self.ohandle.getDatastreamObject('MODS').content.serialize()
-
+    '''
+    This class represents an object already present, or destined, for Ouroboros.
+    "object_type" is required for discerning between the two.
+
+    object_type = 'WSUDOR'
+        - object is present in WSUDOR, actions include management and export
+
+    object_type = 'bag'
+        - object is present outside of WSUDOR, actions include primarily ingest and validation
+    '''
+
+    # init
+    ############################################################################################################
+    def __init__(self, object_type=False, content_type=False, payload=False, orig_payload=False):
+
+        self.index_on_ingest = True
+
+        self.struct_requirements = {
+            "WSUDOR_GenObject":{
+                "datastreams":[
+                    {
+                        "id":"THUMBNAIL",
+                        "purpose":"Thumbnail of image",
+                        "mimetype":"image/jpeg"
+                    },
+                    {
+                        "id":"MODS",
+                        "purpose":"Descriptive MODS",
+                        "mimetype":"text/xml"
+                    },
+                    {
+                        "id":"RELS-EXT",
+                        "purpose":"RDF relationships",
+                        "mimetype":"application/rdf+xml"
+                    },
+                    {
+                        "id":"POLICY",
+                        "purpose":"XACML Policy",
+                        "mimetype":"text/xml"
+                    }
+                ],
+                "external_relationships":[
+                    "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
+                    "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy"
+                ]
+            }
+        }
+
+        self.orig_payload = orig_payload
+
+        # WSUDOR or BagIt archive for the object returned
+        try:
+
+            # Future WSUDOR object, BagIt object
+            if object_type == "bag":
+                self.object_type = object_type
+
+                # read objMeta.json
+                path = payload + '/data/objMeta.json'
+                fhand = open(path,'r')
+                self.objMeta = json.loads(fhand.read())
+                print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
+
+                # instantiate bag propoerties
+                self.pid = self.objMeta['id']
+                self.label = self.objMeta['label']
+                self.content_type = content_type # use content_type as derived from WSUDOR_Object factory
+
+                # placeholder for future ohandle
+                self.ohandle = None
+
+                # BagIt methods
+                self.Bag = bagit.Bag(payload)
+                self.temp_payload = self.Bag.path
+
+
+            # Active, WSUDOR object
+            if object_type == "WSUDOR":
+
+                # check if payload actual eulfedora object or string literal
+                if type(payload) != eulfedora.models.DigitalObject:
+                    payload = fedora_handle.get_object(payload)
+
+                # instantiate WSUDOR propoerties
+                self.object_type = object_type
+                self.pid = payload.pid
+                self.pid_suffix = payload.pid.split(":")[1]
+                self.content_type = content_type
+                self.ohandle = payload
+                # only fires for v2 objects
+                if "OBJMETA" in self.ohandle.ds_list:
+                    self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
+
+
+        except Exception,e:
+            print traceback.format_exc()
+            print e
+
+
+        try:
+            # initiate IIIF Manifest Factory
+            self.iiif_factory = ManifestFactory()
+            # Where the resources live on the web
+            self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+            # Where the resources live on disk
+            self.iiif_factory.set_base_prezi_dir("/tmp")
+
+            # Default Image API information
+            self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+            self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
+
+            # 'warn' will print warnings, default level
+            # 'error' will turn off warnings
+            # 'error_on_warning' will make warnings into errors
+            self.iiif_factory.set_debug("warn")
+        except:
+            self.iiif_factory = False
+
+
+
+    # Lazy Loaded properties
+    ############################################################################################################
+    '''
+    These properties use helpers.LazyProperty decorator, to avoid loading them if not called.
+    '''
+
+    # MODS metadata
+    @helpers.LazyProperty
+    def MODS_XML(self):
+        return self.ohandle.getDatastreamObject('MODS').content.serialize()
+
 
-	@helpers.LazyProperty
-	def MODS_dict(self):
-		return xmltodict.parse(self.MODS_XML)
-
-
-	@helpers.LazyProperty
-	def MODS_Solr_flat(self):
-		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/MODS_extract.xsl','r')
-		xslt_tree = etree.parse(XSLhand)
-		transform = etree.XSLT(xslt_tree)
-		XMLroot = etree.fromstring(self.MODS_XML)
-		SolrXML = transform(XMLroot)
-		return xmltodict.parse(str(SolrXML))
-
-
-	#DC metadata
-	@helpers.LazyProperty
-	def DC_XML(self):
-		return self.ohandle.getDatastreamObject('DC').content.serialize()
-
-
-	@helpers.LazyProperty
-	def DC_dict(self):
-		return xmltodict.parse(self.DC_XML)
-
-
-	@helpers.LazyProperty
-	def DC_Solr_flat(self):
-		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/DC_extract.xsl','r')
-		xslt_tree = etree.parse(XSLhand)
-		transform = etree.XSLT(xslt_tree)
-		XMLroot = etree.fromstring(self.DC_XML)
-		SolrXML = transform(XMLroot)
-		return xmltodict.parse(str(SolrXML))
-
-
-	#RELS-EXT and RELS-INT metadata
-	@helpers.LazyProperty
-	def RELS_EXT_Solr_flat(self):
-		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
-		xslt_tree = etree.parse(XSLhand)
-		transform = etree.XSLT(xslt_tree)
-		# raw, unmodified RDF
-		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (self.pid)
-		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
-		XMLroot = etree.fromstring(raw_xml)
-		SolrXML = transform(XMLroot)
-		return xmltodict.parse(str(SolrXML))
+    @helpers.LazyProperty
+    def MODS_dict(self):
+        return xmltodict.parse(self.MODS_XML)
+
+
+    @helpers.LazyProperty
+    def MODS_Solr_flat(self):
+        # flattens MODS with GSearch XSLT and loads as dictionary
+        XSLhand = open('inc/xsl/MODS_extract.xsl','r')
+        xslt_tree = etree.parse(XSLhand)
+        transform = etree.XSLT(xslt_tree)
+        XMLroot = etree.fromstring(self.MODS_XML)
+        SolrXML = transform(XMLroot)
+        return xmltodict.parse(str(SolrXML))
+
+
+    #DC metadata
+    @helpers.LazyProperty
+    def DC_XML(self):
+        return self.ohandle.getDatastreamObject('DC').content.serialize()
+
+
+    @helpers.LazyProperty
+    def DC_dict(self):
+        return xmltodict.parse(self.DC_XML)
+
+
+    @helpers.LazyProperty
+    def DC_Solr_flat(self):
+        # flattens MODS with GSearch XSLT and loads as dictionary
+        XSLhand = open('inc/xsl/DC_extract.xsl','r')
+        xslt_tree = etree.parse(XSLhand)
+        transform = etree.XSLT(xslt_tree)
+        XMLroot = etree.fromstring(self.DC_XML)
+        SolrXML = transform(XMLroot)
+        return xmltodict.parse(str(SolrXML))
+
+
+    #RELS-EXT and RELS-INT metadata
+    @helpers.LazyProperty
+    def RELS_EXT_Solr_flat(self):
+        # flattens MODS with GSearch XSLT and loads as dictionary
+        XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
+        xslt_tree = etree.parse(XSLhand)
+        transform = etree.XSLT(xslt_tree)
+        # raw, unmodified RDF
+        raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (self.pid)
+        raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+        XMLroot = etree.fromstring(raw_xml)
+        SolrXML = transform(XMLroot)
+        return xmltodict.parse(str(SolrXML))
 
 
-	@helpers.LazyProperty
-	def RELS_INT_Solr_flat(self):
-		# flattens MODS with GSearch XSLT and loads as dictionary
-		XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
-		xslt_tree = etree.parse(XSLhand)
-		transform = etree.XSLT(xslt_tree)
-		# raw, unmodified RDF
-		raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-INT/content" % (self.pid)
-		raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
-		XMLroot = etree.fromstring(raw_xml)
-		SolrXML = transform(XMLroot)
-		return xmltodict.parse(str(SolrXML))
+    @helpers.LazyProperty
+    def RELS_INT_Solr_flat(self):
+        # flattens MODS with GSearch XSLT and loads as dictionary
+        XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
+        xslt_tree = etree.parse(XSLhand)
+        transform = etree.XSLT(xslt_tree)
+        # raw, unmodified RDF
+        raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-INT/content" % (self.pid)
+        raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+        XMLroot = etree.fromstring(raw_xml)
+        SolrXML = transform(XMLroot)
+        return xmltodict.parse(str(SolrXML))
 
 
-	# SolrDoc class
-	@helpers.LazyProperty
-	def SolrDoc(self):
-		return models.SolrDoc(self.pid)
+    # SolrDoc class
+    @helpers.LazyProperty
+    def SolrDoc(self):
+        return models.SolrDoc(self.pid)
 
 
-	# SolrSearchDoc class
-	@helpers.LazyProperty
-	def SolrSearchDoc(self):
-		return models.SolrSearchDoc(self.pid)
+    # SolrSearchDoc class
+    @helpers.LazyProperty
+    def SolrSearchDoc(self):
+        return models.SolrSearchDoc(self.pid)
 
 
-	# return IIIF maniest
-	@helpers.LazyProperty
-	def iiif_manifest(self, format='string'):		
-		return self.ohandle.getDatastreamObject('IIIF_MANIFEST').content
+    # return IIIF maniest
+    @helpers.LazyProperty
+    def iiif_manifest(self, format='string'):       
+        return self.ohandle.getDatastreamObject('IIIF_MANIFEST').content
 
 
-	@helpers.LazyProperty
-	def objSizeDict(self):
+    @helpers.LazyProperty
+    def objSizeDict(self):
 
-		'''
-		Begin storing in Redis.
-		If not stored, generate and store.
-		If stored, return.
+        '''
+        Begin storing in Redis.
+        If not stored, generate and store.
+        If stored, return.
 
-		Improvement: need to provide method for updating
+        Improvement: need to provide method for updating
 
-		Also, needs to include components...
+        Also, needs to include components...
 
-		'''
+        '''
 
-		# check Redis for object size dictionary
-		r_response = redisHandles.r_catchall.get(self.pid)
-		if r_response != None:
-			print "object size dictionary located and retrieved from Redis"
-			return ast.literal_eval(r_response)
+        # check Redis for object size dictionary
+        r_response = redisHandles.r_catchall.get(self.pid)
+        if r_response != None:
+            print "object size dictionary located and retrieved from Redis"
+            return ast.literal_eval(r_response)
 
-		else:
-			print "generating object size dictionary, storing in redis, returning"
+        else:
+            print "generating object size dictionary, storing in redis, returning"
 
-			size_dict = {}
-			tot_size = 0
+            size_dict = {}
+            tot_size = 0
 
-			# loop through datastreams, append size to return dictionary
-			for ds in self.ohandle.ds_list:
-				ds_handle = self.ohandle.getDatastreamObject(ds)
-				ds_size = ds_handle.size
-				tot_size += ds_size
-				size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+            # loop through datastreams, append size to return dictionary
+            for ds in self.ohandle.ds_list:
+                ds_handle = self.ohandle.getDatastreamObject(ds)
+                ds_size = ds_handle.size
+                tot_size += ds_size
+                size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
 
-			# loop through constituents and add as well
-			if len(self.constituents) > 0:
-				constituent_objects_size = 0
-				for obj in self.constituents:
-					for ds in obj.ds_list:
-						ds_handle = obj.getDatastreamObject(ds)
-						ds_size = ds_handle.size
-						constituent_objects_size += ds_size
-				size_dict['constituent_objects'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
-				tot_size += constituent_objects_size
+            # loop through constituents and add as well
+            if len(self.constituents) > 0:
+                constituent_objects_size = 0
+                for obj in self.constituents:
+                    for ds in obj.ds_list:
+                        ds_handle = obj.getDatastreamObject(ds)
+                        ds_size = ds_handle.size
+                        constituent_objects_size += ds_size
+                size_dict['constituent_objects'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+                tot_size += constituent_objects_size
 
-			size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+            size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
 
-			# store in Redis
-			redisHandles.r_catchall.set(self.pid, size_dict)
+            # store in Redis
+            redisHandles.r_catchall.set(self.pid, size_dict)
 
-			# return
-			return size_dict
+            # return
+            return size_dict
 
 
-	def update_objSizeDict(self):
+    def update_objSizeDict(self):
 
-		# clear from Redis
-		print "clearing previous entry in Redis"
-		redisHandles.r_catchall.delete(self.pid)
+        # clear from Redis
+        print "clearing previous entry in Redis"
+        redisHandles.r_catchall.delete(self.pid)
 
-		print "regenerating and returning"
-		return self.objSizeDict
+        print "regenerating and returning"
+        return self.objSizeDict
 
 
-	#######################################################
-	# RDF Relationships
-	#######################################################
+    #######################################################
+    # RDF Relationships
+    #######################################################
 
-	# constituent objects
-	@helpers.LazyProperty
-	def constituents(self):
+    # constituent objects
+    @helpers.LazyProperty
+    def constituents(self):
 
-		'''
-		Returns OrderedDict with pageOrder as key, digital obj as val
-		'''
+        '''
+        Returns OrderedDict with pageOrder as key, digital obj as val
+        '''
 
-		# get ordered, constituent objs
-		sparql_response = fedora_handle.risearch.sparql_query('select $constituent WHERE {{ $constituent <info:fedora/fedora-system:def/relations-external#isConstituentOf> <info:fedora/%s> . }}' % (self.pid))
-		constituent_objects = [ fedora_handle.get_object(obj['constituent']) for obj in sparql_response ]		
-		return constituent_objects
+        # get ordered, constituent objs
+        sparql_response = fedora_handle.risearch.sparql_query('select $constituent WHERE {{ $constituent <info:fedora/fedora-system:def/relations-external#isConstituentOf> <info:fedora/%s> . }}' % (self.pid))
+        constituent_objects = [ fedora_handle.get_object(obj['constituent']) for obj in sparql_response ]       
+        return constituent_objects
 
 
-	# collection members
-	@helpers.LazyProperty
-	def collectionMembers(self):
+    # collection members
+    @helpers.LazyProperty
+    def collectionMembers(self):
 
-		'''
-		Returns PIDs that are members
-		'''
+        '''
+        Returns PIDs that are members
+        '''
 
-		# get all members
-		return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri))
+        # get all members
+        return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri))
 
 
-	# rels-int, partOf
-	@helpers.LazyProperty
-	def hasInternalParts(self):
+    # rels-int, partOf
+    @helpers.LazyProperty
+    def hasInternalParts(self):
 
-		'''
-		returns datastreams that are rels-int:partOf object
-		'''
-		
-		sparql_response = fedora_handle.risearch.sparql_query('select $s WHERE {{ $s <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s> . }}' % (self.pid))
-		parts = [ fedora_handle.get_object(obj['s']) for obj in sparql_response ]
-		parts = [ part.pid.split("/")[-1] for part in parts ]
-		return parts
+        '''
+        returns datastreams that are rels-int:partOf object
+        '''
+        
+        sparql_response = fedora_handle.risearch.sparql_query('select $s WHERE {{ $s <info:fedora/fedora-system:def/relations-internal#isPartOf> <info:fedora/%s> . }}' % (self.pid))
+        parts = [ fedora_handle.get_object(obj['s']) for obj in sparql_response ]
+        parts = [ part.pid.split("/")[-1] for part in parts ]
+        return parts
 
 
-	# hasMemberOf
-	@helpers.LazyProperty
-	def hasMemberOf(self):
+    # hasMemberOf
+    @helpers.LazyProperty
+    def hasMemberOf(self):
 
-		'''
-		returns subjecst that are isMember of object
-		'''
+        '''
+        returns subjecst that are isMember of object
+        '''
 
-		# get all members
-		return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOf', self.ohandle.uri))
+        # get all members
+        return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOf', self.ohandle.uri))
 
 
-	# isMemberOfCollection
-	@helpers.LazyProperty
-	def isMemberOfCollections(self):
+    # isMemberOfCollection
+    @helpers.LazyProperty
+    def isMemberOfCollections(self):
 
-		'''
-		returns list of collections object belongs to
-		'''
-		if 'rels_isMemberOfCollection' in self.SolrDoc.asDictionary():
-			return self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
-		else:
-			return False
+        '''
+        returns list of collections object belongs to
+        '''
+        if 'rels_isMemberOfCollection' in self.SolrDoc.asDictionary():
+            return self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+        else:
+            return False
 
 
-	# learning objects
-	@helpers.LazyProperty
-	def hasLearningObjects(self):
+    # learning objects
+    @helpers.LazyProperty
+    def hasLearningObjects(self):
 
-		# get collections
-		sparql_query = "select $lo_title $lo_uri from <#ri> where { $lo_uri <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/learningObjectFor> <fedora:%s> . $lo_uri <http://purl.org/dc/elements/1.1/title> $lo_title . }" % self.pid
-		learning_objects = list(fedora_handle.risearch.sparql_query(sparql_query))
-		return learning_objects
+        # get collections
+        sparql_query = "select $lo_title $lo_uri from <#ri> where { $lo_uri <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/learningObjectFor> <fedora:%s> . $lo_uri <http://purl.org/dc/elements/1.1/title> $lo_title . }" % self.pid
+        learning_objects = list(fedora_handle.risearch.sparql_query(sparql_query))
+        return learning_objects
 
 
 
-	# object triples
-	@helpers.LazyProperty
-	def rdf_triples(self):
-		return list(self.ohandle.rels_ext.content)
+    # object triples
+    @helpers.LazyProperty
+    def rdf_triples(self):
+        return list(self.ohandle.rels_ext.content)
 
 
 
-	# WSUDOR_Object Methods
-	############################################################################################################
-	# generic, simple ingest
-	def ingestBag(self, indexObject=True):
-		if self.object_type != "bag":
-			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
+    # WSUDOR_Object Methods
+    ############################################################################################################
+    # generic, simple ingest
+    def ingestBag(self, indexObject=True):
+        if self.object_type != "bag":
+            raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
 
-		# ingest Volume object
-		try:
-			self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
-			self.ohandle.save()
+        # ingest Volume object
+        try:
+            self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
+            self.ohandle.save()
 
-			# set base properties of object
-			self.ohandle.label = self.objMeta['label']
+            # set base properties of object
+            self.ohandle.label = self.objMeta['label']
 
-			# write POLICY datastream (NOTE: 'E' management type required, not 'R')
-			print "Using policy:",self.objMeta['policy']
-			policy_suffix = self.objMeta['policy']
-			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
-			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
-			policy_handle.label = "POLICY"
-			policy_handle.save()
+            # write POLICY datastream (NOTE: 'E' management type required, not 'R')
+            print "Using policy:",self.objMeta['policy']
+            policy_suffix = self.objMeta['policy']
+            policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
+            policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
+            policy_handle.label = "POLICY"
+            policy_handle.save()
 
-			# write objMeta as datastream
-			objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
-			objMeta_handle.label = "Ingest Bag Object Metadata"
-			objMeta_handle.content = json.dumps(self.objMeta)
-			objMeta_handle.save()
+            # write objMeta as datastream
+            objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+            objMeta_handle.label = "Ingest Bag Object Metadata"
+            objMeta_handle.content = json.dumps(self.objMeta)
+            objMeta_handle.save()
 
-			# write explicit RELS-EXT relationships
-			for relationship in self.objMeta['object_relationships']:
-				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
-				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
+            # write explicit RELS-EXT relationships
+            for relationship in self.objMeta['object_relationships']:
+                print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+                self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 
-			# writes derived RELS-EXT
-			content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]
-			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
+            # writes derived RELS-EXT
+            content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]
+            self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
-			# write MODS datastream if MODS.xml exists
-			if os.path.exists(self.Bag.path + "/data/MODS.xml"):
-				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
-				MODS_handle.label = "MODS descriptive metadata"
-				file_path = self.Bag.path + "/data/MODS.xml"
-				MODS_handle.content = open(file_path)
-				MODS_handle.save()
+            # write MODS datastream if MODS.xml exists
+            if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+                MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+                MODS_handle.label = "MODS descriptive metadata"
+                file_path = self.Bag.path + "/data/MODS.xml"
+                MODS_handle.content = open(file_path)
+                MODS_handle.save()
 
-			else:
-				# write generic MODS datastream
-				MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
-				MODS_handle.label = "MODS descriptive metadata"
+            else:
+                # write generic MODS datastream
+                MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+                MODS_handle.label = "MODS descriptive metadata"
 
-				raw_MODS = '''
+                raw_MODS = '''
 <mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
   <mods:titleInfo>
-	<mods:title>%s</mods:title>
+    <mods:title>%s</mods:title>
   </mods:titleInfo>
   <mods:identifier type="local">%s</mods:identifier>
   <mods:extension>
-	<PID>%s</PID>
+    <PID>%s</PID>
   </mods:extension>
 </mods:mods>
-				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
-				print raw_MODS
-				MODS_handle.content = raw_MODS
-				MODS_handle.save()
-
-			# save and commit object before finishIngest()
-			final_save = self.ohandle.save()
-
-			# finish generic ingest
-			return self.finishIngest(indexObject=indexObject)
-
-
-		# exception handling
-		except Exception,e:
-			print traceback.format_exc()
-			print "Volume Ingest Error:",e
-			return False
-
-
-	# function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
-	def finishIngest(self, indexObject=True, gen_manifest=False, contentTypeMethods=[]):
-
-		# as object finishes ingest, it can be granted eulfedora methods, its 'ohandle' attribute
-		if self.ohandle != None:
-			self.ohandle = fedora_handle.get_object(self.objMeta['id'])
-
-		# pull in BagIt metadata as BAG_META datastream tarball
-		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".tar"
-		tar_handle = tarfile.open(temp_filename,'w')
-		for bag_meta_file in ['bag-info.txt','bagit.txt','manifest-md5.txt','tagmanifest-md5.txt']:
-			tar_handle.add(self.Bag.path + "/" + bag_meta_file, recursive=False, arcname=bag_meta_file)
-		tar_handle.close()
-		bag_meta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "BAGIT_META", "BagIt Metadata Tarball", mimetype="application/x-tar", control_group='M')
-		bag_meta_handle.label = "BagIt Metadata Tarball"
-		bag_meta_handle.content = open(temp_filename)
-		bag_meta_handle.save()
-		os.system('rm %s' % (temp_filename))
-
-		# derive Dublin Core from MODS, update DC datastream
-		self.DCfromMODS()
-
-		# Write isWSUDORObject RELS-EXT relationship
-		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
-
-		# if gen_manifest set, generate IIIF Manifest
-		if gen_manifest == True:
-			try:
-				self.genIIIFManifest(on_demand=True)
-			except:
-				print "failed on generating IIIF manifest"
-
-		# register with OAI
-		self.registerOAI()
-
-		# the following methods are not needed when objects are "passing through"
-		if indexObject:
-
-			# Index in Solr (can override from command by setting self.index_on_ingest to False)
-			if self.index_on_ingest != False:
-				self.indexToSolr()
-			else:
-				print "Skipping Solr Index"
-
-			# index object size
-			self.update_objSizeDict()
-
-			# run all ContentType specific methods that were passed here
-			print "RUNNING ContentType methods..."
-			for func in contentTypeMethods:
-				func()
-
-		else:
-			print "skipping index of object"
-
-		# CLEANUP
-		# delete temp_payload, might be dir or symlink
-		try:
-			print "removing temp_payload directory"
-			shutil.rmtree(self.temp_payload)
-		except OSError, e:
-			# might be symlink
-			print "removing temp_payload symlink"
-			os.unlink(self.temp_payload)
-
-		# finally, return
-		return True
-
-
-	# def exportBag(self, job_package=False, returnTargetDir=False, preserveRelationships=True):
-
-	# 	'''
-	# 	Target Example:
-	# 	.
-	# 	├── bag-info.txt
-	# 	├── bagit.txt
-	# 	├── data
-	# 	│   ├── datastreams
-	# 	│   │   ├── roots.jpg
-	# 	│   │   └── trunk.jpg
-	# 	│   ├── MODS.xml
-	# 	│   └── objMeta.json
-	# 	├── manifest-md5.txt
-	# 	└── tagmanifest-md5.txt
-	# 	'''
-
-	# 	# get PID
-	# 	PID = self.pid
-
-	# 	# create temp dir structure
-	# 	working_dir = "/tmp/Ouroboros/export_bags"
-	# 	# create if doesn't exist
-	# 	if not os.path.exists("/tmp/Ouroboros/export_bags"):
-	# 		os.mkdir("/tmp/Ouroboros/export_bags")
-
-	# 	temp_dir = working_dir + "/" + str(uuid.uuid4())
-	# 	time.sleep(.25)
-	# 	os.system("mkdir %s" % (temp_dir))
-	# 	time.sleep(.25)
-	# 	os.system("mkdir %s/data" % (temp_dir))
-	# 	time.sleep(.25)
-	# 	os.system("mkdir %s/data/datastreams" % (temp_dir))
-
-	# 	# move bagit files to temp dir, and unpack
-	# 	bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
-	# 	bagitIO = StringIO.StringIO(bagit_files)
-	# 	tar_handle = tarfile.open(fileobj=bagitIO)
-	# 	tar_handle.extractall(path=temp_dir)
-
-	# 	# export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
-	# 	def writeDS(write_tuple):
-	# 		ds_id=write_tuple[0]
-	# 		print "WORKING ON",ds_id
-
-	# 		ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
-
-	# 		# skip if empty (might have been removed / condensed, as case with PDFs)
-	# 		if ds_handle.content != None:
-
-	# 			# XML ds model
-	# 			if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
-	# 				print "FIRING XML WRITER"
-	# 				with open(write_tuple[1],'w') as fhand:
-	# 					fhand.write(ds_handle.content.serialize())
-
-	# 			# generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
-	# 			'''
-	# 			Why is this not writing tiffs?
-	# 			'''
-	# 			else:
-	# 				print "FIRING GENERIC WRITER"
-	# 				with open(write_tuple[1],'wb') as fhand:
-	# 					for chunk in ds_handle.get_chunked_content():
-	# 						fhand.write(chunk)
-
-	# 		else:
-	# 			print "Content was NONE for",ds_id,"- skipping..."
-
-
-	# 	# write original datastreams
-	# 	for ds in self.objMeta['datastreams']:
-	# 		print "writing %s" % ds
-	# 		writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
-
-
-	# 	# include RELS
-	# 	if preserveRelationships == True:
-	# 		print "preserving current relationships and writing to RELS-EXT and RELS-INT"
-	# 		for rels_ds in ['RELS-EXT','RELS-INT']:
-	# 			print "writing %s" % rels_ds
-	# 			writeDS((rels_ds,"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
-
-
-	# 	# write MODS and objMeta files
-	# 	simple = [
-	# 		("MODS","%s/data/MODS.xml" % (temp_dir)),
-	# 		("OBJMETA","%s/data/objMeta.json" % (temp_dir))
-	# 	]
-	# 	for ds in simple:
-	# 		writeDS(ds)
-
-	# 	# tarball it up
-	# 	named_dir = self.pid.replace(":","-")
-	# 	os.system("mv %s %s/%s" % (temp_dir, working_dir, named_dir))
-	# 	orig_dir = os.getcwd()
-	# 	os.chdir(working_dir)
-	# 	os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
-	# 	os.system("rm -r %s/%s" % (working_dir, named_dir))
-
-	# 	# move to web accessible location, with username as folder
-	# 	if job_package != False:
-	# 		username = job_package['username']
-	# 	else:
-	# 		username = "consoleUser"
-	# 	target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
-	# 	if os.path.exists(target_dir) == False:
-	# 		os.system("mkdir %s" % (target_dir))
-	# 	os.system("mv %s.tar %s" % (named_dir,target_dir))
-
-	# 	# jump back to original working dir
-	# 	os.chdir(orig_dir)
-
-	# 	if returnTargetDir == True:
-	# 		return "%s/%s.tar" % (target_dir,named_dir)
-	# 	else:
-	# 		return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, username, named_dir)
-
-
-	# # reingest bag
-	# def reingestBag(self, removeExportTar=False, preserveRelationships=True):
-
-	# 	# get PID
-	# 	PID = self.pid
-
-	# 	print "Roundrip Ingesting:",PID
-
-	# 	# export bag, returning the file structure location of tar file
-	# 	export_tar = self.exportBag(returnTargetDir=True, preserveRelationships=preserveRelationships)
-	# 	print "Location of export tar file:",export_tar
-
-	# 	# open bag
-	# 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_tar, object_type='bag')
-
-	# 	# purge self
-	# 	if bag_handle != False:
-	# 		fedora_handle.purge_object(PID)
-	# 	else:
-	# 		print "exported object doesn't look good, aborting purge"
-
-	# 	# reingest exported tar file
-	# 	bag_handle.ingestBag()
-
-	# 	# delete exported tar
-	# 	if removeExportTar == True:
-	# 		print "Removing export tar..."
-	# 		os.remove(export_tar)
-
-	# 	# return
-	# 	return PID,"Reingested."
-
-
-
-	# Solr Indexing
-	def indexToSolr(self, printOnly=False):
-
-		# derive Dublin Core
-		self.DCfromMODS()
-
-		return actions.solrIndexer.solrIndexer('modifyObject', self.pid, human_hash=False, printOnly=printOnly)
-
-
-	def previewSolrDict(self):
-		'''
-		Function to run current WSUDOR object through indexSolr() transforms
-		'''
-		try:
-			return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly=True)
-		except:
-			print "Could not run indexSolr() transform."
-			return False
-
-
-
-	# regnerate derivative JP2s
-	def regenJP2(self, regenIIIFManifest=False, target_ds=None, clear_cache=True):
-		'''
-		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
-		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
-
-		A lot are failing because the TIFFS are compressed, PNG files.  We need a secondary attempt
-		that converts to uncompressed TIFF first.
-		'''
-
-		# iterate through datastreams and look for JP2s
-		if target_ds is None:
-			jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
-		else:
-			jp2_ds_list = [target_ds]
-
-		for i, ds in enumerate(jp2_ds_list):
-
-			print "converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list)))
-
-			# jp2 handle
-			jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
-
-			# get original ds_handle
-			orig = ds.split("_JP2")[0]
-			try:
-				orig_ds_handle = self.ohandle.getDatastreamObject(orig)
-			except:
-				print "could not find original for",orig
-
-			# write temp original and set as inPath
-			guessed_ext = utilities.mimetypes.guess_extension(orig_ds_handle.mimetype)
-			print "guessed extension for temporary orig handle:",guessed_ext
-			temp_orig_handle = Derivative.write_temp_file(orig_ds_handle, suffix=guessed_ext)
-
-			# # gen temp new jp2			
-			jp2 = ImageDerivative(temp_orig_handle.name)
-			jp2_result = jp2.makeJP2()
-
-			if jp2_result:
-				with open(jp2.output_handle.name) as fhand:
-					jp2_ds_handle.content = fhand.read()
-				jp2_ds_handle.save()
-
-				# cleanup
-				jp2.output_handle.unlink(jp2.output_handle.name)
-				temp_orig_handle.unlink(temp_orig_handle.name)
-			else:
-				# cleanup
-				jp2.output_handle.unlink(jp2.output_handle.name)
-				temp_orig_handle.unlink(temp_orig_handle.name)
-				raise Exception("Could not create JP2")
-
-			# if regenIIIFManifest
-			if regenIIIFManifest:
-				print "regenerating IIIF manifest"
-				self.genIIIFManifest()
-
-			if clear_cache:
-				print "clearing cache"
-				self.removeObjFromCache()
-
-			return True
-
-
-	def _checkJP2Codestream(self,ds):
-		print "Checking integrity of JP2 with jpylyzer..."
-
-		temp_filename = "/tmp/Ouroboros/%s.jp2" % uuid.uuid4()
-
-		ds_handle = self.ohandle.getDatastreamObject(ds)
-		with open(temp_filename, 'w') as f:
-			for chunk in ds_handle.get_chunked_content():
-				f.write(chunk)
-
-		# wrap in try block to make sure we remove the file even if jpylyzer fails
-		try:
-			# open jpylyzer handle
-			jpylyzer_handle = jpylyzer.checkOneFile(temp_filename)
-			# check for codestream box
-			codestream_check = jpylyzer_handle.find('properties/contiguousCodestreamBox')
-			# remove temp file
-			os.remove(temp_filename)
-			# good JP2
-			if type(codestream_check) == etpatch.Element:
-				print "codestream found"
-				return True
-			elif type(codestream_check) == None:
-				print "codestream not found"
-				return False
-			else:
-				print "codestream check inconclusive, returning false"
-				return False
-		except:
-			# remove temp file
-			os.remove(temp_filename)
-			print "codestream check inconclusive, returning false"
-			return False
-
-
-
-	# from Loris
-	def _from_jp2(self,jp2):
-
-		'''
-		where 'jp2' is file-like object
-		'''
-
-		b = jp2.read(1)
-		window =  deque([], 4)
-		while ''.join(window) != 'ihdr':
-			b = jp2.read(1)
-			c = struct.unpack('c', b)[0]
-			window.append(c)
-		height = int(struct.unpack(">I", jp2.read(4))[0]) # height (pg. 136)
-		width = int(struct.unpack(">I", jp2.read(4))[0]) # width
-		return (width,height)
-
-
-
-	# from Loris
-	def _extract_with_pillow(self, fp):
-		im = Image.open(fp)
-		width,height = im.size
-		return (width,height)
-
-
-
-	def _imageOrientation(self,dimensions):
-		if dimensions[0] > dimensions[1]:
-			return "landscape"
-		elif dimensions[1] > dimensions[0]:
-			return "portrait"
-		elif dimensions[0] == dimensions[1]:
-			return "square"
-		else:
-			return False
-
-
-	def _checkJP2Orientation(self,ds):
-		print "Checking aspect ratio of JP2 with Loris"
-
-		# check jp2
-		print "checking jp2 dimensions..."
-		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
-		print ds_url
-		uf = urlopen(ds_url)
-		jp2_dimensions = self._from_jp2(uf)
-		print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
-
-		# check original
-		print "checking original dimensions..."
-		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
-		print ds_url
-		uf = urlopen(ds_url)
-		orig_dimensions = self._extract_with_pillow(uf)
-		print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
-
-		if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
-			print "same orientation"
-			return True
-		else:
-			return False
-
-
-	def _checkJP2OrientationAndSize(self, ds):
-		print "Checking aspect ratio and size of %s with Loris" % ds
-
-		# check jp2
-		print "checking jp2 dimensions..."
-		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
-		print ds_url
-		uf = urlopen(ds_url)
-		jp2_dimensions = self._from_jp2(uf)
-		print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
-
-		# check original
-		print "checking original dimensions..."
-		ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
-		print ds_url
-		uf = urlopen(ds_url)
-		orig_dimensions = self._extract_with_pillow(uf)
-		print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
-
-		# check orientation
-		tests = True
-		if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
-			print "same orientation"
-			tests = True
-		else:
-			tests = False
-
-		# check size
-		if jp2_dimensions == orig_dimensions:
-			print "same size"
-			tests = True
-		else:
-			tests = False
-
-		# return tests
-		return tests
-
-
-
-	# regnerate derivative JP2s
-	def checkJP2(self, regenJP2_on_fail=True, tests=['all']):
-
-		'''
-		Function to check health and integrity of JP2s for object
-		Uses jpylyzer library
-		'''
-
-		checks = []
-
-		# iterate through datastreams and look for JP2s
-		jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
-
-		for i,ds in enumerate(jp2_ds_list):
-
-			print "checking %s, %s / %s" % (ds,i,len(jp2_ds_list))
-
-			# check codesteram present
-			if 'all' in tests or 'codestream' in tests:
-				checks.append( self._checkJP2Codestream(ds) )
-
-			# check aspect ratio
-			if 'all' in tests or 'orientation' in tests:
-				checks.append( self._checkJP2OrientationAndSize(ds) )
-
-			print "Final checks:", checks
-
-			# if regen on check fail
-		if regenJP2_on_fail and False in checks:
-			self.regenJP2(regenIIIFManifest=True, target_ds=ds)
-
-
-
-
-
-	def fixJP2(self):
-
-		'''
-		Use checkJP2 to check, fire JP2 if bad
-		'''
-
-		print "Checking integrity of JP2 with jpylyzer..."
-
-		if not self.checkJP2():
-			self.regenJP2()
-
-
-	# # regnerate derivative JP2s
-	# def regen_objMeta(self):
-	# 	'''
-	# 	Function to regen objMeta.  When we decided to let the bag info stored in Fedora not validate,
-	# 	opened up the door for editing the objMeta file if things change.
-
-	# 	Add non-derivative datastreams to objMeta, remove objMeta datastreams that no longer exist
-	# 	'''
-
-	# 	# get list of current datastreams, sans known derivatives
-	# 	new_datastreams = []
-	# 	prunable_datastreams = []
-	# 	original_datastreams = [ ds['ds_id'] for ds in self.objMeta['datastreams'] ]
-	# 	known_derivs = [
-	# 		'BAGIT_META',
-	# 		'DC',
-	# 		'MODS',
-	# 		'OBJMETA',
-	# 		'POLICY',
-	# 		'PREVIEW',
-	# 		'RELS-EXT',
-	# 		'RELS-INT',
-	# 		'THUMBNAIL',
-	# 		'HTML_FULL'
-	# 	]
-	# 	known_suffixes = [
-	# 		'_JP2',
-	# 		'_PREVIEW',
-	# 		'_THUMBNAIL',
-	# 		'_ACCESS'
-	# 	]
-
-	# 	# look for new datastreams not present in objMeta
-	# 	for ds in self.ohandle.ds_list:
-	# 		if ds not in known_derivs and len([suffix for suffix in known_suffixes if ds.endswith(suffix)]) == 0 and ds not in original_datastreams:
-	# 			new_datastreams.append(ds)
-	# 	print "new datastreams:",new_datastreams
-
-	# 	# add new datastream to objMeta
-	# 	for ds in new_datastreams:
-	# 		ds_handle = self.ohandle.ds_list[ds]
-	# 		new_ds = {
-	# 			'ds_id':ds,
-	# 			'filename':ds,
-	# 			'internal_relationships':{},
-	# 			'label':ds_handle.label,
-	# 			'mimetype':ds_handle.mimeType
-	# 		}
-	# 		self.objMeta['datastreams'].append(new_ds)
-
-	# 	# look for datastreams in objMeta that should be removed
-	# 	for ds in self.objMeta['datastreams']:
-	# 		if ds['ds_id'] not in self.ohandle.ds_list:
-	# 			prunable_datastreams.append(ds['ds_id'])
-	# 	print "prunable datastreams",prunable_datastreams
-
-	# 	# prune datastream from objMeta
-	# 	self.objMeta['datastreams'] = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] not in prunable_datastreams ]
-
-	# 	# resulting objMeta datastreams
-	# 	print "Resulting objMeta datastreams",self.objMeta['datastreams']
-
-	# 	# write current objMeta to fedora datastream
-	# 	objMeta_handle = self.ohandle.getDatastreamObject('OBJMETA')
-	# 	objMeta_handle.content = json.dumps(self.objMeta)
-	# 	objMeta_handle.save()
-
-
-	# remove object from Loris, Varnish, and other caches
-	def removeObjFromCache(self):
-
-		results = {}
-
-		# remove from Loris
-		results['loris'] = self._removeObjFromLorisCache()
-
-		# remove from Varnish
-		# results['varnish'] = self._removeObjFromVarnishCache()
-
-		# return results dictionary
-		return results
-
-
-	# remove from Loris cache
-	def _removeObjFromLorisCache(self):
-
-		for ds in self.ohandle.ds_list:
-			self._removeDatastreamFromLorisCache(self.pid, ds)
-
-		# check constituents		
-		if len(self.constituents) > 0:
-			for constituent in self.constituents:
-				try:
-					for ds in constituent.ds_list:
-						self._removeDatastreamFromLorisCache(constituent.pid, ds)
-				except:
-					print "could not remove constituent %s from cache, possible already purged" % constituent
-
-		return True
-
-
-	# remove from Loris cache
-	def _removeObjFromLorisCache(self):
-
-		for ds in self.ohandle.ds_list:
-			self._removeDatastreamFromLorisCache(self.pid, ds)
-
-		# check constituents		
-		if len(self.constituents) > 0:
-			for constituent in self.constituents:
-				for ds in constituent.ds_list:
-					self._removeDatastreamFromLorisCache(constituent.pid, ds)
-
-		return True
-
-
-	# remove from Loris cache
-	def _removeDatastreamFromLorisCache(self, pid, ds):
-
-		'''
-		As we now use Varnish for caching tiles and client<->Loris requests,
-		we cannot ascertain as well the file path of the Loris<->Fedora cache.
-
-		Now, requires datastream to purge from cache.
-		'''
-
-		print "Removing object from Loris caches..."
-
-		# read config file for Loris
-		data = StringIO.StringIO('\n'.join(line.strip() for line in open('/etc/loris2/loris2.conf')))
-		config = ConfigParser.ConfigParser()
-		config.readfp(data)
-
-		# get cache location(s)
-		image_cache = config.get('img.ImageCache','cache_dp').replace("'","")
-		if image_cache.endswith('/'):
-			image_cache = image_cache[:-1]
-
-		# craft ident
-		ident = "fedora:%s|%s" % (pid, ds)
-
-		# clear from fedora resolver cache
-		try:
-			print "removing instance: %s" % ident
-			file_structure = ''
-			ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
-			file_structure_list = [ident_hash[0:2]] + [ident_hash[i:i+3] for i in range(2, len(ident_hash), 3)]
-			for piece in file_structure_list:
-				file_structure = os.path.join(file_structure, piece)
-				final_file_structure = "%s/fedora/wayne/%s" % ( image_cache, file_structure )
-			print "removing dir: %s" % final_file_structure
-			shutil.rmtree(final_file_structure)
-			return True
-		except:
-			print "could not remove from fedora resolver cache"
-			return False
-
-
-
-	# refresh object
-	def objectRefresh(self):
-
-		'''
-		Function to update / refresh object properties requisite for front-end.
-		Runs multiple object methods under one banner.
-
-		Includes following methods:
-		- generate IIIF manifest --> self.genIIIFManifest()
-		- update object size in Solr --> self.update_objSizeDict()
-		- index in Solr --> self.indexToSolr()
-		'''
-		
-		print "-------------------- firing objectRefresh --------------------"
-
-		try:
-			# index in Solr
-			self.indexToSolr()
-
-			# remove object from Loris cache
-			self.removeObjFromCache()
-
-			# generate IIIF manifest
-			self.genIIIFManifest()
-
-			# update object size in Solr
-			self.update_objSizeDict()
-
-			return True
-
-		except:
-			return False
-
-
-	# method to send object to remote repository
-	def sendObject(self, 
-		dest_repo, 
-		export_context='archive', 
-		overwrite=False, 
-		show_progress=False, 
-		refresh_remote=True, 
-		omit_checksums=True, 
-		skip_constituents=False, 
-		refresh_remote_constituents=False):
-
-		'''
-		dest_repo = string key from localConfig for remote repositories credentials
-		'''
-
-		# handle string or eulfedora handle
-		print dest_repo,type(dest_repo)
-		if type(dest_repo) == str or type(dest_repo) == unicode:
-			dest_repo_handle = fedoraHandles.remoteRepo(dest_repo)
-		elif type(dest_repo) == eulfedora.server.Repository:
-			dest_repo_handle = dest_repo
-		else:
-			print "destination eulfedora not found, try again"
-			return False
-			
-		# generate list of objects to send
-		'''
-		This is important if objects have constituent objects, need to send them too
-		'''
-		
-		# init list
-		sync_list = [self.pid]
-		
-		# if not skipping constituents, check for them
-		if not skip_constituents:
-			constituents = fedora_handle.risearch.spo_search(None, "fedora-rels-ext:isConstituentOf", "info:fedora/%s" % self.pid)
-			if len(constituents) > 0:
-				for constituent in constituents:
-					# add to sync list
-					print "adding %s to sync list" % constituent[0]
-					sync_list.append(constituent[0].split("/")[-1])
-					
-		# iterate and send
-		for i,pid in enumerate(sync_list):
-			print "sending %s, %d/%d..." % (pid, i+1, len(sync_list))
-
-			# remove IIIF manifest
-			print "removing IIIF Manifest before transfer"			
-			fedora_handle.api.purgeDatastream(self.ohandle,'IIIF_MANIFEST')
-
-			# use syncutil
-			result = syncutil.sync_object(
-				fedora_handle.get_object(pid),
-				dest_repo_handle,
-				export_context=export_context,
-				overwrite=overwrite,
-				show_progress=show_progress,
-				omit_checksums=omit_checksums)
-				
-		# refresh remote objects
-		# refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
-		if type(dest_repo) == str or type(dest_repo) == unicode:
-			
-			# indexing both
-			if refresh_remote and refresh_remote_constituents:
-				for i,pid in enumerate(sync_list):
-					print "refreshing remote object in remote repository %s, %d/%d..." % (pid, i+1, len(sync_list))
-					refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], pid)
-					print refresh_remote_url
-					r = requests.get( refresh_remote_url )
-					print r.content
-			
-			# index self pid only
-			elif refresh_remote and not refresh_remote_constituents:
-				print "refreshing remote object in remote repository %s, 1/1..." % (self.pid)
-				refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
-				print refresh_remote_url
-				r = requests.get( refresh_remote_url )
-				print r.content
-				
-			else:
-				print "skipping remote refresh"
-				
-		# cannot refresh
-		else:
-			print "Cannot refresh remote.  It is likely you passed an Eulfedora Repository object.  To refresh remote, please provide string of remote repository that aligns with localConfig"
-
-
-
-	# enrich metadata from METS file
-	def enrichMODSFromMETS(self, METS_handle, DMDID_prefix="UP00", auto_commit=True):
-
-		'''
-		1) read <mods:extension>/<orig_filename>
-		2) look for DMDID_prefix + orig_filename
-		3) if found, grab MODS from METS
-		4) update object MODS
-		5) recreate <mods:extension>/<orig_filename> if lost
-		'''
-
-		# METS root
-		METS_root = METS_handle.getroot()
-
-		# MODS handle
-		MODS_handle = self.ohandle.getDatastreamObject('MODS')
-
-		# 1) read <mods:extension>/<orig_filename>
-		orig_filename = MODS_handle.content.node.xpath('//mods:extension/orig_filename', namespaces=METS_root.nsmap)
-		print orig_filename #DEBUG
-		if len(orig_filename) == 1:
-			orig_filename = orig_filename[0].text
-		elif len(orig_filename) > 1:
-			print "multiple orig_filename elements found, aborting"
-			return False
-		elif len(orig_filename) == 0:
-			print "no orig_filename elements found, aborting"
-			return False
-		else:
-			print "could not determine orig_filename"
-			return False
-
-		'''
-		Need to determine if orig_filename ends with file extension, which we would strip
-		or is other.
-
-		Probably safe to assume that file extensions are not *entirely* numbers, which the following
-		checks for.
-		'''
-
-		# check if orig_filename contains file extension, if so, strip
-		full_orig_filename = orig_filename
-		parts = orig_filename.split('.')
-		try:
-			int(parts[-1])
-			file_ext_present = False
-			print "assuming NOT file extension - keeping orig_filename"
-		except:
-			file_ext_present = True
-			print "assuming file extension present - stripping"
-			orig_filename = ".".join(parts[:-1])
-
-
-		# 2) look for DMDID_prefix + orig_filename
-		dmd = METS_root.xpath('//mets:dmdSec[@ID="%s%s"]' % (DMDID_prefix, orig_filename), namespaces=METS_root.nsmap)
-		print dmd #DEBUG
-		if len(dmd) == 1:
-			print "one DMD section found!"
-		elif len(dmd) > 1:
-			print "multiple DMD sections found, aborting"
-			return False
-		elif len(dmd) == 0:
-			print "no DMD sections found, aborting"
-			return False
-
-
-		# 3) if found, grab MODS from METS
-		enriched_MODS = dmd[0].xpath('.//mods:mods',namespaces=METS_root.nsmap)
-		print enriched_MODS # DEBUG
-		if len(enriched_MODS) == 1:
-			print "MODS found"
-		elif len(enriched_MODS) > 1:
-			print "multiple MODS found, aborting"
-			return False
-		elif len(enriched_MODS) == 0:
-			print "no MODS found, aborting"
-			return False
-
-
-		# 4) update object MODS
-		MODS_handle.content = etree.tostring(enriched_MODS[0])
-		MODS_handle.save()
-
-
-		# 5) recreate <mods:extension>/<orig_filename> if lost (taken from MODS export)
-		print "ensuring that <orig_filename> endures"
-
-		# reinit MODS and ohandle
-		self.ohandle = fedora_handle.get_object(self.pid)
-		MODS_handle = self.ohandle.getDatastreamObject('MODS')
-
-		# does <PID> element already exist?
-		orig_filename = MODS_handle.content.node.xpath('//mods:extension/orig_filename', namespaces=MODS_handle.content.node.nsmap)
-
-		# if not, continue with checks
-		if len(orig_filename) == 0:
-
-			# check for <mods:extension>, if not present add
-			extension_check = MODS_handle.content.node.xpath('//mods:extension', namespaces=MODS_handle.content.node.nsmap)
-
-			# if absent, create with <PID> subelement
-			if len(extension_check) == 0:
-				#serialize and replace
-				MODS_content = MODS_handle.content.serialize()
-				# drop original full filename back in here
-				MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><orig_filename>%s</orig_filename></mods:extension></mods:mods>" % full_orig_filename)
-
-			# <mods:extension> present, but no PID subelement, create
-			else:
-				orig_filename_elem = etree.SubElement(extension_check[0],"orig_filename")
-				orig_filename_elem.text = full_orig_filename
-				#serialize
-				MODS_content = MODS_handle.content.serialize()
-
-		# overwrite with PID
-		else:
-			orig_filename_elem = orig_filename[0]
-			orig_filename_elem.text = full_orig_filename
-
-			#serialize
-			MODS_content = MODS_handle.content.serialize()
-
-		# finall, write content back to MODS
-		MODS_handle.content = MODS_content
-		MODS_handle.save()
-
-
-
-	# add isSensitive relationship
-	def isSensitive(self):
-		'''
-		Function to add isSensitive relationship to Object in Fedora.
-		A quick way to handle objects flagged internally or externally for having initially shocking material
-		'''
-
-		# Check if to see that doesn't have sensitive flag
-		s = list(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library/.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive'))
-		if not s:
-			# else
-			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive","True")
-			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitiveContent","True")
-		return True
-
-
-	# add OAI identifers and set memberships
-	def registerOAI(self):
-		# generate OAI identifier
-		print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid))
-		print "created OAI identifier"
-
-		# affiliate with collection set(s)
-		try:
-			collections = self.isMemberOfCollections
-			for collection in collections:
-				print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
-				print "registered with collection %s" % collection
-		except:
-			print "could not affiliate with collection"
+                ''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
+                print raw_MODS
+                MODS_handle.content = raw_MODS
+                MODS_handle.save()
+
+            # save and commit object before finishIngest()
+            final_save = self.ohandle.save()
+
+            # finish generic ingest
+            return self.finishIngest(indexObject=indexObject)
+
+
+        # exception handling
+        except Exception,e:
+            print traceback.format_exc()
+            print "Volume Ingest Error:",e
+            return False
+
+
+    # function that runs at end of ContentType ingestBag(), running ingest processes generic to ALL objects
+    def finishIngest(self, indexObject=True, gen_manifest=False, contentTypeMethods=[]):
+
+        # as object finishes ingest, it can be granted eulfedora methods, its 'ohandle' attribute
+        if self.ohandle != None:
+            self.ohandle = fedora_handle.get_object(self.objMeta['id'])
+
+        # pull in BagIt metadata as BAG_META datastream tarball
+        temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".tar"
+        tar_handle = tarfile.open(temp_filename,'w')
+        for bag_meta_file in ['bag-info.txt','bagit.txt','manifest-md5.txt','tagmanifest-md5.txt']:
+            tar_handle.add(self.Bag.path + "/" + bag_meta_file, recursive=False, arcname=bag_meta_file)
+        tar_handle.close()
+        bag_meta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "BAGIT_META", "BagIt Metadata Tarball", mimetype="application/x-tar", control_group='M')
+        bag_meta_handle.label = "BagIt Metadata Tarball"
+        bag_meta_handle.content = open(temp_filename)
+        bag_meta_handle.save()
+        os.system('rm %s' % (temp_filename))
+
+        # derive Dublin Core from MODS, update DC datastream
+        self.DCfromMODS()
+
+        # Write isWSUDORObject RELS-EXT relationship
+        self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
+
+        # if gen_manifest set, generate IIIF Manifest
+        if gen_manifest == True:
+            try:
+                self.genIIIFManifest(on_demand=True)
+            except:
+                print "failed on generating IIIF manifest"
+
+        # register with OAI
+        self.registerOAI()
+
+        # the following methods are not needed when objects are "passing through"
+        if indexObject:
+
+            # Index in Solr (can override from command by setting self.index_on_ingest to False)
+            if self.index_on_ingest != False:
+                self.indexToSolr()
+            else:
+                print "Skipping Solr Index"
+
+            # index object size
+            self.update_objSizeDict()
+
+            # run all ContentType specific methods that were passed here
+            print "RUNNING ContentType methods..."
+            for func in contentTypeMethods:
+                func()
+
+        else:
+            print "skipping index of object"
+
+        # CLEANUP
+        # delete temp_payload, might be dir or symlink
+        try:
+            print "removing temp_payload directory"
+            shutil.rmtree(self.temp_payload)
+        except OSError, e:
+            # might be symlink
+            print "removing temp_payload symlink"
+            os.unlink(self.temp_payload)
+
+        # finally, return
+        return True
+
+
+    # def exportBag(self, job_package=False, returnTargetDir=False, preserveRelationships=True):
+
+    #   '''
+    #   Target Example:
+    #   .
+    #   ├── bag-info.txt
+    #   ├── bagit.txt
+    #   ├── data
+    #   │   ├── datastreams
+    #   │   │   ├── roots.jpg
+    #   │   │   └── trunk.jpg
+    #   │   ├── MODS.xml
+    #   │   └── objMeta.json
+    #   ├── manifest-md5.txt
+    #   └── tagmanifest-md5.txt
+    #   '''
+
+    #   # get PID
+    #   PID = self.pid
+
+    #   # create temp dir structure
+    #   working_dir = "/tmp/Ouroboros/export_bags"
+    #   # create if doesn't exist
+    #   if not os.path.exists("/tmp/Ouroboros/export_bags"):
+    #       os.mkdir("/tmp/Ouroboros/export_bags")
+
+    #   temp_dir = working_dir + "/" + str(uuid.uuid4())
+    #   time.sleep(.25)
+    #   os.system("mkdir %s" % (temp_dir))
+    #   time.sleep(.25)
+    #   os.system("mkdir %s/data" % (temp_dir))
+    #   time.sleep(.25)
+    #   os.system("mkdir %s/data/datastreams" % (temp_dir))
+
+    #   # move bagit files to temp dir, and unpack
+    #   bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
+    #   bagitIO = StringIO.StringIO(bagit_files)
+    #   tar_handle = tarfile.open(fileobj=bagitIO)
+    #   tar_handle.extractall(path=temp_dir)
+
+    #   # export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
+    #   def writeDS(write_tuple):
+    #       ds_id=write_tuple[0]
+    #       print "WORKING ON",ds_id
+
+    #       ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
+
+    #       # skip if empty (might have been removed / condensed, as case with PDFs)
+    #       if ds_handle.content != None:
+
+    #           # XML ds model
+    #           if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
+    #               print "FIRING XML WRITER"
+    #               with open(write_tuple[1],'w') as fhand:
+    #                   fhand.write(ds_handle.content.serialize())
+
+    #           # generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
+    #           '''
+    #           Why is this not writing tiffs?
+    #           '''
+    #           else:
+    #               print "FIRING GENERIC WRITER"
+    #               with open(write_tuple[1],'wb') as fhand:
+    #                   for chunk in ds_handle.get_chunked_content():
+    #                       fhand.write(chunk)
+
+    #       else:
+    #           print "Content was NONE for",ds_id,"- skipping..."
+
+
+    #   # write original datastreams
+    #   for ds in self.objMeta['datastreams']:
+    #       print "writing %s" % ds
+    #       writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
+
+
+    #   # include RELS
+    #   if preserveRelationships == True:
+    #       print "preserving current relationships and writing to RELS-EXT and RELS-INT"
+    #       for rels_ds in ['RELS-EXT','RELS-INT']:
+    #           print "writing %s" % rels_ds
+    #           writeDS((rels_ds,"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
+
+
+    #   # write MODS and objMeta files
+    #   simple = [
+    #       ("MODS","%s/data/MODS.xml" % (temp_dir)),
+    #       ("OBJMETA","%s/data/objMeta.json" % (temp_dir))
+    #   ]
+    #   for ds in simple:
+    #       writeDS(ds)
+
+    #   # tarball it up
+    #   named_dir = self.pid.replace(":","-")
+    #   os.system("mv %s %s/%s" % (temp_dir, working_dir, named_dir))
+    #   orig_dir = os.getcwd()
+    #   os.chdir(working_dir)
+    #   os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
+    #   os.system("rm -r %s/%s" % (working_dir, named_dir))
+
+    #   # move to web accessible location, with username as folder
+    #   if job_package != False:
+    #       username = job_package['username']
+    #   else:
+    #       username = "consoleUser"
+    #   target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
+    #   if os.path.exists(target_dir) == False:
+    #       os.system("mkdir %s" % (target_dir))
+    #   os.system("mv %s.tar %s" % (named_dir,target_dir))
+
+    #   # jump back to original working dir
+    #   os.chdir(orig_dir)
+
+    #   if returnTargetDir == True:
+    #       return "%s/%s.tar" % (target_dir,named_dir)
+    #   else:
+    #       return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, username, named_dir)
+
+
+    # # reingest bag
+    # def reingestBag(self, removeExportTar=False, preserveRelationships=True):
+
+    #   # get PID
+    #   PID = self.pid
+
+    #   print "Roundrip Ingesting:",PID
+
+    #   # export bag, returning the file structure location of tar file
+    #   export_tar = self.exportBag(returnTargetDir=True, preserveRelationships=preserveRelationships)
+    #   print "Location of export tar file:",export_tar
+
+    #   # open bag
+    #   bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_tar, object_type='bag')
+
+    #   # purge self
+    #   if bag_handle != False:
+    #       fedora_handle.purge_object(PID)
+    #   else:
+    #       print "exported object doesn't look good, aborting purge"
+
+    #   # reingest exported tar file
+    #   bag_handle.ingestBag()
+
+    #   # delete exported tar
+    #   if removeExportTar == True:
+    #       print "Removing export tar..."
+    #       os.remove(export_tar)
+
+    #   # return
+    #   return PID,"Reingested."
+
+
+
+    # Solr Indexing
+    def indexToSolr(self, printOnly=False):
+
+        # derive Dublin Core
+        self.DCfromMODS()
+
+        return actions.solrIndexer.solrIndexer('modifyObject', self.pid, human_hash=False, printOnly=printOnly)
+
+
+    def previewSolrDict(self):
+        '''
+        Function to run current WSUDOR object through indexSolr() transforms
+        '''
+        try:
+            return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly=True)
+        except:
+            print "Could not run indexSolr() transform."
+            return False
+
+
+
+    # regnerate derivative JP2s
+    def regenJP2(self, regenIIIFManifest=False, target_ds=None, clear_cache=True):
+        '''
+        Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
+        Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
+
+        A lot are failing because the TIFFS are compressed, PNG files.  We need a secondary attempt
+        that converts to uncompressed TIFF first.
+        '''
+
+        # iterate through datastreams and look for JP2s
+        if target_ds is None:
+            jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
+        else:
+            jp2_ds_list = [target_ds]
+
+        for i, ds in enumerate(jp2_ds_list):
+
+            print "converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list)))
+
+            # jp2 handle
+            jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
+
+            # get original ds_handle
+            orig = ds.split("_JP2")[0]
+            try:
+                orig_ds_handle = self.ohandle.getDatastreamObject(orig)
+            except:
+                print "could not find original for",orig
+
+            # write temp original and set as inPath
+            guessed_ext = utilities.mimetypes.guess_extension(orig_ds_handle.mimetype)
+            print "guessed extension for temporary orig handle:",guessed_ext
+            temp_orig_handle = Derivative.write_temp_file(orig_ds_handle, suffix=guessed_ext)
+
+            # # gen temp new jp2            
+            jp2 = ImageDerivative(temp_orig_handle.name)
+            jp2_result = jp2.makeJP2()
+
+            if jp2_result:
+                with open(jp2.output_handle.name) as fhand:
+                    jp2_ds_handle.content = fhand.read()
+                jp2_ds_handle.save()
+
+                # cleanup
+                jp2.output_handle.unlink(jp2.output_handle.name)
+                temp_orig_handle.unlink(temp_orig_handle.name)
+            else:
+                # cleanup
+                jp2.output_handle.unlink(jp2.output_handle.name)
+                temp_orig_handle.unlink(temp_orig_handle.name)
+                raise Exception("Could not create JP2")
+
+            # if regenIIIFManifest
+            if regenIIIFManifest:
+                print "regenerating IIIF manifest"
+                self.genIIIFManifest()
+
+            if clear_cache:
+                print "clearing cache"
+                self.removeObjFromCache()
+
+            return True
+
+
+    def _checkJP2Codestream(self,ds):
+        print "Checking integrity of JP2 with jpylyzer..."
+
+        temp_filename = "/tmp/Ouroboros/%s.jp2" % uuid.uuid4()
+
+        ds_handle = self.ohandle.getDatastreamObject(ds)
+        with open(temp_filename, 'w') as f:
+            for chunk in ds_handle.get_chunked_content():
+                f.write(chunk)
+
+        # wrap in try block to make sure we remove the file even if jpylyzer fails
+        try:
+            # open jpylyzer handle
+            jpylyzer_handle = jpylyzer.checkOneFile(temp_filename)
+            # check for codestream box
+            codestream_check = jpylyzer_handle.find('properties/contiguousCodestreamBox')
+            # remove temp file
+            os.remove(temp_filename)
+            # good JP2
+            if type(codestream_check) == etpatch.Element:
+                print "codestream found"
+                return True
+            elif type(codestream_check) == None:
+                print "codestream not found"
+                return False
+            else:
+                print "codestream check inconclusive, returning false"
+                return False
+        except:
+            # remove temp file
+            os.remove(temp_filename)
+            print "codestream check inconclusive, returning false"
+            return False
+
+
+
+    # from Loris
+    def _from_jp2(self,jp2):
+
+        '''
+        where 'jp2' is file-like object
+        '''
+
+        b = jp2.read(1)
+        window =  deque([], 4)
+        while ''.join(window) != 'ihdr':
+            b = jp2.read(1)
+            c = struct.unpack('c', b)[0]
+            window.append(c)
+        height = int(struct.unpack(">I", jp2.read(4))[0]) # height (pg. 136)
+        width = int(struct.unpack(">I", jp2.read(4))[0]) # width
+        return (width,height)
+
+
+
+    # from Loris
+    def _extract_with_pillow(self, fp):
+        im = Image.open(fp)
+        width,height = im.size
+        return (width,height)
+
+
+
+    def _imageOrientation(self,dimensions):
+        if dimensions[0] > dimensions[1]:
+            return "landscape"
+        elif dimensions[1] > dimensions[0]:
+            return "portrait"
+        elif dimensions[0] == dimensions[1]:
+            return "square"
+        else:
+            return False
+
+
+    def _checkJP2Orientation(self,ds):
+        print "Checking aspect ratio of JP2 with Loris"
+
+        # check jp2
+        print "checking jp2 dimensions..."
+        ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
+        print ds_url
+        uf = urlopen(ds_url)
+        jp2_dimensions = self._from_jp2(uf)
+        print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
+
+        # check original
+        print "checking original dimensions..."
+        ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
+        print ds_url
+        uf = urlopen(ds_url)
+        orig_dimensions = self._extract_with_pillow(uf)
+        print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
+
+        if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
+            print "same orientation"
+            return True
+        else:
+            return False
+
+
+    def _checkJP2OrientationAndSize(self, ds):
+        print "Checking aspect ratio and size of %s with Loris" % ds
+
+        # check jp2
+        print "checking jp2 dimensions..."
+        ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
+        print ds_url
+        uf = urlopen(ds_url)
+        jp2_dimensions = self._from_jp2(uf)
+        print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
+
+        # check original
+        print "checking original dimensions..."
+        ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
+        print ds_url
+        uf = urlopen(ds_url)
+        orig_dimensions = self._extract_with_pillow(uf)
+        print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
+
+        # check orientation
+        tests = True
+        if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
+            print "same orientation"
+            tests = True
+        else:
+            tests = False
+
+        # check size
+        if jp2_dimensions == orig_dimensions:
+            print "same size"
+            tests = True
+        else:
+            tests = False
+
+        # return tests
+        return tests
+
+
+
+    # regnerate derivative JP2s
+    def checkJP2(self, regenJP2_on_fail=True, tests=['all']):
+
+        '''
+        Function to check health and integrity of JP2s for object
+        Uses jpylyzer library
+        '''
+
+        checks = []
+
+        # iterate through datastreams and look for JP2s
+        jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
+
+        for i,ds in enumerate(jp2_ds_list):
+
+            print "checking %s, %s / %s" % (ds,i,len(jp2_ds_list))
+
+            # check codesteram present
+            if 'all' in tests or 'codestream' in tests:
+                checks.append( self._checkJP2Codestream(ds) )
+
+            # check aspect ratio
+            if 'all' in tests or 'orientation' in tests:
+                checks.append( self._checkJP2OrientationAndSize(ds) )
+
+            print "Final checks:", checks
+
+            # if regen on check fail
+        if regenJP2_on_fail and False in checks:
+            self.regenJP2(regenIIIFManifest=True, target_ds=ds)
+
+
+
+
+
+    def fixJP2(self):
+
+        '''
+        Use checkJP2 to check, fire JP2 if bad
+        '''
+
+        print "Checking integrity of JP2 with jpylyzer..."
+
+        if not self.checkJP2():
+            self.regenJP2()
+
+
+    # # regnerate derivative JP2s
+    # def regen_objMeta(self):
+    #   '''
+    #   Function to regen objMeta.  When we decided to let the bag info stored in Fedora not validate,
+    #   opened up the door for editing the objMeta file if things change.
+
+    #   Add non-derivative datastreams to objMeta, remove objMeta datastreams that no longer exist
+    #   '''
+
+    #   # get list of current datastreams, sans known derivatives
+    #   new_datastreams = []
+    #   prunable_datastreams = []
+    #   original_datastreams = [ ds['ds_id'] for ds in self.objMeta['datastreams'] ]
+    #   known_derivs = [
+    #       'BAGIT_META',
+    #       'DC',
+    #       'MODS',
+    #       'OBJMETA',
+    #       'POLICY',
+    #       'PREVIEW',
+    #       'RELS-EXT',
+    #       'RELS-INT',
+    #       'THUMBNAIL',
+    #       'HTML_FULL'
+    #   ]
+    #   known_suffixes = [
+    #       '_JP2',
+    #       '_PREVIEW',
+    #       '_THUMBNAIL',
+    #       '_ACCESS'
+    #   ]
+
+    #   # look for new datastreams not present in objMeta
+    #   for ds in self.ohandle.ds_list:
+    #       if ds not in known_derivs and len([suffix for suffix in known_suffixes if ds.endswith(suffix)]) == 0 and ds not in original_datastreams:
+    #           new_datastreams.append(ds)
+    #   print "new datastreams:",new_datastreams
+
+    #   # add new datastream to objMeta
+    #   for ds in new_datastreams:
+    #       ds_handle = self.ohandle.ds_list[ds]
+    #       new_ds = {
+    #           'ds_id':ds,
+    #           'filename':ds,
+    #           'internal_relationships':{},
+    #           'label':ds_handle.label,
+    #           'mimetype':ds_handle.mimeType
+    #       }
+    #       self.objMeta['datastreams'].append(new_ds)
+
+    #   # look for datastreams in objMeta that should be removed
+    #   for ds in self.objMeta['datastreams']:
+    #       if ds['ds_id'] not in self.ohandle.ds_list:
+    #           prunable_datastreams.append(ds['ds_id'])
+    #   print "prunable datastreams",prunable_datastreams
+
+    #   # prune datastream from objMeta
+    #   self.objMeta['datastreams'] = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] not in prunable_datastreams ]
+
+    #   # resulting objMeta datastreams
+    #   print "Resulting objMeta datastreams",self.objMeta['datastreams']
+
+    #   # write current objMeta to fedora datastream
+    #   objMeta_handle = self.ohandle.getDatastreamObject('OBJMETA')
+    #   objMeta_handle.content = json.dumps(self.objMeta)
+    #   objMeta_handle.save()
+
+
+    # remove object from Loris, Varnish, and other caches
+    def removeObjFromCache(self):
+
+        results = {}
+
+        # remove from Loris
+        results['loris'] = self._removeObjFromLorisCache()
+
+        # remove from Varnish
+        # results['varnish'] = self._removeObjFromVarnishCache()
+
+        # return results dictionary
+        return results
+
+
+    # remove from Loris cache
+    def _removeObjFromLorisCache(self):
+
+        for ds in self.ohandle.ds_list:
+            self._removeDatastreamFromLorisCache(self.pid, ds)
+
+        # check constituents        
+        if len(self.constituents) > 0:
+            for constituent in self.constituents:
+                try:
+                    for ds in constituent.ds_list:
+                        self._removeDatastreamFromLorisCache(constituent.pid, ds)
+                except:
+                    print "could not remove constituent %s from cache, possible already purged" % constituent
+
+        return True
+
+
+    # remove from Loris cache
+    def _removeObjFromLorisCache(self):
+
+        for ds in self.ohandle.ds_list:
+            self._removeDatastreamFromLorisCache(self.pid, ds)
+
+        # check constituents        
+        if len(self.constituents) > 0:
+            for constituent in self.constituents:
+                for ds in constituent.ds_list:
+                    self._removeDatastreamFromLorisCache(constituent.pid, ds)
+
+        return True
+
+
+    # remove from Loris cache
+    def _removeDatastreamFromLorisCache(self, pid, ds):
+
+        '''
+        As we now use Varnish for caching tiles and client<->Loris requests,
+        we cannot ascertain as well the file path of the Loris<->Fedora cache.
+
+        Now, requires datastream to purge from cache.
+        '''
+
+        print "Removing object from Loris caches..."
+
+        # read config file for Loris
+        data = StringIO.StringIO('\n'.join(line.strip() for line in open('/etc/loris2/loris2.conf')))
+        config = ConfigParser.ConfigParser()
+        config.readfp(data)
+
+        # get cache location(s)
+        image_cache = config.get('img.ImageCache','cache_dp').replace("'","")
+        if image_cache.endswith('/'):
+            image_cache = image_cache[:-1]
+
+        # craft ident
+        ident = "fedora:%s|%s" % (pid, ds)
+
+        # clear from fedora resolver cache
+        try:
+            print "removing instance: %s" % ident
+            file_structure = ''
+            ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
+            file_structure_list = [ident_hash[0:2]] + [ident_hash[i:i+3] for i in range(2, len(ident_hash), 3)]
+            for piece in file_structure_list:
+                file_structure = os.path.join(file_structure, piece)
+                final_file_structure = "%s/fedora/wayne/%s" % ( image_cache, file_structure )
+            print "removing dir: %s" % final_file_structure
+            shutil.rmtree(final_file_structure)
+            return True
+        except:
+            print "could not remove from fedora resolver cache"
+            return False
+
+
+
+    # refresh object
+    def objectRefresh(self):
+
+        '''
+        Function to update / refresh object properties requisite for front-end.
+        Runs multiple object methods under one banner.
+
+        Includes following methods:
+        - generate IIIF manifest --> self.genIIIFManifest()
+        - update object size in Solr --> self.update_objSizeDict()
+        - index in Solr --> self.indexToSolr()
+        '''
+        
+        print "-------------------- firing objectRefresh --------------------"
+
+        try:
+            # index in Solr
+            self.indexToSolr()
+
+            # remove object from Loris cache
+            self.removeObjFromCache()
+
+            # generate IIIF manifest
+            self.genIIIFManifest()
+
+            # update object size in Solr
+            self.update_objSizeDict()
+
+            return True
+
+        except:
+            return False
+
+
+    # method to send object to remote repository
+    def sendObject(self, 
+        dest_repo, 
+        export_context='archive', 
+        overwrite=False, 
+        show_progress=False, 
+        refresh_remote=True, 
+        omit_checksums=True, 
+        skip_constituents=False, 
+        refresh_remote_constituents=False):
+
+        '''
+        dest_repo = string key from localConfig for remote repositories credentials
+        '''
+
+        # handle string or eulfedora handle
+        print dest_repo,type(dest_repo)
+        if type(dest_repo) == str or type(dest_repo) == unicode:
+            dest_repo_handle = fedoraHandles.remoteRepo(dest_repo)
+        elif type(dest_repo) == eulfedora.server.Repository:
+            dest_repo_handle = dest_repo
+        else:
+            print "destination eulfedora not found, try again"
+            return False
+            
+        # generate list of objects to send
+        '''
+        This is important if objects have constituent objects, need to send them too
+        '''
+        
+        # init list
+        sync_list = [self.pid]
+        
+        # if not skipping constituents, check for them
+        if not skip_constituents:
+            constituents = fedora_handle.risearch.spo_search(None, "fedora-rels-ext:isConstituentOf", "info:fedora/%s" % self.pid)
+            if len(constituents) > 0:
+                for constituent in constituents:
+                    # add to sync list
+                    print "adding %s to sync list" % constituent[0]
+                    sync_list.append(constituent[0].split("/")[-1])
+                    
+        # iterate and send
+        for i,pid in enumerate(sync_list):
+            print "sending %s, %d/%d..." % (pid, i+1, len(sync_list))
+
+            # remove IIIF manifest
+            print "removing IIIF Manifest before transfer"          
+            fedora_handle.api.purgeDatastream(self.ohandle,'IIIF_MANIFEST')
+
+            # use syncutil
+            result = syncutil.sync_object(
+                fedora_handle.get_object(pid),
+                dest_repo_handle,
+                export_context=export_context,
+                overwrite=overwrite,
+                show_progress=show_progress,
+                omit_checksums=omit_checksums)
+                
+        # refresh remote objects
+        # refresh object in remote repo (requires refreshObject() method in remote Ouroboros)
+        if type(dest_repo) == str or type(dest_repo) == unicode:
+            
+            # indexing both
+            if refresh_remote and refresh_remote_constituents:
+                for i,pid in enumerate(sync_list):
+                    print "refreshing remote object in remote repository %s, %d/%d..." % (pid, i+1, len(sync_list))
+                    refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], pid)
+                    print refresh_remote_url
+                    r = requests.get( refresh_remote_url )
+                    print r.content
+            
+            # index self pid only
+            elif refresh_remote and not refresh_remote_constituents:
+                print "refreshing remote object in remote repository %s, 1/1..." % (self.pid)
+                refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
+                print refresh_remote_url
+                r = requests.get( refresh_remote_url )
+                print r.content
+                
+            else:
+                print "skipping remote refresh"
+                
+        # cannot refresh
+        else:
+            print "Cannot refresh remote.  It is likely you passed an Eulfedora Repository object.  To refresh remote, please provide string of remote repository that aligns with localConfig"
+
+
+
+    # enrich metadata from METS file
+    def enrichMODSFromMETS(self, METS_handle, DMDID_prefix="UP00", auto_commit=True):
+
+        '''
+        1) read <mods:extension>/<orig_filename>
+        2) look for DMDID_prefix + orig_filename
+        3) if found, grab MODS from METS
+        4) update object MODS
+        5) recreate <mods:extension>/<orig_filename> if lost
+        '''
+
+        # METS root
+        METS_root = METS_handle.getroot()
+
+        # MODS handle
+        MODS_handle = self.ohandle.getDatastreamObject('MODS')
+
+        # 1) read <mods:extension>/<orig_filename>
+        orig_filename = MODS_handle.content.node.xpath('//mods:extension/orig_filename', namespaces=METS_root.nsmap)
+        print orig_filename #DEBUG
+        if len(orig_filename) == 1:
+            orig_filename = orig_filename[0].text
+        elif len(orig_filename) > 1:
+            print "multiple orig_filename elements found, aborting"
+            return False
+        elif len(orig_filename) == 0:
+            print "no orig_filename elements found, aborting"
+            return False
+        else:
+            print "could not determine orig_filename"
+            return False
+
+        '''
+        Need to determine if orig_filename ends with file extension, which we would strip
+        or is other.
+
+        Probably safe to assume that file extensions are not *entirely* numbers, which the following
+        checks for.
+        '''
+
+        # check if orig_filename contains file extension, if so, strip
+        full_orig_filename = orig_filename
+        parts = orig_filename.split('.')
+        try:
+            int(parts[-1])
+            file_ext_present = False
+            print "assuming NOT file extension - keeping orig_filename"
+        except:
+            file_ext_present = True
+            print "assuming file extension present - stripping"
+            orig_filename = ".".join(parts[:-1])
+
+
+        # 2) look for DMDID_prefix + orig_filename
+        dmd = METS_root.xpath('//mets:dmdSec[@ID="%s%s"]' % (DMDID_prefix, orig_filename), namespaces=METS_root.nsmap)
+        print dmd #DEBUG
+        if len(dmd) == 1:
+            print "one DMD section found!"
+        elif len(dmd) > 1:
+            print "multiple DMD sections found, aborting"
+            return False
+        elif len(dmd) == 0:
+            print "no DMD sections found, aborting"
+            return False
+
+
+        # 3) if found, grab MODS from METS
+        enriched_MODS = dmd[0].xpath('.//mods:mods',namespaces=METS_root.nsmap)
+        print enriched_MODS # DEBUG
+        if len(enriched_MODS) == 1:
+            print "MODS found"
+        elif len(enriched_MODS) > 1:
+            print "multiple MODS found, aborting"
+            return False
+        elif len(enriched_MODS) == 0:
+            print "no MODS found, aborting"
+            return False
+
+
+        # 4) update object MODS
+        MODS_handle.content = etree.tostring(enriched_MODS[0])
+        MODS_handle.save()
+
+
+        # 5) recreate <mods:extension>/<orig_filename> if lost (taken from MODS export)
+        print "ensuring that <orig_filename> endures"
+
+        # reinit MODS and ohandle
+        self.ohandle = fedora_handle.get_object(self.pid)
+        MODS_handle = self.ohandle.getDatastreamObject('MODS')
+
+        # does <PID> element already exist?
+        orig_filename = MODS_handle.content.node.xpath('//mods:extension/orig_filename', namespaces=MODS_handle.content.node.nsmap)
+
+        # if not, continue with checks
+        if len(orig_filename) == 0:
+
+            # check for <mods:extension>, if not present add
+            extension_check = MODS_handle.content.node.xpath('//mods:extension', namespaces=MODS_handle.content.node.nsmap)
+
+            # if absent, create with <PID> subelement
+            if len(extension_check) == 0:
+                #serialize and replace
+                MODS_content = MODS_handle.content.serialize()
+                # drop original full filename back in here
+                MODS_content = MODS_content.replace("</mods:mods>","<mods:extension><orig_filename>%s</orig_filename></mods:extension></mods:mods>" % full_orig_filename)
+
+            # <mods:extension> present, but no PID subelement, create
+            else:
+                orig_filename_elem = etree.SubElement(extension_check[0],"orig_filename")
+                orig_filename_elem.text = full_orig_filename
+                #serialize
+                MODS_content = MODS_handle.content.serialize()
+
+        # overwrite with PID
+        else:
+            orig_filename_elem = orig_filename[0]
+            orig_filename_elem.text = full_orig_filename
+
+            #serialize
+            MODS_content = MODS_handle.content.serialize()
+
+        # finall, write content back to MODS
+        MODS_handle.content = MODS_content
+        MODS_handle.save()
+
+
+
+    # add isSensitive relationship
+    def isSensitive(self):
+        '''
+        Function to add isSensitive relationship to Object in Fedora.
+        A quick way to handle objects flagged internally or externally for having initially shocking material
+        '''
+
+        # Check if to see that doesn't have sensitive flag
+        s = list(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library/.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive'))
+        if not s:
+            # else
+            self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitive","True")
+            self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isSensitiveContent","True")
+        return True
+
+
+    # add OAI identifers and set memberships
+    def registerOAI(self):
+        # generate OAI identifier
+        print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid))
+        print "created OAI identifier"
+
+        # affiliate with collection set(s)
+        try:
+            collections = self.isMemberOfCollections
+            for collection in collections:
+                print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
+                print "registered with collection %s" % collection
+        except:
+            print "could not affiliate with collection"
 
 
     # send Object to Problem Object staging space (i.e. in user_pids table)
-   	def reportProb(self, data):
-		try:
-			probData = dict(data)
-			PID = probData['pid']
-			probData.pop('pid')
-			probData.pop('to')
-			probData['email'] = probData.pop('from')
-			probData['name'] = ''
-			probData['message'] = probData.pop('msg')
-			form_notes = json.dumps(probData)
-			problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs",form_notes)
-			db.session.add(problemPID)
-			db.session.commit()
-			response = True
-		except:
-			response = False
+    def reportProb(self, data):
+        try:
+            probData = dict(data)
+            PID = probData['pid']
+            probData.pop('pid')
+            probData.pop('to')
+            probData['email'] = probData.pop('from')
+            probData['name'] = ''
+            probData['message'] = probData.pop('msg')
+            form_notes = json.dumps(probData)
+            problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs",form_notes)
+            db.session.add(problemPID)
+            db.session.commit()
+            response = True
+        except:
+            response = False
 
-		return response
-
-
-	# purge object
-	def purge(self, override_state=False):
-
-		if self.ohandle.state != "D" and override_state == False:
-			raise Exception("Skipping, object state not 'Deleted (D)'")
-
-		else:
-
-			# purge constituent objets
-			print "purging Constituents if present"
-			if getattr(self, 'purgeConstituents', None):
-				self.purgeConstituents()
-
-			# purge Readux virtual objects if present
-			if hasattr(self, 'purgeReaduxVirtualObjects'):
-				self.purgeReaduxVirtualObjects()
-
-			# remove from Loris and Varnish cache
-			self.removeObjFromCache()
-
-			# remove from Solr
-			print "purging from solr"
-			solr_handle.delete_by_key(self.pid)
-
-			# purge object
-			print "purging from fedora"
-			fedora_handle.purge_object(self.pid)
-
-			return True
+        return response
 
 
-	# default previewImage return
-	def previewImage(self):
+    # purge object
+    def purge(self, override_state=False):
 
-		'''
-		Return image/loris params for API to render
-			- pid, datastream, region, size, rotation, quality, format
-		'''
-		return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
+        if self.ohandle.state != "D" and override_state == False:
+            raise Exception("Skipping, object state not 'Deleted (D)'")
+
+        else:
+
+            # purge constituent objets
+            print "purging Constituents if present"
+            if getattr(self, 'purgeConstituents', None):
+                self.purgeConstituents()
+
+            # purge Readux virtual objects if present
+            if hasattr(self, 'purgeReaduxVirtualObjects'):
+                self.purgeReaduxVirtualObjects()
+
+            # remove from Loris and Varnish cache
+            self.removeObjFromCache()
+
+            # remove from Solr
+            print "purging from solr"
+            solr_handle.delete_by_key(self.pid)
+
+            # purge object
+            print "purging from fedora"
+            fedora_handle.purge_object(self.pid)
+
+            return True
 
 
-	# return object hierarchy
-	def object_hierarchy(self, overwrite=False):
+    # default previewImage return
+    def previewImage(self):
 
-		'''
-		Returns object hierarchy from models.ObjHierarchy
-		'''
-		return models.ObjHierarchy(self.pid, self.SolrDoc.asDictionary()['dc_title'][0]).load_hierarchy(overwrite=overwrite)
+        '''
+        Return image/loris params for API to render
+            - pid, datastream, region, size, rotation, quality, format
+        '''
+        return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
 
 
+    # return object hierarchy
+    def object_hierarchy(self, overwrite=False):
 
-	################################################################
-	# Consider moving
-	################################################################
-	# derive DC from MODS
-	def DCfromMODS(self, print_only=False):
+        '''
+        Returns object hierarchy from models.ObjHierarchy
+        '''
+        return models.ObjHierarchy(self.pid, self.SolrDoc.asDictionary()['dc_title'][0]).load_hierarchy(overwrite=overwrite)
 
-		# retrieve MODS
-		MODS_handle = self.ohandle.getDatastreamObject('MODS')
-		XMLroot = etree.fromstring(MODS_handle.content.serialize())
+    # return timeline
+    def timeline(self):
 
-		# transform downloaded MODS to DC with LOC stylesheet
-		print "XSLT Transforming: %s" % (self.pid)
-		# Saxon transformation
-		XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')
-		xslt_tree = etree.parse(XSLhand)
-		transform = etree.XSLT(xslt_tree)
-		DC = transform(XMLroot)
+        # closure to organize the timeline creation process
+        def _initialize_timeline(self):
+            # get dates
+            initial_ingest = str(fedora_handle.get_object(self.pid).getProfile().created)
+            fedora = str(fedora_handle.get_object(self.pid).getProfile().modified)
+            search_string = self.pid.replace(":", "\:")
+            solr = solr_handle.search(**{"q": search_string}).documents[0]['solr_modifiedDate']
+            varnish = urlopen("https://localhost/item/" + self.pid, context=ssl._create_unverified_context()).headers['date']
+            # standardize dates
+            initial_ingest = parser.parse(initial_ingest)
+            fedora = parser.parse(fedora)
+            solr = parser.parse(solr)
+            varnish = parser.parse(varnish)
+            # organize dates
+            timeline = [("initial_ingest", initial_ingest), ("fedora", fedora), ("solr", solr), ("varnish", varnish)]
+            # sort list of tuples according to each second tuple value (aka timestamp)
+            timeline = sorted(timeline, key=lambda x: x[1])
 
-		# scrub duplicate, identical elements from DC
-		DC = utilities.delDuplicateElements(DC)
+            return timeline
 
-		# save to DC datastream
-		if not print_only:			
-			DS_handle = self.ohandle.getDatastreamObject("DC")
-			old_DC = DS_handle.content
-			# only update if different:
-				# do here
-			DS_handle.content = str(DC)
-			derive_results = DS_handle.save()
-			print "DCfromMODS result:",derive_results
-			return derive_results
+        # Make the dates a bit more human readable
+        def _make_human_readable(timeline):
+            human_readable_dates = []
+            human_readable_names = []
 
-		else:
-			return str(DC)
+            def i():
+                return "Ingested into Fedora Commons"
+
+            def f():
+                return "Last Modified in Fedora"
+
+            def s():
+                return "Indexed in Solr"
+
+            def v():
+                return "Cached in Varnish"
+
+            names = {"initial_ingest": i,
+                     "fedora": f,
+                     "solr": s,
+                     "varnish": v, }
+
+            for each in timeline:
+                human_readable_dates.append((each[0], each[1].ctime()))
+                human_readable_names.append((names[each[0]](), each[1].ctime()))
+
+            human_readable = {'events': human_readable_dates, 'human': human_readable_names}
+            return human_readable
+
+        # check order and let us know if it's as it should be
+        def _check_order(timeline):
+            preferred_order = [("initial_ingest", 0), ("fedora", 1), ("solr", 2), ("varnish", 3)]
+            actual_order = timeline['events']
+            order = [x[0] for x, y in zip(preferred_order, actual_order) if x[0] == y[0]]
+            if order == ['initial_ingest', 'fedora', 'solr', 'varnish']:
+                health = True
+                message = "Nothing to Report. Everything looks good."
+            else:
+                health = False
+                message = "Something is amiss. Cache or index might need to be updated."
+
+            # append messages
+            timeline = {"events": actual_order, "healthy": health, "message": message, 'human': timeline['human']}
+            return timeline
+
+        # PREMIS -- future work to add the ability to convert and append PREMIS events to the timeline
+        # def _append_Premis_events(timeline):
+
+        # make basic timeline structure
+        timeline = _initialize_timeline(self)
+
+        # handle the formatting of the dates so it's more human readable and also make a front-end ready data set
+        human_readable = _make_human_readable(timeline)
+
+        # check order
+        checked = _check_order(human_readable)
+
+        # output activity dates for fedora, solr, and varnish along with a message about caching/indexing status
+        return checked
+
+    ################################################################
+    # Consider moving
+    ################################################################
+    # derive DC from MODS
+    def DCfromMODS(self, print_only=False):
+
+        # retrieve MODS
+        MODS_handle = self.ohandle.getDatastreamObject('MODS')
+        XMLroot = etree.fromstring(MODS_handle.content.serialize())
+
+        # transform downloaded MODS to DC with LOC stylesheet
+        print "XSLT Transforming: %s" % (self.pid)
+        # Saxon transformation
+        XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')
+        xslt_tree = etree.parse(XSLhand)
+        transform = etree.XSLT(xslt_tree)
+        DC = transform(XMLroot)
+
+        # scrub duplicate, identical elements from DC
+        DC = utilities.delDuplicateElements(DC)
+
+        # save to DC datastream
+        if not print_only:          
+            DS_handle = self.ohandle.getDatastreamObject("DC")
+            old_DC = DS_handle.content
+            # only update if different:
+                # do here
+            DS_handle.content = str(DC)
+            derive_results = DS_handle.save()
+            print "DCfromMODS result:",derive_results
+            return derive_results
+
+        else:
+            return str(DC)
 
 
 

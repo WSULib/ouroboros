@@ -2,8 +2,6 @@
 <!-- Imports -->
 <script type="text/javascript" src="{{ url_for('static',filename='chartjs/Chart.js')}}"></script>
 
-
-
 <div class="row">
 		<div class="col-md-12">		
 			{% include "PIDiterator.html" %}
@@ -35,8 +33,119 @@
 			</tr>
 		</table>
 
-	</div>	
-</div>
+	</div>
+
+<!-- Timeline -->
+<div class="row">
+	<div class="col-md-6">
+		<div class="container">
+	        <h2>Object Timeline</h2>
+
+		    <div class="timeline">
+		        <!-- Line component -->
+		        <div class="line text-muted"></div>
+		        <!-- Separator -->
+		        <div class="separator text-muted">
+		            <time>{{object_package['timeline']['human'][0][1]}}</time>
+		        </div>
+		        <!-- /Separator -->
+		   
+			     <!-- Panel -->
+		        <article class="panel panel-primary">
+		            <!-- Icon -->
+		            <div class="panel-heading icon">
+		                <i class="glyphicon glyphicon-plus"></i>
+		            </div>
+		            <!-- /Icon -->
+		            <!-- Heading -->
+		            <div class="panel-heading">
+		                <h2 class="panel-title">{{object_package['timeline']['human'][0][0]}}</h2>
+		            </div>
+		        </article>
+		        <!-- /Panel -->
+
+		        <!-- Separator -->
+		        <div class="separator text-muted">
+		            <time>{{object_package['timeline']['human'][1][1]}}</time>
+		        </div>
+		        <!-- /Separator -->
+		    
+		     	<!-- Panel -->
+		        <article class="panel panel-info">
+		            <!-- Icon -->
+		            <div class="panel-heading icon">
+		                <i class="glyphicon glyphicon-plus"></i>
+		            </div>
+		            <!-- /Icon -->	    
+		            <!-- Heading -->
+		            <div class="panel-heading">
+		                <h2 class="panel-title">{{object_package['timeline']['human'][1][0]}}</h2>
+		            </div> 
+		        </article>
+		        <!-- /Panel -->
+		    
+		        <!-- Separator -->
+		        <div class="separator text-muted">
+		            <time>{{object_package['timeline']['human'][2][1]}}</time>
+		        </div>
+		        <!-- /Separator -->
+		    
+		        <!-- Panel -->
+		        <article class="panel panel-warning">
+		            <!-- Icon -->
+		            <div class="panel-heading icon">
+		                <i class="glyphicon glyphicon-plus"></i>
+		            </div>
+		            <!-- /Icon -->
+		            <!-- Heading -->
+		            <div class="panel-heading">
+		                <h2 class="panel-title">{{object_package['timeline']['human'][2][0]}}</h2>
+		            </div>
+		            <!-- /Heading -->   
+		        </article>
+		        <!-- /Panel -->
+		    
+		        <!-- Separator -->
+		        <div class="separator text-muted">
+		            <time>{{object_package['timeline']['human'][3][1]}}</time>
+		        </div>
+		        <!-- /Separator -->
+		    
+		        <!-- Panel -->
+		        <article class="panel panel-success">
+		            <!-- Icon -->
+		            <div class="panel-heading icon">
+		                <i class="glyphicon glyphicon-plus"></i>
+		            </div>
+		            <!-- /Icon -->
+		            <!-- Heading -->
+		            <div class="panel-heading">
+		                <h2 class="panel-title">{{object_package['timeline']['human'][3][0]}}</h2>
+		            </div>
+		            <!-- /Heading -->   
+		        </article>
+		        <!-- /Panel -->
+		    
+		        <!-- Panel -->
+		        <article id="timeline-temp" data-health="{{object_package['timeline']['healthy']}}" class="panel panel-primary panel-outline">
+		            <!-- Icon -->
+		            <div class="panel-heading icon">
+		                <i class="glyphicon glyphicon-info-sign"></i>
+		            </div>
+		            <!-- /Icon -->
+		            <!-- Body -->
+		            <div class="panel-body">
+		                {{object_package['timeline']['message']}}
+		            </div>
+		            <!-- /Body -->
+		        </article>
+		        <!-- /Panel -->
+
+		    </div> <!-- timeline -->
+		</div> <!-- container -->
+	</div> <!-- col-md-6 -->
+</div> <!-- row -->
+    <!-- /Timeline -->
 
 <div class="row">
 	<div class="col-md-6">
@@ -260,6 +369,18 @@
 		</ul>
 	</div>
 </div>
+
+
+</div>
+
+<script>
+var health = $('#timeline-temp').data()['health'];
+if (health === "False") {
+	var info = document.querySelector('#timeline-temp')
+	info.classList.add("panel-danger");
+	info.classList.remove("panel-primary");
+}
+</script>
 
 <!-- <div class="row">
 	<div class="col-md-12">

@@ -249,6 +249,25 @@ def deleteObject(job_id,ingest_id):
 	return redirect('/%s/tasks/ingestWorkspace/job/%s' % (localConfig.APP_PREFIX, job_id))
 
 
+# pids from job
+@ingestWorkspace.route('/ingestWorkspace/job/<job_id>/job_pids/<output_type>', methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def job_pids(job_id, output_type):
+
+	# get handle
+	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
+
+	# get objects
+	objs = models.ingest_workspace_object.query.filter_by(job=j)
+
+	if output_type == 'solr_search_terms':
+		return " OR ".join(["'%s'" % obj.pid for obj in objs])
+
+	if output_type == 'python_list':
+		return ",".join(["'%s'" % obj.pid for obj in objs])
+
+
+
 #################################################################################
 # Modify Rows from Details
 #################################################################################

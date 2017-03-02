@@ -390,17 +390,6 @@ class WSUDOR_GenObject(object):
     @helpers.LazyProperty
     def objSizeDict(self):
 
-        '''
-        Begin storing in Redis.
-        If not stored, generate and store.
-        If stored, return.
-
-        Improvement: need to provide method for updating
-
-        Also, needs to include components...
-
-        '''
-
         # check Redis for object size dictionary
         r_response = redisHandles.r_catchall.get(self.pid)
         if r_response != None:

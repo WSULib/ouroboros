@@ -153,7 +153,6 @@ text-align: center;
 				{% if g.user.is_authenticated%}
 			<li><a href="{{ url_for('logout') }}">Logout, <strong>{{g.user.displayName}}</strong></a></li>
 				{% endif %}
-			<li><a href="/logs" target="_blank">Logs Viewer</a></li>
 			<li>
 				<form style="margin-left:10px; margin-top:10px;" class="form-inline" role="form" method="GET" action="/{{APP_PREFIX}}/quickPID" enctype="multipart/form-data">
 					<div class="form-group">

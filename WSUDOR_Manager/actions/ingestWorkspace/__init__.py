@@ -303,7 +303,7 @@ def jobjson(job_id):
 
 	def existsReturnValue(input):
 		if input != None and input != "0":
-			return input
+			return "<a target='_blank' href='%s'>live link</a>" % (input)
 		else:
 			return "<span style='color:red;'>False</span>"
 
@@ -940,13 +940,20 @@ def ingestBag_factory(job_package):
 @celery.task(name="ingestBag_callback")
 def ingestBag_callback(job_package):
 	
-	print "FIRING ingestBag_callback"	
+	print "FIRING ingestBag_callback"
+
+	'''
+	This is an opportunity check the status of the ingest.
+	'''	
 
 	# open handle
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
 	print "Retrieved row: %s / %s" % (o.ingest_id,o.object_title)
-	print "Setting ingest JSON"
-	o.ingested = job_package['form_data']['dest_repo']
+	
+	# set ingested link
+	remote_repo_host = localConfig.REMOTE_REPOSITORIES[job_package['form_data']['dest_repo']]['FRONT_END_HOST']
+	o.ingested = "http://%s/item/%s" % (remote_repo_host, o.pid)
+	# o.ingested = job_package['form_data']['dest_repo']
 	return o._commit()
 
 

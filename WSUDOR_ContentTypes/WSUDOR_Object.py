@@ -272,21 +272,24 @@ class WSUDOR_GenObject(object):
             print e
 
 
-        # initiate IIIF Manifest Factory
-        self.iiif_factory = ManifestFactory()
-        # Where the resources live on the web
-        self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
-        # Where the resources live on disk
-        self.iiif_factory.set_base_prezi_dir("/tmp")
+        try:
+            # initiate IIIF Manifest Factory
+            self.iiif_factory = ManifestFactory()
+            # Where the resources live on the web
+            self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+            # Where the resources live on disk
+            self.iiif_factory.set_base_prezi_dir("/tmp")
 
-        # Default Image API information
-        self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
-        self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
+            # Default Image API information
+            self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+            self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
 
-        # 'warn' will print warnings, default level
-        # 'error' will turn off warnings
-        # 'error_on_warning' will make warnings into errors
-        self.iiif_factory.set_debug("warn")
+            # 'warn' will print warnings, default level
+            # 'error' will turn off warnings
+            # 'error_on_warning' will make warnings into errors
+            self.iiif_factory.set_debug("warn")
+        except:
+            self.iiif_factory = False
 
 
 
@@ -1177,10 +1180,23 @@ class WSUDOR_GenObject(object):
         results['loris'] = self._removeObjFromLorisCache()
 
         # remove from Varnish
-        # results['varnish'] = self._removeObjFromVarnishCache()
+        results['varnish'] = self._removeObjFromVarnishCache()
 
         # return results dictionary
         return results
+
+    # ban image from varnish cache
+    def _removeObjFromVarnishCache(self):
+
+        # main pid
+        os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % self.pid)
+
+        # check constituents
+        if len(self.constituents) > 0:
+            for constituent in self.constituents:
+                os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % constituent.pid)
+
+        return  True
 
 
     # remove from Loris cache
@@ -1199,22 +1215,6 @@ class WSUDOR_GenObject(object):
                     print "could not remove constituent %s from cache, possible already purged" % constituent
 
         return True
-
-
-    # remove from Loris cache
-    def _removeObjFromLorisCache(self):
-
-        for ds in self.ohandle.ds_list:
-            self._removeDatastreamFromLorisCache(self.pid, ds)
-
-        # check constituents        
-        if len(self.constituents) > 0:
-            for constituent in self.constituents:
-                for ds in constituent.ds_list:
-                    self._removeDatastreamFromLorisCache(constituent.pid, ds)
-
-        return True
-
 
     # remove from Loris cache
     def _removeDatastreamFromLorisCache(self, pid, ds):
@@ -1620,9 +1620,9 @@ class WSUDOR_GenObject(object):
             # get dates
             initial_ingest = str(fedora_handle.get_object(self.pid).getProfile().created)
             fedora = str(fedora_handle.get_object(self.pid).getProfile().modified)
-            search_string = self.pid.replace(":", "\:")
+            search_string = "id:" + self.pid.replace(":", "\:")
             solr = solr_handle.search(**{"q": search_string}).documents[0]['solr_modifiedDate']
-            varnish = urlopen("https://localhost/item/" + self.pid, context=ssl._create_unverified_context()).headers['date']
+            varnish = urlopen("https://" + localConfig.PUBLIC_HOST + "/item/" + self.pid, context=ssl._create_unverified_context()).headers['date']
             # standardize dates
             initial_ingest = parser.parse(initial_ingest)
             fedora = parser.parse(fedora)
@@ -1694,6 +1694,16 @@ class WSUDOR_GenObject(object):
 
         # output activity dates for fedora, solr, and varnish along with a message about caching/indexing status
         return checked
+
+    # Cache object
+    def cacheInVarnish(self):
+        try:
+            self._removeObjFromVarnishCache()
+            urlopen("https://" + localConfig.PUBLIC_HOST + "/item/" + self.pid, context=ssl._create_unverified_context())
+            urlopen("https://" + localConfig.PUBLIC_HOST + "/" + self.pid + "/thumbnail", context=ssl._create_unverified_context())
+            return True
+        except:
+            return False
 
     ################################################################
     # Consider moving

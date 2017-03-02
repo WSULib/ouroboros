@@ -1632,7 +1632,7 @@ class WSUDOR_GenObject(object):
             # get dates
             initial_ingest = str(fedora_handle.get_object(self.pid).getProfile().created)
             fedora = str(fedora_handle.get_object(self.pid).getProfile().modified)
-            search_string = self.pid.replace(":", "\:")
+            search_string = "id:" + self.pid.replace(":", "\:")
             solr = solr_handle.search(**{"q": search_string}).documents[0]['solr_modifiedDate']
             varnish = urlopen("https://" + localConfig.PUBLIC_HOST + "/item/" + self.pid, context=ssl._create_unverified_context()).headers['date']
             # standardize dates

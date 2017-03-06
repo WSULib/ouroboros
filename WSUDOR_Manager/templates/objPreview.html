@@ -158,7 +158,8 @@
 				var ctx = $("#size_chart").get(0).getContext("2d");								
 
 				// prepare data
-				var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');				
+				var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');
+				console.log(raw_data);
 
 				/**
 				 * Converts an HSV color value to RGB. Conversion formula
@@ -232,20 +233,20 @@
 
 				// loop through
 				data = [];
-				for (var key in raw_data) {
+				for (var key in raw_data.datastreams) {
 
 				  // skip datastreams with 0 size, and "total_size" key
-				  if ( raw_data.hasOwnProperty(key) && key != "total_size" && raw_data[key][0] > 0 ) {				  	
+				  if ( raw_data.datastreams.hasOwnProperty(key) && key != "total_size" && raw_data.datastreams[key][0] > 0 ) {				  	
 				    
 				  	// determine color using HSV
-				  	percentage_of_total = raw_data[key][0] / raw_data['total_size'][0];
+				  	percentage_of_total = raw_data.datastreams[key][0] / raw_data['fedora_total_size'][0];
 				  	seg_percent = ( 1 - percentage_of_total ) * .23;
 				  	rgb_values = hsvToRgb(seg_percent, .9, .9);				  	
 
 				    var temp_obj = {
 				    	"label":key,
-				    	"value":raw_data[key][0],
-				    	"human_value":raw_data[key][1],
+				    	"value":raw_data.datastreams[key][0],
+				    	"human_value":raw_data.datastreams[key][1],
 				    	"color":"rgb("+Math.round(rgb_values[0])+","+Math.round(rgb_values[1])+","+Math.round(rgb_values[2])+")"
 				    }
 				    data.push(temp_obj);
@@ -284,7 +285,8 @@
 				// This will get the first returned node in the jQuery collection.				
 				var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
 			</script>
-			<h3>Total Object Size: <strong>{{object_package.size_dict.total_size.1}}</strong></h3>
+			<h3>Fedora Object Size: <strong>{{object_package.size_dict.fedora_total_size.1}}</strong></h3>
+			<h3>WSUDOR Object Size: <strong>{{object_package.size_dict.wsudor_total_size.1}}</strong></h3>
 		</div>
 		
 
@@ -301,7 +303,7 @@
 					<td>{{ds}}</td>
 					<td>{{object_package.datastream_package[ds].label}}</td>
 					<td>{{object_package.datastream_package[ds].mimeType}}</td>
-					<td>{{object_package.size_dict[ds].1}}</td>					
+					<td>{{object_package.size_dict.datastreams[ds].1}}</td>					
 					<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
 				</tr>
 			{% endfor %}

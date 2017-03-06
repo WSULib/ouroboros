@@ -1055,15 +1055,13 @@ def objPreview(PIDnum):
     ds_list = obj_handle.ohandle.ds_list
     object_package['datastream_package'] = ds_list
 
-    # Object size of datastreams
-    '''
-    problematic: updating everytime
-        - more accurate, but quite slow, too slow
-    '''
-    # size_dict = obj_handle.update_objSizeDict()
-    size_dict = obj_handle.objSizeDict
+    # Object size and datastreams
+    size_dict = obj_handle.object_size(details=True)
     object_package['size_dict'] = size_dict
-    object_package['size_dict_json'] = json.dumps(size_dict)
+    object_package['size_dict_json'] = json.dumps({
+        'datastreams':size_dict['datastreams'],
+        'fedora_total_size':size_dict['fedora_total_size']
+        })
 
     # OAI
     OAI_dict = {}

@@ -434,22 +434,6 @@ class WSUDOR_GenObject(object):
         return size_dict
 
 
-    # def objSizeDict_RDF(self):
-
-    #     stime = time.time()
-
-    #     # get self
-    #     self_filesize = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'https://www.ebu.ch/metadata/ontologies/ebucore/index.html#fileSize').next())
-
-    #     # add constituents
-    #     sparql_response = fedora_handle.risearch.sparql_query('select $constituent $filesize WHERE {{ $constituent <info:fedora/fedora-system:def/relations-external#isConstituentOf> <info:fedora/%s> . $constituent <https://www.ebu.ch/metadata/ontologies/ebucore/index.html#fileSize> $filesize . }}' % (self.pid))
-    #     constituent_objects = [ int(obj['filesize']) for obj in sparql_response ]
-    #     constituents_filesize = sum(constituent_objects)
-
-    #     print "elapsed: %s" % (time.time() - stime)
-    #     return self_filesize + constituents_filesize
-
-
     def object_size(self, details=False, update=False):
         
         '''
@@ -475,6 +459,7 @@ class WSUDOR_GenObject(object):
 
         # update RDF relationships detailing object and datastream sizes
         if update:
+            stime = time.time()
             print "updating object size"
 
             rels_to_write = []
@@ -492,18 +477,20 @@ class WSUDOR_GenObject(object):
             # if constituents, add relationships as well
             if 'constituent_objects' in size_dict.keys():
                 for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
+                    constituent_obj = fedora_handle.get_object(constituent_pid)
                     for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
-                        rels_to_write.append((constituent_pid,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
+                        rels_to_write.append((constituent_obj,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
                     # write total sizes
-                    rels_to_write.append((constituent_pid,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
-                    rels_to_write.append((constituent_pid,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
+                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
+                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
 
-            # write all rels
+            # write/update all rels
             for rel_tuple in rels_to_write:
                 print rel_tuple
-                fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
+                # fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
 
             # return size_dict
+            print "elapsed: %s" % (time.time() - stime)
             return size_dict
 
         # calculate and return full size dictionary, including constituents

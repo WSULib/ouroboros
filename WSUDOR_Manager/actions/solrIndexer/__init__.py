@@ -260,8 +260,10 @@ class SolrIndexerWorker(object):
 
 		# Add object and datastream sizes
 		try:
-			setattr(obj_handle.SolrDoc.doc, "obj_size_i", obj_handle.objSizeDict['total_size'][0] )
-			setattr(obj_handle.SolrDoc.doc, "obj_size_human", obj_handle.objSizeDict['total_size'][1] )
+			setattr(obj_handle.SolrDoc.doc, "obj_fedora_size_i", obj_handle.object_size()['fedora_total_size'][0] )
+			setattr(obj_handle.SolrDoc.doc, "obj_fedora_size_human", obj_handle.object_size()['fedora_total_size'][1] )
+			setattr(obj_handle.SolrDoc.doc, "obj_wsudor_size_i", obj_handle.object_size()['wsudor_total_size'][0] )
+			setattr(obj_handle.SolrDoc.doc, "obj_wsudor_size_human", obj_handle.object_size()['wsudor_total_size'][1] )
 		except:
 			print "Could not determine object size, skipping"
 

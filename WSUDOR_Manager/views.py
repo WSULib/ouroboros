@@ -34,7 +34,7 @@ from WSUDOR_Manager import redisHandles
 from WSUDOR_Manager import login_manager
 from WSUDOR_Manager import WSUDOR_ContentTypes
 from WSUDOR_ContentTypes import *
-from WSUDOR_API.v1.bitStream import BitStream
+from WSUDOR_API.v2.inc.bitStream import BitStream
 import utilities
 
 # flask-security
@@ -1056,7 +1056,8 @@ def objPreview(PIDnum):
     object_package['datastream_package'] = ds_list
 
     # Object size and datastreams
-    size_dict = obj_handle.object_size(details=True)
+    size_dict = obj_handle.object_size()
+    print size_dict
     object_package['size_dict'] = size_dict
     object_package['size_dict_json'] = json.dumps({
         'datastreams':size_dict['datastreams'],
@@ -1790,12 +1791,12 @@ def objAccess(pid):
     obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
 
     # General Metadata
-    solr_params = {'q':utilities.escapeSolrArg(pid), 'rows':1}
-    solr_results = solr_handle.search(**solr_params)
-    if solr_results.total_results == 0:
-        return "Selected objects don't appear to exist."
-    solr_package = solr_results.documents[0]
-    object_package['solr_package'] = solr_package
+    # solr_params = {'q':utilities.escapeSolrArg(pid), 'rows':1}
+    # solr_results = solr_handle.search(**solr_params)
+    # if solr_results.total_results == 0:
+    #     return "Selected objects don't appear to exist."
+    # solr_package = solr_results.documents[0]
+    object_package['solr_package'] = obj_handle.SolrDoc.asDictionary()
 
     # COMPONENTS
     object_package['components_package'] = []
@@ -1819,13 +1820,14 @@ def objAccess(pid):
     ds_list = obj_handle.ohandle.ds_list
     object_package['datastream_package'] = ds_list
 
-    # Object size of datastreams
-    if 'update' in request.args:
-        size_dict = obj_handle.update_objSizeDict()
-    else:   
-        size_dict = obj_handle.objSizeDict
+    # Object size and datastreams
+    size_dict = obj_handle.object_size()
+    print size_dict
     object_package['size_dict'] = size_dict
-    object_package['size_dict_json'] = json.dumps(size_dict)
+    object_package['size_dict_json'] = json.dumps({
+        'datastreams':size_dict['datastreams'],
+        'fedora_total_size':size_dict['fedora_total_size']
+        })
 
     # OAI
     OAI_dict = {}
@@ -1853,6 +1855,7 @@ def objAccess(pid):
     object_package['bitStream_tokens'] = BitStream.genAllTokens(pid, localConfig.BITSTREAM_KEY)
 
     # RENDER
+    print object_package['solr_package']
     return render_template("admin_object_access.html", pid=pid, object_package=object_package, localConfig=localConfig)
 
 

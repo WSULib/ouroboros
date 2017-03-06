@@ -144,7 +144,7 @@ class BitStream(object):
 						redisHandles.r_catchall.set(return_token, self.unique_id)
 						self.msg = {
 							"token":return_token,
-							"url":"https://%s/item/%s/bitStream/%s/?token=%s" % (localConfig.APP_HOST, self.PID, self.DS, return_token),
+							"url":"https://%s/item/%s/file/%s/?token=%s" % (localConfig.APP_HOST, self.PID, self.DS, return_token),
 							"object":self.PID,
 							"datastream":self.DS
 						}
@@ -204,7 +204,7 @@ class BitStream(object):
 		else:
 			self.msg = {
 				"token":None,
-				"url":"https://%s/item/%s/bitStream/%s/?" % (localConfig.APP_HOST, self.PID, self.DS),
+				"url":"https://%s/item/%s/file/%s/?" % (localConfig.APP_HOST, self.PID, self.DS),
 				"object":self.PID,
 				"datastream":self.DS			
 			}

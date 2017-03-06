@@ -128,20 +128,20 @@
 
 				// loop through
 				data = [];
-				for (var key in raw_data) {
+				for (var key in raw_data.datastreams) {
 
 				  // skip datastreams with 0 size, and "total_size" key
-				  if ( raw_data.hasOwnProperty(key) && key != "total_size" && raw_data[key][0] > 0 ) {				  	
+				  if ( raw_data.datastreams.hasOwnProperty(key) && key != "total_size" && raw_data.datastreams[key][0] > 0 ) {				  	
 				    
 				  	// determine color using HSV
-				  	percentage_of_total = raw_data[key][0] / raw_data['total_size'][0];
+				  	percentage_of_total = raw_data.datastreams[key][0] / raw_data['fedora_total_size'][0];
 				  	seg_percent = ( 1 - percentage_of_total ) * .23;
 				  	rgb_values = hsvToRgb(seg_percent, .9, .9);				  	
 
 				    var temp_obj = {
 				    	"label":key,
-				    	"value":raw_data[key][0],
-				    	"human_value":raw_data[key][1],
+				    	"value":raw_data.datastreams[key][0],
+				    	"human_value":raw_data.datastreams[key][1],
 				    	"color":"rgb("+Math.round(rgb_values[0])+","+Math.round(rgb_values[1])+","+Math.round(rgb_values[2])+")"
 				    }
 				    data.push(temp_obj);
@@ -180,7 +180,8 @@
 				// This will get the first returned node in the jQuery collection.				
 				var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
 			</script>
-			<h4>Total Object Size: <strong>{{object_package.size_dict.total_size.1}}</strong></h4>
+			<h4>Fedora Object Size: <strong>{{object_package.size_dict.fedora_total_size.1}}</strong></h4>
+			<h4>WSUDOR Object Size: <strong>{{object_package.size_dict.wsudor_total_size.1}}</strong></h4>
 		</div>
 	</div>
 </div>
@@ -213,7 +214,7 @@
 				else {
 					ds = 'Unknown';
 				}
-				thumb_url = 'http://{{localConfig.APP_HOST}}/item/wayne:WSUDORThumbnails/bitStream/'+ds+'?key={{localConfig.BITSTREAM_KEY}}'
+				thumb_url = 'http://{{localConfig.APP_HOST}}/item/wayne:WSUDORThumbnails/file/'+ds+'?key={{localConfig.BITSTREAM_KEY}}'
 
 				// replace
 				img_ele.attr('src',thumb_url);
@@ -292,7 +293,7 @@
 					<td>{{ds}}</td>
 					<td>{{object_package.datastream_package[ds].label}}</td>
 					<td>{{object_package.datastream_package[ds].mimeType}}</td>
-					<td>{{object_package.size_dict[ds].1}}</td>			
+					<td>{{object_package.size_dict.datastreams[ds].1}}</td>			
 					<!-- use bitStream tokens here -->		
 					<td>
 						<a target="_blank" href="{{object_package.bitStream_tokens[ds].url}}" class="btn btn-success download_button" onclick="$(this).removeClass('btn-success').addClass('btn-danger').addClass('disabled'); $(this).html('Link Expired'); $(this).prop('disabled',true);">Download</a>

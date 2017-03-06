@@ -390,53 +390,6 @@ class WSUDOR_GenObject(object):
         return self.ohandle.getDatastreamObject('IIIF_MANIFEST').content
 
 
-    # @helpers.LazyProperty
-    # def objSizeDict(self):
-
-    #     stime = time.time()
-    #     print "generating object size dictionary, storing in redis, returning"
-
-    #     size_dict = {}
-    #     tot_size = 0
-
-    #     # loop through datastreams, append size to return dictionary
-    #     for ds in self.ohandle.ds_list:
-    #         ds_handle = self.ohandle.getDatastreamObject(ds)
-    #         ds_size = ds_handle.size
-    #         tot_size += ds_size
-    #         size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
-
-    #     # loop through constituents and add as well
-    #     if len(self.constituents) > 0:
-    #         constituent_objects_size = 0
-    #         for obj in self.constituents:
-    #             for ds in obj.ds_list:
-    #                 ds_handle = obj.getDatastreamObject(ds)
-    #                 ds_size = ds_handle.size
-    #                 constituent_objects_size += ds_size
-    #         size_dict['constituent_objects'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
-    #         tot_size += constituent_objects_size
-
-    #     size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
-
-    #     # store in Redis
-    #     redisHandles.r_catchall.set(self.pid, size_dict)
-
-    #     # return
-    #     print "elapsed: %s" % (time.time() - stime)
-    #     return size_dict
-
-
-    # def update_objSizeDict(self):
-
-    #     # clear from Redis
-    #     print "clearing previous entry in Redis"
-    #     redisHandles.r_catchall.delete(self.pid)
-
-    #     print "regenerating and returning"
-    #     return self.objSizeDict
-
-
     def calc_object_size(self):
 
         stime = time.time()
@@ -797,14 +750,14 @@ class WSUDOR_GenObject(object):
         # the following methods are not needed when objects are "passing through"
         if indexObject:
 
+            # calculate object size
+            self.object_size(update=True)
+            
             # Index in Solr (can override from command by setting self.index_on_ingest to False)
             if self.index_on_ingest != False:
                 self.indexToSolr()
             else:
                 print "Skipping Solr Index"
-
-            # index object size
-            self.update_objSizeDict()
 
             # run all ContentType specific methods that were passed here
             print "RUNNING ContentType methods..."
@@ -1418,7 +1371,7 @@ class WSUDOR_GenObject(object):
 
         Includes following methods:
         - generate IIIF manifest --> self.genIIIFManifest()
-        - update object size in Solr --> self.update_objSizeDict()
+        - update object size in Solr --> self.object_size(update=True)
         - index in Solr --> self.indexToSolr()
         '''
         

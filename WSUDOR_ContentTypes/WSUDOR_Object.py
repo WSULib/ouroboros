@@ -390,56 +390,190 @@ class WSUDOR_GenObject(object):
         return self.ohandle.getDatastreamObject('IIIF_MANIFEST').content
 
 
-    @helpers.LazyProperty
-    def objSizeDict(self):
+    # @helpers.LazyProperty
+    # def objSizeDict(self):
 
-        # check Redis for object size dictionary
-        r_response = redisHandles.r_catchall.get(self.pid)
-        if r_response != None:
-            print "object size dictionary located and retrieved from Redis"
-            return ast.literal_eval(r_response)
+    #     stime = time.time()
+    #     print "generating object size dictionary, storing in redis, returning"
 
+    #     size_dict = {}
+    #     tot_size = 0
+
+    #     # loop through datastreams, append size to return dictionary
+    #     for ds in self.ohandle.ds_list:
+    #         ds_handle = self.ohandle.getDatastreamObject(ds)
+    #         ds_size = ds_handle.size
+    #         tot_size += ds_size
+    #         size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+    #     # loop through constituents and add as well
+    #     if len(self.constituents) > 0:
+    #         constituent_objects_size = 0
+    #         for obj in self.constituents:
+    #             for ds in obj.ds_list:
+    #                 ds_handle = obj.getDatastreamObject(ds)
+    #                 ds_size = ds_handle.size
+    #                 constituent_objects_size += ds_size
+    #         size_dict['constituent_objects'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+    #         tot_size += constituent_objects_size
+
+    #     size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+
+    #     # store in Redis
+    #     redisHandles.r_catchall.set(self.pid, size_dict)
+
+    #     # return
+    #     print "elapsed: %s" % (time.time() - stime)
+    #     return size_dict
+
+
+    # def update_objSizeDict(self):
+
+    #     # clear from Redis
+    #     print "clearing previous entry in Redis"
+    #     redisHandles.r_catchall.delete(self.pid)
+
+    #     print "regenerating and returning"
+    #     return self.objSizeDict
+
+
+    def calc_object_size(self):
+
+        stime = time.time()
+
+        print "calculating object and constituent sizes"
+
+        size_dict = {
+            'datastreams':{}
+        }
+        fedora_obj_size = 0
+        wsudor_obj_size = 0
+
+        # loop through datastreams, append size to return dictionary
+        for ds in self.ohandle.ds_list:
+            ds_handle = self.ohandle.getDatastreamObject(ds)
+            ds_size = ds_handle.size
+            fedora_obj_size += ds_size            
+            size_dict['datastreams'][ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+
+        # set as equal prior to constituent calc
+        wsudor_obj_size = fedora_obj_size
+
+        # loop through constituents and add as well
+        if len(self.constituents) > 0:
+            size_dict['constituent_objects'] = {
+                'objects':{}
+            }
+            constituent_objects_size = 0
+            for obj in self.constituents:
+                t_obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
+                t_obj_handle_size = t_obj_handle.calc_object_size()
+                size_dict['constituent_objects']['objects'][t_obj_handle.pid] = t_obj_handle_size
+                constituent_objects_size += t_obj_handle_size['fedora_total_size'][0]
+            size_dict['constituent_objects']['fedora_total_size'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+            wsudor_obj_size += constituent_objects_size
+
+        size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
+        size_dict['wsudor_total_size'] = (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
+
+        # return
+        print "elapsed: %s" % (time.time() - stime)
+        return size_dict
+
+
+    # def objSizeDict_RDF(self):
+
+    #     stime = time.time()
+
+    #     # get self
+    #     self_filesize = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'https://www.ebu.ch/metadata/ontologies/ebucore/index.html#fileSize').next())
+
+    #     # add constituents
+    #     sparql_response = fedora_handle.risearch.sparql_query('select $constituent $filesize WHERE {{ $constituent <info:fedora/fedora-system:def/relations-external#isConstituentOf> <info:fedora/%s> . $constituent <https://www.ebu.ch/metadata/ontologies/ebucore/index.html#fileSize> $filesize . }}' % (self.pid))
+    #     constituent_objects = [ int(obj['filesize']) for obj in sparql_response ]
+    #     constituents_filesize = sum(constituent_objects)
+
+    #     print "elapsed: %s" % (time.time() - stime)
+    #     return self_filesize + constituents_filesize
+
+
+    def object_size(self, details=False, update=False):
+        
+        '''
+        Primary method for returning information about an object's size.
+        This information is calculated and stored as RDF relationships:
+            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize - aggregatoe size of all datastreams and constituent objects
+            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize - aggreagate size of all datastreams in Fedora object
+            - http://www.loc.gov/premis/rdf/v1#hasSize - size of each datastream
+
+        If details:
+            return dictionary of size of all datastreams (including constituent objects);
         else:
-            print "generating object size dictionary, storing in redis, returning"
+            return dictionary with only `total_size` tuple
 
-            size_dict = {}
-            tot_size = 0
+        if update:
+            calculate size of datastreams and aggregate object size, store as RDF relationships
+                - including all constituent objects        
+        '''
 
-            # loop through datastreams, append size to return dictionary
-            for ds in self.ohandle.ds_list:
-                ds_handle = self.ohandle.getDatastreamObject(ds)
-                ds_size = ds_handle.size
-                tot_size += ds_size
-                size_dict[ds] = ( ds_size, utilities.sizeof_fmt(ds_size) )
+        # if details or update needed, calc object size
+        if details or update:
+            size_dict = self.calc_object_size()
 
-            # loop through constituents and add as well
-            if len(self.constituents) > 0:
-                constituent_objects_size = 0
-                for obj in self.constituents:
-                    for ds in obj.ds_list:
-                        ds_handle = obj.getDatastreamObject(ds)
-                        ds_size = ds_handle.size
-                        constituent_objects_size += ds_size
-                size_dict['constituent_objects'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
-                tot_size += constituent_objects_size
+        # update RDF relationships detailing object and datastream sizes
+        if update:
+            print "updating object size"
 
-            size_dict['total_size'] = (tot_size, utilities.sizeof_fmt(tot_size) )
+            rels_to_write = []
 
-            # store in Redis
-            redisHandles.r_catchall.set(self.pid, size_dict)
+            # get self and constituent sizes
+            # size_dict = self.calc_object_size()
 
-            # return
+            # update RDF relationships for self
+            for ds_id, size_tuple in size_dict['datastreams'].iteritems():
+                rels_to_write.append((self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
+            # write total sizes
+            rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
+            rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
+
+            # if constituents, add relationships as well
+            if 'constituent_objects' in size_dict.keys():
+                for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
+                    for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
+                        rels_to_write.append((constituent_pid,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
+                    # write total sizes
+                    rels_to_write.append((constituent_pid,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
+                    rels_to_write.append((constituent_pid,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
+
+            # write all rels
+            for rel_tuple in rels_to_write:
+                print rel_tuple
+                fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
+
+            # return size_dict
             return size_dict
 
 
-    def update_objSizeDict(self):
+        # if details, return calculated object size
+        if details:
+            return size_dict
 
-        # clear from Redis
-        print "clearing previous entry in Redis"
-        redisHandles.r_catchall.delete(self.pid)
 
-        print "regenerating and returning"
-        return self.objSizeDict
+        # else, return RDF object size
+        fedora_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize').next())
+        wsudor_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize').next())
+        return {
+            'fedora_total_size': (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) ),
+            'wsudor_total_size': (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
+        }
+
+
+
+
+
+
+
+
 
 
     #######################################################

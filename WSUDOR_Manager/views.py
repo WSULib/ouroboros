@@ -1056,7 +1056,12 @@ def objPreview(PIDnum):
     object_package['datastream_package'] = ds_list
 
     # Object size of datastreams
-    size_dict = obj_handle.update_objSizeDict()
+    '''
+    problematic: updating everytime
+        - more accurate, but quite slow, too slow
+    '''
+    # size_dict = obj_handle.update_objSizeDict()
+    size_dict = obj_handle.objSizeDict
     object_package['size_dict'] = size_dict
     object_package['size_dict_json'] = json.dumps(size_dict)
 

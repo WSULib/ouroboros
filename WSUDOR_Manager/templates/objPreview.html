@@ -305,7 +305,11 @@
 						<td><code>{{ds}}</code></td>
 						<td>{{object_package.datastream_package[ds].label}}</td>
 						<td>{{object_package.datastream_package[ds].mimeType}}</td>
-						<td>{{object_package.size_dict.datastreams[ds].1}}</td>					
+						{% if object_package.size_dict.datastreams[ds] %}
+							<td>{{object_package.size_dict.datastreams[ds].1}}</td>
+						{% else %}
+							<td><span style="color:red;">?????</span> (run <code>object.update_object_size()</code>)</td>
+						{% endif %}
 						<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
 					</tr>
 				{% endfor %}

@@ -501,29 +501,30 @@ class WSUDOR_GenObject(object):
                 'datastreams':False
             }
 
-            # if details, grab size info for datastreams
-
             # get datastream sizes
-            sparql_response = fedora_handle.risearch.sparql_query('select $ds_id $filesize WHERE { <info:fedora/%s> <info:fedora/fedora-system:def/view#disseminates> $ds_id . $ds_id <http://www.loc.gov/premis/rdf/v1#hasSize> $filesize . }' % (self.pid))
-            size_dict['datastreams'] = { ds['ds_id'].split("/")[-1]: (int(ds['filesize']), utilities.sizeof_fmt(int(ds['filesize'])) ) for ds in sparql_response }
+            try:
+                sparql_response = fedora_handle.risearch.sparql_query('select $ds_id $filesize WHERE { <info:fedora/%s> <info:fedora/fedora-system:def/view#disseminates> $ds_id . $ds_id <http://www.loc.gov/premis/rdf/v1#hasSize> $filesize . }' % (self.pid))            
+                size_dict['datastreams'] = { ds['ds_id'].split("/")[-1]: (int(ds['filesize']), utilities.sizeof_fmt(int(ds['filesize'])) ) for ds in sparql_response }
+            except:
+                print "RDF for datastream sizes not found."
 
             # else, return RDF object size
-            fedora_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize').next())
-            wsudor_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize').next())
+            try:
+                fedora_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize').next())
+            except:
+                print "RDF for Fedora object size not found."
+                fedora_obj_size = 0
+            try:
+                wsudor_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize').next())
+            except:
+                print "RDF for WSUDOR object size not found."
+                wsudor_obj_size = 0
             
             size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
             size_dict['wsudor_total_size'] =  (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
 
             # return 
             return size_dict
-
-
-
-
-
-
-
-
 
 
     #######################################################

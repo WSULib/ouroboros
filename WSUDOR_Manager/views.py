@@ -1022,72 +1022,80 @@ def objPreview(PIDnum):
     PIDlet['pURL'] = "/objPreview/"+str(int(PIDnum)-1)
     PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)
 
+    print "generating information about:",PIDlet['cPID']
+
     # WSUDOR handle
     obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PIDlet['cPID'])
 
-    # General Metadata
-    solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
-    solr_results = solr_handle.search(**solr_params)
-    if solr_results.total_results == 0:
-        return "Selected objects don't appear to exist."
-    solr_package = solr_results.documents[0]
-    object_package['solr_package'] = solr_package
+    # if obj_handle is false, abort
+    if not obj_handle:
+        object_package = False
 
-    # COMPONENTS
-    object_package['components_package'] = []
-    riquery = fedora_handle.risearch.spo_search(subject=None, predicate="info:fedora/fedora-system:def/relations-external#isMemberOf", object="info:fedora/"+PIDlet['cPID'])
-    for s,p,o in riquery:
-        object_package['components_package'].append(s.encode('utf-8'))
-    if len(object_package['components_package']) == 0:
-        object_package.pop('components_package')
+    # else, continue
+    else:
+        # General Metadata
+        solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
+        solr_results = solr_handle.search(**solr_params)
+        if solr_results.total_results == 0:
+            return "Selected objects don't appear to exist."
+        solr_package = solr_results.documents[0]
+        object_package['solr_package'] = solr_package
 
-    # RDF RELATIONSHIPS
-    riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate=None, object=None)
+        # COMPONENTS
+        object_package['components_package'] = []
+        riquery = fedora_handle.risearch.spo_search(subject=None, predicate="info:fedora/fedora-system:def/relations-external#isMemberOf", object="info:fedora/"+PIDlet['cPID'])
+        for s,p,o in riquery:
+            object_package['components_package'].append(s.encode('utf-8'))
+        if len(object_package['components_package']) == 0:
+            object_package.pop('components_package')
 
-    # parse
-    riquery_filtered = []
-    for s,p,o in riquery:
-        riquery_filtered.append((p,o))
-    riquery_filtered.sort()
-    object_package['rdf_package'] = riquery_filtered
+        # RDF RELATIONSHIPS
+        riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate=None, object=None)
 
-    # DATASTREAMS
-    ds_list = obj_handle.ohandle.ds_list
-    object_package['datastream_package'] = ds_list
+        # parse
+        riquery_filtered = []
+        for s,p,o in riquery:
+            riquery_filtered.append((p,o))
+        riquery_filtered.sort()
+        object_package['rdf_package'] = riquery_filtered
 
-    # Object size and datastreams
-    size_dict = obj_handle.object_size()
-    print size_dict
-    object_package['size_dict'] = size_dict
-    object_package['size_dict_json'] = json.dumps({
-        'datastreams':size_dict['datastreams'],
-        'fedora_total_size':size_dict['fedora_total_size']
-        })
+        # DATASTREAMS
+        ds_list = obj_handle.ohandle.ds_list
+        object_package['datastream_package'] = ds_list
 
-    # OAI
-    OAI_dict = {}
-    #identifer
-    try:
-        riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://www.openarchives.org/OAI/2.0/itemID", object=None)
-        OAI_ID = riquery.objects().next().encode('utf-8')
-        OAI_dict['ID'] = OAI_ID
-    except:
-        print "No OAI Identifier found."
+        # Object size and datastreams
+        size_dict = obj_handle.object_size()
+        print size_dict
+        object_package['size_dict'] = size_dict
+        object_package['size_dict_json'] = json.dumps({
+            'datastreams':size_dict['datastreams'],
+            'fedora_total_size':size_dict['fedora_total_size']
+            })
 
-    # sets
-    OAI_dict['sets'] = []
-    try:
-        riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", object=None)
-        for each in riquery.objects():
-            OAI_dict['sets'].append(each)
-    except:
-        print "No OAI sets found."
+        # OAI
+        OAI_dict = {}
+        #identifer
+        try:
+            riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://www.openarchives.org/OAI/2.0/itemID", object=None)
+            OAI_ID = riquery.objects().next().encode('utf-8')
+            OAI_dict['ID'] = OAI_ID
+        except:
+            print "No OAI Identifier found."
 
-    object_package['OAI_package'] = OAI_dict
-    print object_package['OAI_package']
+        # sets
+        OAI_dict['sets'] = []
+        try:
+            riquery = fedora_handle.risearch.spo_search(subject="info:fedora/"+PIDlet['cPID'], predicate="http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", object=None)
+            for each in riquery.objects():
+                OAI_dict['sets'].append(each)
+        except:
+            print "No OAI sets found."
 
-    # timeline
-    object_package['timeline'] = obj_handle.timeline()
+        object_package['OAI_package'] = OAI_dict
+        print object_package['OAI_package']
+
+        # timeline
+        object_package['timeline'] = obj_handle.timeline()
 
     # RENDER
     return render_template("objPreview.html", PIDnum=(int(PIDnum)+1), PIDlet=PIDlet, object_package=object_package, localConfig=localConfig)

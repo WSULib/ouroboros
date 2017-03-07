@@ -3,391 +3,403 @@
 <script type="text/javascript" src="{{ url_for('static',filename='chartjs/Chart.js')}}"></script>
 
 <div class="row">
-		<div class="col-md-12">		
-			{% include "PIDiterator.html" %}
+	<div class="col-md-12">		
+		{% include "PIDiterator.html" %}
+	</div>
+</div>
+
+{% if object_package != False %}
+
+	<div class="row">
+		<div class="col-md-12">
+			<h2>Object-at-a-Glace</h2>
 		</div>
 	</div>
 
-<div class="row">
-	<div class="col-md-12">
-		<h2>Object-at-a-Glace</h2>
-	</div>
-</div>
+	<div class="row">
+		<div class="col-md-6">
+			<h3>Metadata</h3>
+			<table id="solr_table" style="font-size:90%;" class="table">
+				{% set displayed_fields = ['dc_title','dc_description'] %}
+				{% for field in object_package.solr_package %}
+				{% if field in displayed_fields %}
+				<tr>
+					<td><strong>{{field}}:</strong></td>
+					<td>{{object_package.solr_package[field][0]}}</td>
+				</tr>
+				{% endif %}
+				{% endfor %}			
+				<tr>
+					<td><strong>thumbnail:</strong></td>
+					<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/item/{{PIDlet.cPID}}"><img class="img-rounded" src="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a></td>
+				</tr>
+			</table>
 
-<div class="row">
-	<div class="col-md-6">
-		<h3>Metadata</h3>
-		<table id="solr_table" style="font-size:90%;" class="table">
-			{% set displayed_fields = ['dc_title','dc_description'] %}
-			{% for field in object_package.solr_package %}
-			{% if field in displayed_fields %}
-			<tr>
-				<td><strong>{{field}}:</strong></td>
-				<td>{{object_package.solr_package[field][0]}}</td>
-			</tr>
-			{% endif %}
-			{% endfor %}			
-			<tr>
-				<td><strong>thumbnail:</strong></td>
-				<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/item/{{PIDlet.cPID}}"><img class="img-rounded" src="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/THUMBNAIL/content"/></a></td>
-			</tr>
-		</table>
-
-	</div>
-
-<!-- Timeline -->
-<div class="row">
-	<div class="col-md-6">
-		<div class="container">
-	        <h2>Object Timeline</h2>
-
-		    <div class="timeline">
-		        <!-- Line component -->
-		        <div class="line text-muted"></div>
-		        <!-- Separator -->
-		        <div class="separator text-muted">
-		            <time>{{object_package['timeline']['human'][0][1]}}</time>
-		        </div>
-		        <!-- /Separator -->
-		   
-			     <!-- Panel -->
-		        <article class="panel panel-primary">
-		            <!-- Icon -->
-		            <div class="panel-heading icon">
-		                <i class="glyphicon glyphicon-plus"></i>
-		            </div>
-		            <!-- /Icon -->
-		            <!-- Heading -->
-		            <div class="panel-heading">
-		                <h2 class="panel-title">{{object_package['timeline']['human'][0][0]}}</h2>
-		            </div>
-		        </article>
-		        <!-- /Panel -->
-
-		        <!-- Separator -->
-		        <div class="separator text-muted">
-		            <time>{{object_package['timeline']['human'][1][1]}}</time>
-		        </div>
-		        <!-- /Separator -->
-		    
-		     	<!-- Panel -->
-		        <article class="panel panel-info">
-		            <!-- Icon -->
-		            <div class="panel-heading icon">
-		                <i class="glyphicon glyphicon-plus"></i>
-		            </div>
-		            <!-- /Icon -->	    
-		            <!-- Heading -->
-		            <div class="panel-heading">
-		                <h2 class="panel-title">{{object_package['timeline']['human'][1][0]}}</h2>
-		            </div> 
-		        </article>
-		        <!-- /Panel -->
-		    
-		        <!-- Separator -->
-		        <div class="separator text-muted">
-		            <time>{{object_package['timeline']['human'][2][1]}}</time>
-		        </div>
-		        <!-- /Separator -->
-		    
-		        <!-- Panel -->
-		        <article class="panel panel-warning">
-		            <!-- Icon -->
-		            <div class="panel-heading icon">
-		                <i class="glyphicon glyphicon-plus"></i>
-		            </div>
-		            <!-- /Icon -->
-		            <!-- Heading -->
-		            <div class="panel-heading">
-		                <h2 class="panel-title">{{object_package['timeline']['human'][2][0]}}</h2>
-		            </div>
-		            <!-- /Heading -->   
-		        </article>
-		        <!-- /Panel -->
-		    
-		        <!-- Separator -->
-		        <div class="separator text-muted">
-		            <time>{{object_package['timeline']['human'][3][1]}}</time>
-		        </div>
-		        <!-- /Separator -->
-		    
-		        <!-- Panel -->
-		        <article class="panel panel-success">
-		            <!-- Icon -->
-		            <div class="panel-heading icon">
-		                <i class="glyphicon glyphicon-plus"></i>
-		            </div>
-		            <!-- /Icon -->
-		            <!-- Heading -->
-		            <div class="panel-heading">
-		                <h2 class="panel-title">{{object_package['timeline']['human'][3][0]}}</h2>
-		            </div>
-		            <!-- /Heading -->   
-		        </article>
-		        <!-- /Panel -->
-		    
-		        <!-- Panel -->
-		        <article id="timeline-temp" data-health="{{object_package['timeline']['healthy']}}" class="panel panel-primary panel-outline">
-		            <!-- Icon -->
-		            <div class="panel-heading icon">
-		                <i class="glyphicon glyphicon-info-sign"></i>
-		            </div>
-		            <!-- /Icon -->
-		            <!-- Body -->
-		            <div class="panel-body">
-		                {{object_package['timeline']['message']}}
-		            </div>
-		            <!-- /Body -->
-		        </article>
-		        <!-- /Panel -->
-
-		    </div> <!-- timeline -->
-		</div> <!-- container -->
-	</div> <!-- col-md-6 -->
-</div> <!-- row -->
-    <!-- /Timeline -->
-
-<div class="row">
-	<div class="col-md-6">
-		<h3><a href="/{{APP_PREFIX}}/datastreamManagement">Datastreams</a></h3>
-
-		<div id="size">			
-			<canvas id="size_chart" width="400" height="400"></canvas>
-			<script type="text/javascript">
-				// Get context with jQuery - using jQuery's .get() method.
-				var ctx = $("#size_chart").get(0).getContext("2d");								
-
-				// prepare data
-				var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');
-				console.log(raw_data);
-
-				/**
-				 * Converts an HSV color value to RGB. Conversion formula
-				 * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
-				 * Assumes h, s, and v are contained in the set [0, 1] and
-				 * returns r, g, and b in the set [0, 255].
-				 *
-				 * @param   Number  h       The hue
-				 * @param   Number  s       The saturation
-				 * @param   Number  v       The value
-				 * @return  Array           The RGB representation
-
-				 Pulled from: http://axonflux.com/handy-rgb-to-hsl-and-rgb-to-hsv-color-model-c
-				 */
-				function hsvToRgb(h, s, v){
-				    var r, g, b;
-
-				    var i = Math.floor(h * 6);
-				    var f = h * 6 - i;
-				    var p = v * (1 - s);
-				    var q = v * (1 - f * s);
-				    var t = v * (1 - (1 - f) * s);
-
-				    switch(i % 6){
-				        case 0: r = v, g = t, b = p; break;
-				        case 1: r = q, g = v, b = p; break;
-				        case 2: r = p, g = v, b = t; break;
-				        case 3: r = p, g = q, b = v; break;
-				        case 4: r = t, g = p, b = v; break;
-				        case 5: r = v, g = p, b = q; break;
-				    }
-
-				    return [r * 255, g * 255, b * 255];
-				}
-
-				/**
-				 * Converts an HSL color value to RGB. Conversion formula
-				 * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
-				 * Assumes h, s, and l are contained in the set [0, 1] and
-				 * returns r, g, and b in the set [0, 255].
-				 *
-				 * @param   Number  h       The hue
-				 * @param   Number  s       The saturation
-				 * @param   Number  l       The lightness
-				 * @return  Array           The RGB representation
-				 */
-				function hslToRgb(h, s, l){
-				    var r, g, b;
-
-				    if(s == 0){
-				        r = g = b = l; // achromatic
-				    }else{
-				        function hue2rgb(p, q, t){
-				            if(t < 0) t += 1;
-				            if(t > 1) t -= 1;
-				            if(t < 1/6) return p + (q - p) * 6 * t;
-				            if(t < 1/2) return q;
-				            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-				            return p;
-				        }
-
-				        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-				        var p = 2 * l - q;
-				        r = hue2rgb(p, q, h + 1/3);
-				        g = hue2rgb(p, q, h);
-				        b = hue2rgb(p, q, h - 1/3);
-				    }
-
-				    return [r * 255, g * 255, b * 255];
-				}
-
-				// loop through
-				data = [];
-				for (var key in raw_data.datastreams) {
-
-				  // skip datastreams with 0 size, and "total_size" key
-				  if ( raw_data.datastreams.hasOwnProperty(key) && key != "total_size" && raw_data.datastreams[key][0] > 0 ) {				  	
-				    
-				  	// determine color using HSV
-				  	percentage_of_total = raw_data.datastreams[key][0] / raw_data['fedora_total_size'][0];
-				  	seg_percent = ( 1 - percentage_of_total ) * .23;
-				  	rgb_values = hsvToRgb(seg_percent, .9, .9);				  	
-
-				    var temp_obj = {
-				    	"label":key,
-				    	"value":raw_data.datastreams[key][0],
-				    	"human_value":raw_data.datastreams[key][1],
-				    	"color":"rgb("+Math.round(rgb_values[0])+","+Math.round(rgb_values[1])+","+Math.round(rgb_values[2])+")"
-				    }
-				    data.push(temp_obj);
-				  }				  
-				}				
-
-				// quick sort based on value (passes as param to .sort() method)
-				function compare(a,b) {
-				  if (a.value < b.value)
-				     return -1;
-				  if (a.value > b.value)
-				    return 1;
-				  return 0;
-				}
-				data = data.sort(compare);
-
-				var options = {
-				    //Boolean - Whether we should show a stroke on each segment
-				    segmentShowStroke : true,
-				    //String - The colour of each segment stroke
-				    segmentStrokeColor : "#fff",
-				    //Number - The width of each segment stroke
-				    segmentStrokeWidth : 1,
-				    //Number - The percentage of the chart that we cut out of the middle
-				    percentageInnerCutout : 50, // This is 0 for Pie charts
-				    //Number - Amount of animation steps
-				    animationSteps : 50,
-				    //String - Animation easing effect
-				    animationEasing : "easeOutCirc",
-				    //Boolean - Whether we animate the rotation of the Doughnut
-				    animateRotate : true,
-				    //Boolean - Whether we animate scaling the Doughnut from the centre
-				    animateScale : false				    
-				}
-
-				// This will get the first returned node in the jQuery collection.				
-				var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
-			</script>
-			<h3>Fedora Object Size: <strong>{{object_package.size_dict.fedora_total_size.1}}</strong></h3>
-			<h3>WSUDOR Object Size: <strong>{{object_package.size_dict.wsudor_total_size.1}}</strong></h3>
 		</div>
-		
 
-		<table style="font-size:90%;" style="margin:auto;" class="table">
-			<tr class="headers">
-				<td><strong>ID</strong></td>
-				<td><strong>Label</strong></td>
-				<td><strong>Mime Type</strong></td>
-				<td><strong>Size</strong></td>
-				<td><strong>Direct Link</strong></td>				
-			</tr>
-			{% for ds in object_package.datastream_package %}				
-				<tr>						
-					<td>{{ds}}</td>
-					<td>{{object_package.datastream_package[ds].label}}</td>
-					<td>{{object_package.datastream_package[ds].mimeType}}</td>
-					<td>{{object_package.size_dict.datastreams[ds].1}}</td>					
-					<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
-				</tr>
-			{% endfor %}
-		</table>
-	</div>
-	{% if object_package.components_package %}
-	<div class="col-md-6">
-		<h3>Components</h3>		
-		<table style="font-size:90%;" style="margin:auto;" class="table">
-			<tr class="headers">
-				<td><strong>PID</strong></td>				
-			</tr>
-			{% for subject in object_package.components_package %}				
-				<tr>						
-					<td>{{subject}}</td>				
-				</tr>
-			{% endfor %}
-		</table>
-	</div>
-	{% endif %}
-</div>
+	<!-- Timeline -->
+	<div class="row">
+		<div class="col-md-6">
+			<div class="container">
+		        <h2>Object Timeline</h2>
 
-<!-- <div class="row">
-	
-</div> -->
+			    <div class="timeline">
+			        <!-- Line component -->
+			        <div class="line text-muted"></div>
+			        <!-- Separator -->
+			        <div class="separator text-muted">
+			            <time>{{object_package['timeline']['human'][0][1]}}</time>
+			        </div>
+			        <!-- /Separator -->
+			   
+				     <!-- Panel -->
+			        <article class="panel panel-primary">
+			            <!-- Icon -->
+			            <div class="panel-heading icon">
+			                <i class="glyphicon glyphicon-plus"></i>
+			            </div>
+			            <!-- /Icon -->
+			            <!-- Heading -->
+			            <div class="panel-heading">
+			                <h2 class="panel-title">{{object_package['timeline']['human'][0][0]}}</h2>
+			            </div>
+			        </article>
+			        <!-- /Panel -->
 
-<div class="row">
-	<div class="col-md-12">
-		<h3><a href="/{{APP_PREFIX}}/tasks/editRELS">RDF Relationships</a></h3>		
+			        <!-- Separator -->
+			        <div class="separator text-muted">
+			            <time>{{object_package['timeline']['human'][1][1]}}</time>
+			        </div>
+			        <!-- /Separator -->
+			    
+			     	<!-- Panel -->
+			        <article class="panel panel-info">
+			            <!-- Icon -->
+			            <div class="panel-heading icon">
+			                <i class="glyphicon glyphicon-plus"></i>
+			            </div>
+			            <!-- /Icon -->	    
+			            <!-- Heading -->
+			            <div class="panel-heading">
+			                <h2 class="panel-title">{{object_package['timeline']['human'][1][0]}}</h2>
+			            </div> 
+			        </article>
+			        <!-- /Panel -->
+			    
+			        <!-- Separator -->
+			        <div class="separator text-muted">
+			            <time>{{object_package['timeline']['human'][2][1]}}</time>
+			        </div>
+			        <!-- /Separator -->
+			    
+			        <!-- Panel -->
+			        <article class="panel panel-warning">
+			            <!-- Icon -->
+			            <div class="panel-heading icon">
+			                <i class="glyphicon glyphicon-plus"></i>
+			            </div>
+			            <!-- /Icon -->
+			            <!-- Heading -->
+			            <div class="panel-heading">
+			                <h2 class="panel-title">{{object_package['timeline']['human'][2][0]}}</h2>
+			            </div>
+			            <!-- /Heading -->   
+			        </article>
+			        <!-- /Panel -->
+			    
+			        <!-- Separator -->
+			        <div class="separator text-muted">
+			            <time>{{object_package['timeline']['human'][3][1]}}</time>
+			        </div>
+			        <!-- /Separator -->
+			    
+			        <!-- Panel -->
+			        <article class="panel panel-success">
+			            <!-- Icon -->
+			            <div class="panel-heading icon">
+			                <i class="glyphicon glyphicon-plus"></i>
+			            </div>
+			            <!-- /Icon -->
+			            <!-- Heading -->
+			            <div class="panel-heading">
+			                <h2 class="panel-title">{{object_package['timeline']['human'][3][0]}}</h2>
+			            </div>
+			            <!-- /Heading -->   
+			        </article>
+			        <!-- /Panel -->
+			    
+			        <!-- Panel -->
+			        <article id="timeline-temp" data-health="{{object_package['timeline']['healthy']}}" class="panel panel-primary panel-outline">
+			            <!-- Icon -->
+			            <div class="panel-heading icon">
+			                <i class="glyphicon glyphicon-info-sign"></i>
+			            </div>
+			            <!-- /Icon -->
+			            <!-- Body -->
+			            <div class="panel-body">
+			                {{object_package['timeline']['message']}}
+			            </div>
+			            <!-- /Body -->
+			        </article>
+			        <!-- /Panel -->
 
-		<table style="font-size:90%;" id="rdf_triples_modify" style="margin:auto;" class="table">
-			<tr class="headers">
-				<td><strong>Predicate</strong></td>
-				<td><strong>Object</strong></td>				
-			</tr>
-			{% for predicate,object in object_package.rdf_package %}				
-				<tr>						
-					<td class="predicate">{{predicate}}</td>
-					<td class="object">{{object}}</td>					
-				</tr>
-			{% endfor %}
-		</table>
+			    </div> <!-- timeline -->
+			</div> <!-- container -->
+		</div> <!-- col-md-6 -->
+	</div> <!-- row -->
+	    <!-- /Timeline -->
 
-	</div>
-</div>
+	<div class="row">
+		<div class="col-md-6">
+			<h3><a href="/{{APP_PREFIX}}/datastreamManagement">Datastreams</a></h3>
 
+			<div id="size">			
+				<canvas id="size_chart" width="400" height="400"></canvas>
+				<script type="text/javascript">
+					// Get context with jQuery - using jQuery's .get() method.
+					var ctx = $("#size_chart").get(0).getContext("2d");								
 
+					// prepare data
+					var raw_data = JSON.parse('{{ object_package.size_dict_json|safe }}');
+					console.log(raw_data);
 
-<div class="row">
-	<div class="col-md-12">
-		<h3><a href="/{{APP_PREFIX}}/tasks/manageOAIOAI">OAI</a></h3>
-		<ul>{% if object_package.OAI_package['ID'] %}
- 			<li><strong>OAI Identifier:</strong>{{object_package.OAI_package['ID']}}</a></li>			
-			<li><strong>OAI Record:</strong> <a target="_blank" href="http://{{localConfig.APP_HOST}}/oaiprovider/?verb=GetRecord&identifier={{object_package.OAI_package['ID']}}&metadataPrefix=mods">link</a></li>
-			{% endif %}
+					/**
+					 * Converts an HSV color value to RGB. Conversion formula
+					 * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+					 * Assumes h, s, and v are contained in the set [0, 1] and
+					 * returns r, g, and b in the set [0, 255].
+					 *
+					 * @param   Number  h       The hue
+					 * @param   Number  s       The saturation
+					 * @param   Number  v       The value
+					 * @return  Array           The RGB representation
+
+					 Pulled from: http://axonflux.com/handy-rgb-to-hsl-and-rgb-to-hsv-color-model-c
+					 */
+					function hsvToRgb(h, s, v){
+					    var r, g, b;
+
+					    var i = Math.floor(h * 6);
+					    var f = h * 6 - i;
+					    var p = v * (1 - s);
+					    var q = v * (1 - f * s);
+					    var t = v * (1 - (1 - f) * s);
+
+					    switch(i % 6){
+					        case 0: r = v, g = t, b = p; break;
+					        case 1: r = q, g = v, b = p; break;
+					        case 2: r = p, g = v, b = t; break;
+					        case 3: r = p, g = q, b = v; break;
+					        case 4: r = t, g = p, b = v; break;
+					        case 5: r = v, g = p, b = q; break;
+					    }
+
+					    return [r * 255, g * 255, b * 255];
+					}
+
+					/**
+					 * Converts an HSL color value to RGB. Conversion formula
+					 * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+					 * Assumes h, s, and l are contained in the set [0, 1] and
+					 * returns r, g, and b in the set [0, 255].
+					 *
+					 * @param   Number  h       The hue
+					 * @param   Number  s       The saturation
+					 * @param   Number  l       The lightness
+					 * @return  Array           The RGB representation
+					 */
+					function hslToRgb(h, s, l){
+					    var r, g, b;
+
+					    if(s == 0){
+					        r = g = b = l; // achromatic
+					    }else{
+					        function hue2rgb(p, q, t){
+					            if(t < 0) t += 1;
+					            if(t > 1) t -= 1;
+					            if(t < 1/6) return p + (q - p) * 6 * t;
+					            if(t < 1/2) return q;
+					            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+					            return p;
+					        }
+
+					        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+					        var p = 2 * l - q;
+					        r = hue2rgb(p, q, h + 1/3);
+					        g = hue2rgb(p, q, h);
+					        b = hue2rgb(p, q, h - 1/3);
+					    }
+
+					    return [r * 255, g * 255, b * 255];
+					}
+
+					// loop through
+					data = [];
+					for (var key in raw_data.datastreams) {
+
+					  // skip datastreams with 0 size, and "total_size" key
+					  if ( raw_data.datastreams.hasOwnProperty(key) && key != "total_size" && raw_data.datastreams[key][0] > 0 ) {				  	
+					    
+					  	// determine color using HSV
+					  	percentage_of_total = raw_data.datastreams[key][0] / raw_data['fedora_total_size'][0];
+					  	seg_percent = ( 1 - percentage_of_total ) * .23;
+					  	rgb_values = hsvToRgb(seg_percent, .9, .9);				  	
+
+					    var temp_obj = {
+					    	"label":key,
+					    	"value":raw_data.datastreams[key][0],
+					    	"human_value":raw_data.datastreams[key][1],
+					    	"color":"rgb("+Math.round(rgb_values[0])+","+Math.round(rgb_values[1])+","+Math.round(rgb_values[2])+")"
+					    }
+					    data.push(temp_obj);
+					  }				  
+					}				
+
+					// quick sort based on value (passes as param to .sort() method)
+					function compare(a,b) {
+					  if (a.value < b.value)
+					     return -1;
+					  if (a.value > b.value)
+					    return 1;
+					  return 0;
+					}
+					data = data.sort(compare);
+
+					var options = {
+					    //Boolean - Whether we should show a stroke on each segment
+					    segmentShowStroke : true,
+					    //String - The colour of each segment stroke
+					    segmentStrokeColor : "#fff",
+					    //Number - The width of each segment stroke
+					    segmentStrokeWidth : 1,
+					    //Number - The percentage of the chart that we cut out of the middle
+					    percentageInnerCutout : 50, // This is 0 for Pie charts
+					    //Number - Amount of animation steps
+					    animationSteps : 50,
+					    //String - Animation easing effect
+					    animationEasing : "easeOutCirc",
+					    //Boolean - Whether we animate the rotation of the Doughnut
+					    animateRotate : true,
+					    //Boolean - Whether we animate scaling the Doughnut from the centre
+					    animateScale : false				    
+					}
+
+					// This will get the first returned node in the jQuery collection.				
+					var myDoughnutChart = new Chart(ctx).Doughnut(data,options);
+				</script>
+				<h3>Fedora Object Size: <strong>{{object_package.size_dict.fedora_total_size.1}}</strong></h3>
+				<h3>WSUDOR Object Size: <strong>{{object_package.size_dict.wsudor_total_size.1}}</strong></h3>
+			</div>
 			
-			<li><strong>Members of OAI Sets</strong>:
-				<ul>
-					{% for set in object_package.OAI_package['sets'] %}
-					<li>{{set}}</li>
-					{% endfor %}
-				</ul>
-			</li>			
 
-		</ul>
+			<table style="font-size:90%;" style="margin:auto;" class="table">
+				<tr class="headers">
+					<td><strong>ID</strong></td>
+					<td><strong>Label</strong></td>
+					<td><strong>Mime Type</strong></td>
+					<td><strong>Size</strong></td>
+					<td><strong>Direct Link</strong></td>				
+				</tr>
+				{% for ds in object_package.datastream_package %}				
+					<tr>						
+						<td><code>{{ds}}</code></td>
+						<td>{{object_package.datastream_package[ds].label}}</td>
+						<td>{{object_package.datastream_package[ds].mimeType}}</td>
+						<td>{{object_package.size_dict.datastreams[ds].1}}</td>					
+						<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
+					</tr>
+				{% endfor %}
+			</table>
+		</div>
+		{% if object_package.components_package %}
+		<div class="col-md-6">
+			<h3>Components</h3>		
+			<table style="font-size:90%;" style="margin:auto;" class="table">
+				<tr class="headers">
+					<td><strong>PID</strong></td>				
+				</tr>
+				{% for subject in object_package.components_package %}				
+					<tr>						
+						<td>{{subject}}</td>				
+					</tr>
+				{% endfor %}
+			</table>
+		</div>
+		{% endif %}
+	</div>
+
+	<!-- <div class="row">
+		
+	</div> -->
+
+	<div class="row">
+		<div class="col-md-12">
+			<h3><a href="/{{APP_PREFIX}}/tasks/editRELS">RDF Relationships</a></h3>		
+
+			<table style="font-size:90%;" id="rdf_triples_modify" style="margin:auto;" class="table">
+				<tr class="headers">
+					<td><strong>Predicate</strong></td>
+					<td><strong>Object</strong></td>				
+				</tr>
+				{% for predicate,object in object_package.rdf_package %}				
+					<tr>						
+						<td class="predicate"><code>{{predicate}}</code></td>
+						<td class="object"><code>{{object}}</code></td>					
+					</tr>
+				{% endfor %}
+			</table>
+
+		</div>
+	</div>
+
+
+
+	<div class="row">
+		<div class="col-md-12">
+			<h3><a href="/{{APP_PREFIX}}/tasks/manageOAIOAI">OAI</a></h3>
+			<ul>{% if object_package.OAI_package['ID'] %}
+	 			<li><strong>OAI Identifier:</strong>{{object_package.OAI_package['ID']}}</a></li>			
+				<li><strong>OAI Record:</strong> <a target="_blank" href="http://{{localConfig.APP_HOST}}/oaiprovider/?verb=GetRecord&identifier={{object_package.OAI_package['ID']}}&metadataPrefix=mods">link</a></li>
+				{% endif %}
+				
+				<li><strong>Members of OAI Sets</strong>:
+					<ul>
+						{% for set in object_package.OAI_package['sets'] %}
+						<li>{{set}}</li>
+						{% endfor %}
+					</ul>
+				</li>			
+
+			</ul>
+		</div>
+	</div>
+
+
+	</div>
+
+	<script>
+	var health = $('#timeline-temp').data()['health'];
+	if (health === "False") {
+		var info = document.querySelector('#timeline-temp')
+		info.classList.add("panel-danger");
+		info.classList.remove("panel-primary");
+	}
+	</script>
+
+	<!-- <div class="row">
+		<div class="col-md-12">
+			<h3>???</h3>
+		</div>
+	</div> -->
+
+{% else %}
+
+<div class="row">
+	<div class="col-md-12">		
+		<p>Object is not valid.</p>
 	</div>
 </div>
 
-
-</div>
-
-<script>
-var health = $('#timeline-temp').data()['health'];
-if (health === "False") {
-	var info = document.querySelector('#timeline-temp')
-	info.classList.add("panel-danger");
-	info.classList.remove("panel-primary");
-}
-</script>
-
-<!-- <div class="row">
-	<div class="col-md-12">
-		<h3>???</h3>
-	</div>
-</div> -->
+{% endif %}
 
 {% include 'footer.html' %}

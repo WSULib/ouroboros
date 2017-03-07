@@ -4,7 +4,7 @@
 	{% else %}
 	<li><a class="btn btn-default disabled btn-sm" href="#">Unmoved mover</a></li>
 	{% endif %}
-	<li><strong>{{PIDlet.cPID}} ({{PIDnum}} / {{PIDlet.count}})</strong></li>
+	<li><strong><code>{{PIDlet.cPID}}</code> ({{PIDnum}} / {{PIDlet.count}})</strong></li>
 	{% if PIDlet.nPID != None %}
 	<li><a class="btn btn-default btn-sm" href="/{{APP_PREFIX}}/{{PIDlet.nURL}}"> --&gt; {{PIDlet.nPID}}</a></li>
 	{% else %}

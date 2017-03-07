@@ -168,26 +168,26 @@
                                 });
 
                                 // fire finish_rendering
-                                finish_rendering();
+                                finish_rendering(json);
 
                             }
                           });  
 
                             function finish_rendering(json) {
-                                console.log("anything else we'd like to do?");
+                                // console.log("anything else we'd like to do?");
                             }
 
                         });
 
                         function post_draw(settings){
                             
-                            console.log(settings);
+                            // console.log(settings);
 
                             // update form connectors
                             var single_options = {
                                 beforeSubmit: function(arr, $form, options) {                                         
                                     var current_tag_group = $("#tag_group").val();
-                                    console.log("current tag group is:",current_tag_group);
+                                    // console.log("current tag group is:",current_tag_group);
                                     for (var i = 0; i < arr.length; i++) {
                                         if (arr[i].name == "tag_group"){
                                             arr[i].value = current_tag_group;
@@ -195,7 +195,7 @@
                                     }
                                 },
                                 success: function(responseText, statusText, xhr, $form){
-                                    console.log(responseText);
+                                    // console.log(responseText);
                                     $("#status_msg").html("<p style='color:green;'>"+responseText+"</p>");
                                 }
                             }
@@ -203,21 +203,31 @@
 
                             // update search_params in add_object_search
                             search_params_json = JSON.stringify(settings.json.search_params);
-                            console.log(search_params_json);
+                            // console.log(search_params_json);
                             $("#search_params").val(search_params_json)
+
+                            // console.log("appending total search size");
+                            $(".dataTables_info").append("<p>Total Size of found objects: <strong>"+settings.json.stats.obj_size_fedora_i.sum.fileSize()+"</strong></p>");
+
                         }
 
                         // bind search results to button click
                         $(document).ready(function(){
                             var search_options = {                                
                                 success: function(responseText, statusText, xhr, $form){
-                                    console.log(responseText);
+                                    // console.log(responseText);
                                     $("#status_msg").html("<p style='color:green;'>"+responseText+"</p>");
                                 }
                             }
                             $('#add_object_search').ajaxForm(search_options);                            
                         });
 
+                    // prototype to convert bytes to human readable form
+                    Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
+                     return (a=a?[1e3,'k','B']:[1024,'K','iB'],b=Math,c=b.log,
+                     d=c(this)/c(a[0])|0,this/b.pow(a[0],d)).toFixed(2)
+                     +' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'Bytes');
+                    },writable:false,enumerable:false});
 
                     </script>
 
@@ -343,14 +353,14 @@
 
                 if (action == "group_toggle"){      
                     data = {"group_name":$("#toggle_group").val()}
-                    console.log(data);
+                    // console.log(data);
                     $.ajax({
                         url: "/{{APP_PREFIX}}/PIDmanageAction/"+action,      
                         type:"POST",
                         data:data           
                         })
                     .done(function(response) {
-                        console.log(response);      
+                        // console.log(response);      
                         table_handle.draw( false );         
                     });
                 }
@@ -360,7 +370,7 @@
                         url: "/{{APP_PREFIX}}/PIDmanageAction/"+action,                  
                         })
                     .done(function(response) {
-                        console.log(response);      
+                        // console.log(response);      
                         table_handle.draw( false );         
                     });
                 }
@@ -393,9 +403,9 @@
                 // listener for tab being selected
                  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                     var target = $(e.target).attr("href");
-                    console.log(target);
+                    // console.log(target);
                     if ((target == '#select')) {
-                        console.log('updating userworkspace');
+                        // console.log('updating userworkspace');
                         // redraw table
                         table_handle.draw();
                         // populate groups everywhere

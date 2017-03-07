@@ -886,6 +886,8 @@ class SolrDT(object):
 				"human_isMemberOfCollection"
 			],
 			'facet.sort': 'index',
+			'stats':True,
+			'stats.field':'obj_size_fedora_i'
 		}
 
 		# query and build response
@@ -1005,6 +1007,9 @@ class SolrDT(object):
 
 			# add facet information
 			self.DToutput['facets'] = s.facets['facet_fields']
+
+			# add facet information
+			self.DToutput['stats'] = s.stats
 
 			# add search_params
 			self.DToutput['search_params'] = self.search_params

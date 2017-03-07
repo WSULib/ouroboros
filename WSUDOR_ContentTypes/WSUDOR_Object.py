@@ -433,74 +433,60 @@ class WSUDOR_GenObject(object):
         print "elapsed: %s" % (time.time() - stime)
         return size_dict
 
+    def update_object_size(self):
 
-    def object_size(self, details=False, update=False):
-        
         '''
         Primary method for returning information about an object's size.
         This information is calculated and stored as RDF relationships:
-            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize - aggregatoe size of all datastreams and constituent objects
-            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize - aggreagate size of all datastreams in Fedora object
+            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize - aggregate size of all datastreams and constituent objects
+            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize - aggregate size of all datastreams in Fedora object
             - http://www.loc.gov/premis/rdf/v1#hasSize - size of each datastream
-
-        If details:
-            return dictionary of size of all datastreams (including constituent objects);
-        else:
-            return dictionary with only `total_size` tuple
-
-        if update:
-            calculate size of datastreams and aggregate object size, store as RDF relationships
-                - including all constituent objects        
         '''
 
-        # if details or update needed, calc object size
-        if details or update:
-            size_dict = self.calc_object_size()
+        stime = time.time()
 
-        # update RDF relationships detailing object and datastream sizes
-        if update:
-            stime = time.time()
-            print "updating object size"
+        print "updating object size"
 
-            rels_to_write = []
+        size_dict = self.calc_object_size()
 
-            # get self and constituent sizes
-            # size_dict = self.calc_object_size()
+        rels_to_write = []
 
-            # update RDF relationships for self
-            for ds_id, size_tuple in size_dict['datastreams'].iteritems():
-                rels_to_write.append((self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
-            # write total sizes
-            rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
-            rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
+        # update RDF relationships for self
+        for ds_id, size_tuple in size_dict['datastreams'].iteritems():
+            rels_to_write.append((self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
+        # write total sizes
+        rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
+        rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
 
-            # if constituents, add relationships as well
-            if 'constituent_objects' in size_dict.keys():
-                for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
-                    constituent_obj = fedora_handle.get_object(constituent_pid)
-                    for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
-                        rels_to_write.append((constituent_obj,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
-                    # write total sizes
-                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
-                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['wsudor_total_size'][0]))
+        # if constituents, add relationships as well
+        if 'constituent_objects' in size_dict.keys():
+            for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
+                constituent_obj = fedora_handle.get_object(constituent_pid)
+                for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
+                    rels_to_write.append((constituent_obj,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
+                # write total sizes
+                rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
+                rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
 
-            # write/update all rels
-            for rel_tuple in rels_to_write:
-                print rel_tuple
-                # check if relationship exists
-                vals = fedora_handle.risearch.get_objects(rel_tuple[1],rel_tuple[2])
-                for val in vals:
-                    fedora_handle.api.purgeRelationship(rel_tuple[0], rel_tuple[1], rel_tuple[2], val, isLiteral=True)
-                fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
+        # write/update all rels
+        for rel_tuple in rels_to_write:
+            print rel_tuple
+            # check if relationship exists
+            vals = fedora_handle.risearch.get_objects(rel_tuple[1],rel_tuple[2])
+            for val in vals:
+                fedora_handle.api.purgeRelationship(rel_tuple[0], rel_tuple[1], rel_tuple[2], val, isLiteral=True)
+            fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
 
-            # return size_dict
-            print "elapsed: %s" % (time.time() - stime)
-            return size_dict
+        # return size_dict
+        print "elapsed: %s" % (time.time() - stime)
+        return size_dict
 
+
+    def object_size(self, details=False):
+        
         # calculate and return full size dictionary, including constituents
         if details:
-            return size_dict
-
+            return self.calc_object_size()
 
         # return object size results based on RDF queries
         else:

@@ -4,6 +4,7 @@ from WSUDOR_Manager import jobs
 
 # python
 import os
+import rdflib
 import time
 
 print '''

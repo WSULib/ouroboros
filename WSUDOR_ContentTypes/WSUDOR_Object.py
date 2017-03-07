@@ -28,6 +28,10 @@ import ssl
 import operator
 from dateutil import parser
 
+# rdflib
+import rdflib
+from rdflib.namespace import XSD, RDF, Namespace
+
 # library for working with LOC BagIt standard
 import bagit
 
@@ -1819,6 +1823,51 @@ class WSUDOR_GenObject(object):
 
         else:
             return str(DC)
+
+
+    # regen RDF
+    def regenRDF(self):
+
+        '''
+        Why is this needed?
+
+        Eulfedora has the potential for interacting with RDF -- via the RELS-EXT and RELS-INT datastreams -- in a couple of different ways.
+            
+            1) using the native Fedora REST API
+                - e.g. fedora_handle.api.addRelationship()
+                - does NOT create namespace prefixes, but embeds each predicate namespace in the triple
+                - THIS IS THE STYLE WE USE
+
+            2) interacting with the RELS-EXT relationships as a graph, via python's rdflib
+                - object.rels_ext.content is a RDFLib graph object
+                - firing object.rels_ext.content.save() rewrites the RELS-EXT datastream with namespace prefixes
+
+            While both are valid, and the system generally responds to both formats equally, it hurts processes downstream that don't expect prefixes if the second style fires for any reason.  At the time of this writing, the Readux Virtual Objects *do* use the second style, but they are somewhat isolated and unique, that might be okay.
+
+            This WSUDOR object method, regardless of which style the RELS-EXT is currently serialized as, will take the triples and re-write them as "styles #1", with no prefixes, that is used across Ouroboros.
+        '''
+
+        triples = self.rdf_triples
+
+        # purge all
+        print "PURGING ALL RELATIONSHIPS"
+        for triple in triples:
+            print triple
+            if type(triple[2]) == rdflib.term.Literal:
+                isLit = True
+            else:
+                isLit = False
+            self.ohandle.api.purgeRelationship(self.ohandle, *triple, isLiteral=isLit)
+        
+        # re-add
+        print "RE-ADDING ALL RELATIONSHIPS"
+        for triple in triples:
+            print triple
+            if type(triple[2]) == rdflib.term.Literal:
+                isLit = True
+            else:
+                isLit = False
+            self.ohandle.api.addRelationship(self.ohandle, *triple, isLiteral=isLit)
 
 
 

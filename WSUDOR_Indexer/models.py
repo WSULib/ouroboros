@@ -147,6 +147,20 @@ class FedoraJMSWorker(object):
 	# 	return pruneSolr_worker.delay(None,PID=self.pid)
 
 
+class Indexer(object):
+
+	def __init__(self):
+		pass
+
+	@classmethod
+	def check_db(self):
+		to_index = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
+		if to_index != None:
+			print to_index
+			indexer_queue.query.filter_by(id=to_index.id).delete()
+			db.session.commit()
+
+
 # WSUDOR_Indexer queue table
 class indexer_queue(db.Model):
 	id = db.Column(db.Integer, primary_key=True)

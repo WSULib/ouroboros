@@ -2,7 +2,7 @@
 from twisted.web.wsgi import WSGIResource
 from twisted.web.server import Site
 from twisted.internet import reactor
-from twisted.internet.task import deferLater
+from twisted.internet.task import deferLater, LoopingCall
 from twisted.web.server import NOT_DONE_YET
 from twisted.web import server, resource
 from twisted.python import log
@@ -27,7 +27,7 @@ from WSUDOR_Manager import app as WSUDOR_Manager_app
 from WSUDOR_API import WSUDOR_API_app
 
 # import main indexer
-from WSUDOR_Indexer.models import FedoraJMSConsumer
+from WSUDOR_Indexer.models import FedoraJMSConsumer, Indexer
 
 
 # Ouroboros pidfile ##############################################################
@@ -111,11 +111,13 @@ if __name__ == '__main__':
         print "Starting WSUDOR_API_app..."
         reactor.listenTCP( WSUDOR_API_LISTENER_PORT, WSUDOR_API_site )
 
-    # fedConsumer
+    # WSUDOR_Indexer
     if FEDCONSUMER_FIRE == True:
         print "Starting Fedora JSM consumer..."
         fedora_jms_consumer = FedoraJMSConsumer()
         fedora_jms_consumer.run()
+        l = LoopingCall(Indexer.check_db)
+        l.start(0.1)
 
 
     print '''

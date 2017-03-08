@@ -94,6 +94,11 @@ def tableWipe():
 		print "xsl_transformations dropped."
 	except:
 		print "xsl_transformations not found..."
+	try:
+		db.session.execute('DROP TABLE indexer_queue;')
+		print "indexer_queue dropped."
+	except:
+		print "indexer_queue not found..."
 	print "commiting..."
 	db.session.commit()
 

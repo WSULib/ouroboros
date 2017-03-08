@@ -6,10 +6,14 @@ from stompest.config import StompConfig
 from stompest.protocol import StompSpec
 from stompest.error import StompCancelledError, StompConnectionError, StompConnectTimeout, StompProtocolError
 from twisted.internet import defer
+from datetime import datetime
 
 # index to Solr
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
+
+from WSUDOR_Manager import db
+
 
 
 # Fedora JMS worker instantiated by Twisted
@@ -87,45 +91,64 @@ class FedoraJMSWorker(object):
 		print "Fedora message: %s, consumed for: %s" % (self.methodName, self.pid)
 
 		# debug
-		# print self.headers
-		# print self.body
+		print self.headers
+		print self.body
 
-		# capture modifications to datastream
-		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
-			self._determine_ds()
-			if localConfig.SOLR_AUTOINDEX and self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
-				self.index_object()
+		# add pid to indexer queue (iqp = "indexer queue pid")
+		print "adding to indexer queue"
+		iqp = indexer_queue(self.pid, None, 4)
+		db.session.add(iqp)
+		db.session.commit()
 
-		# capture ingests
-		if self.methodName in ['ingest']:
-			if localConfig.SOLR_AUTOINDEX:
-				self.index_object()
+	# 	# capture modifications to datastream
+	# 	if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
+	# 		self._determine_ds()
+	# 		if localConfig.SOLR_AUTOINDEX and self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
+	# 			self.index_object()
 
-		# capture purge
-		if self.methodName in ['purgeObject']:
-			if localConfig.SOLR_AUTOINDEX:
-				self.purge_object()
+	# 	# capture ingests
+	# 	if self.methodName in ['ingest']:
+	# 		if localConfig.SOLR_AUTOINDEX:
+	# 			self.index_object()
 
-
-	def _determine_ds(self):
-		'''
-		Small function to determine which datastream was acted on
-		'''
-		self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
-		print "datastream %s was acted on" % self.ds
-		return self.ds
+	# 	# capture purge
+	# 	if self.methodName in ['purgeObject']:
+	# 		if localConfig.SOLR_AUTOINDEX:
+	# 			self.purge_object()
 
 
-	def index_object(self):
-		return solrIndexer.delay("fedoraConsumerIndex", self.pid)
+	# def _determine_ds(self):
+	# 	'''
+	# 	Small function to determine which datastream was acted on
+	# 	'''
+	# 	self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
+	# 	print "datastream %s was acted on" % self.ds
+	# 	return self.ds
 
 
-	def purge_object(self):
-		return pruneSolr_worker.delay(None,PID=self.pid)
+	# def index_object(self):
+	# 	return solrIndexer.delay("fedoraConsumerIndex", self.pid)
 
 
+	# def purge_object(self):
+	# 	return pruneSolr_worker.delay(None,PID=self.pid)
 
 
+# WSUDOR_Indexer queue table
+class indexer_queue(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	pid = db.Column(db.String(255)) # consider making this the primary key?
+	username = db.Column(db.String(255))
+	priority = db.Column(db.Integer)
+	timestamp = db.Column(db.DateTime, default=datetime.now)
+
+	def __init__(self, pid, username, priority):
+		self.pid = pid
+		self.username = username
+		self.priority = priority
+
+	def __repr__(self):
+		return '<PID %s, priority %s, timestamp %s, username %s>' % (self.pid, self.priority, self.timestamp, self.username)
 
 
 

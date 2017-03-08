@@ -11,8 +11,53 @@ from twisted.internet import defer
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 
-# handles events in Fedora Commons as reported by JMS
+
+# Fedora JMS worker instantiated by Twisted
 class FedoraJMSConsumer(object):
+
+	'''
+	Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),
+	routes 'fedEvents' to fedoraConsumer()
+	'''
+
+	QUEUE = "/topic/fedora.apim.update"
+	ERROR_QUEUE = '/queue/testConsumerError'
+
+	def __init__(self, config=None):
+		if config is None:
+			config = StompConfig('tcp://localhost:%s' % (localConfig.FEDCONSUMER_PORT))
+			config = StompConfig(uri='failover:(tcp://localhost:%s)?randomize=false,startupMaxReconnectAttempts=3,initialReconnectDelay=5000,maxReconnectDelay=10000,maxReconnectAttempts=20' % (localConfig.FEDCONSUMER_PORT))
+		self.config = config
+
+
+	@defer.inlineCallbacks
+	def run(self):
+		client = Stomp(self.config)
+		yield client.connect()
+		headers = {
+			# client-individual mode is necessary for concurrent processing
+			StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
+			# the maximal number of messages the broker will let you work on at the same time
+			'activemq.prefetchSize': '100',
+		}
+		try:
+			client = yield client.disconnected
+		except StompConnectionError:
+			yield client.connect()
+		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
+
+
+	def consume(self, client, frame):
+		fedora_jms_worker = FedoraJMSWorker(frame)
+		fedora_jms_worker.act()
+
+
+# handles events in Fedora Commons as reported by JMS
+class FedoraJMSWorker(object):
+
+	'''
+	Worker that handles Fedora JMS messages captured by FedoraJMSConsumer
+	'''
 
 	def __init__(self, frame):
 
@@ -77,50 +122,6 @@ class FedoraJMSConsumer(object):
 
 	def purge_object(self):
 		return pruneSolr_worker.delay(None,PID=self.pid)
-
-
-# Fedora Commons Messaging STOMP protocol consumer ##############################################################
-'''
-Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),
-routes 'fedEvents' to fedoraConsumer()
-
-This needs some kind of listener if Tomcat (Fedora) goes down, it needs to reconnect...
-
-'''
-class FedoraJMSConsumer_Worker(object):
-
-
-    QUEUE = "/topic/fedora.apim.update"
-    ERROR_QUEUE = '/queue/testConsumerError'
-
-
-    def __init__(self, config=None):
-        if config is None:
-            config = StompConfig('tcp://localhost:%s' % (localConfig.FEDCONSUMER_PORT))
-            config = StompConfig(uri='failover:(tcp://localhost:%s)?randomize=false,startupMaxReconnectAttempts=3,initialReconnectDelay=5000,maxReconnectDelay=10000,maxReconnectAttempts=20' % (localConfig.FEDCONSUMER_PORT))
-        self.config = config
-
-
-    @defer.inlineCallbacks
-    def run(self):
-        client = Stomp(self.config)
-        yield client.connect()
-        headers = {
-            # client-individual mode is necessary for concurrent processing
-            StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
-            # the maximal number of messages the broker will let you work on at the same time
-            'activemq.prefetchSize': '100',
-        }
-        try:
-            client = yield client.disconnected
-        except StompConnectionError:
-            yield client.connect()
-        client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
-
-
-    def consume(self, client, frame):
-        fedora_jms_consumer = FedoraJMSConsumer(frame)
-        fedora_jms_consumer.act()
 
 
 

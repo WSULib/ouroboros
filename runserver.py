@@ -27,7 +27,7 @@ from WSUDOR_Manager import app as WSUDOR_Manager_app
 from WSUDOR_API import WSUDOR_API_app
 
 # import main indexer
-from WSUDOR_Indexer.models import FedoraJMSConsumer_Worker
+from WSUDOR_Indexer.models import FedoraJMSConsumer
 
 
 # Ouroboros pidfile ##############################################################
@@ -113,9 +113,9 @@ if __name__ == '__main__':
 
     # fedConsumer
     if FEDCONSUMER_FIRE == True:
-        print "Starting JSM listener..."
-        fedora_jms_consumer_worker = FedoraJMSConsumer_Worker()
-        fedora_jms_consumer_worker.run()
+        print "Starting Fedora JSM consumer..."
+        fedora_jms_consumer = FedoraJMSConsumer()
+        fedora_jms_consumer.run()
 
 
     print '''

@@ -1,20 +1,14 @@
 # library
 from twisted.web.wsgi import WSGIResource
 from twisted.web.server import Site
-from twisted.internet import reactor, defer
+from twisted.internet import reactor
 from twisted.internet.task import deferLater
 from twisted.web.server import NOT_DONE_YET
 from twisted.web import server, resource
 from twisted.python import log
-from stompest.async import Stomp
-from stompest.async.listener import SubscriptionListener
-from stompest.config import StompConfig
-from stompest.protocol import StompSpec
-from stompest.error import StompCancelledError, StompConnectionError, StompConnectTimeout, StompProtocolError
 import json
 import logging
 import subprocess
-# from subprocess import check_output, CalledProcessError
 
 # for Ouroboros pid management
 import os
@@ -33,7 +27,7 @@ from WSUDOR_Manager import app as WSUDOR_Manager_app
 from WSUDOR_API import WSUDOR_API_app
 
 # import main indexer
-from WSUDOR_Indexer import WSUDOR_Indexer
+from WSUDOR_Indexer.models import FedoraJMSConsumer_Worker
 
 
 # Ouroboros pidfile ##############################################################
@@ -90,47 +84,6 @@ def shutdown():
     print "<-- Ouroboros says thanks for playing -->"
 
 
-# Fedora Commons Messaging STOMP protocol consumer ##############################################################
-'''
-Prod: Connected to JSM Messaging service on stomp://localhost:FEDCONSUMER_PORT (usually 61616),
-routes 'fedEvents' to fedoraConsumer()
-
-This needs some kind of listener if Tomcat (Fedora) goes down, it needs to reconnect...
-
-'''
-class IndexerWorker(object):
-
-    QUEUE = "/topic/fedora.apim.update"
-    ERROR_QUEUE = '/queue/testConsumerError'
-
-
-    def __init__(self, config=None):
-        if config is None:
-            config = StompConfig('tcp://localhost:%s' % (FEDCONSUMER_PORT))
-            config = StompConfig(uri='failover:(tcp://localhost:%s)?randomize=false,startupMaxReconnectAttempts=3,initialReconnectDelay=5000,maxReconnectDelay=10000,maxReconnectAttempts=20' % (FEDCONSUMER_PORT))
-        self.config = config
-
-    @defer.inlineCallbacks
-    def run(self):
-        client = Stomp(self.config)
-        yield client.connect()
-        headers = {
-            # client-individual mode is necessary for concurrent processing
-            StompSpec.ACK_HEADER: StompSpec.ACK_CLIENT_INDIVIDUAL,
-            # the maximal number of messages the broker will let you work on at the same time
-            'activemq.prefetchSize': '100',
-        }
-        try:
-            client = yield client.disconnected
-        except StompConnectionError:
-            yield client.connect()
-        client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
-
-    def consume(self, client, frame):
-        indexer = WSUDOR_Indexer(frame)
-        indexer.act()
-
-
 # twisted liseners
 logging.basicConfig(level=LOGGING_LEVEL)
 
@@ -161,8 +114,8 @@ if __name__ == '__main__':
     # fedConsumer
     if FEDCONSUMER_FIRE == True:
         print "Starting JSM listener..."
-        indexer = IndexerWorker()
-        indexer.run()
+        fedora_jms_consumer_worker = FedoraJMSConsumer_Worker()
+        fedora_jms_consumer_worker.run()
 
 
     print '''

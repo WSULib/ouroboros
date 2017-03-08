@@ -43,10 +43,16 @@ SOLR_MANAGE_CORE = 'fedobjs'
 SOLR_SEARCH_CORE = 'fedobjs'
 SOLR_BOOKREADER_CORE = 'bookreader'
 
-# solrIndexer
+# WSUDOR_Indexer
 # printOnly (if True, will not write to Solr)
 SOLR_INDEXER_WRITE_DEFAULT = False
-SOLR_AUTOINDEX = False
+SOLR_AUTOINDEX = True
+SKIP_INDEX_DATASTREAMS = [
+	'DC',
+	'IIIF_MANIFEST',
+	'IIIF_ANNOLIST'
+]
+INDEXER_POLL_DELAY = 0.1
 
 # Celery Config
 REDIS_BROKER_DB = 5

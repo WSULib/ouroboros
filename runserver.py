@@ -117,7 +117,7 @@ if __name__ == '__main__':
         fedora_jms_consumer = FedoraJMSConsumer()
         fedora_jms_consumer.run()
         l = LoopingCall(Indexer.check_db)
-        l.start(0.1)
+        l.start(INDEXER_POLL_DELAY)
 
 
     print '''

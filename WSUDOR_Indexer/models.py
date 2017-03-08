@@ -30,9 +30,21 @@ class FedoraJMSConsumer(object):
 
 	def __init__(self, config=None):
 		if config is None:
-			config = StompConfig('tcp://localhost:%s' % (localConfig.FEDCONSUMER_PORT))
-			config = StompConfig(uri='failover:(tcp://localhost:%s)?randomize=false,startupMaxReconnectAttempts=3,initialReconnectDelay=5000,maxReconnectDelay=10000,maxReconnectAttempts=20' % (localConfig.FEDCONSUMER_PORT))
+			config = StompConfig(uri='tcp://localhost:%s?randomize=false,startupMaxReconnectAttempts=3,initialReconnectDelay=5000,maxReconnectDelay=10000,maxReconnectAttempts=20' % (localConfig.FEDCONSUMER_PORT))
 		self.config = config
+		self.subscription_token = None
+
+
+	# def local_onSubscribe(self, connection, frame, context): # @UnusedVariable
+	# 	"""Set the **ack** header of the **SUBSCRIBE** frame initiating this listener's subscription to the value of the class atrribute :attr:`DEFAULT_ACK_MODE` (if it isn't set already). Keep a copy of the headers for handling messages originating from this subscription."""
+	# 	print "#############################"
+	# 	if context is not self:
+	# 		return
+	# 	if self._headers is not None: # already subscribed
+	# 		return
+	# 	frame.headers.setdefault(StompSpec.ACK_HEADER, self.DEFAULT_ACK_MODE)
+	# 	self._headers = frame.headers
+	# SubscriptionListener.onSubscribe = local_onSubscribe
 
 
 	@defer.inlineCallbacks
@@ -45,16 +57,21 @@ class FedoraJMSConsumer(object):
 			# the maximal number of messages the broker will let you work on at the same time
 			'activemq.prefetchSize': '100',
 		}
-		try:
-			client = yield client.disconnected
-		except StompConnectionError:
-			yield client.connect()
-		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume))
+		# try:
+		# 	client = yield client.disconnected
+		# except StompConnectionError:
+		# 	yield client.connect()
+		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume, onMessageFailed=self.error))
 
 
 	def consume(self, client, frame):
 		fedora_jms_worker = FedoraJMSWorker(frame)
 		fedora_jms_worker.act()
+
+
+	def error(self, connection, failure, frame, errorDestination):
+		print "WE GOT ERROR"
+		print failure
 
 
 # handles events in Fedora Commons as reported by JMS
@@ -92,19 +109,21 @@ class FedoraJMSWorker(object):
 		print "Fedora message: %s, consumed for: %s" % (self.methodName, self.pid)
 
 		# debug
-		print self.headers
-		print self.body
+		# print self.headers
+		# print self.body
+
+		# raise Exception("GOOBERTRONIC EXCEPTION")
 
 		# add pid to indexer queue (iqp = "indexer queue pid")
-		# print "adding to indexer queue"
-		# add_tup = (self.pid, None, 4)
-		# print add_tup
-		# iqp = indexer_queue(*add_tup)
-		# db.session.add(iqp)
-		# try:
-		# 	db.session.commit()
-		# except e:
-		# 	print "Pid already exists!"
+		print "adding to indexer queue"
+		add_tup = (self.pid, None, 4)
+		print add_tup
+		iqp = indexer_queue(*add_tup)
+		db.session.add(iqp)
+		try:
+			db.session.commit()
+		except:
+			db.session.rollback()
 
 	# 	# capture modifications to datastream
 	# 	if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:

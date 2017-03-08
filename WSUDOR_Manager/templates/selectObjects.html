@@ -207,7 +207,10 @@
                             $("#search_params").val(search_params_json)
 
                             // console.log("appending total search size");
-                            $(".dataTables_info").append("<p>Total Size of found objects: <strong>"+settings.json.stats.obj_size_fedora_i.sum.fileSize()+"</strong></p>");
+                            /*
+                                Problematic - if stats aren't avaialble, this fails.  Commenting out for now.
+                            */
+                            // $(".dataTables_info").append("<p>Total Size of found objects: <strong>"+settings.json.stats.obj_size_fedora_i.sum.fileSize()+"</strong></p>");
 
                         }
 

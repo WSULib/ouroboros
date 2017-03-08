@@ -7,6 +7,7 @@ from stompest.protocol import StompSpec
 from stompest.error import StompCancelledError, StompConnectionError, StompConnectTimeout, StompProtocolError
 from twisted.internet import defer
 from datetime import datetime
+from sqlalchemy import UniqueConstraint
 
 # index to Solr
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
@@ -95,10 +96,15 @@ class FedoraJMSWorker(object):
 		print self.body
 
 		# add pid to indexer queue (iqp = "indexer queue pid")
-		print "adding to indexer queue"
-		iqp = indexer_queue(self.pid, None, 4)
-		db.session.add(iqp)
-		db.session.commit()
+		# print "adding to indexer queue"
+		# add_tup = (self.pid, None, 4)
+		# print add_tup
+		# iqp = indexer_queue(*add_tup)
+		# db.session.add(iqp)
+		# try:
+		# 	db.session.commit()
+		# except e:
+		# 	print "Pid already exists!"
 
 	# 	# capture modifications to datastream
 	# 	if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
@@ -137,7 +143,7 @@ class FedoraJMSWorker(object):
 # WSUDOR_Indexer queue table
 class indexer_queue(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	pid = db.Column(db.String(255)) # consider making this the primary key?
+	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
 	username = db.Column(db.String(255))
 	priority = db.Column(db.Integer)
 	timestamp = db.Column(db.DateTime, default=datetime.now)
@@ -146,6 +152,8 @@ class indexer_queue(db.Model):
 		self.pid = pid
 		self.username = username
 		self.priority = priority
+
+		from sqlalchemy import UniqueConstraint
 
 	def __repr__(self):
 		return '<PID %s, priority %s, timestamp %s, username %s>' % (self.pid, self.priority, self.timestamp, self.username)

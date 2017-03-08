@@ -81,10 +81,6 @@ def shutdown():
             sup_server.supervisor.removeProcessGroup(process_group)
             os.system('rm /etc/supervisor/conf.d/%s' % conf)
 
-    # disconnect from Fedora JMS
-    # fedora_jms_consumer = FedoraJMSConsumer()
-    # fedora_jms_consumer.unsubscribe()
-
     print "<-- Ouroboros says thanks for playing -->"
 
 

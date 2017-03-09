@@ -15,6 +15,8 @@ from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 
 from WSUDOR_Manager import db
 
+import logging
+
 
 
 # Fedora JMS worker instantiated by Twisted
@@ -52,7 +54,7 @@ class FedoraJMSConsumer(object):
 		try:			
 			client = yield client.disconnected
 		except StompConnectionError:
-			print "reconnecting..."
+			logging.info("FedoraJMSConsumer: reconnecting")
 			yield client.connect()
 
 
@@ -61,8 +63,8 @@ class FedoraJMSConsumer(object):
 		fedora_jms_worker.act()
 
 	def error(self, connection, failure, frame, errorDestination):
-		print "WE GOT ERROR"
-		print failure
+		logging.info("FedoraJMSConsumer: ERROR")
+		logging.info(failure)
 
 
 # handles events in Fedora Commons as reported by JMS
@@ -97,15 +99,42 @@ class FedoraJMSWorker(object):
 
 	def act(self):
 
-		print "Fedora message: %s, consumed for: %s" % (self.methodName, self.pid)
+		logging.info("Fedora message: %s, consumed for: %s" % (self.methodName, self.pid))
 
 		# debug
 		# print self.headers
 		# print self.body
 
+		# capture modifications to datastream
+		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
+			self._determine_ds()
+			if localConfig.SOLR_AUTOINDEX and self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
+				self.index_object()
+
+		# capture ingests
+		if self.methodName in ['ingest']:
+			if localConfig.SOLR_AUTOINDEX:
+				self.index_object()
+
+		# capture purge
+		if self.methodName in ['purgeObject']:
+			if localConfig.SOLR_AUTOINDEX:
+				self.purge_object()
+
+
+	def _determine_ds(self):
+		'''
+		Small function to determine which datastream was acted on
+		'''
+		self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
+		logging.debug("datastream %s was acted on" % self.ds)
+		return self.ds
+
+
+	def index_object(self):
 		# add pid to indexer queue (iqp = "indexer queue pid")
-		print "adding to indexer queue"
-		index_tuple = (self.pid, None, 1)
+		logging.info("FedoraJMSWorker: adding to queue")
+		index_tuple = (self.pid, None, 1, 'index')
 		iqp = indexer_queue(*index_tuple)
 		db.session.add(iqp)
 		try:
@@ -113,52 +142,43 @@ class FedoraJMSWorker(object):
 		except:
 			db.session.rollback()
 
-	# 	# capture modifications to datastream
-	# 	if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
-	# 		self._determine_ds()
-	# 		if localConfig.SOLR_AUTOINDEX and self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
-	# 			self.index_object()
 
-	# 	# capture ingests
-	# 	if self.methodName in ['ingest']:
-	# 		if localConfig.SOLR_AUTOINDEX:
-	# 			self.index_object()
-
-	# 	# capture purge
-	# 	if self.methodName in ['purgeObject']:
-	# 		if localConfig.SOLR_AUTOINDEX:
-	# 			self.purge_object()
+	def purge_object(self):
+		return pruneSolr_worker.delay(None,PID=self.pid)
 
 
-	# def _determine_ds(self):
-	# 	'''
-	# 	Small function to determine which datastream was acted on
-	# 	'''
-	# 	self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
-	# 	print "datastream %s was acted on" % self.ds
-	# 	return self.ds
-
-
-	# def index_object(self):
-	# 	return solrIndexer.delay("fedoraConsumerIndex", self.pid)
-
-
-	# def purge_object(self):
-	# 	return pruneSolr_worker.delay(None,PID=self.pid)
-
-
+# Indexer class
 class Indexer(object):
 
-	def __init__(self):
-		pass
+	'''
+	Class to handle polling and indexing from SQL indexer_queue table
+	'''
 
 	@classmethod
-	def check_db(self):
+	def poll(self):
 		to_index = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
-		if to_index != None:
-			print to_index
-			indexer_queue.query.filter_by(id=to_index.id).delete()
-			db.session.commit()
+		if to_index != None:			
+			logging.info("Indexer: %s" % to_index)
+			self.to_index = to_index
+			self.route()
+
+
+	@classmethod
+	def route(self):
+		logging.info("Indexer: routing")
+		
+		# index pid
+		if self.to_index.action == 'index':
+			self.index()
+
+
+	@classmethod
+	def index(self):
+		logging.info("Indexer: indexing")
+		# return solrIndexer.delay("fedoraConsumerIndex", self.pid)
+		indexer_queue.query.filter_by(id=self.to_index.id).delete()
+		db.session.commit()
+
 
 
 # WSUDOR_Indexer queue table
@@ -167,12 +187,14 @@ class indexer_queue(db.Model):
 	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
 	username = db.Column(db.String(255))
 	priority = db.Column(db.Integer)
+	action = db.Column(db.String(255))
 	timestamp = db.Column(db.DateTime, default=datetime.now)
 
-	def __init__(self, pid, username, priority):
+	def __init__(self, pid, username, priority, action):
 		self.pid = pid
 		self.username = username
 		self.priority = priority
+		self.action = action
 
 		from sqlalchemy import UniqueConstraint
 

@@ -116,7 +116,7 @@ if __name__ == '__main__':
         print "Starting Fedora JSM consumer..."
         fedora_jms_consumer = FedoraJMSConsumer()
         fedora_jms_consumer.run()
-        l = LoopingCall(Indexer.check_db)
+        l = LoopingCall(Indexer.poll)
         l.start(INDEXER_POLL_DELAY)
 
 

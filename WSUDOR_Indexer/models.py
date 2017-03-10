@@ -8,6 +8,7 @@ from stompest.error import StompCancelledError, StompConnectionError, StompConne
 from twisted.internet import defer
 from datetime import datetime, timedelta
 from sqlalchemy import UniqueConstraint
+import time
 
 # index to Solr
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
@@ -171,7 +172,7 @@ class Indexer(object):
 
 	@classmethod
 	def poll(self):
-		# logging.info('polling...')
+		stime = time.time()
 		queue_row = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
 		# if result, push to router
 		if queue_row != None:			
@@ -179,7 +180,8 @@ class Indexer(object):
 			self.queue_row = queue_row
 			self._route()
 		else:
-			db.session.commit()
+			db.session.close()
+		logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
 
 
 	@classmethod

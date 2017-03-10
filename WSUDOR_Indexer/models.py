@@ -5,19 +5,21 @@ from stompest.async.listener import SubscriptionListener
 from stompest.config import StompConfig
 from stompest.protocol import StompSpec
 from stompest.error import StompCancelledError, StompConnectionError, StompConnectTimeout, StompProtocolError
-from twisted.internet import defer
+from twisted.internet import reactor, defer
 from datetime import datetime, timedelta
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.exc import IntegrityError
 import time
 
-# index to Solr
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
+from WSUDOR_Manager import solrHandles
 
 from WSUDOR_Manager import db
 
 import logging
+
+# celery
 
 
 
@@ -87,6 +89,7 @@ class FedoraJMSWorker(object):
 		self.parsed_body = xmltodict.parse(self.body)
 		self.title = self.parsed_body['entry']['title']['#text']
 		self.categories = self.parsed_body['entry']['category']
+		self.author = self.parsed_body['entry']['author']['name']
 
 		# method type
 		if self.methodName.startswith('add'):
@@ -111,19 +114,23 @@ class FedoraJMSWorker(object):
 		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
 			self._determine_ds()
 			if self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
-				self.index_object()
+				self.queue_action = 'index'
+				self.queue_object()
 
 		# capture ingests
 		if self.methodName in ['ingest']:
-			self.index_object()
+			self.queue_action = 'index'
+			self.queue_object()
 
 		# RDF relationships
 		if self.methodName in ['addRelationship','purgeRelationship']:
-			self.index_object()
+			self.queue_action = 'index'
+			self.queue_object()
 
 		# capture purge
 		if self.methodName in ['purgeObject']:
-			self.purge_object()
+			self.queue_action = 'purge'
+			self.queue_object()
 
 
 	def _determine_ds(self):
@@ -135,40 +142,20 @@ class FedoraJMSWorker(object):
 		return self.ds
 
 
-	# def index_object(self):
-	# 	logging.info("FedoraJMSWorker: adding to queue")
-	# 	queue_tuple = (self.pid, None, 1, 'index')
-	# 	iqp = indexer_queue(*queue_tuple)
-	# 	db.session.add(iqp)
-	# 	try:
-	# 		db.session.commit()
-	# 	except:
-	# 		db.session.rollback()
-
-
-	# def purge_object(self):
-	# 	logging.info("FedoraJMSWorker: adding to queue")
-	# 	queue_tuple = (self.pid, None, 1, 'purge')
-	# 	iqp = indexer_queue(*queue_tuple)
-	# 	db.session.add(iqp)
-	# 	try:
-	# 		db.session.commit()
-	# 	except:
-	# 		db.session.rollback()
-
-	def index_object(self):
-		Indexer.queue_object(self.pid, None, 1, 'index')
-
-
-	def purge_object(self):
-		Indexer.queue_object(self.pid, None, 1, 'purge')
+	def queue_object(self):
+		IndexRouter.queue_object(self.pid, self.author, 1, self.queue_action)
 
 
 # Indexer class
-class Indexer(object):
+class IndexRouter(object):
 
 	'''
-	Class to handle polling and indexing from SQL indexer_queue table
+	Class to handle polling and routing of index queue
+	Most methods are classmethods, as they accept input and requests from various endpoints
+
+	Preferred workflow for indexing items is:
+		1) item added to queue with queue_object()
+		2) poll() and route() pick it up, sending to IndexWorker as queue_row, which includes pid and action
 	'''
 
 	@classmethod
@@ -177,71 +164,86 @@ class Indexer(object):
 		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
 		# if result, push to router
 		if queue_row != None:			
-			logging.info("Indexer: %s" % queue_row)
-			self.queue_row = queue_row
-			self._route()
+			self.route(queue_row)
 		else:
 			db.session.close()
 		# logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
 
 
 	@classmethod
-	def _route(self):
-		logging.info("Indexer: routing")
+	def route(self, queue_row):
+		logging.info("IndexRouter: routing %s" % queue_row)
 		
 		# index object in solr
-		if self.queue_row.action == 'index':
+		if queue_row.action == 'index':
 			if localConfig.SOLR_AUTOINDEX:
-				self.index()
+				iw = IndexWorker(queue_row)
+				iw.index()
 
 		# purge object from solr
-		if self.queue_row.action == 'purge':
+		if queue_row.action == 'purge':
 			if localConfig.SOLR_AUTOINDEX:
-				self.purge()
+				iw = IndexWorker(queue_row)
+				iw.purge()
 
 
 	@classmethod
 	def queue_object(self, pid, username, priority, action):
-		logging.info("Indexer: adding to queue")
+		logging.info("IndexRouter: queuing %s" % pid)
 		queue_tuple = (pid, username, priority, action)
 		iqp = indexer_queue(*queue_tuple)
 		db.session.add(iqp)
 		try:
 			db.session.commit()
 		except IntegrityError:
-			logging.debug("Indexer: IntegrityError, pid likely exists, skipping and rolling back")
+			logging.debug("IndexRouter: IntegrityError, pid likely exists, skipping and rolling back")
 			db.session.rollback()
 		except:
-			logging.warning("Indexer: could not add to queue, rolling back")
+			logging.warning("IndexRouter: could not add to queue, rolling back")
 			db.session.rollback()
 
 	
 	@classmethod
-	def dequeue_object(self, pid=None):
-		logging.info("Indexer: removing from queue")
+	def dequeue_object(self, queue_row=None, pid=None):
 		try:
-			if pid == None:
-				indexer_queue.query.filter_by(id=self.queue_row.id).delete()
-			else:
+			if queue_row:
+				logging.info("IndexRouter: dequeing %s" % queue_row)
+				indexer_queue.query.filter_by(id=queue_row.id).delete()
+			elif pid:
+				logging.info("IndexRouter: dequeing %s" % pid)
 				indexer_queue.query.filter_by(pid=pid).delete()
 			db.session.commit()
 		except:
-			logging.warning("Indexer: Could not remove from queue, rolling back")
+			logging.warning("IndexRouter: Could not remove from queue, rolling back")
 			db.session.rollback()
 
 
-	@classmethod
+
+
+
+class IndexWorker(object):
+
+	'''
+	Class to perform indexing, modifying, and purging of records in various systems (e.g. Solr)
+	When initialized, expects queue_row as input
+	'''
+
+	def __init__(self, queue_row):
+		self.queue_row = queue_row
+
+
 	def index(self):
-		logging.info("Indexer: indexing")
+		logging.info("IndexWorker: indexing %s" % self.queue_row)
 		solrIndexer.delay("WSUDOR_Indexer", self.queue_row.pid)
-		self.dequeue_object()
+		IndexRouter.dequeue_object(queue_row = self.queue_row)
 
 
-	@classmethod
 	def purge(self):
-		logging.info("Indexer: purging")
+		logging.info("IndexWorker: purging %s" % self.queue_row)
 		pruneSolr_worker.delay(None, PID=self.queue_row.pid)
-		self.dequeue_object()
+		IndexRouter.dequeue_object(queue_row = self.queue_row)
+
+
 
 
 

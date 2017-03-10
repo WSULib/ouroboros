@@ -27,7 +27,7 @@ from WSUDOR_Manager import app as WSUDOR_Manager_app
 from WSUDOR_API import WSUDOR_API_app
 
 # import main indexer
-from WSUDOR_Indexer.models import FedoraJMSConsumer, Indexer
+from WSUDOR_Indexer.models import FedoraJMSConsumer, IndexRouter
 
 
 # Ouroboros pidfile ##############################################################
@@ -116,9 +116,8 @@ if __name__ == '__main__':
         print "Starting Fedora JSM consumer..."
         fedora_jms_consumer = FedoraJMSConsumer()
         fedora_jms_consumer.run()
-        l = LoopingCall(Indexer.poll)
-        l.start(INDEXER_POLL_DELAY)
-
+        indexer = LoopingCall(IndexRouter.poll)
+        indexer.start(INDEXER_POLL_DELAY, now=False)
 
     print '''
                 ::+:/`

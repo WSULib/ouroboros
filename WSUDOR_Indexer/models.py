@@ -8,6 +8,7 @@ from stompest.error import StompCancelledError, StompConnectionError, StompConne
 from twisted.internet import defer
 from datetime import datetime, timedelta
 from sqlalchemy import UniqueConstraint
+from sqlalchemy.exc import IntegrityError
 import time
 
 # index to Solr
@@ -173,7 +174,7 @@ class Indexer(object):
 	@classmethod
 	def poll(self):
 		stime = time.time()
-		queue_row = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
+		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
 		# if result, push to router
 		if queue_row != None:			
 			logging.info("Indexer: %s" % queue_row)
@@ -181,7 +182,7 @@ class Indexer(object):
 			self._route()
 		else:
 			db.session.close()
-		logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
+		# logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
 
 
 	@classmethod
@@ -207,6 +208,9 @@ class Indexer(object):
 		db.session.add(iqp)
 		try:
 			db.session.commit()
+		except IntegrityError:
+			logging.info("Indexer: IntegrityError, skipping and rolling back")
+			db.session.rollback()
 		except:
 			logging.warning("Indexer: could not add to queue, rolling back")
 			db.session.rollback()

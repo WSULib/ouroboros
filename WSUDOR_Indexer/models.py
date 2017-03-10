@@ -6,7 +6,7 @@ from stompest.config import StompConfig
 from stompest.protocol import StompSpec
 from stompest.error import StompCancelledError, StompConnectionError, StompConnectTimeout, StompProtocolError
 from twisted.internet import defer
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import UniqueConstraint
 
 # index to Solr
@@ -108,18 +108,20 @@ class FedoraJMSWorker(object):
 		# capture modifications to datastream
 		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
 			self._determine_ds()
-			if localConfig.SOLR_AUTOINDEX and self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
-				self.index_object()
+			if self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
+				self.queue_object()
 
 		# capture ingests
 		if self.methodName in ['ingest']:
-			if localConfig.SOLR_AUTOINDEX:
-				self.index_object()
+			self.queue_object()
+
+		# RDF relationships
+		if self.methodName in ['addRelationship','purgeRelationship']:
+			self.queue_object()
 
 		# capture purge
 		if self.methodName in ['purgeObject']:
-			if localConfig.SOLR_AUTOINDEX:
-				self.purge_object()
+			self.purge_object()
 
 
 	def _determine_ds(self):
@@ -131,11 +133,10 @@ class FedoraJMSWorker(object):
 		return self.ds
 
 
-	def index_object(self):
-		# add pid to indexer queue (iqp = "indexer queue pid")
+	def queue_object(self):
 		logging.info("FedoraJMSWorker: adding to queue")
-		index_tuple = (self.pid, None, 1, 'index')
-		iqp = indexer_queue(*index_tuple)
+		queue_tuple = (self.pid, None, 1, 'index')
+		iqp = indexer_queue(*queue_tuple)
 		db.session.add(iqp)
 		try:
 			db.session.commit()
@@ -144,7 +145,14 @@ class FedoraJMSWorker(object):
 
 
 	def purge_object(self):
-		return pruneSolr_worker.delay(None,PID=self.pid)
+		logging.info("FedoraJMSWorker: adding to queue")
+		queue_tuple = (self.pid, None, 1, 'purge')
+		iqp = indexer_queue(*queue_tuple)
+		db.session.add(iqp)
+		try:
+			db.session.commit()
+		except:
+			db.session.rollback()
 
 
 # Indexer class
@@ -156,10 +164,11 @@ class Indexer(object):
 
 	@classmethod
 	def poll(self):
-		to_index = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
-		if to_index != None:			
-			logging.info("Indexer: %s" % to_index)
-			self.to_index = to_index
+		queue_object = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
+		# if result, push to router
+		if queue_object != None:			
+			logging.info("Indexer: %s" % queue_object)
+			self.queue_object = queue_object
 			self.route()
 
 
@@ -167,17 +176,38 @@ class Indexer(object):
 	def route(self):
 		logging.info("Indexer: routing")
 		
-		# index pid
-		if self.to_index.action == 'index':
-			self.index()
+		# index object in solr
+		if self.queue_object.action == 'index':
+			if localConfig.SOLR_AUTOINDEX:
+				self.index()
+
+		# purge object from solr
+		if self.queue_object.action == 'purge':
+			if localConfig.SOLR_AUTOINDEX:
+				self.purge()
+
+	@classmethod
+	def remove_from_queue(self):
+		try:
+			indexer_queue.query.filter_by(id=self.queue_object.id).delete()
+			db.session.commit()
+		except:
+			logging.warning("Indexer: Could not remove from queue, rolling back")
+			db.session.rollback()
 
 
 	@classmethod
 	def index(self):
 		logging.info("Indexer: indexing")
-		# return solrIndexer.delay("fedoraConsumerIndex", self.pid)
-		indexer_queue.query.filter_by(id=self.to_index.id).delete()
-		db.session.commit()
+		solrIndexer.delay("WSUDOR_Indexer", self.queue_object.pid)
+		self.remove_from_queue()
+
+
+	@classmethod
+	def purge(self):
+		logging.info("Indexer: purging")
+		pruneSolr_worker.delay(None, PID=self.queue_object.pid)
+		self.remove_from_queue()
 
 
 

@@ -355,7 +355,7 @@ def solrIndexer(index_type, PID, human_hash=False, printOnly=SOLR_INDEXER_WRITE_
 
 	# determine action based on index_type
 	# Index single item per index_type
-	if index_type in ["ingest", "modifyObject","fedoraConsumerIndex"]:
+	if index_type in ["ingest", "modifyObject","WSUDOR_Indexer"]:
 
 		print "Updating / Indexing",PID
 		# index PIDs in Solr

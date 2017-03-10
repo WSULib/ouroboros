@@ -109,15 +109,15 @@ class FedoraJMSWorker(object):
 		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
 			self._determine_ds()
 			if self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
-				self.queue_object()
+				self.index_object()
 
 		# capture ingests
 		if self.methodName in ['ingest']:
-			self.queue_object()
+			self.index_object()
 
 		# RDF relationships
 		if self.methodName in ['addRelationship','purgeRelationship']:
-			self.queue_object()
+			self.index_object()
 
 		# capture purge
 		if self.methodName in ['purgeObject']:
@@ -133,26 +133,33 @@ class FedoraJMSWorker(object):
 		return self.ds
 
 
-	def queue_object(self):
-		logging.info("FedoraJMSWorker: adding to queue")
-		queue_tuple = (self.pid, None, 1, 'index')
-		iqp = indexer_queue(*queue_tuple)
-		db.session.add(iqp)
-		try:
-			db.session.commit()
-		except:
-			db.session.rollback()
+	# def index_object(self):
+	# 	logging.info("FedoraJMSWorker: adding to queue")
+	# 	queue_tuple = (self.pid, None, 1, 'index')
+	# 	iqp = indexer_queue(*queue_tuple)
+	# 	db.session.add(iqp)
+	# 	try:
+	# 		db.session.commit()
+	# 	except:
+	# 		db.session.rollback()
+
+
+	# def purge_object(self):
+	# 	logging.info("FedoraJMSWorker: adding to queue")
+	# 	queue_tuple = (self.pid, None, 1, 'purge')
+	# 	iqp = indexer_queue(*queue_tuple)
+	# 	db.session.add(iqp)
+	# 	try:
+	# 		db.session.commit()
+	# 	except:
+	# 		db.session.rollback()
+
+	def index_object(self):
+		Indexer.queue_object(self.pid, None, 1, 'index')
 
 
 	def purge_object(self):
-		logging.info("FedoraJMSWorker: adding to queue")
-		queue_tuple = (self.pid, None, 1, 'purge')
-		iqp = indexer_queue(*queue_tuple)
-		db.session.add(iqp)
-		try:
-			db.session.commit()
-		except:
-			db.session.rollback()
+		Indexer.queue_object(self.pid, None, 1, 'purge')
 
 
 # Indexer class
@@ -164,32 +171,53 @@ class Indexer(object):
 
 	@classmethod
 	def poll(self):
-		queue_object = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
+		# logging.info('polling...')
+		queue_row = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.desc()).first()
 		# if result, push to router
-		if queue_object != None:			
-			logging.info("Indexer: %s" % queue_object)
-			self.queue_object = queue_object
-			self.route()
+		if queue_row != None:			
+			logging.info("Indexer: %s" % queue_row)
+			self.queue_row = queue_row
+			self._route()
+		else:
+			db.session.commit()
 
 
 	@classmethod
-	def route(self):
+	def _route(self):
 		logging.info("Indexer: routing")
 		
 		# index object in solr
-		if self.queue_object.action == 'index':
+		if self.queue_row.action == 'index':
 			if localConfig.SOLR_AUTOINDEX:
 				self.index()
 
 		# purge object from solr
-		if self.queue_object.action == 'purge':
+		if self.queue_row.action == 'purge':
 			if localConfig.SOLR_AUTOINDEX:
 				self.purge()
 
+
 	@classmethod
-	def remove_from_queue(self):
+	def queue_object(self, pid, username, priority, action):
+		logging.info("Indexer: adding to queue")
+		queue_tuple = (pid, username, priority, action)
+		iqp = indexer_queue(*queue_tuple)
+		db.session.add(iqp)
 		try:
-			indexer_queue.query.filter_by(id=self.queue_object.id).delete()
+			db.session.commit()
+		except:
+			logging.warning("Indexer: could not add to queue, rolling back")
+			db.session.rollback()
+
+	
+	@classmethod
+	def dequeue_object(self, pid=None):
+		logging.info("Indexer: removing from queue")
+		try:
+			if pid == None:
+				indexer_queue.query.filter_by(id=self.queue_row.id).delete()
+			else:
+				indexer_queue.query.filter_by(pid=pid).delete()
 			db.session.commit()
 		except:
 			logging.warning("Indexer: Could not remove from queue, rolling back")
@@ -199,15 +227,15 @@ class Indexer(object):
 	@classmethod
 	def index(self):
 		logging.info("Indexer: indexing")
-		solrIndexer.delay("WSUDOR_Indexer", self.queue_object.pid)
-		self.remove_from_queue()
+		solrIndexer.delay("WSUDOR_Indexer", self.queue_row.pid)
+		self.dequeue_object()
 
 
 	@classmethod
 	def purge(self):
 		logging.info("Indexer: purging")
-		pruneSolr_worker.delay(None, PID=self.queue_object.pid)
-		self.remove_from_queue()
+		pruneSolr_worker.delay(None, PID=self.queue_row.pid)
+		self.dequeue_object()
 
 
 
@@ -229,7 +257,7 @@ class indexer_queue(db.Model):
 		from sqlalchemy import UniqueConstraint
 
 	def __repr__(self):
-		return '<PID %s, priority %s, timestamp %s, username %s>' % (self.pid, self.priority, self.timestamp, self.username)
+		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
 
 
 

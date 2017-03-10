@@ -209,7 +209,7 @@ class Indexer(object):
 		try:
 			db.session.commit()
 		except IntegrityError:
-			logging.info("Indexer: IntegrityError, skipping and rolling back")
+			logging.debug("Indexer: IntegrityError, pid likely exists, skipping and rolling back")
 			db.session.rollback()
 		except:
 			logging.warning("Indexer: could not add to queue, rolling back")

@@ -9,6 +9,7 @@ from PIL import Image
 import time
 import traceback
 import sys
+import requests
 
 # library for working with LOC BagIt standard 
 import bagit
@@ -298,10 +299,37 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
 
 
+	# content-type specific indexing tasks
+	def index_augment(self):
 
+		# get all PDF's
+		pdf_ds_list = [ 
+			ds for ds in self.ohandle.ds_list 
+			if self.ohandle.ds_list[ds].mimeType == "application/pdf" 
+			and self.ohandle.getDatastreamObject(ds).control_group != 'R'
+			and ds != "FILE"
+		]
 
+		# iterate through and add to list
+		if len(pdf_ds_list) > 0:
+			
+			# start list of full-text to index
+			self.SolrDoc.doc.int_fullText = []
+			
+			# iterate through and appsend
+			for pdf in pdf_ds_list:
+				
+				# get handle
+				pdf_ds_handle = self.ohandle.getDatastreamObject(pdf)
 
+				# use Solr's Tika Extract to strip down to text
+				print "extracting full-text from PDF: %s" % pdf
+				baseurl = "http://localhost/solr4/fedobjs/update/extract?&extractOnly=true"
+				files = {'file': pdf_ds_handle.content}		
+				r = requests.post(baseurl, files=files)
+				ds_stripped_content = r.text	
 
-
+				# add to list
+				self.SolrDoc.doc.int_fullText.append(ds_stripped_content)
 
 

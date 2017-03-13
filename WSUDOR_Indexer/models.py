@@ -12,7 +12,6 @@ from sqlalchemy.exc import IntegrityError
 import time
 import urllib
 
-from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 from WSUDOR_Manager import solrHandles
 import WSUDOR_ContentTypes
@@ -175,7 +174,7 @@ class IndexRouter(object):
 
 	@classmethod
 	def route(self, queue_row):
-		logging.info("IndexRouter: routing %s" % queue_row)
+		logging.debug("IndexRouter: routing %s" % queue_row)
 		
 		# index object in solr
 		if queue_row.action == 'index':

@@ -1,13 +1,44 @@
 {% include 'header.html' %}
 
 <div class="row">
-	<div class="col-md-7">
+	<div class="col-md-12">
 
 		<h2>Object Indexing - Status</h2>
 
-		<p>Here be status.</p>
+		<p>The table belows represents objects currently in the queue for indexing.  The table automatically refreshes every 5 seconds.</p>
+
+		<!-- insert table here -->
+		<table id="object_table" class="display" cellspacing="0" width="100%" style="font-size:100%;">
+            <thead>
+                <tr>            
+                    <th>id</th>
+                    <th>pid</th>
+                    <th>username</th>
+                    <th>priority</th>
+                    <th>action</th>
+                    <th>timestamp</th>
+                </tr>
+            </thead>  
+            <tbody></tbody>          
+        </table>
 
 	</div>
 </div>
+
+<!-- JS -->
+<script type="text/javascript" charset="utf-8">
+	$(document).ready(function(){
+	  var table = $('#object_table').DataTable({
+	    "processing": true,
+	    "serverSide": true,
+	    "ajax": "/{{APP_PREFIX}}/indexing/status.json"
+	  });
+	  setInterval( function () {
+	    table.ajax.reload();
+	  }, 5000 );
+	});
+
+	
+</script>
 
 {% include 'footer.html' %}

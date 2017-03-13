@@ -25,7 +25,7 @@ from datetime import datetime
 from datetime import timedelta
 
 # WSUDOR_Manager
-from WSUDOR_Indexer.models import IndexRouter
+from WSUDOR_Indexer.models import IndexRouter, indexer_queue, indexer_exception
 from WSUDOR_Manager import app
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
@@ -70,6 +70,9 @@ from fedoraHandles import fedora_handle
 
 # regex
 import re
+
+# flask-SQLalchemy-datatables
+from datatables import ColumnDT, DataTables
 
 
 # GENERAL
@@ -1688,6 +1691,28 @@ def indexing_index(action, group):
 @roles.auth(['admin','metadata'])
 def indexing_status():
     return render_template("indexing_status.html",localConfig=localConfig)
+
+
+@app.route("/indexing/status.json", methods=['POST', 'GET'])
+def indexing_status_json():
+    
+    # defining columns
+    columns = []    
+    columns.append(ColumnDT('id'))
+    columns.append(ColumnDT('pid'))
+    columns.append(ColumnDT('username'))
+    columns.append(ColumnDT('priority'))
+    columns.append(ColumnDT('action'))
+    columns.append(ColumnDT('timestamp'))
+
+    # build query
+    query = db.session.query(indexer_queue).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc())
+
+    # instantiating a DataTable for the query and table needed
+    rowTable = DataTables(request.args, indexer_queue, query, columns)
+
+    # returns what is needed by DataTable
+    return jsonify(rowTable.output_result())
 
 
 

@@ -1079,8 +1079,20 @@ class WSUDOR_GenObject(object):
             return True
 
 
-    def queue_for_index(self, priority=1, username=None, action='index'):
+    def prune(self):
+        solr_handle.delete_by_key(self.pid)
+
+        # prune constituents
+        if len(self.constituents) > 0:
+            for c in self.constituents:
+                solr_handle.delete_by_key(c.pid)
+
+        return True
+
+
+    def add_to_indexer_queue(self, priority=1, username=None, action='index'):
         IndexRouter.queue_object(self.pid, priority=priority, username=username, action=action)
+
 
 
     # regnerate derivative JP2s

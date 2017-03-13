@@ -130,7 +130,7 @@ class FedoraJMSWorker(object):
 
 		# capture purge
 		if self.methodName in ['purgeObject']:
-			self.queue_action = 'purge'
+			self.queue_action = 'prune'
 			self.queue_object()
 
 
@@ -181,11 +181,15 @@ class IndexRouter(object):
 				iw = IndexWorker(queue_row)
 				iw.index()
 
-		# purge object from solr
-		if queue_row.action == 'purge':
+		# prune object from solr
+		elif queue_row.action == 'prune':
 			if localConfig.SOLR_AUTOINDEX:
 				iw = IndexWorker(queue_row)
-				iw.purge()
+				iw.prune()
+
+		else:
+			logging.info("IndexRouter: routing action `%s` not known, sending to exceptions" % queue_row.action)	
+			self.add_exception(queue_row, dequeue=True)
 
 
 	@classmethod
@@ -213,10 +217,7 @@ class IndexRouter(object):
 				db.session.commit()
 				# if is_exception, add to exception table
 				if is_exception:
-					self.add_exception(queue_row.pid, queue_row.username, queue_row.priority, queue_row.action)
-				# # else, assume success and remove from exceptions if present
-				# else:
-				# 	self.remove_exception(queue_row=queue_row)
+					self.add_exception(queue_row)
 			elif pid:
 				logging.info("IndexRouter: dequeing %s" % pid)
 				indexer_queue.query.filter_by(pid=pid).delete()
@@ -227,9 +228,9 @@ class IndexRouter(object):
 
 		
 	@classmethod
-	def add_exception(self, pid, username, priority, action):
-		logging.info("IndexRouter: noting exception %s" % pid)
-		exception_tuple = (pid, username, priority, action)
+	def add_exception(self, queue_row, dequeue):
+		logging.info("IndexRouter: noting exception %s" % queue_row.pid)
+		exception_tuple = (queue_row.pid, queue_row.username, queue_row.priority, queue_row.action)
 		exception = indexer_exception(*exception_tuple)
 		db.session.add(exception)
 		try:
@@ -240,6 +241,8 @@ class IndexRouter(object):
 		except:
 			logging.warning("IndexRouter: could not add to exceptions, rolling back")
 			db.session.rollback()
+		if dequeue:
+			self.dequeue_object(queue_row=queue_row)
 
 
 	@classmethod	
@@ -252,7 +255,7 @@ class IndexRouter(object):
 
 
 	@classmethod	
-	def queue_exceptions(self):
+	def queue_all_exceptions(self):
 		
 		# indexer_queue.__table__.insert().from_select(names=['pid','username','priority','action'],select=db.session.query(indexer_exception))
 		db.session.execute('INSERT INTO indexer_queue (pid,username,priority,action,timestamp) (SELECT pid,username,priority,action,timestamp FROM `indexer_exception`);')
@@ -264,7 +267,7 @@ class IndexRouter(object):
 class IndexWorker(object):
 
 	'''
-	Class to perform indexing, modifying, and purging of records in various systems (e.g. Solr)
+	Class to perform indexing, modifying, and pruning of records in various systems (e.g. Solr)
 	When initialized, expects queue_row as input
 	'''
 
@@ -287,10 +290,15 @@ class IndexWorker(object):
 			IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
 
 
-	def purge(self):
-		logging.info("IndexWorker: purging %s" % self.queue_row)
-		pruneSolr_worker.delay(None, PID=self.queue_row.pid)
-		IndexRouter.dequeue_object(queue_row = self.queue_row)
+	def prune(self):
+		logging.info("IndexWorker: pruning %s" % self.queue_row)
+		obj = WSUDOR_ContentTypes.WSUDOR_Object(self.queue_row.pid)
+		if obj:
+			obj.prune()
+			IndexRouter.dequeue_object(queue_row = self.queue_row)
+		else:
+			logging.warning("IndexWorker: could not open object, skipping")
+			IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
 
 
 

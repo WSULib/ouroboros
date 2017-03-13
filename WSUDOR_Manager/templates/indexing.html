@@ -1,0 +1,47 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<div class="col-md-7">
+
+		<h2>Object Indexing</h2>
+
+		<p>Primary layer for discovery of objects in WSUDOR is Solr.  Objects from Fedora are indexed in Solr, including content-type specific information that is extracted along the way (page text from ebooks, etc.).  The majority of this functionality lives in <code>WSUDOR_Indexer</code>, with methods at the object level for indexing and pruning.  Though Ouroboros listens to Fedora for objects that have been modified, and thus should be indexed, sometimes manual indexing is required.</p>
+
+		<table class="table">
+			
+			<tr>
+				<td><strong>Action</strong></td>
+				<td><strong>Description</strong></td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/selected">Index Selected Objects</a></td>
+				<td><strong>Indexes currently selected</strong> objects.</td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/modified">Index Modified Objects</a></td>
+				<td><strong>Indexs all objects modified in Fedora</strong> since last partial or full index.</td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/all">Index All Objects</a></td>
+				<td><strong>Indexes all objects in Fedora</strong>, but does not purge old ones.</td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-warning btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/prune/selected">Prune Selected Objects</a></td>
+				<td><strong>Removes currently selcted objects</strong> from index.</td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-danger btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/selected">Purge and Reindex</a></td>
+				<td><strong>Purges and reindexes</strong> all objects in Solr.  <span style="color:red;">Will remove all live Solr records, run only if necessary or system is down.</span></td>
+			</tr>
+
+		</table>
+
+	</div>
+</div>
+
+{% include 'footer.html' %}

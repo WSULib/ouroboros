@@ -281,12 +281,12 @@ class WSUDOR_GenObject(object):
             # initiate IIIF Manifest Factory
             self.iiif_factory = ManifestFactory()
             # Where the resources live on the web
-            self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+            self.iiif_factory.set_base_prezi_uri("https://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
             # Where the resources live on disk
             self.iiif_factory.set_base_prezi_dir("/tmp")
 
             # Default Image API information
-            self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+            self.iiif_factory.set_base_image_uri("https://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
             self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
 
             # 'warn' will print warnings, default level
@@ -1081,18 +1081,15 @@ class WSUDOR_GenObject(object):
 
     def prune(self):
         solr_handle.delete_by_key(self.pid)
-
         # prune constituents
         if len(self.constituents) > 0:
             for c in self.constituents:
                 solr_handle.delete_by_key(c.pid)
-
         return True
 
 
     def add_to_indexer_queue(self, priority=1, username=None, action='index'):
         IndexRouter.queue_object(self.pid, priority=priority, username=username, action=action)
-
 
 
     # regnerate derivative JP2s

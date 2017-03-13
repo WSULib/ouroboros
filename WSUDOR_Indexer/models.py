@@ -10,13 +10,15 @@ from datetime import datetime, timedelta
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.exc import IntegrityError
 import time
+import urllib
 
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 from WSUDOR_Manager import solrHandles
 import WSUDOR_ContentTypes
 
-from WSUDOR_Manager import db
+import WSUDOR_Manager
+from WSUDOR_Manager import db, fedora_handle
 
 import logging
 
@@ -207,7 +209,7 @@ class IndexRouter(object):
 			logging.warning("IndexRouter: could not add to queue, rolling back")
 			db.session.rollback()
 
-	
+
 	@classmethod
 	def dequeue_object(self, queue_row=None, pid=None, is_exception=False):
 		try:
@@ -261,6 +263,65 @@ class IndexRouter(object):
 		db.session.execute('INSERT INTO indexer_queue (pid,username,priority,action,timestamp) (SELECT pid,username,priority,action,timestamp FROM `indexer_exception`);')
 		indexer_exception.query.delete()
 		db.session.commit()
+
+
+	@classmethod
+	def last_index_date(self):
+		doc_handle = WSUDOR_Manager.models.SolrDoc("LastFedoraIndex")
+		return doc_handle.doc.solr_modifiedDate
+
+
+	@classmethod
+	def update_last_index_date(self):		
+		doc_handle = WSUDOR_Manager.models.SolrDoc("LastFedoraIndex")
+		doc_handle.doc.solr_modifiedDate = "NOW"
+		result = doc_handle.update()
+		return result.raw_content
+
+
+	@classmethod
+	def queue_modified(self, username=None, priority=1, action='index'):
+
+		'''
+		# Get Objects/Datastreams modified on or after this date
+		# Returns streaming socket iterator with PIDs
+		'''
+		
+		risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/fedora-system:FedoraObject-3.0> and $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '%s'^^<xml-schema:dateTime> in <#xsd>" % (self.last_index_date())
+
+		risearch_params = urllib.urlencode({
+			'type': 'tuples', 
+			'lang': 'itql', 
+			'format': 'CSV',
+			'limit':'',
+			'dt': 'on',
+			'stream':'on',
+			'query': risearch_query
+			})
+		risearch_host = "http://%s:%s@localhost/fedora/risearch?" % (localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD)
+
+		modified_objects = urllib.urlopen(risearch_host,risearch_params)
+		modified_objects.next() # bump past headers
+
+		# for each in list, add to queue
+		for pid in modified_objects:
+			self.queue_object(pid, username, priority, action)
+
+		# set new last_index_date
+		self.update_last_index_date()
+
+
+	@classmethod
+	def queue_all(self, username=None, priority=1, action='index'):
+		
+		all_pids = fedora_handle.find_objects("*")
+
+		# for each in list, add to queue
+		for pid in all_pids:
+			self.queue_object(pid, username, priority, action)
+
+		# set new last_index_date
+		self.update_last_index_date()
 
 
 

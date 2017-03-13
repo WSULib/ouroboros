@@ -51,6 +51,7 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import fedoraHandles
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db
+from WSUDOR_Indexer.models import IndexRouter
 
 # derivatives
 from inc.derivatives import Derivative
@@ -1078,6 +1079,8 @@ class WSUDOR_GenObject(object):
             return True
 
 
+    def queue_for_index(self, priority=1, username=None, action='index'):
+        IndexRouter.queue_object(self.pid, priority=priority, username=username, action=action)
 
 
     # regnerate derivative JP2s

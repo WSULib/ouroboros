@@ -14,6 +14,7 @@ import time
 from WSUDOR_Manager.actions.solrIndexer import solrIndexer
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
 from WSUDOR_Manager import solrHandles
+import WSUDOR_ContentTypes
 
 from WSUDOR_Manager import db
 
@@ -204,20 +205,59 @@ class IndexRouter(object):
 
 	
 	@classmethod
-	def dequeue_object(self, queue_row=None, pid=None):
+	def dequeue_object(self, queue_row=None, pid=None, is_exception=False):
 		try:
 			if queue_row:
 				logging.info("IndexRouter: dequeing %s" % queue_row)
 				indexer_queue.query.filter_by(id=queue_row.id).delete()
+				db.session.commit()
+				# if is_exception, add to exception table
+				if is_exception:
+					self.add_exception(queue_row.pid, queue_row.username, queue_row.priority, queue_row.action)
+				# # else, assume success and remove from exceptions if present
+				# else:
+				# 	self.remove_exception(queue_row=queue_row)
 			elif pid:
 				logging.info("IndexRouter: dequeing %s" % pid)
 				indexer_queue.query.filter_by(pid=pid).delete()
-			db.session.commit()
+				db.session.commit()
 		except:
 			logging.warning("IndexRouter: Could not remove from queue, rolling back")
 			db.session.rollback()
 
+		
+	@classmethod
+	def add_exception(self, pid, username, priority, action):
+		logging.info("IndexRouter: noting exception %s" % pid)
+		exception_tuple = (pid, username, priority, action)
+		exception = indexer_exception(*exception_tuple)
+		db.session.add(exception)
+		try:
+			db.session.commit()
+		except IntegrityError:
+			logging.debug("IndexRouter: IntegrityError, pid likely exists, skipping and rolling back")
+			db.session.rollback()
+		except:
+			logging.warning("IndexRouter: could not add to exceptions, rolling back")
+			db.session.rollback()
 
+
+	@classmethod	
+	def remove_exception(self, pid, queue_row=None):
+		if queue_row:
+			pid = queue_row.pid
+		logging.info("IndexRouter: removing exception %s" % pid)
+		indexer_exception.query.filter_by(pid=pid).delete()	
+		db.session.commit()
+
+
+	@classmethod	
+	def queue_exceptions(self):
+		
+		# indexer_queue.__table__.insert().from_select(names=['pid','username','priority','action'],select=db.session.query(indexer_exception))
+		db.session.execute('INSERT INTO indexer_queue (pid,username,priority,action,timestamp) (SELECT pid,username,priority,action,timestamp FROM `indexer_exception`);')
+		indexer_exception.query.delete()
+		db.session.commit()
 
 
 
@@ -234,16 +274,23 @@ class IndexWorker(object):
 
 	def index(self):
 		logging.info("IndexWorker: indexing %s" % self.queue_row)
-		solrIndexer.delay("WSUDOR_Indexer", self.queue_row.pid)
-		IndexRouter.dequeue_object(queue_row = self.queue_row)
+		obj = WSUDOR_ContentTypes.WSUDOR_Object(self.queue_row.pid)
+		if obj:
+			index_result = obj.index()
+			if index_result:
+				IndexRouter.dequeue_object(queue_row = self.queue_row)
+			else:
+				logging.warning("IndexWorker: index was not successful")
+				IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
+		else:
+			logging.warning("IndexWorker: could not open object, skipping")
+			IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
 
 
 	def purge(self):
 		logging.info("IndexWorker: purging %s" % self.queue_row)
 		pruneSolr_worker.delay(None, PID=self.queue_row.pid)
 		IndexRouter.dequeue_object(queue_row = self.queue_row)
-
-
 
 
 
@@ -262,7 +309,23 @@ class indexer_queue(db.Model):
 		self.priority = priority
 		self.action = action
 
-		from sqlalchemy import UniqueConstraint
+	def __repr__(self):
+		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
+
+
+class indexer_exception(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
+	username = db.Column(db.String(255))
+	priority = db.Column(db.Integer)
+	action = db.Column(db.String(255))
+	timestamp = db.Column(db.DateTime, default=datetime.now)
+
+	def __init__(self, pid, username, priority, action):
+		self.pid = pid
+		self.username = username
+		self.priority = priority
+		self.action = action
 
 	def __repr__(self):
 		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)

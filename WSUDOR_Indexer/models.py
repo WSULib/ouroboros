@@ -239,7 +239,7 @@ class IndexRouter(object):
 				db.session.commit()
 				# if is_exception, add to exception table
 				if is_exception:
-					self.add_exception(queue_row)
+					self.add_exception(queue_row, dequeue=False)
 			elif pid:
 				logging.info("IndexRouter: dequeing %s" % pid)
 				indexer_queue.query.filter_by(pid=pid).delete()
@@ -261,14 +261,14 @@ class IndexRouter(object):
 				db.session.commit()
 				# if is_exception, add to exception table
 				if is_exception:
-					self.add_exception(queue_row)
+					self.add_exception(queue_row, dequeue=False)
 		except:
 			logging.warning("IndexRouter: Could not remove from queue, rolling back")
 			db.session.rollback()
 
 		
 	@classmethod
-	def add_exception(self, queue_row, dequeue):
+	def add_exception(self, queue_row, dequeue=True):
 		logging.info("IndexRouter: noting exception %s" % queue_row.pid)
 		exception_tuple = (queue_row.pid, queue_row.username, queue_row.priority, queue_row.action)
 		exception = indexer_exception(*exception_tuple)
@@ -368,19 +368,19 @@ class postIndexWorker(Task):
 	def after_return(self, *args, **kwargs):
 
 		# debug
-		# print "############## running post IndexWorker ################"
-		# print args
-		# print type(args[3])
-		# print type(args[3][0])
-		# print args[3][0].pid
-		# print "########################################################"
+		logging.info("postIndexWorker: ######### BEGIN DEBUG #########")
+		logging.info(args)
+		logging.info("postIndexWorker: ######### END DEBUG #########")
 
 		queue_row = args[3][0]
 
-		# dequeue if success
+		# if celery task completed
 		if args[0] == 'SUCCESS':
-			logging.info("postIndexWorker: index success, removing from working %s" % queue_row)
-			IndexRouter.object_complete(queue_row = queue_row)
+			if args[1] == True:
+				logging.info("postIndexWorker: index success, removing from working %s" % queue_row)
+				IndexRouter.object_complete(queue_row = queue_row)
+			else:
+				IndexRouter.object_complete(queue_row = queue_row, is_exception=True)
 		# dequeue and add exception
 		else:
 			logging.warning("postIndexWorker: index was not successful")

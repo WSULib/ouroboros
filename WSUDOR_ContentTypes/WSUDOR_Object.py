@@ -940,6 +940,8 @@ class WSUDOR_GenObject(object):
     # Solr Indexing
     def index(self, printOnly=False):
 
+        raise Exception("ERRRRRRRRROROROROROR")
+
         # generate human values
         print "preparing 'human_hash' values..."
         human_hash = {

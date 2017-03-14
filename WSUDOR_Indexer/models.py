@@ -175,18 +175,20 @@ class IndexRouter(object):
 	@classmethod
 	def poll(self):
 		stime = time.time()
+		# refresh connection every poll
 		db.session.close()
 		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
 		# if result, push to router
 		if queue_row != None:			
 			self.route(queue_row)
-		# else:
-		# 	db.session.close()
 		# logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
 
 
 	@classmethod
 	def route(self, queue_row):
+		'''
+		Begins celery process, removes from queue
+		'''
 		logging.info("IndexRouter: routing %s" % queue_row)
 		
 		# index object in solr
@@ -195,6 +197,8 @@ class IndexRouter(object):
 				# iw = IndexWorker(queue_row)
 				# iw.index.delay(queue_row)
 				IndexWorker.index.delay(queue_row)
+				self.dequeue_object(queue_row = queue_row)
+
 
 		# prune object from solr
 		elif queue_row.action == 'prune':
@@ -209,6 +213,11 @@ class IndexRouter(object):
 
 	@classmethod
 	def queue_object(self, pid, username, priority, action):
+
+		'''
+		if not in queue or working, add to queue
+		'''
+		db.session.commit()
 		logging.info("IndexRouter: queuing %s" % pid)
 		queue_tuple = (pid, username, priority, action)
 		iqp = indexer_queue(*queue_tuple)
@@ -225,10 +234,16 @@ class IndexRouter(object):
 
 	@classmethod
 	def dequeue_object(self, queue_row=None, pid=None, is_exception=False):
+		'''
+		moves object from queue to working
+		'''
 		try:
 			if queue_row:
-				logging.info("IndexRouter: dequeing %s" % queue_row)
+				logging.info("IndexRouter: moving to working %s" % queue_row)
 				indexer_queue.query.filter_by(id=queue_row.id).delete()
+				working_tuple = (queue_row.pid, queue_row.username, queue_row.priority, queue_row.action)
+				iwp = indexer_working(*working_tuple)
+				db.session.add(iwp)
 				db.session.commit()
 				# if is_exception, add to exception table
 				if is_exception:
@@ -240,6 +255,44 @@ class IndexRouter(object):
 		except:
 			logging.warning("IndexRouter: Could not remove from queue, rolling back")
 			db.session.rollback()
+
+
+	@classmethod
+	def object_complete(self, queue_row=None, is_exception=False):
+		'''
+		removes from working table
+		'''
+		try:
+			if queue_row:
+				logging.info("IndexRouter: marking as complete %s" % queue_row)
+				indexer_working.query.filter_by(pid=queue_row.pid).delete()
+				db.session.commit()
+				# if is_exception, add to exception table
+				if is_exception:
+					self.add_exception(queue_row)
+		except:
+			logging.warning("IndexRouter: Could not remove from queue, rolling back")
+			db.session.rollback()
+
+
+
+	# @classmethod
+	# def dequeue_object(self, queue_row=None, pid=None, is_exception=False):
+	# 	try:
+	# 		if queue_row:
+	# 			logging.info("IndexRouter: dequeing %s" % queue_row)
+	# 			indexer_queue.query.filter_by(id=queue_row.id).delete()
+	# 			db.session.commit()
+	# 			# if is_exception, add to exception table
+	# 			if is_exception:
+	# 				self.add_exception(queue_row)
+	# 		elif pid:
+	# 			logging.info("IndexRouter: dequeing %s" % pid)
+	# 			indexer_queue.query.filter_by(pid=pid).delete()
+	# 			db.session.commit()
+	# 	except:
+	# 		logging.warning("IndexRouter: Could not remove from queue, rolling back")
+	# 		db.session.rollback()
 
 		
 	@classmethod
@@ -352,11 +405,12 @@ class postTask(Task):
 
 		# dequeue if success
 		if args[0] == 'SUCCESS':
-			IndexRouter.dequeue_object(queue_row = queue_row)
+			IndexRouter.object_complete(queue_row = queue_row)
 		# dequeue and add exception
 		else:
 			logging.warning("IndexWorker: index was not successful")
-			IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
+			IndexRouter.object_complete(queue_row = queue_row, is_exception=True)
+
 
 class IndexWorker(object):
 
@@ -417,6 +471,24 @@ class IndexWorker(object):
 
 # WSUDOR_Indexer queue table
 class indexer_queue(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
+	username = db.Column(db.String(255))
+	priority = db.Column(db.Integer)
+	action = db.Column(db.String(255))
+	timestamp = db.Column(db.DateTime, default=datetime.now)
+
+	def __init__(self, pid, username, priority, action):
+		self.pid = pid
+		self.username = username
+		self.priority = priority
+		self.action = action
+
+	def __repr__(self):
+		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
+
+
+class indexer_working(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
 	username = db.Column(db.String(255))

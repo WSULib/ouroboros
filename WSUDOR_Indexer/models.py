@@ -13,7 +13,7 @@ import time
 import urllib
 
 from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
-from WSUDOR_Manager import solrHandles
+from WSUDOR_Manager import solrHandles, celery
 import WSUDOR_ContentTypes
 
 import WSUDOR_Manager
@@ -22,7 +22,7 @@ from WSUDOR_Manager import db, fedora_handle
 import logging
 
 # celery
-
+from celery import Task
 
 
 # Fedora JMS worker instantiated by Twisted
@@ -160,27 +160,41 @@ class IndexRouter(object):
 		2) poll() and route() pick it up, sending to IndexWorker as queue_row, which includes pid and action
 	'''
 
+	# @classmethod
+	# def poll(self):
+	# 	d = defer.Deferred()
+	# 	reactor.callLater(0, d.callback, 'horsetronic')
+	# 	d.addCallback(self.poll_report)
+	# 	return d
+
+	# @classmethod
+	# def poll_report(self,result):
+	# 	time.sleep(5)
+	# 	print result
+
 	@classmethod
 	def poll(self):
 		stime = time.time()
+		db.session.close()
 		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
 		# if result, push to router
 		if queue_row != None:			
 			self.route(queue_row)
-		else:
-			db.session.close()
+		# else:
+		# 	db.session.close()
 		# logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
 
 
 	@classmethod
 	def route(self, queue_row):
-		logging.debug("IndexRouter: routing %s" % queue_row)
+		logging.info("IndexRouter: routing %s" % queue_row)
 		
 		# index object in solr
 		if queue_row.action == 'index':
 			if localConfig.SOLR_AUTOINDEX:
-				iw = IndexWorker(queue_row)
-				iw.index()
+				# iw = IndexWorker(queue_row)
+				# iw.index.delay(queue_row)
+				IndexWorker.index.delay(queue_row)
 
 		# prune object from solr
 		elif queue_row.action == 'prune':
@@ -323,31 +337,67 @@ class IndexRouter(object):
 		self.update_last_index_date()
 
 
+# Fires *after* task is complete
+class postTask(Task):
+	abstract = True
+	def after_return(self, *args, **kwargs):
+
+		print "############## running post IndexWorker ################"
+		print args
+		print type(args[3])
+		print type(args[3][0])
+		print args[3][0].pid
+		queue_row = args[3][0]
+		print "########################################################"
+
+		# dequeue if success
+		if args[0] == 'SUCCESS':
+			IndexRouter.dequeue_object(queue_row = queue_row)
+		# dequeue and add exception
+		else:
+			logging.warning("IndexWorker: index was not successful")
+			IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
 
 class IndexWorker(object):
 
 	'''
 	Class to perform indexing, modifying, and pruning of records in various systems (e.g. Solr)
-	When initialized, expects queue_row as input
+	Each method expects queue_row as input.
+	All methods are run as background celery tasks
+		- when complete, fire post task cleanup
 	'''
 
 	def __init__(self, queue_row):
 		self.queue_row = queue_row
 
 
-	def index(self):
-		logging.info("IndexWorker: indexing %s" % self.queue_row)
-		obj = WSUDOR_ContentTypes.WSUDOR_Object(self.queue_row.pid)
+	@classmethod
+	@celery.task(base=postTask, bind=True, max_retries=3, name="IndexWorker_index",trail=True)
+	def index(self, queue_row):
+		logging.info("IndexWorker: indexing %s" % queue_row)
+		
+		# OLD BLOCKING
+		# obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
+		# if obj:
+		# 	index_result = obj.index()
+		# 	if index_result:
+		# 		IndexRouter.dequeue_object(queue_row = queue_row)
+		# 	else:
+		# 		logging.warning("IndexWorker: index was not successful")
+		# 		IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
+		# else:
+		# 	logging.warning("IndexWorker: could not open object, skipping")
+		# 	IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
+
+		# NEW CELERY
+		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
 			index_result = obj.index()
-			if index_result:
-				IndexRouter.dequeue_object(queue_row = self.queue_row)
-			else:
-				logging.warning("IndexWorker: index was not successful")
-				IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
+			return index_result
 		else:
 			logging.warning("IndexWorker: could not open object, skipping")
-			IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
+			IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
+			return False
 
 
 	def prune(self):
@@ -359,6 +409,9 @@ class IndexWorker(object):
 		else:
 			logging.warning("IndexWorker: could not open object, skipping")
 			IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
+
+
+
 
 
 

@@ -109,8 +109,8 @@ class CeleryWorker(object):
 	def __init__(self,username):
 		self.username = username
 		if self.username == 'celery':
-			print "celery for indexer, setting concurrency to 10"
-			self.celery_concurrency = 10
+			print "celery for indexer, setting concurrency to %s" % localConfig.INDEXER_CELERY_CONCURRENCY
+			self.celery_concurrency = localConfig.INDEXER_CELERY_CONCURRENCY
 		else:
 			print "celery instance for %s, setting concurrency to %s" % (self.username, localConfig.CELERY_CONCURRENCY)
 			self.celery_concurrency = localConfig.CELERY_CONCURRENCY

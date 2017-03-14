@@ -1681,7 +1681,7 @@ def indexing_index(action, group):
 
         if group == 'reindex':
             print "purging and adding all to queue"
-            alkjsd;flkjasd;flkjsad;lfkajsdkl
+            
 
     # redierct to status
     return redirect('indexing/status')
@@ -1695,7 +1695,7 @@ def indexing_status():
 
 @app.route("/indexing/status.json", methods=['POST', 'GET'])
 def indexing_status_json():
-    
+
     # defining columns
     columns = []    
     columns.append(ColumnDT('id'))

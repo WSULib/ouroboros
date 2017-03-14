@@ -95,6 +95,9 @@ WSUDOR_Manager_site = Site(WSUDOR_Manager_resource)
 WSUDOR_API_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUDOR_API_app)
 WSUDOR_API_site = Site(WSUDOR_API_resource)
 
+def testing(result):
+    print result
+
 if __name__ == '__main__':
 
     # write PID to /var/run

@@ -217,19 +217,28 @@ class IndexRouter(object):
 		'''
 		if not in queue or working, add to queue
 		'''
+
+		# refresh
 		db.session.commit()
-		logging.info("IndexRouter: queuing %s" % pid)
-		queue_tuple = (pid, username, priority, action)
-		iqp = indexer_queue(*queue_tuple)
-		db.session.add(iqp)
-		try:
-			db.session.commit()
-		except IntegrityError:
-			logging.debug("IndexRouter: IntegrityError, pid likely exists, skipping and rolling back")
-			db.session.rollback()
-		except:
-			logging.warning("IndexRouter: could not add to queue, rolling back")
-			db.session.rollback()
+
+		# check if in working table
+		if indexer_working.query.filter_by(pid = pid).count() == 0:
+
+			logging.info("IndexRouter: queuing %s" % pid)
+			queue_tuple = (pid, username, priority, action)
+			iqp = indexer_queue(*queue_tuple)
+			db.session.add(iqp)
+			try:
+				db.session.commit()
+			except IntegrityError:
+				logging.debug("IndexRouter: IntegrityError, pid likely exists, skipping and rolling back")
+				db.session.rollback()
+			except:
+				logging.warning("IndexRouter: could not add to queue, rolling back")
+				db.session.rollback()
+
+		else:
+			logging.info("IndexRouter: %s is currently in working, skipping queue" % pid)
 
 
 	@classmethod

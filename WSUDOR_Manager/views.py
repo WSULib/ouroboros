@@ -25,7 +25,7 @@ from datetime import datetime
 from datetime import timedelta
 
 # WSUDOR_Manager
-from WSUDOR_Indexer.models import IndexRouter, indexer_queue, indexer_exception
+from WSUDOR_Indexer.models import IndexRouter, indexer_queue, indexer_working, indexer_exception
 from WSUDOR_Manager import app
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
@@ -1706,10 +1706,10 @@ def indexing_status_json():
     columns.append(ColumnDT('timestamp'))
 
     # build query
-    query = db.session.query(indexer_queue).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc())
+    query = db.session.query(indexer_working).order_by(indexer_working.priority.desc()).order_by(indexer_working.timestamp.asc())
 
     # instantiating a DataTable for the query and table needed
-    rowTable = DataTables(request.args, indexer_queue, query, columns)
+    rowTable = DataTables(request.args, indexer_working, query, columns)
 
     # returns what is needed by DataTable
     return jsonify(rowTable.output_result())

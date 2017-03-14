@@ -1684,7 +1684,7 @@ def indexing_index(action, group):
             
 
     # redierct to status
-    return redirect('indexing/status')
+    return redirect('indexing')
 
 
 @app.route("/indexing/status", methods=['POST', 'GET'])

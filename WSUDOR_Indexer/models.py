@@ -154,23 +154,7 @@ class IndexRouter(object):
 	'''
 	Class to handle polling and routing of index queue
 	Most methods are classmethods, as they accept input and requests from various endpoints
-
-	Preferred workflow for indexing items is:
-		1) item added to queue with queue_object()
-		2) poll() and route() pick it up, sending to IndexWorker as queue_row, which includes pid and action
 	'''
-
-	# @classmethod
-	# def poll(self):
-	# 	d = defer.Deferred()
-	# 	reactor.callLater(0, d.callback, 'horsetronic')
-	# 	d.addCallback(self.poll_report)
-	# 	return d
-
-	# @classmethod
-	# def poll_report(self,result):
-	# 	time.sleep(5)
-	# 	print result
 
 	@classmethod
 	def poll(self):
@@ -194,8 +178,6 @@ class IndexRouter(object):
 		# index object in solr
 		if queue_row.action == 'index':
 			if localConfig.SOLR_AUTOINDEX:
-				# iw = IndexWorker(queue_row)
-				# iw.index.delay(queue_row)
 				IndexWorker.index.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
 
@@ -203,8 +185,8 @@ class IndexRouter(object):
 		# prune object from solr
 		elif queue_row.action == 'prune':
 			if localConfig.SOLR_AUTOINDEX:
-				iw = IndexWorker(queue_row)
-				iw.prune()
+				IndexWorker.prune.delay(queue_row)
+				self.dequeue_object(queue_row = queue_row)
 
 		else:
 			logging.info("IndexRouter: routing action `%s` not known, sending to exceptions" % queue_row.action)	
@@ -282,26 +264,6 @@ class IndexRouter(object):
 		except:
 			logging.warning("IndexRouter: Could not remove from queue, rolling back")
 			db.session.rollback()
-
-
-
-	# @classmethod
-	# def dequeue_object(self, queue_row=None, pid=None, is_exception=False):
-	# 	try:
-	# 		if queue_row:
-	# 			logging.info("IndexRouter: dequeing %s" % queue_row)
-	# 			indexer_queue.query.filter_by(id=queue_row.id).delete()
-	# 			db.session.commit()
-	# 			# if is_exception, add to exception table
-	# 			if is_exception:
-	# 				self.add_exception(queue_row)
-	# 		elif pid:
-	# 			logging.info("IndexRouter: dequeing %s" % pid)
-	# 			indexer_queue.query.filter_by(pid=pid).delete()
-	# 			db.session.commit()
-	# 	except:
-	# 		logging.warning("IndexRouter: Could not remove from queue, rolling back")
-	# 		db.session.rollback()
 
 		
 	@classmethod
@@ -400,24 +362,27 @@ class IndexRouter(object):
 
 
 # Fires *after* task is complete
-class postTask(Task):
+class postIndexWorker(Task):
 	abstract = True
 	def after_return(self, *args, **kwargs):
 
-		print "############## running post IndexWorker ################"
-		print args
-		print type(args[3])
-		print type(args[3][0])
-		print args[3][0].pid
+		# debug
+		# print "############## running post IndexWorker ################"
+		# print args
+		# print type(args[3])
+		# print type(args[3][0])
+		# print args[3][0].pid
+		# print "########################################################"
+
 		queue_row = args[3][0]
-		print "########################################################"
 
 		# dequeue if success
 		if args[0] == 'SUCCESS':
+			logging.info("postIndexWorker: index success, removing from working %s" % queue_row)
 			IndexRouter.object_complete(queue_row = queue_row)
 		# dequeue and add exception
 		else:
-			logging.warning("IndexWorker: index was not successful")
+			logging.warning("postIndexWorker: index was not successful")
 			IndexRouter.object_complete(queue_row = queue_row, is_exception=True)
 
 
@@ -430,29 +395,10 @@ class IndexWorker(object):
 		- when complete, fire post task cleanup
 	'''
 
-	def __init__(self, queue_row):
-		self.queue_row = queue_row
-
-
 	@classmethod
-	@celery.task(base=postTask, bind=True, max_retries=3, name="IndexWorker_index",trail=True)
+	@celery.task(base=postIndexWorker, bind=True, max_retries=3, name="IndexWorker_index",trail=True)
 	def index(self, queue_row):
 		logging.info("IndexWorker: indexing %s" % queue_row)
-		
-		# OLD BLOCKING
-		# obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
-		# if obj:
-		# 	index_result = obj.index()
-		# 	if index_result:
-		# 		IndexRouter.dequeue_object(queue_row = queue_row)
-		# 	else:
-		# 		logging.warning("IndexWorker: index was not successful")
-		# 		IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
-		# else:
-		# 	logging.warning("IndexWorker: could not open object, skipping")
-		# 	IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
-
-		# NEW CELERY
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
 			index_result = obj.index()
@@ -463,19 +409,17 @@ class IndexWorker(object):
 			return False
 
 
-	def prune(self):
-		logging.info("IndexWorker: pruning %s" % self.queue_row)
-		obj = WSUDOR_ContentTypes.WSUDOR_Object(self.queue_row.pid)
+	@classmethod
+	@celery.task(base=postIndexWorker, bind=True, max_retries=3, name="IndexWorker_prune",trail=True)
+	def prune(self, queue_row):
+		logging.info("IndexWorker: pruning %s" % queue_row)
+		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
 			obj.prune()
-			IndexRouter.dequeue_object(queue_row = self.queue_row)
+			IndexRouter.dequeue_object(queue_row = queue_row)
 		else:
 			logging.warning("IndexWorker: could not open object, skipping")
-			IndexRouter.dequeue_object(queue_row = self.queue_row, is_exception=True)
-
-
-
-
+			IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
 
 
 # WSUDOR_Indexer queue table

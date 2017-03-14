@@ -1693,8 +1693,30 @@ def indexing_status():
     return render_template("indexing_status.html",localConfig=localConfig)
 
 
-@app.route("/indexing/status.json", methods=['POST', 'GET'])
-def indexing_status_json():
+@app.route("/indexing/status/queued.json", methods=['POST', 'GET'])
+def indexing_status_queued_json():
+
+    # defining columns
+    columns = []    
+    columns.append(ColumnDT('id'))
+    columns.append(ColumnDT('pid'))
+    columns.append(ColumnDT('username'))
+    columns.append(ColumnDT('priority'))
+    columns.append(ColumnDT('action'))
+    columns.append(ColumnDT('timestamp'))
+
+    # build query
+    query = db.session.query(indexer_queue).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc())
+
+    # instantiating a DataTable for the query and table needed
+    rowTable = DataTables(request.args, indexer_queue, query, columns)
+
+    # returns what is needed by DataTable
+    return jsonify(rowTable.output_result())
+
+
+@app.route("/indexing/status/working.json", methods=['POST', 'GET'])
+def indexing_status_working_json():
 
     # defining columns
     columns = []    

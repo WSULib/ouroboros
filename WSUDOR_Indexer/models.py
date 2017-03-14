@@ -161,7 +161,8 @@ class IndexRouter(object):
 		stime = time.time()
 		# refresh connection every poll
 		db.session.close()
-		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
+		# queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
+		queue_row = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
 		# if result, push to router
 		if queue_row != None:			
 			self.route(queue_row)

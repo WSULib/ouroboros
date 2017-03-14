@@ -250,7 +250,7 @@ class IndexRouter(object):
 
 
 	@classmethod
-	def object_complete(self, queue_row=None, is_exception=False):
+	def object_complete(self, queue_row=None, is_exception=False, msg="Unknown"):
 		'''
 		removes from working table
 		'''
@@ -261,16 +261,16 @@ class IndexRouter(object):
 				db.session.commit()
 				# if is_exception, add to exception table
 				if is_exception:
-					self.add_exception(queue_row, dequeue=False)
+					self.add_exception(queue_row, dequeue=False, msg=msg)
 		except:
 			logging.warning("IndexRouter: Could not remove from queue, rolling back")
 			db.session.rollback()
 
 		
 	@classmethod
-	def add_exception(self, queue_row, dequeue=True):
+	def add_exception(self, queue_row, dequeue=True, msg="Unknown"):
 		logging.info("IndexRouter: noting exception %s" % queue_row.pid)
-		exception_tuple = (queue_row.pid, queue_row.username, queue_row.priority, queue_row.action)
+		exception_tuple = (queue_row.pid, queue_row.username, queue_row.priority, queue_row.action, msg)
 		exception = indexer_exception(*exception_tuple)
 		db.session.add(exception)
 		try:
@@ -296,9 +296,13 @@ class IndexRouter(object):
 
 	@classmethod	
 	def queue_all_exceptions(self):
-		
-		# indexer_queue.__table__.insert().from_select(names=['pid','username','priority','action'],select=db.session.query(indexer_exception))
 		db.session.execute('INSERT INTO indexer_queue (pid,username,priority,action,timestamp) (SELECT pid,username,priority,action,timestamp FROM `indexer_exception`);')
+		indexer_exception.query.delete()
+		db.session.commit()
+
+
+	@classmethod	
+	def remove_all_exceptions(self):
 		indexer_exception.query.delete()
 		db.session.commit()
 
@@ -380,11 +384,11 @@ class postIndexWorker(Task):
 				logging.info("postIndexWorker: index success, removing from working %s" % queue_row)
 				IndexRouter.object_complete(queue_row = queue_row)
 			else:
-				IndexRouter.object_complete(queue_row = queue_row, is_exception=True)
+				IndexRouter.object_complete(queue_row = queue_row, is_exception=True, msg=args[1])
 		# dequeue and add exception
 		else:
 			logging.warning("postIndexWorker: index was not successful")
-			IndexRouter.object_complete(queue_row = queue_row, is_exception=True)
+			IndexRouter.object_complete(queue_row = queue_row, is_exception=True, msg=args[1])
 
 
 class IndexWorker(object):
@@ -467,12 +471,14 @@ class indexer_exception(db.Model):
 	priority = db.Column(db.Integer)
 	action = db.Column(db.String(255))
 	timestamp = db.Column(db.DateTime, default=datetime.now)
+	msg = db.Column(db.String(2048))
 
-	def __init__(self, pid, username, priority, action):
+	def __init__(self, pid, username, priority, action, msg):
 		self.pid = pid
 		self.username = username
 		self.priority = priority
 		self.action = action
+		self.msg = msg
 
 	def __repr__(self):
 		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)

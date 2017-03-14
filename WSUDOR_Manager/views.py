@@ -1678,10 +1678,17 @@ def indexing_index(action, group):
             for pid in pids:
                 IndexRouter.queue_object(pid, username, 2, 'prune')
 
-
         if group == 'reindex':
             print "purging and adding all to queue"
-            
+
+    # pruning
+    if action == 'exceptions':
+        if group == 'all':
+            print "rerunning exceptions"
+            IndexRouter.queue_all_exceptions()
+        if group == 'clear':
+            print "removing exceptions"
+            IndexRouter.remove_all_exceptions()
 
     # redierct to status
     return redirect('indexing')
@@ -1732,6 +1739,29 @@ def indexing_status_working_json():
 
     # instantiating a DataTable for the query and table needed
     rowTable = DataTables(request.args, indexer_working, query, columns)
+
+    # returns what is needed by DataTable
+    return jsonify(rowTable.output_result())
+
+
+@app.route("/indexing/status/exception.json", methods=['POST', 'GET'])
+def indexing_status_exception_json():
+
+    # defining columns
+    columns = []    
+    columns.append(ColumnDT('id'))
+    columns.append(ColumnDT('pid'))
+    columns.append(ColumnDT('username'))
+    columns.append(ColumnDT('priority'))
+    columns.append(ColumnDT('action'))
+    columns.append(ColumnDT('timestamp'))
+    columns.append(ColumnDT('msg'))
+
+    # build query
+    query = db.session.query(indexer_exception).order_by(indexer_exception.priority.desc()).order_by(indexer_exception.timestamp.asc())
+
+    # instantiating a DataTable for the query and table needed
+    rowTable = DataTables(request.args, indexer_exception, query, columns)
 
     # returns what is needed by DataTable
     return jsonify(rowTable.output_result())

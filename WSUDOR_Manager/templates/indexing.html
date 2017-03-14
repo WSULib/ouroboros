@@ -35,8 +35,18 @@
 			</tr>
 
 			<tr>
-				<td><a class="btn btn-danger btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/selected">Purge and Reindex</a></td>
+				<td><a class="btn btn-danger btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/prune/reindex">Purge and Reindex</a></td>
 				<td><strong>Purges and reindexes</strong> all objects in Solr.  <span style="color:red;">Will remove all live Solr records, run only if necessary or system is down.</span></td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/exceptions/all">Re-Run Exceptions</a></td>
+				<td><strong>Re-run</strong> all exceptions.</td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-danger btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/exceptions/clear">Clear Exceptions</a></td>
+				<td><strong>Clears</strong> all exceptions.</td>
 			</tr>
 
 		</table>
@@ -92,6 +102,33 @@
 	</div>
 </div>
 
+<div class="row">
+	<div class="col-md-6">
+
+		<h3>Exceptions</h3>
+
+		<p>The table belows represents objects that failed.  The table automatically refreshes every 5 seconds.</p>
+
+		<!-- insert table here -->
+		<table id="exception" class="display" cellspacing="0" width="100%" style="font-size:100%;">
+            <thead>
+                <tr>            
+                    <th>id</th>
+                    <th>pid</th>
+                    <th>username</th>
+                    <th>priority</th>
+                    <th>action</th>
+                    <th>timestamp</th>
+                    <th>msg</th>
+                </tr>
+            </thead>  
+            <tbody></tbody>          
+        </table>
+
+	</div>
+
+</div>
+
 <!-- JS -->
 <script type="text/javascript" charset="utf-8">
 	
@@ -126,6 +163,24 @@
 	    table.ajax.reload();
 	  }, 5000 );
 	});
+
+	// exception
+	$(document).ready(function(){
+	  var table = $('#exception').DataTable({
+	    "processing": true,
+	    "serverSide": true,
+	    "ajax": "/{{APP_PREFIX}}/indexing/status/exception.json"
+	  });
+	  $.fn.dataTable.ext.errMode = 'none';
+		$('#exception').on('error.dt', function(e, settings, techNote, message) {
+		   console.log( 'An error has been reported by DataTables: ', message);
+		})
+	  setInterval( function () {
+	    table.ajax.reload();
+	  }, 5000 );
+	});
+
+
 </script>
 
 

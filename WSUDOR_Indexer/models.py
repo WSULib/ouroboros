@@ -166,7 +166,7 @@ class IndexRouter(object):
 		# if result, push to router
 		if queue_row != None:			
 			self.route(queue_row)
-		logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
+		# logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
 
 
 	@classmethod

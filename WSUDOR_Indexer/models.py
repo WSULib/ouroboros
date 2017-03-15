@@ -109,13 +109,13 @@ class FedoraJMSWorker(object):
 		logging.info("Fedora message: %s, consumed for: %s" % (self.methodName, self.pid))
 
 		# debug
-		# print self.headers
-		# print self.body
+		logging.debug(self.headers)
+		logging.debug(self.body)
 
 		# capture modifications to datastream
 		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
 			self._determine_ds()
-			if self.ds not in localConfig.SKIP_INDEX_DATASTREAMS:
+			if self.ds not in localConfig.INDEXER_SKIP_DATASTREAMS:
 				self.queue_action = 'index'
 				self.queue_object()
 
@@ -178,14 +178,14 @@ class IndexRouter(object):
 		
 		# index object in solr
 		if queue_row.action == 'index':
-			if localConfig.SOLR_AUTOINDEX:
+			if localConfig.INDEXER_AUTOINDEX:
 				IndexWorker.index.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
 
 
 		# prune object from solr
 		elif queue_row.action == 'prune':
-			if localConfig.SOLR_AUTOINDEX:
+			if localConfig.INDEXER_AUTOINDEX:
 				IndexWorker.prune.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
 

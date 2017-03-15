@@ -649,6 +649,34 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return (page.pid, 'JP2', 'full', '!960,960', 0, 'default', 'jpg')
 
 
+	def index_augment(self):
+
+		# get ds content
+		ds_handle = self.ohandle.getDatastreamObject("HTML_FULL")
+		ds_content = ds_handle.content
+		
+		# assume v1 book, attempt ds_content again
+		if ds_content == None:
+
+			# derive fullbook PID	
+			self.ohandle = fedora_handle.get_object(PID.split(":")[1]+":fullbook")
+			ds_handle = self.ohandle.getDatastreamObject("HTML_FULL")
+			ds_content = ds_handle.content
+
+		# use Solr's Tika Extract to strip down to text
+		baseurl = "http://localhost/solr4/fedobjs/update/extract?&extractOnly=true"
+		files = {'file': ds_content}		
+		r = requests.post(baseurl, files=files)
+		ds_stripped_content = r.text	
+
+		# add to solr doc
+		self.SolrDoc.doc.int_fullText = ds_stripped_content
+
+		# finally, index each page to /bookreader core
+		print "running page indexer"
+		self.indexPageText()
+
+
 	#############################################################################
 	# associated Readux style virtual objects
 	#############################################################################
@@ -805,6 +833,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				break
 
 		self.indexReaduxVirtualObjects(action='index')
+
+
+
 
 		
 		

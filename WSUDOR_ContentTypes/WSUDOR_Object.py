@@ -51,6 +51,7 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import fedoraHandles
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db
+from WSUDOR_Indexer.models import IndexRouter
 
 # derivatives
 from inc.derivatives import Derivative
@@ -280,12 +281,12 @@ class WSUDOR_GenObject(object):
             # initiate IIIF Manifest Factory
             self.iiif_factory = ManifestFactory()
             # Where the resources live on the web
-            self.iiif_factory.set_base_prezi_uri("http://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+            self.iiif_factory.set_base_prezi_uri("https://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
             # Where the resources live on disk
             self.iiif_factory.set_base_prezi_dir("/tmp")
 
             # Default Image API information
-            self.iiif_factory.set_base_image_uri("http://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+            self.iiif_factory.set_base_image_uri("https://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
             self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
 
             # 'warn' will print warnings, default level
@@ -935,6 +936,160 @@ class WSUDOR_GenObject(object):
             print "Could not run indexSolr() transform."
             return False
 
+
+    # Solr Indexing
+    def index(self, printOnly=False):
+
+        # generate human values
+        print "preparing 'human_hash' values..."
+        human_hash = {
+            'collections': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:Collection','fl':'id dc_title','rows':1000}).documents },
+            'content_types': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:ContentModel','fl':'id dc_title','rows':1000}).documents }
+        }
+
+        # update Dublin Core
+        try:
+            self.DCfromMODS()
+        except:
+            print "could not re-derive DC from MODS"
+
+        # initialize blank document and set pid
+        self.SolrDoc.doc = helpers.BlankObject()
+        self.SolrDoc.doc.id = self.pid
+
+        #######################################################################################
+        # Bulk of the indexing work on datastreams
+        #######################################################################################
+
+        # built-ins from ohandle
+        self.SolrDoc.doc.obj_label = self.ohandle.label
+        self.SolrDoc.doc.obj_createdDate = self.ohandle.created.isoformat()+"Z"
+        self.SolrDoc.doc.obj_modifiedDate = self.ohandle.modified.isoformat()+"Z"
+
+        # MODS
+        try:
+            for each in self.MODS_Solr_flat['fields']['field']:
+                try:
+                    if type(each['@name']) == unicode:              
+                        fname = each['@name']
+                        fvalue = each['#text'].rstrip()
+                        if hasattr(self.SolrDoc.doc, fname) == False:
+                            # create empty list
+                            setattr(self.SolrDoc.doc, fname, [])
+                        # append to list
+                        getattr(self.SolrDoc.doc, fname).append(fvalue)
+                except:
+                    print "Could not add",each
+        except:
+            print "Could not find or index datastream MODS"
+
+        # DC
+        try:
+            for each in self.DC_Solr_flat['fields']['field']:
+                try:
+                    if type(each['@name']) == unicode:              
+                        fname = each['@name']
+                        fvalue = each['#text'].rstrip()
+                        if hasattr(self.SolrDoc.doc, fname) == False:
+                            # create empty list
+                            setattr(self.SolrDoc.doc, fname, [])
+                        # append to list
+                        getattr(self.SolrDoc.doc, fname).append(fvalue)
+                except:
+                    print "Could not add",each
+        except:
+            print "Could not find or index datastream DC"
+
+        # RELS-EXT
+        try:
+            for each in self.RELS_EXT_Solr_flat['fields']['field']:
+                try:
+                    if type(each['@name']) == unicode:              
+                        fname = each['@name']
+                        fvalue = each['#text'].rstrip()
+                        if hasattr(self.SolrDoc.doc, fname) == False:
+                            # create empty list
+                            setattr(self.SolrDoc.doc, fname, [])
+                        # append to list
+                        getattr(self.SolrDoc.doc, fname).append(fvalue)
+                except:
+                    print "Could not add",each
+        except:
+            print "Could not find or index datastream RELS-EXT"
+
+        # Add object and datastream sizes
+        try:
+            size_dict = self.object_size()
+            setattr(self.SolrDoc.doc, "obj_size_fedora_i", size_dict['fedora_total_size'][0] )
+            setattr(self.SolrDoc.doc, "obj_size_fedora_human", size_dict['fedora_total_size'][1] )
+            setattr(self.SolrDoc.doc, "obj_size_wsudor_i", size_dict['wsudor_total_size'][0] )
+            setattr(self.SolrDoc.doc, "obj_size_wsudor_human", size_dict['wsudor_total_size'][1] )
+        except:
+            print "Could not determine object size, skipping"
+
+
+        #######################################################################################
+        # Here, we have the opportunity to do some cleanup, addition, and finagling of fields.
+        #######################################################################################
+
+        # derive human readable fields, 'human_*'
+        collections = getattr(self.SolrDoc.doc, 'rels_isMemberOfCollection', False)
+        if collections:
+            print "deriving human collection names"
+            print collections
+            for pid in collections:
+                pid = pid.split("/")[1]
+                if pid in human_hash['collections']:
+                    setattr(self.SolrDoc.doc, "human_isMemberOfCollection", human_hash['collections'][pid] )
+
+
+        content_types = getattr(self.SolrDoc.doc, 'rels_hasContentModel', False)
+        if content_types:
+            print "deriving human content types"
+            print content_types
+            for pid in content_types:
+                pid = pid.split("/")[1]
+                if pid in human_hash['content_types']:
+                    setattr(self.SolrDoc.doc, "human_hasContentModel", human_hash['content_types'][pid] )
+
+
+        #######################################################################################
+        # Run content-type specific indexing tasks
+        #######################################################################################
+        '''
+        Content-types have optional `index_augment()` method that expects already started
+        self.SolrDoc.doc that it can augment and add to before update
+        '''
+        if getattr(self,'index_augment',False):
+            self.index_augment()
+
+
+        #######################################################################################
+        # Update in Solr
+        #######################################################################################
+        
+        if printOnly == True:
+            # print and return dicitonary, but do NOT update, commit, or replicate
+            print "DEBUG: printing only"
+            return self.SolrDoc.doc.__dict__
+
+        else:
+            # update object, no commit yet
+            self.SolrDoc.update()
+            return True
+
+
+    def prune(self):
+        solr_handle.delete_by_key(self.pid)
+        # prune constituents
+        if len(self.constituents) > 0:
+            for c in self.constituents:
+                solr_handle.delete_by_key(c.pid)
+        return True
+
+
+    def add_to_indexer_queue(self, priority=1, username=None, action='index'):
+        IndexRouter.queue_object(self.pid, priority=priority, username=username, action=action)
 
 
     # regnerate derivative JP2s

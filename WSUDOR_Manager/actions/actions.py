@@ -126,10 +126,6 @@ app.register_blueprint(purgeObject, url_prefix=tasks_URL_prefix)
 from sendObject import sendObject, sendObject_worker
 app.register_blueprint(sendObject, url_prefix=tasks_URL_prefix)
 
-#solrIndexer
-from solrIndexer import solrIndexer_blue
-app.register_blueprint(solrIndexer_blue, url_prefix=tasks_URL_prefix)
-
 
 # Fires *after* task is complete
 class postTask(Task):

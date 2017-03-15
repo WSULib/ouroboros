@@ -25,6 +25,7 @@ from datetime import datetime
 from datetime import timedelta
 
 # WSUDOR_Manager
+from WSUDOR_Indexer.models import IndexRouter, indexer_queue, indexer_working, indexer_exception
 from WSUDOR_Manager import app
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
@@ -69,6 +70,9 @@ from fedoraHandles import fedora_handle
 
 # regex
 import re
+
+# flask-SQLalchemy-datatables
+from datatables import ColumnDT, DataTables
 
 
 # GENERAL
@@ -1219,92 +1223,6 @@ def PIDRowUpdate(id,action,status):
     return "PID updated."
 
 
-# # PID selection via Solr
-# @app.route("/PIDSolr", methods=['POST', 'GET'])
-# @roles.auth(['admin','metadata','view'])
-# @login_required
-# def PIDSolr():
-
-#     # get username from session
-#     username = session['username']
-
-# 	# get form
-#     form = forms.solrSearch(request.form)
-
-#     # collection selection
-#     coll_query = {'q':"rels_hasContentModel:*Collection", 'fl':["id","dc_title"], 'rows':1000}
-#     coll_results = solr_handle.search(**coll_query)
-#     coll_docs = coll_results.documents
-
-#     # check for title, give generic if not present
-#     for each in coll_docs:
-#         if 'dc_title' not in each:
-#             each['dc_title'] = [ 'Unknown Collection Title' + each['id'].encode('ascii','ignore') ]
-
-#     form.collection_object.choices = [(each['id'].encode('ascii','ignore'), each['dc_title'][0].encode('ascii','ignore')) for each in coll_docs]
-#     form.collection_object.choices.insert(0,("","All Collections"))
-
-#     # content model
-#     cm_query = {'q':'*', 'facet' : 'true', 'facet.field' : 'rels_hasContentModel'}
-#     cm_results = solr_handle.search(**cm_query)
-#     form.content_model.choices = [(each, each.split(":")[-1]) for each in cm_results.facets['facet_fields']['rels_hasContentModel']]
-#     form.content_model.choices.insert(0,("","All Content Types"))
-
-#     # perform search
-#     if request.method == 'POST':
-
-#         # build base with native Solr queries
-#         query = {'q':form.q.data, 'fq':[form.fq.data], 'fl':[form.fl.data], 'rows':100000}
-
-#         # Fedora RELS-EXT
-#         # collection selection
-#         if form.collection_object.data:
-#             print "Collection refinement:",form.collection_object.data
-#             escaped_coll = form.collection_object.data.replace(":","\:")
-#             query['fq'].append("rels_isMemberOfCollection:info\:fedora/"+escaped_coll)
-
-
-#         # content model / type selection
-#         if form.content_model.data:
-#             print "Content Model refinement:",form.content_model.data
-#             escaped_cm = form.content_model.data.replace(":","\:")
-#             query['fq'].append("rels_hasContentModel:"+escaped_cm)
-
-
-
-#         # issue query
-#         print query
-#         stime = time.time()
-#         q_results = solr_handle.search(**query)
-#         etime = time.time()
-#         ttime = (etime - stime) * 1000
-#         print "Solr Query took:",ttime,"ms"
-#         output_dict = {}
-#         data = []
-#         stime = time.time()
-#         for each in q_results.documents:
-#             try:
-#                 PID = each['id'].encode('ascii','ignore')
-#                 try:
-#                     dc_title = each['dc_title'][0].encode('ascii','ignore')
-#                 except:
-#                     dc_title = "None"
-#                 data.append([PID,dc_title])
-#             except:
-#                 print "Could not render:",each['id'] #unicdoe solr id
-#         etime = time.time()
-#         ttime = (etime - stime) * 1000
-#         print "Solr Munging for DataTables took::",ttime,"ms"
-
-#         output_dict['data'] = data
-#         json_output = json.dumps(data)
-
-#         return render_template("PIDSolr.html",username=username, form=form, q_results=q_results, json_output=json_output, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
-
-#     # pass the current PIDs to page as list
-#     return render_template("PIDSolr.html",username=username, form=form, coll_docs=coll_docs,APP_HOST=localConfig.APP_HOST)
-
-
 # PID check for user
 @app.route("/updatePIDsfromSolr/<update_type>", methods=['POST', 'GET'])
 @roles.auth(['admin','metadata','view'])
@@ -1715,6 +1633,138 @@ def genericMethod():
     return render_template("genericMethod.html", methods_list=methods_list)
 
 
+# Indexing
+#########################################################################################################
+
+# indexing home
+@app.route("/indexing", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def indexing():
+    return render_template("indexing.html",localConfig=localConfig)
+
+
+@app.route("/indexing/<action>/<group>", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def indexing_index(action, group):
+
+    # get username from session
+    username = session['username']
+
+    # indexing
+    if action == 'index':
+
+        if group == 'selected':
+            print "adding selected objects to index queue to index"
+            pids = jobs.getSelPIDs()
+            # add to index queue
+            for pid in pids:
+                IndexRouter.queue_object(pid, username, 2, 'index')
+
+        if group == 'modified':
+            print "adding selected objects to index queue to index"
+            IndexRouter.queue_modified(username=username, priority=1, action='index')
+
+        if group == 'all':
+            print "adding selected objects to index queue to index"
+            IndexRouter.queue_all(username=username, priority=1, action='index')
+
+    # pruning
+    if action == 'prune':
+
+        if group == 'selected':
+            print "adding selected objects to index queue to prune"
+            pids = jobs.getSelPIDs()
+            # add to index queue
+            for pid in pids:
+                IndexRouter.queue_object(pid, username, 2, 'prune')
+
+        if group == 'reindex':
+            print "purging and adding all to queue"
+
+    # pruning
+    if action == 'exceptions':
+        if group == 'all':
+            print "rerunning exceptions"
+            IndexRouter.queue_all_exceptions()
+        if group == 'clear':
+            print "removing exceptions"
+            IndexRouter.remove_all_exceptions()
+
+    # redierct to status
+    return redirect('indexing')
+
+
+@app.route("/indexing/status", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def indexing_status():
+    return render_template("indexing_status.html",localConfig=localConfig)
+
+
+@app.route("/indexing/status/queued.json", methods=['POST', 'GET'])
+def indexing_status_queued_json():
+
+    # defining columns
+    columns = []    
+    columns.append(ColumnDT('id'))
+    columns.append(ColumnDT('pid'))
+    columns.append(ColumnDT('username'))
+    columns.append(ColumnDT('priority'))
+    columns.append(ColumnDT('action'))
+    columns.append(ColumnDT('timestamp'))
+
+    # build query
+    query = db.session.query(indexer_queue).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc())
+
+    # instantiating a DataTable for the query and table needed
+    rowTable = DataTables(request.args, indexer_queue, query, columns)
+
+    # returns what is needed by DataTable
+    return jsonify(rowTable.output_result())
+
+
+@app.route("/indexing/status/working.json", methods=['POST', 'GET'])
+def indexing_status_working_json():
+
+    # defining columns
+    columns = []    
+    columns.append(ColumnDT('id'))
+    columns.append(ColumnDT('pid'))
+    columns.append(ColumnDT('username'))
+    columns.append(ColumnDT('priority'))
+    columns.append(ColumnDT('action'))
+    columns.append(ColumnDT('timestamp'))
+
+    # build query
+    query = db.session.query(indexer_working).order_by(indexer_working.priority.desc()).order_by(indexer_working.timestamp.asc())
+
+    # instantiating a DataTable for the query and table needed
+    rowTable = DataTables(request.args, indexer_working, query, columns)
+
+    # returns what is needed by DataTable
+    return jsonify(rowTable.output_result())
+
+
+@app.route("/indexing/status/exception.json", methods=['POST', 'GET'])
+def indexing_status_exception_json():
+
+    # defining columns
+    columns = []    
+    columns.append(ColumnDT('id'))
+    columns.append(ColumnDT('pid'))
+    columns.append(ColumnDT('username'))
+    columns.append(ColumnDT('priority'))
+    columns.append(ColumnDT('action'))
+    columns.append(ColumnDT('timestamp'))
+    columns.append(ColumnDT('msg'))
+
+    # build query
+    query = db.session.query(indexer_exception).order_by(indexer_exception.priority.desc()).order_by(indexer_exception.timestamp.asc())
+
+    # instantiating a DataTable for the query and table needed
+    rowTable = DataTables(request.args, indexer_exception, query, columns)
+
+    # returns what is needed by DataTable
+    return jsonify(rowTable.output_result())
 
 
 

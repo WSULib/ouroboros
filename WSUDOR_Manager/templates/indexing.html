@@ -132,26 +132,25 @@
 <!-- JS -->
 <script type="text/javascript" charset="utf-8">
 	
-	// queued
 	$(document).ready(function(){
-	  var table = $('#queued').DataTable({
-	    "processing": true,
+	  
+	  // queued
+	  var qtable = $('#queued').DataTable({
+	    "processing": false,
 	    "serverSide": true,
-	    "ajax": "/{{APP_PREFIX}}/indexing/status/queued.json"
+	    "ajax": "/{{APP_PREFIX}}/indexing/status/queued.json",
+	    "oLanguage": {
+	        "sProcessing": "<img src='/themes/third_party/linkedin_search/img/165.gif'>"
+	    }
 	  });
 	  $.fn.dataTable.ext.errMode = 'none';
 		$('#queued').on('error.dt', function(e, settings, techNote, message) {
 		   console.log( 'An error has been reported by DataTables: ', message);
 		})
-	  setInterval( function () {
-	    table.ajax.reload();
-	  }, 5000 );
-	});
 
-	// working
-	$(document).ready(function(){
-	  var table = $('#working').DataTable({
-	    "processing": true,
+	  // working
+	  var wtable = $('#working').DataTable({
+	    "processing": false,
 	    "serverSide": true,
 	    "ajax": "/{{APP_PREFIX}}/indexing/status/working.json"
 	  });
@@ -159,15 +158,10 @@
 		$('#working').on('error.dt', function(e, settings, techNote, message) {
 		   console.log( 'An error has been reported by DataTables: ', message);
 		})
-	  setInterval( function () {
-	    table.ajax.reload();
-	  }, 5000 );
-	});
 
-	// exception
-	$(document).ready(function(){
-	  var table = $('#exception').DataTable({
-	    "processing": true,
+	  // exception
+	  var etable = $('#exception').DataTable({
+	    "processing": false,
 	    "serverSide": true,
 	    "ajax": "/{{APP_PREFIX}}/indexing/status/exception.json"
 	  });
@@ -175,11 +169,15 @@
 		$('#exception').on('error.dt', function(e, settings, techNote, message) {
 		   console.log( 'An error has been reported by DataTables: ', message);
 		})
-	  setInterval( function () {
-	    table.ajax.reload();
-	  }, 5000 );
-	});
 
+	  // refresh timer
+	  setInterval( function () {
+	    qtable.ajax.reload();
+	    wtable.ajax.reload();
+	    etable.ajax.reload();
+	  }, 5000 );
+
+	});
 
 </script>
 

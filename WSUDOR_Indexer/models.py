@@ -1,5 +1,5 @@
-import xmltodict, json
-import localConfig
+import json
+import logging
 from stompest.async import Stomp
 from stompest.async.listener import SubscriptionListener
 from stompest.config import StompConfig
@@ -11,18 +11,19 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.exc import IntegrityError
 import time
 import urllib
-
-from WSUDOR_Manager.actions.pruneSolr import pruneSolr_worker
-from WSUDOR_Manager import solrHandles, celery
-import WSUDOR_ContentTypes
-
-import WSUDOR_Manager
-from WSUDOR_Manager import db, fedora_handle
-
-import logging
+import xmltodict
 
 # celery
 from celery import Task
+
+# WSUDOR
+import WSUDOR_ContentTypes
+import WSUDOR_Manager
+from WSUDOR_Manager import celery, db, fedora_handle
+
+# localConfig
+import localConfig
+
 
 
 # Fedora JMS worker instantiated by Twisted
@@ -62,7 +63,6 @@ class FedoraJMSConsumer(object):
 		except StompConnectionError:
 			logging.info("FedoraJMSConsumer: reconnecting")
 			yield client.connect()
-
 
 	def consume(self, client, frame):
 		fedora_jms_worker = FedoraJMSWorker(frame)
@@ -148,12 +148,13 @@ class FedoraJMSWorker(object):
 		IndexRouter.queue_object(self.pid, self.author, 1, self.queue_action)
 
 
+
 # Indexer class
 class IndexRouter(object):
 
 	'''
-	Class to handle polling and routing of index queue
-	Most methods are classmethods, as they accept input and requests from various endpoints
+	Class to handle polling and routing for WSUDOR_Indexer
+	Most methods are classmethods, as they accept input and requests from various locales
 	'''
 
 	@classmethod
@@ -161,12 +162,11 @@ class IndexRouter(object):
 		stime = time.time()
 		# refresh connection every poll
 		db.session.close()
-		# queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
-		queue_row = indexer_queue.query.order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
+		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
 		# if result, push to router
 		if queue_row != None:			
 			self.route(queue_row)
-		# logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
+		logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
 
 
 	@classmethod
@@ -202,7 +202,7 @@ class IndexRouter(object):
 		'''
 
 		# refresh
-		db.session.commit()
+		db.session.close()
 
 		# check if in working table
 		if indexer_working.query.filter_by(pid = pid).count() == 0:
@@ -366,19 +366,22 @@ class IndexRouter(object):
 		self.update_last_index_date()
 
 
+
 # Fires *after* task is complete
 class postIndexWorker(Task):
+
 	abstract = True
+
 	def after_return(self, *args, **kwargs):
 
 		# debug
-		logging.info("postIndexWorker: ######### BEGIN DEBUG #########")
+		logging.info("postIndexWorker: BEGIN DEBUG")
 		logging.info(args)
-		logging.info("postIndexWorker: ######### END DEBUG #########")
+		logging.info("postIndexWorker: END DEBUG")
 
 		queue_row = args[3][0]
 
-		# if celery task completed
+		# if celery task completed, remove from working table
 		if args[0] == 'SUCCESS':
 			if args[1] == True:
 				logging.info("postIndexWorker: index success, removing from working %s" % queue_row)
@@ -389,6 +392,7 @@ class postIndexWorker(Task):
 		else:
 			logging.warning("postIndexWorker: index was not successful")
 			IndexRouter.object_complete(queue_row = queue_row, is_exception=True, msg=args[1])
+
 
 
 class IndexWorker(object):

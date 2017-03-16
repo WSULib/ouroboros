@@ -25,7 +25,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, utilities
+from WSUDOR_Manager import redisHandles, utilities, helpers
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
@@ -431,6 +431,14 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		image_parts = self.imageParts()
 		return (self.pid, image_parts['sorted'][0]['preview'], 'full', 'full', 0, 'default', 'jpg')
+
+
+	# content_type refresh
+	def refresh_content_type(self):
+
+		# regen IIIF manifest
+		self.genIIIFManifest()
+		
 
 
 

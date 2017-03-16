@@ -77,3 +77,4 @@ def gzipped(f):
 		return f(*args, **kwargs)
 
 	return view_func
+

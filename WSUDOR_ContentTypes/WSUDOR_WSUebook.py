@@ -40,12 +40,6 @@ import localConfig
 from inc import derivatives
 
 
-# helper function for natural sorting
-def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
-	return [int(text) if text.isdigit() else text.lower()
-			for text in re.split(_nsre, s)]
-
-
 class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	# static values for class
@@ -364,7 +358,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			page_obj.ingestMissingPage(self, page_num, from_bag=False)
 
 		# reindex book
-		self.objectRefresh()
+		self.refresh()
 
 
 	# method to purge main book object and children pages
@@ -675,6 +669,13 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# finally, index each page to /bookreader core
 		print "running page indexer"
 		self.indexPageText()
+
+
+	# content_type refresh
+	def refresh_content_type(self):
+
+		# regen IIIF manifest
+		self.genIIIFManifest()
 
 
 	#############################################################################

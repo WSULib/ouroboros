@@ -10,6 +10,7 @@ from functools import wraps
 import mimetypes
 import xmlrpclib
 from lxml import etree
+import re
 
 
 from localConfig import *
@@ -133,6 +134,11 @@ def imMode(im):
 
     return im
 
+
+# helper function for natural sorting
+def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(_nsre, s)]
 
 # DECORATORS
 #########################################################################################################

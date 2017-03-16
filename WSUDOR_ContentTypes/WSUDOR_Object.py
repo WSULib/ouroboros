@@ -1509,7 +1509,7 @@ class WSUDOR_GenObject(object):
             - calculating object size
 
         Additionally, content-types may run additional refresh activities under an optional
-        content-type specific method 
+        content-type specific method: self.refresh_content_type
 
         '''
         
@@ -1521,10 +1521,9 @@ class WSUDOR_GenObject(object):
         # remove object from Loris cache
         self.removeObjFromCache()
 
-        # generate IIIF manifest
-        # self.genIIIFManifest()
-
-        # if getattr(self, '')
+        # check for object type specific tasks
+        if getattr(self, 'refresh_content_type', False):
+            self.refresh_content_type()
 
         # finally, (re)index in Solr
         self.add_to_indexer_queue()

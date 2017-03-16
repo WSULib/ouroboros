@@ -281,12 +281,12 @@ class WSUDOR_GenObject(object):
             # initiate IIIF Manifest Factory
             self.iiif_factory = ManifestFactory()
             # Where the resources live on the web
-            self.iiif_factory.set_base_prezi_uri("https://%s/item/%s/iiif" % (localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
+            self.iiif_factory.set_base_prezi_uri("%s://%s/item/%s/iiif" % (localConfig.IIIF_IPREZI_PROTOCOL, localConfig.IIIF_MANIFEST_TARGET_HOST, self.pid))
             # Where the resources live on disk
             self.iiif_factory.set_base_prezi_dir("/tmp")
 
             # Default Image API information
-            self.iiif_factory.set_base_image_uri("https://%s/loris" % localConfig.IIIF_MANIFEST_TARGET_HOST)
+            self.iiif_factory.set_base_image_uri("%s://%s/loris" % (localConfig.IIIF_IPREZI_PROTOCOL, localConfig.IIIF_MANIFEST_TARGET_HOST))
             self.iiif_factory.set_iiif_image_info(2.0, 2) # Version, ComplianceLevel
 
             # 'warn' will print warnings, default level
@@ -1500,37 +1500,36 @@ class WSUDOR_GenObject(object):
 
 
     # refresh object
-    def objectRefresh(self):
+    def refresh(self):
 
         '''
-        Function to update / refresh object properties requisite for front-end.
-        Runs multiple object methods under one banner.
+        Method to refresh object.  Default behavior includes:
+            - queue for indexing in Solr
+            - removing from Varnish cache
+            - calculating object size
 
-        Includes following methods:
-        - generate IIIF manifest --> self.genIIIFManifest()
-        - update object size in Solr --> self.object_size(update=True)
-        - index in Solr --> self.indexToSolr()
+        Additionally, content-types may run additional refresh activities under an optional
+        content-type specific method 
+
         '''
         
         print "-------------------- firing objectRefresh --------------------"
 
-        try:
-            # index in Solr
-            self.indexToSolr()
+        # update object size in Solr
+        self.update_object_size()
 
-            # remove object from Loris cache
-            self.removeObjFromCache()
+        # remove object from Loris cache
+        self.removeObjFromCache()
 
-            # generate IIIF manifest
-            self.genIIIFManifest()
+        # generate IIIF manifest
+        # self.genIIIFManifest()
 
-            # update object size in Solr
-            self.update_objSizeDict()
+        # if getattr(self, '')
 
-            return True
+        # finally, (re)index in Solr
+        self.add_to_indexer_queue()
 
-        except:
-            return False
+        return True
 
 
     # method to send object to remote repository

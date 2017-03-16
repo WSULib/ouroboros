@@ -45,7 +45,7 @@ def index(PID):
 	stime = time.time()
 
 	try:
-		obj_handle.objectRefresh()
+		obj_handle.refresh()
 		return_dict = {
 			'pid':PID,
 			'result':True

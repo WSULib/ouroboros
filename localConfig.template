@@ -67,6 +67,7 @@ TOMCAT_PROAI_PATH = '/oaiprovider'
 PROAI_CACHE_LOCATION = '/var/lib/tomcat7/webapps/oaiprovider/cache'
 
 # LORIS & IIIF
+IIIF_IPREZI_PROTOCOL = 'http'
 IIIF_MANIFEST_PREFIX = "iiif_manifest"
 IIIF_MANIFEST_TARGET_HOST = APP_HOST
 LORIS_API_ENDPOINT = "http://localhost/loris_local/"

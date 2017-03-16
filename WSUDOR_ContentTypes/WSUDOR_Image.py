@@ -25,7 +25,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers
+from WSUDOR_Manager import redisHandles, utilities
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
@@ -40,8 +40,8 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	Fedora_ContentType = "CM:Image"
 	version = 2
 
-	def __init__(self,object_type=False,content_type=False,payload=False,orig_payload=False):
-
+	def __init__(self,object_type=False, content_type=False, payload=False, orig_payload=False):
+ 
 		# run __init__ from parent class
 		WSUDOR_ContentTypes.WSUDOR_GenObject.__init__(self,object_type, content_type, payload, orig_payload)
 
@@ -192,7 +192,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					im = Image.open(file_path)
 
 					# run through filter
-					im = imMode(im)
+					im = utilities.imMode(im)
 
 					im.save(temp_filename,'JPEG')
 					preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_ACCESS" % (ds['ds_id']), "%s_ACCESS" % (ds['label']), mimetype="image/jpeg", control_group='M')
@@ -209,7 +209,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					max_height = 200
 
 					# run through filter
-					im = imMode(im)
+					im = utilities.imMode(im)
 
 					im.thumbnail((max_width, max_height), Image.ANTIALIAS)
 					im.save(temp_filename,'JPEG')
@@ -227,7 +227,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					max_height = 960
 
 					# run through filter
-					im = imMode(im)
+					im = utlities.imMode(im)
 
 					im.thumbnail((max_width, max_height), Image.ANTIALIAS)
 					im.save(temp_filename,'JPEG')
@@ -435,17 +435,3 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 
-# helpers
-def imMode(im):
-	# check for 16-bit tiffs
-	print "Image mode:",im.mode
-	if im.mode in ['I;16','I;16B']:
-		print "I;16 tiff detected, converting..."
-		im.mode = 'I'
-		im = im.point(lambda i:i*(1./256)).convert('L')
-	# else if not RGB, convert
-	elif im.mode != "RGB" :
-		print "Converting to RGB"
-		im = im.convert("RGB")
-
-	return im

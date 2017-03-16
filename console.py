@@ -205,7 +205,7 @@ def getSeedObjects(target_repo):
 							time.sleep(.5)
 					obj = w(pid)
 					try:
-						obj.objectRefresh()
+						obj.refresh()
 					except:
 						print "could not index %s" % pid
 				else:

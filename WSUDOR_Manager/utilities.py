@@ -119,6 +119,20 @@ def delDuplicateElements(XML):
     return XML
 
 
+def imMode(im):
+    # check for 16-bit tiffs
+    print "Image mode:",im.mode
+    if im.mode in ['I;16','I;16B']:
+        print "I;16 tiff detected, converting..."
+        im.mode = 'I'
+        im = im.point(lambda i:i*(1./256)).convert('L')
+    # else if not RGB, convert
+    elif im.mode != "RGB" :
+        print "Converting to RGB"
+        im = im.convert("RGB")
+
+    return im
+
 
 # DECORATORS
 #########################################################################################################

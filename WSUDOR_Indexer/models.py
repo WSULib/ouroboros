@@ -113,7 +113,7 @@ class FedoraJMSWorker(object):
 		logging.debug(self.body)
 
 		# capture modifications to datastream
-		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference']:
+		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference','purgeDatastream']:
 			self._determine_ds()
 			if self.ds not in localConfig.INDEXER_SKIP_DATASTREAMS:
 				self.queue_action = 'index'

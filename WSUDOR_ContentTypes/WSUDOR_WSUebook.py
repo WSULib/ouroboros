@@ -677,6 +677,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# regen IIIF manifest
 		self.genIIIFManifest()
 
+		# regen Readux objects
+		# self.regenReaduxVirtualObjects()
+
 
 	#############################################################################
 	# associated Readux style virtual objects

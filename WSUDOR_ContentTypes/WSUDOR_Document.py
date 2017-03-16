@@ -333,3 +333,10 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				self.SolrDoc.doc.int_fullText.append(ds_stripped_content)
 
 
+	# content_type refresh
+	def refresh_content_type(self):
+
+		# figure hierarchy
+		self.object_hierarchy(overwrite=True)
+
+

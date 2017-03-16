@@ -200,6 +200,14 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		pass
 
 
+	# content_type refresh
+	def refresh_content_type(self):
+
+		# figure hierarchy
+		self.object_hierarchy(overwrite=True)
+		
+
+
 
 
 

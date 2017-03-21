@@ -1497,7 +1497,11 @@ def workspace_json():
     username = session['username']
 
     # gen group list
-    user_pid_groups = db.session.query(models.user_pids).filter(models.user_pids.username == username).group_by("group_name")
+    # user_pid_groups = db.session.query(models.user_pids).filter(models.user_pids.username == username).group_by("group_name")
+    # group_names = [ each.group_name.encode('ascii','ignore') for each in user_pid_groups ]
+    # print group_names
+
+    user_pid_groups = db.session.query(models.user_pids).with_entities(models.user_pids.username, models.user_pids.group_name).filter(models.user_pids.username == username).group_by(models.user_pids.group_name)
     group_names = [ each.group_name.encode('ascii','ignore') for each in user_pid_groups ]
     print group_names
 

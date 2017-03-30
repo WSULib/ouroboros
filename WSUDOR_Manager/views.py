@@ -1684,6 +1684,9 @@ def indexing_index(action, group):
 
         if group == 'reindex':
             print "purging and adding all to queue"
+            # delete wayne:* form solr core
+            solr_handle.delete_by_query('id:wayne\:*')
+            IndexRouter.queue_all(username=username, priority=1, action='index')
 
     # pruning
     if action == 'exceptions':

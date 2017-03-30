@@ -413,7 +413,8 @@ class Search(Resource):
 				"dc_creator",
 				"dc_coverage",
 				"dc_language",
-				"dc_publisher"
+				"dc_publisher",
+				"dc_title"
 			],
 			'facet.sort': 'count', # default facet sorting to count
 			'f.facet_mods_year.facet.sort': 'index', # sort mods_year by index (year)
@@ -527,11 +528,14 @@ class Search(Resource):
 		logging.info(self.params)
 		self.search_results = solr_search_handle.search(**self.params)		
 		logging.debug(self.search_results.raw_content)
+		# success
 		if self.search_results.status == 200:
 			if include_item_metadata:
 				self.interleave_item_metadata()
 			# fix facets
 			self.process_facets()
+			# check dupe title
+			self.check_dupe_title()
 
 
 	def interleave_item_metadata(self):
@@ -553,6 +557,17 @@ class Search(Resource):
 		facet_fields = self.search_results.raw_content['facet_counts']['facet_fields']
 		for facet in facet_fields:
 			facet_fields[facet] = [tuple(facet_fields[facet][i:i+2]) for i in range(0, len(facet_fields[facet]), 2)]
+
+
+	def check_dupe_title(self):
+		'''
+		Some archival materials are ingested with identical titles.
+		If the dc_title facet is > 1, we have duplicate titles.
+		Perform another quick query, include in API response
+		'''
+		# dc_title = self.search_results.raw_content['facet_counts']['facet_fields']
+		pass
+
 
 
 	# generic search GET request

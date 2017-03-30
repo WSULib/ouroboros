@@ -345,12 +345,12 @@ class ObjMeta:
 ########################################################################
 # Solr
 ########################################################################
-
-class SolrDoc(object):  
-
-	class SolrFields(object):
+class SolrFields(object):
 		def __init__(self, **fields): 
 			self.__dict__.update(fields)
+
+
+class SolrDoc(object):  
 
 	# init
 	def __init__(self,id):
@@ -364,16 +364,17 @@ class SolrDoc(object):
 		}
 		response = solr_handle.search(**query_params)
 		if len(response.documents) > 0:
-			self.doc = self.SolrFields(**response.documents[0])
+			self.doc = SolrFields(**response.documents[0])
 			#store version, remove from doc
 			self.version = self.doc._version_ 
 			del self.doc._version_
 			# finally, set exists to True
 			self.exists = True
 		else:
-			self.doc = self.SolrFields()
+			self.doc = SolrFields()
 			self.doc.id = self.id # automatically set ID as PID
 			self.exists = False
+
 
 	# delete doc in Solr
 	def delete(self):
@@ -397,10 +398,6 @@ class SolrDoc(object):
 
 class SolrSearchDoc(object):    
 
-	class SolrFields(object):
-		def __init__(self, **fields): 
-			self.__dict__.update(fields)
-
 	# init
 	def __init__(self,id):
 		self.id = id
@@ -413,14 +410,14 @@ class SolrSearchDoc(object):
 		}
 		response = solr_handle.search(**query_params)
 		if len(response.documents) > 0:
-			self.doc = self.SolrFields(**response.documents[0])
+			self.doc = SolrFields(**response.documents[0])
 			#store version, remove from doc
 			self.version = self.doc._version_
 			del self.doc._version_
 			# finally, set exists to True
 			self.exists = True
 		else:
-			self.doc = self.SolrFields()
+			self.doc = SolrFields()
 			self.doc.id = self.id # automatically set ID as PID
 			self.exists = False
 

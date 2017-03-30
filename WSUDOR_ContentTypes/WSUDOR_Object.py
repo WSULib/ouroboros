@@ -1429,12 +1429,12 @@ class WSUDOR_GenObject(object):
     def _removeObjFromVarnishCache(self):
 
         # main pid
-        os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % self.pid)
+        os.system('varnishadm -S /etc/varnish/secret -T localhost:6082 "ban req.url ~ %s"' % self.pid)
 
         # check constituents
         if len(self.constituents) > 0:
             for constituent in self.constituents:
-                os.system('varnishadm -S /home/ouroboros/varnish_secret -T localhost:6082 "ban req.url ~ %s"' % constituent.pid)
+                os.system('varnishadm -S /etc/varnish/secret -T localhost:6082 "ban req.url ~ %s"' % constituent.pid)
 
         return  True
 

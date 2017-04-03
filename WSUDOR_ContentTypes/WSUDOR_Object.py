@@ -1787,8 +1787,8 @@ class WSUDOR_GenObject(object):
             PID = probData['pid']
             probData.pop('pid')
             probData.pop('to')
-            probData['email'] = probData.pop('from')
-            probData['name'] = ''
+            probData['email'] = probData.pop('email')
+            probData['name'] = probData.pop('from')
             probData['message'] = probData.pop('msg')
             form_notes = json.dumps(probData)
             problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs",form_notes)

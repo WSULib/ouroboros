@@ -557,6 +557,14 @@ class PREMISClient(object):
 
 	example PREMIS events from METS:
 	https://gist.github.com/ghukill/844f218bd95afef60c51ba19058e5c38
+
+	Some helpful readings:
+
+	PREMIS and PROV-O in FC4:
+		https://wiki.duraspace.org/display/FF/Design+-+PREMIS+Event+Service
+
+	PROV-O and PREMIS merging:
+		http://dcpapers.dublincore.org/pubs/article/view/3709
 	'''
 
 	def __init__(self, pid=False, ds_id='PREMIS'):
@@ -576,15 +584,15 @@ class PREMISClient(object):
 			else:
 				print "%s datastream not found, initializing blank PREMIS node" % ds_id
 
-		# if no pre-exisintg PREMIS datastream, init new one
-		if not self.premis_ds:
-			ns = {
-				"xsi": "http://www.w3.org/2001/XMLSchema-instance",
-				"xsd": "http://www.w3.org/2001/XMLSchema",
-				"premis": "info:lc/xmlns/premis-v2",
-			}
-			self.premis_root = etree.Element('premis', nsmap=ns)
-			self.premis_tree = etree.ElementTree(self.premis_root)
+			# if no pre-exisintg PREMIS datastream, init new one
+			if not self.premis_ds:
+				ns = {
+					"xsi": "http://www.w3.org/2001/XMLSchema-instance",
+					"xsd": "http://www.w3.org/2001/XMLSchema",
+					"premis": "info:lc/xmlns/premis-v2",
+				}
+				self.premis_root = etree.Element('premis', nsmap=ns)
+				self.premis_tree = etree.ElementTree(self.premis_root)
 
 
 	def add_event_xml(self, event):
@@ -614,14 +622,14 @@ class PREMISClient(object):
 		# update
 		if self.premis_ds:
 			self.premis_ds.content = self.as_string(pretty_print=False)
-			self.premis_ds.save()
+			return self.premis_ds.save()
 
 		# init and save
 		else:
 			self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M')
 			self.premis_ds.label = "PREMIS"
 			self.premis_ds.content = self.as_string(pretty_print=False)
-			self.premis_ds.save()
+			return self.premis_ds.save()
 
 
 	def as_string(self, pretty_print=2):

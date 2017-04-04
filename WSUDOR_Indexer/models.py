@@ -92,6 +92,7 @@ class FedoraJMSWorker(object):
 		self.title = self.parsed_body['entry']['title']['#text']
 		self.categories = self.parsed_body['entry']['category']
 		self.author = self.parsed_body['entry']['author']['name']
+		self.queue_action = False
 
 		# method type
 		if self.methodName.startswith('add'):
@@ -117,22 +118,39 @@ class FedoraJMSWorker(object):
 			self._determine_ds()
 			if self.ds not in localConfig.INDEXER_SKIP_DATASTREAMS:
 				self.queue_action = 'index'
-				self.queue_object()
+
+		# capture changes to object
+		if self.methodName in ['modifyObject']:
+			self.queue_action = 'index'
 
 		# capture ingests
 		if self.methodName in ['ingest']:
 			self.queue_action = 'index'
-			self.queue_object()
 
 		# RDF relationships
 		if self.methodName in ['addRelationship','purgeRelationship']:
 			self.queue_action = 'index'
-			self.queue_object()
 
 		# capture purge
+		'''
+		Perhaps unsurprisingly, this fails.
+		When objects are purged, they cannot be opened to run their own .prune() method.
+		Perhaps .prune() should be included here as well, so it can run seperate from object method?
+		'''
 		if self.methodName in ['purgeObject']:
 			self.queue_action = 'prune'
+
+
+		# finally, queue object and log
+		if self.queue_action:
 			self.queue_object()
+			# self.log_premis_event()
+
+
+	def log_premis_event(self):
+
+		# finally, log PREMIS event
+		PREMISWorker.log_jms_event.delay(self.pid, self.body)
 
 
 	def _determine_ds(self):
@@ -205,7 +223,7 @@ class IndexRouter(object):
 		db.session.close()
 
 		# check if in working table
-		if indexer_working.query.filter_by(pid = pid).count() == 0:
+		if indexer_working.query.filter_by(pid = pid, action = action).count() == 0:
 
 			logging.info("IndexRouter: queuing %s" % pid)
 			queue_tuple = (pid, username, priority, action)
@@ -394,7 +412,6 @@ class postIndexWorker(Task):
 			IndexRouter.object_complete(queue_row = queue_row, is_exception=True, msg=args[1])
 
 
-
 class IndexWorker(object):
 
 	'''
@@ -410,6 +427,9 @@ class IndexWorker(object):
 		logging.info("IndexWorker: indexing %s" % queue_row)
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
+			# remove from cache
+			obj.removeObjFromCache()
+			# then, index
 			index_result = obj.index()
 			return index_result
 		else:
@@ -424,6 +444,9 @@ class IndexWorker(object):
 		logging.info("IndexWorker: pruning %s" % queue_row)
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
+			# remove from cache
+			obj.removeObjFromCache()
+			# then, prune
 			obj.prune()
 			IndexRouter.dequeue_object(queue_row = queue_row)
 		else:
@@ -488,7 +511,29 @@ class indexer_exception(db.Model):
 		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
 
 
+class PREMISWorker(object):
 
+	'''
+	Class to log PREMIS events for objects
+	'''
 
+	# method for logging PREMIS events when reported by Fedora JMS
+	@staticmethod
+	@celery.task(max_retries=3, name="log_jms_event", trail=True)
+	def log_jms_event(pid, frame_body):
+
+		# debugging
+		logging.info("PREMISWorker: logging event")
+		logging.info(frame_body)
+
+		# init PREMIS client
+		premis_client = WSUDOR_Manager.models.PREMISClient(pid=pid)
+
+		# write event
+		premis_client.add_event_xml(frame_body)
+
+		# save
+		return premis_client.update()
+		
 
 

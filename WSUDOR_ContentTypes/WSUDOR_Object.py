@@ -734,11 +734,11 @@ class WSUDOR_GenObject(object):
         if indexObject:
 
             # calculate object size
-            self.object_size(update=True)
+            self.update_object_size()
             
             # Index in Solr (can override from command by setting self.index_on_ingest to False)
             if self.index_on_ingest != False:
-                self.indexToSolr()
+                self.index()
             else:
                 print "Skipping Solr Index"
 

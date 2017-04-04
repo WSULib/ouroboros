@@ -208,10 +208,10 @@ def cw(target, action):
 @app.route('/email', methods=['GET','POST'])
 def email():
 # Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', 'to', (and optionally) 'pid'
-    
+
     # Auth check - make sure email request is from a valid source
     if (localConfig.EMAIL_PASSPHRASE == request.form.get('passphrase')):
-        data = {'from':request.form.get('from'), 'email':request.form.get('email'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
+        data = {'from':request.form.get('from'), 'email':request.form.get('email'), 'to':request.form.get('to'), 'date':request.form.get('date'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
 
         # Sub-section: if this is reporting a problem, then let's run the reportProb module before sending an email
         if data['contact_type'] == "rap" and data['pid']:
@@ -1317,7 +1317,7 @@ def problemObjs():
             saDict['notes'] = json.loads(saDict['notes'])
         saList.append(saDict.copy())
 
-    return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST)
+    return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST,EMAIL_PASSPHRASE=localConfig.EMAIL_PASSPHRASE)
 
 
 # Retrieve all user-reported problem Objects
@@ -1689,9 +1689,6 @@ def indexing_index(action, group):
 
         if group == 'reindex':
             print "purging and adding all to queue"
-            # delete wayne:* form solr core
-            solr_handle.delete_by_query('id:wayne\:*')
-            IndexRouter.queue_all(username=username, priority=1, action='index')
 
     # pruning
     if action == 'exceptions':

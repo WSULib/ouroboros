@@ -1328,9 +1328,6 @@ class WSUDOR_GenObject(object):
             self.regenJP2(regenIIIFManifest=True, target_ds=ds)
 
 
-
-
-
     def fixJP2(self):
 
         '''
@@ -1425,6 +1422,7 @@ class WSUDOR_GenObject(object):
         # return results dictionary
         return results
 
+
     # ban image from varnish cache
     def _removeObjFromVarnishCache(self):
 
@@ -1455,6 +1453,7 @@ class WSUDOR_GenObject(object):
                     print "could not remove constituent %s from cache, possible already purged" % constituent
 
         return True
+
 
     # remove from Loris cache
     def _removeDatastreamFromLorisCache(self, pid, ds):

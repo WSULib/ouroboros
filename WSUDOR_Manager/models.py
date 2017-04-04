@@ -576,15 +576,15 @@ class PREMISClient(object):
 			else:
 				print "%s datastream not found, initializing blank PREMIS node" % ds_id
 
-		# if no pre-exisintg PREMIS datastream, init new one
-		if not self.premis_ds:
-			ns = {
-				"xsi": "http://www.w3.org/2001/XMLSchema-instance",
-				"xsd": "http://www.w3.org/2001/XMLSchema",
-				"premis": "info:lc/xmlns/premis-v2",
-			}
-			self.premis_root = etree.Element('premis', nsmap=ns)
-			self.premis_tree = etree.ElementTree(self.premis_root)
+			# if no pre-exisintg PREMIS datastream, init new one
+			if not self.premis_ds:
+				ns = {
+					"xsi": "http://www.w3.org/2001/XMLSchema-instance",
+					"xsd": "http://www.w3.org/2001/XMLSchema",
+					"premis": "info:lc/xmlns/premis-v2",
+				}
+				self.premis_root = etree.Element('premis', nsmap=ns)
+				self.premis_tree = etree.ElementTree(self.premis_root)
 
 
 	def add_event_xml(self, event):

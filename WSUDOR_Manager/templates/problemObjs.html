@@ -12,15 +12,27 @@ $(document).ready(function () {
             var pid = $(this).closest("div").attr("id");
             if (button == "removeButton") {
                 var action="removeObj";
+                var data={"pid":"wayne:"+pid};
             }
             if (button == "addButton") {
                 var action="claimObj";
+                var data={"pid":"wayne:"+pid};
+            }
+            if (button == "forwardAV") {
+                var action="email";
+                // console.log($(this).data());
+                var data=$(this).data()}
+            }
+            if (button == "forwardM") {
+                var action="email";
+                // console.log();
+                var data={$(this).data()}
             }
 
             $.ajax({
                 url: "/{{APP_PREFIX}}/"+action,
                 type: "POST",
-                data:{"pid":"wayne:"+pid}
+                data:data
             }).done(function(response) { $("#"+pid).fadeToggle("slow", "linear"); location.reload(); });
 
             });
@@ -93,8 +105,10 @@ $(document).ready(function () {
         </small>
       </blockquote>
         <button id="addButton" class="btn btn-success btn-add objectEdit" style="margin-top: 4px;" type="button">Add to Workspace</button>
-        <button id="removeButton" class="btn btn-success btn-danger objectEdit" style="margin-top: 4px;" type="button">Remove</button>
-        <button id="replyButton" class="btn btn-success btn-warning" style="margin-top: 4px;" data-toggle="modal" data-name={{name}} data-email={{email}} data-target="#myModal" type="button">Reply</button>
+        <button id="removeButton" class="btn btn-danger objectEdit" style="margin-top: 4px;" type="button">Remove</button>
+        <button id="replyButton" class="btn btn-warning" style="margin-top: 4px;" data-toggle="modal" data-name={{name}} data-email={{email}} data-target="#myModal" type="button">Reply</button>
+        <button id="forwardAV" class="btn btn-primary objectEdit" style="margin-top: 4px;" data-from={{name}} data-to="personAV@something.com" data-email={{email}} data-msg={{message}} data-pid={{obj.PID}} data-subject="FWD: Issue Reported with object {{obj.PID}}" type="button">Forward to AV</button>
+        <button id="forwardM" class="btn btn-info objectEdit" style="margin-top: 4px;" data-from={{name}} data-to="personManuscript@something.com" data-email={{email}} data-msg={{message}} data-pid={{obj.PID}} data-subject="FWD: Issue Reported with object {{obj.PID}}" type="button">Forward to Manuscript</button>        
     </div>
   </div>
 {% endwith %}

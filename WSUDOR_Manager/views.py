@@ -211,24 +211,29 @@ def email():
     
     # Auth check - make sure email request is from a valid source
     if (localConfig.EMAIL_PASSPHRASE == request.form.get('passphrase')):
-        data = {'from':request.form.get('from'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
+        data = {'from':request.form.get('from'), 'email':request.form.get('email'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
 
         # Sub-section: if this is reporting a problem, then let's run the reportProb module before sending an email
         if data['contact_type'] == "rap" and data['pid']:
             # WSUDOR handle
             obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(data['pid'])
             if not obj_handle:
-                data['msg'] = data[msg] + "\n\n WSUDOR System Note: Could not find specified Object (%s) in system." % data['pid']
+                data['msg'] = data['msg'] + "\n\n WSUDOR System Note: Could not find specified Object (%s) in system." % data['pid']
+                send_email = True
             else:
                 if not obj_handle.reportProb(data):
-                    data['msg'] = data[msg] + "\n\n WSUDOR System Note: Could not add specified Object (%s) to the Report a Problem Queue" % data['pid']
+                    data['msg'] = data['msg'] + "\n\n WSUDOR System Note: Could not add specified Object (%s) to the Report a Problem Queue" % data['pid']
+                    send_email = True
+        else:
+            send_email = True
 
         # Send an email
-        email = utilities.Email()
-        if email.send(data):
-            resp = make_response("email sent", 200)
-        else:
-            resp = make_response("email failed", 500)
+        if send_email:
+            email = utilities.Email()
+            if email.send(data):
+                resp = make_response("email sent", 200)
+            else:
+                resp = make_response("email failed", 500)
     else:
         resp = make_response("failed passphrase", 400)
 

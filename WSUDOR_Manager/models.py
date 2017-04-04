@@ -557,6 +557,14 @@ class PREMISClient(object):
 
 	example PREMIS events from METS:
 	https://gist.github.com/ghukill/844f218bd95afef60c51ba19058e5c38
+
+	Some helpful readings:
+
+	PREMIS and PROV-O in FC4:
+		https://wiki.duraspace.org/display/FF/Design+-+PREMIS+Event+Service
+
+	PROV-O and PREMIS merging:
+		http://dcpapers.dublincore.org/pubs/article/view/3709
 	'''
 
 	def __init__(self, pid=False, ds_id='PREMIS'):
@@ -614,14 +622,14 @@ class PREMISClient(object):
 		# update
 		if self.premis_ds:
 			self.premis_ds.content = self.as_string(pretty_print=False)
-			self.premis_ds.save()
+			return self.premis_ds.save()
 
 		# init and save
 		else:
 			self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M')
 			self.premis_ds.label = "PREMIS"
 			self.premis_ds.content = self.as_string(pretty_print=False)
-			self.premis_ds.save()
+			return self.premis_ds.save()
 
 
 	def as_string(self, pretty_print=2):

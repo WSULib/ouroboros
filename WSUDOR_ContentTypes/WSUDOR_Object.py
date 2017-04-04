@@ -1787,8 +1787,8 @@ class WSUDOR_GenObject(object):
             PID = probData['pid']
             probData.pop('pid')
             probData.pop('to')
-            probData['email'] = probData.pop('email')
-            probData['name'] = probData.pop('from')
+            probData['from'] = probData.pop('from')
+            probData['name'] = probData.pop('name')
             probData['message'] = probData.pop('msg')
             form_notes = json.dumps(probData)
             problemPID = models.user_pids(PID,"problemBot",1,"userReportedPIDs",form_notes)
@@ -1809,9 +1809,6 @@ class WSUDOR_GenObject(object):
 
         else:
 
-            # remove from solr immediately
-            self.prune()
-
             # purge constituent objets
             print "purging Constituents if present"
             if getattr(self, 'purgeConstituents', None):
@@ -1823,6 +1820,10 @@ class WSUDOR_GenObject(object):
 
             # remove from Loris and Varnish cache
             self.removeObjFromCache()
+
+            # remove from Solr
+            print "purging from solr"
+            solr_handle.delete_by_key(self.pid)
 
             # purge object
             print "purging from fedora"

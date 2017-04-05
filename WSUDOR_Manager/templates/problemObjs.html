@@ -20,31 +20,36 @@ $(document).ready(function () {
             }
             if (button == "forwardAV") {
                 var action="email";
-                // console.log($(this).data());
                 var myData = $(this).data();
-                // set message
-                myData['msg'] = "-----------Original Message-------------\nFrom: "+myData['name']+" <"+myData['oldFrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldSubject']+"\n\n"+myData['msg'];
-                console.log(myData['msg']);
+                myData['msg'] = "-----------Original Message-------------\nFrom: "+myData['name']+" <"+myData['oldfrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldsubject']+"\n\n"+myData['msg'];
                 var data=myData;
+                ajax(action, data);
+                var data={"pid":"wayne:"+pid};
+                ajax("removeObj", data);
             }
             if (button == "forwardM") {
                 var action="email";
                 var myData = $(this).data();
-                myData['msg'] = "-----------Original Message-------------\nFrom: "+myData['name']+" <"+myData['oldFrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldSubject']+"\n\n"+myData['msg'];
-                console.log(myData['msg']);
+                myData['msg'] = "-----------Original Message-------------\nFrom: "+myData['name']+" <"+myData['oldfrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldsubject']+"\n\n"+myData['msg'];
                 var data=myData;
+                ajax(action, data);
+                var data={"pid":"wayne:"+pid};
+                ajax("removeObj", data);
             }
-
-            $.ajax({
-                url: "/{{APP_PREFIX}}/"+action,
-                type: "POST",
-                data:data
-            }).done(function(response) { $("#"+pid).fadeToggle("slow", "linear"); location.reload(); });
-
-            });
 
          // return false;
      });
+
+    // generic ajax
+    function ajax(action, data) {
+      $.ajax({
+          url: "/{{APP_PREFIX}}/"+action,
+          type: "POST",
+          data:data
+      }).done(function(response) { $("#"+pid).fadeToggle("slow", "linear"); location.reload(); });
+
+    }
+  });
 
     // add modal functionality
     $('#myModal').on('show.bs.modal', function (e) {
@@ -119,8 +124,8 @@ $(document).ready(function () {
         <button id="addButton" class="btn btn-success btn-add objectEdit" style="margin-top: 4px;" type="button">Add to Workspace</button>
         <button id="removeButton" class="btn btn-danger objectEdit" style="margin-top: 4px;" type="button">Remove</button>
         <button id="replyButton" class="btn btn-warning" style="margin-top: 4px;" data-toggle="modal" data-name="{{name}}" data-email="{{email}}" data-target="#myModal" type="button">Reply</button>
-        <button id="forwardAV" class="btn btn-primary objectEdit" style="margin-top: 4px;" data-name="{{name}}" data-from="libwebmaster@wayne.edu" data-oldFrom="{{email}}" data-date="{{date}}" data-to="personAV@something.com" data-msg="{{message}}" data-pid="{{obj.PID}}" data-oldSubject="{{subject}}" data-subject="FWD: Issue Reported with object {{obj.PID}}" data-passphrase="{{EMAIL_PASSPHRASE}}" type="button">Forward to AV</button>
-        <button id="forwardM" class="btn btn-info objectEdit" style="margin-top: 4px;" data-name="{{name}}" data-from="libwebmaster@wayne.edu" data-oldFrom="{{email}}" data-date="{{date}}" data-to="personManuscript@something.com" data-msg="{{message}}" data-pid="{{obj.PID}}" data-oldSubject="{{subject}}" data-subject="FWD: Issue Reported with object {{obj.PID}}" data-passphrase="{{EMAIL_PASSPHRASE}}" type="button">Forward to Manuscript</button>        
+        <button id="forwardAV" class="btn btn-primary objectEdit" style="margin-top: 4px;" data-name="{{name}}" data-from="libwebmaster@wayne.edu" data-oldfrom="{{email}}" data-date="{{date}}" data-to="{{REUTHER_AV_EMAIL}}" data-msg="{{message}}" data-pid="{{obj.PID}}" data-oldsubject="{{subject}}" data-subject="FWD: Issue Reported with object {{obj.PID}}" data-passphrase="{{EMAIL_PASSPHRASE}}" type="button">Forward to AV</button>
+        <button id="forwardM" class="btn btn-info objectEdit" style="margin-top: 4px;" data-name="{{name}}" data-from="libwebmaster@wayne.edu" data-oldfrom="{{email}}" data-date="{{date}}" data-to="{{REUTHER_MANUSCRIPT_EMAIL}}" data-msg="{{message}}" data-pid="{{obj.PID}}" data-oldsubject="{{subject}}" data-subject="FWD: Issue Reported with object {{obj.PID}}" data-passphrase="{{EMAIL_PASSPHRASE}}" type="button">Forward to Manuscript</button>        
     </div>
   </div>
 {% endwith %}

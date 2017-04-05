@@ -1317,7 +1317,7 @@ def problemObjs():
             saDict['notes'] = json.loads(saDict['notes'])
         saList.append(saDict.copy())
 
-    return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST,EMAIL_PASSPHRASE=localConfig.EMAIL_PASSPHRASE)
+    return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST,EMAIL_PASSPHRASE=localConfig.EMAIL_PASSPHRASE,REUTHER_MANUSCRIPT_EMAIL=localConfig.REUTHER_MANUSCRIPT_EMAIL,REUTHER_AV_EMAIL=localConfig.REUTHER_AV_EMAIL)
 
 
 # Retrieve all user-reported problem Objects

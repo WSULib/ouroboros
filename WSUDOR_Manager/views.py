@@ -214,16 +214,20 @@ def email():
         data = {'from':request.form.get('from'), 'name':request.form.get('name'), 'to':request.form.get('to'), 'date':request.form.get('date'), 'subject':request.form.get('subject'), 'msg':request.form.get("msg"), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
 
         # Sub-section: if this is reporting a problem, then let's run the reportProb module before sending an email
+        # we'll only send an email if we have some issue with adding it to the problem queue
         if data['contact_type'] == "rap" and data['pid']:
             # WSUDOR handle
             obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(data['pid'])
             if not obj_handle:
                 data['msg'] = data['msg'] + "\n\n WSUDOR System Note: Could not find specified Object (%s) in system." % data['pid']
+                data['to'] = localConfig.EMAIL_USERNAME
                 send_email = True
             else:
                 if not obj_handle.reportProb(data):
                     data['msg'] = data['msg'] + "\n\n WSUDOR System Note: Could not add specified Object (%s) to the Report a Problem Queue" % data['pid']
+                    data['to'] = localConfig.EMAIL_USERNAME
                     send_email = True
+        # Else we'll just send a normal contact or permissions request email
         else:
             send_email = True
 

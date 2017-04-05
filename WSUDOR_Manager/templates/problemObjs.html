@@ -13,35 +13,37 @@ $(document).ready(function () {
             if (button == "removeButton") {
                 var action="removeObj";
                 var data={"pid":"wayne:"+pid};
+                ajax(action, data, pid);
             }
             if (button == "addButton") {
                 var action="claimObj";
                 var data={"pid":"wayne:"+pid};
+                ajax(action, data, pid);
             }
             if (button == "forwardAV") {
                 var action="email";
                 var myData = $(this).data();
-                myData['msg'] = "-----------Original Message-------------\nFrom: "+myData['name']+" <"+myData['oldfrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldsubject']+"\n\n"+myData['msg'];
+                myData['msg'] = "-----------Forwarded Message-------------\nFrom: "+myData['name']+" <"+myData['oldfrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldsubject']+"\n\n"+myData['msg'];
                 var data=myData;
                 ajax(action, data);
                 var data={"pid":"wayne:"+pid};
-                ajax("removeObj", data);
+                ajax("removeObj", data, pid);
             }
             if (button == "forwardM") {
                 var action="email";
                 var myData = $(this).data();
-                myData['msg'] = "-----------Original Message-------------\nFrom: "+myData['name']+" <"+myData['oldfrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldsubject']+"\n\n"+myData['msg'];
+                myData['msg'] = "-----------Forwarded Message-------------\nFrom: "+myData['name']+" <"+myData['oldfrom']+">\nDate: "+myData['date']+"\nTo: WSUDOR System\nSubject: "+myData['oldsubject']+"\n\n"+myData['msg'];
                 var data=myData;
                 ajax(action, data);
                 var data={"pid":"wayne:"+pid};
-                ajax("removeObj", data);
+                ajax("removeObj", data, pid);
             }
 
          // return false;
      });
 
     // generic ajax
-    function ajax(action, data) {
+    function ajax(action, data, pid) {
       $.ajax({
           url: "/{{APP_PREFIX}}/"+action,
           type: "POST",

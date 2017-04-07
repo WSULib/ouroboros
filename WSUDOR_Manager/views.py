@@ -243,6 +243,20 @@ def email():
 
     return resp
 
+@app.route('/version', methods=['GET','POST'])
+@login_required
+def version():
+    branch = subprocess.Popen("git rev-parse --abbrev-ref HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    commit = subprocess.Popen("git rev-parse --short HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    origin = subprocess.Popen("git rev-parse --short origin/"+branch, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    url = subprocess.Popen("git config --get remote.origin.url", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    color_level = "style=background-color:rgb(211,255,211);"
+
+    if commit != origin:
+        color_level = "style=background-color:rgb(255,211,211);"
+
+    return "<span "+color_level+">Build #<a href="+url+"/commit/"+commit+">"+commit+"</a> on branch "+branch+"</span>"
+
 # MAJOR SUB-SECTIONS
 #########################################################################################################
 @app.route('/contentModels', methods=['GET', 'POST'])

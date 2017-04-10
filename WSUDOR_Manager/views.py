@@ -116,7 +116,7 @@ def userPage():
     except:
         user.selected_objects_count = 0
 
-    return render_template("userPage.html", user=user)
+    return render_template("userPage.html", user=user, JUPYTER_TOKEN=localConfig.JUPYTER_TOKEN)
 
 
 @app.route('/systemStatus')

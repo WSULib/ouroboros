@@ -1,7 +1,3 @@
-from WSUDOR_Manager import db, actions, app
-from WSUDOR_Manager.solrHandles import solr_handle
-from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import CeleryWorker
 from flask.ext.login import UserMixin
 from flask import session
 from datetime import datetime
@@ -16,8 +12,14 @@ import re
 import eulfedora
 import json
 import requests
-# from itsdangerous import URLSafeTimedSerializer
 
+# eulxml, used for PREMISClient
+from eulxml.xmlmap import premis
+
+from WSUDOR_Manager import db, actions, app
+from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager import CeleryWorker
 from WSUDOR_Manager import logging
 
 # session data secret key
@@ -572,7 +574,8 @@ class PREMISClient(object):
 		self.pid = pid
 		self.ohandle = False
 		self.premis_ds = False
-		self.premis_tree = None
+		self.premis_tree = False
+		self.premis = False
 
 		# if pid provided, attempt to retrieve PREMIS
 		if pid:
@@ -581,18 +584,25 @@ class PREMISClient(object):
 				self.premis_ds = self.ohandle.getDatastreamObject('PREMIS')
 				self.premis_root = self.premis_ds.content.node
 				self.premis_tree = self.premis_root.getroottree()
+
 			else:
 				print "%s datastream not found, initializing blank PREMIS node" % ds_id
 
-			# if no pre-exisintg PREMIS datastream, init new one
-			if not self.premis_ds:
-				ns = {
-					"xsi": "http://www.w3.org/2001/XMLSchema-instance",
-					"xsd": "http://www.w3.org/2001/XMLSchema",
-					"premis": "info:lc/xmlns/premis-v2",
-				}
-				self.premis_root = etree.Element('premis', nsmap=ns)
-				self.premis_tree = etree.ElementTree(self.premis_root)
+			# # if no pre-exisintg PREMIS datastream, init new one
+			# if not self.premis_ds:
+			# 	ns = {
+			# 		"xsi": "http://www.w3.org/2001/XMLSchema-instance",
+			# 		"xsd": "http://www.w3.org/2001/XMLSchema",
+			# 		"premis": "info:lc/xmlns/premis-v2",
+			# 	}
+			# 	self.premis_root = etree.Element('premis', nsmap=ns)
+			# 	self.premis_tree = etree.ElementTree(self.premis_root)
+
+				# init eulxml PREMIS
+				self.premis = premis.Premis()
+				intellectual_object = premis.Object()
+
+
 
 
 	def add_event_xml(self, event):

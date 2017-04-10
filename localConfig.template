@@ -22,7 +22,10 @@ Otherwise, select the prefix and leave the APP_PREFIX_USE as True
 APP_PREFIX = "ouroboros"
 APP_PREFIX_USE = True 
 
-# fedoraManager2 
+# Jupyter notebook
+JUPYTER_TOKEN = '701639b70d47790af5cd930cc59f77e99af363fa'
+
+# WSUDOR_Manager 
 WSUDOR_MANAGER_FIRE = True
 WSUDOR_MANAGER_PORT = 5004
 

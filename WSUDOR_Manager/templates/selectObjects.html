@@ -424,9 +424,9 @@
                   url: "/{{APP_PREFIX}}/selectObjects/workspace.json",
                   context: document.body
                 }).done(function(data) {
-                  $.each($(".object_groups"), function() {
+                  $.each($(".object_groups"), function() {                    
                     $(this).empty();
-                    this.append(new Option("Select a group...",''));
+                    $(this).append(new Option("Select a group...",''));
                     for (var i = 0; i < data.groups.length; i++) {
                         $(this).append(new Option(data.groups[i], data.groups[i]));
                     };

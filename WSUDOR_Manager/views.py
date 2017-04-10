@@ -208,22 +208,26 @@ def cw(target, action):
 @app.route('/email', methods=['GET','POST'])
 def email():
 # Uses external smtp mail server to send email; looking for parameters for 'subject', 'msg', 'from', 'to', (and optionally) 'pid'
-    
+
     # Auth check - make sure email request is from a valid source
     if (localConfig.EMAIL_PASSPHRASE == request.form.get('passphrase')):
-        data = {'from':request.form.get('from'), 'email':request.form.get('email'), 'to':request.form.get('to'), 'subject':request.form.get('subject'), 'msg':request.form.get('msg'), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
+        data = {'from':request.form.get('from'), 'name':request.form.get('name'), 'to':request.form.get('to'), 'date':request.form.get('date'), 'subject':request.form.get('subject'), 'msg':request.form.get("msg"), 'pid':request.form.get('pid', None), 'contact_type':request.form.get('contact_type', None)}
 
         # Sub-section: if this is reporting a problem, then let's run the reportProb module before sending an email
+        # we'll only send an email if we have some issue with adding it to the problem queue
         if data['contact_type'] == "rap" and data['pid']:
             # WSUDOR handle
             obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(data['pid'])
             if not obj_handle:
                 data['msg'] = data['msg'] + "\n\n WSUDOR System Note: Could not find specified Object (%s) in system." % data['pid']
+                data['to'] = localConfig.EMAIL_USERNAME
                 send_email = True
             else:
                 if not obj_handle.reportProb(data):
                     data['msg'] = data['msg'] + "\n\n WSUDOR System Note: Could not add specified Object (%s) to the Report a Problem Queue" % data['pid']
+                    data['to'] = localConfig.EMAIL_USERNAME
                     send_email = True
+        # Else we'll just send a normal contact or permissions request email
         else:
             send_email = True
 
@@ -238,6 +242,20 @@ def email():
         resp = make_response("failed passphrase", 400)
 
     return resp
+
+@app.route('/version', methods=['GET','POST'])
+@login_required
+def version():
+    branch = subprocess.Popen("git rev-parse --abbrev-ref HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    commit = subprocess.Popen("git rev-parse --short HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    origin = subprocess.Popen("git rev-parse --short origin/"+branch, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    url = subprocess.Popen("git config --get remote.origin.url", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    color_level = "style=background-color:rgb(211,255,211);"
+
+    if commit != origin:
+        color_level = "style=background-color:rgb(255,211,211);"
+
+    return "<span "+color_level+">Build #<a href="+url+"/commit/"+commit+">"+commit+"</a> on branch "+branch+"</span>"
 
 # MAJOR SUB-SECTIONS
 #########################################################################################################
@@ -1317,7 +1335,7 @@ def problemObjs():
             saDict['notes'] = json.loads(saDict['notes'])
         saList.append(saDict.copy())
 
-    return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST)
+    return render_template("problemObjs.html",problemObjs=saList,APP_HOST=localConfig.APP_HOST,EMAIL_PASSPHRASE=localConfig.EMAIL_PASSPHRASE,REUTHER_MANUSCRIPT_EMAIL=localConfig.REUTHER_MANUSCRIPT_EMAIL,REUTHER_AV_EMAIL=localConfig.REUTHER_AV_EMAIL)
 
 
 # Retrieve all user-reported problem Objects
@@ -1689,9 +1707,6 @@ def indexing_index(action, group):
 
         if group == 'reindex':
             print "purging and adding all to queue"
-            # delete wayne:* form solr core
-            solr_handle.delete_by_query('id:wayne\:*')
-            IndexRouter.queue_all(username=username, priority=1, action='index')
 
     # pruning
     if action == 'exceptions':

@@ -258,7 +258,7 @@ class Email():
             msg['Subject'] = data['subject']
             msg['From'] = data['from']
             msg['To'] = data['to']
-            data['pid'] = data['pid'] if data['pid'] is None else "\n\n PID: %s" % data['pid']
+            data['pid'] = data['pid'] if data['pid'] is None else "\n\nWSUDOR System Note: %s" % data['pid']
             data['msg'] = data['msg'] if data['pid'] is None else data['msg'] + data['pid']
             text = """%s""" % data['msg']
             msg.attach(MIMEText(text, 'plain'))

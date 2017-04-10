@@ -248,7 +248,7 @@ def email():
 def version():
     branch = subprocess.Popen("git rev-parse --abbrev-ref HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
     commit = subprocess.Popen("git rev-parse --short HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
-    origin = subprocess.Popen("git rev-parse --short origin/"+branch, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
+    origin = subprocess.Popen("git fetch && git rev-parse --short origin/"+branch, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
     url = subprocess.Popen("git config --get remote.origin.url", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
     color_level = "style=background-color:rgb(211,255,211);"
 

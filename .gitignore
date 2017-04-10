@@ -6,3 +6,5 @@ eulfedora/
 .DS_Store
 ._DS_Store
 .cache
+*.ipynb
+.ipynb_checkpoints

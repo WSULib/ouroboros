@@ -22,6 +22,13 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import CeleryWorker
 from WSUDOR_Manager import logging
 
+# import derivatives
+from inc.derivatives import Derivative
+
+# pypremis
+from pypremis.lib import PremisRecord
+import pypremis
+
 # session data secret key
 ####################################
 app.secret_key = 'WSUDOR'
@@ -548,7 +555,6 @@ class createSupervisorProcess(object):
 ########################################################################
 # PREMIS
 ########################################################################
-
 class PREMISClient(object):
 
 	'''
@@ -567,6 +573,9 @@ class PREMISClient(object):
 
 	PROV-O and PREMIS merging:
 		http://dcpapers.dublincore.org/pubs/article/view/3709
+
+	Using 'wsudor' branch of fork of pypremis:
+		https://github.com/WSULib/uchicagoldr-premiswork/tree/wsudor
 	'''
 
 	def __init__(self, pid=False, ds_id='PREMIS'):
@@ -574,77 +583,71 @@ class PREMISClient(object):
 		self.pid = pid
 		self.ohandle = False
 		self.premis_ds = False
-		self.premis_tree = False
 		self.premis = False
+		self.tempfile = None
 
 		# if pid provided, attempt to retrieve PREMIS
 		if pid:
 			self.ohandle = fedora_handle.get_object(pid)
 			if ds_id in self.ohandle.ds_list:
-				self.premis_ds = self.ohandle.getDatastreamObject('PREMIS')
-				self.premis_root = self.premis_ds.content.node
-				self.premis_tree = self.premis_root.getroottree()
+				self.premis_ds = self.ohandle.getDatastreamObject(ds_id)
+				# write temp file
+				self.tempfile = Derivative.write_temp_file(self.premis_ds)
+				# load with pypremis
+				self.premis = PremisRecord(frompath=self.tempfile.name)
 
 			else:
-				print "%s datastream not found, initializing blank PREMIS node" % ds_id
+				print "%s datastream not found, initializing PREMIS datastream" % ds_id
+				# gen object identifier
+				object_identifier = pypremis.nodes.ObjectIdentifier('pid', pid)
+				# set format type for object
+				format_designation = pypremis.nodes.FormatDesignation(formatName='wsudor object')
+				format = pypremis.nodes.Format(formatDesignation=format_designation)
+				# add format to object_characteristics
+				object_characteristics = pypremis.nodes.ObjectCharacteristics(format=format)
+				# create object node
+				o = pypremis.nodes.Object(object_identifier, "intellectual entity", object_characteristics)
+				# add to premis record
+				self.premis = PremisRecord(objects=[o])
+				# write to datastream with .update()
+				self.update()
 
-			# # if no pre-exisintg PREMIS datastream, init new one
-			# if not self.premis_ds:
-			# 	ns = {
-			# 		"xsi": "http://www.w3.org/2001/XMLSchema-instance",
-			# 		"xsd": "http://www.w3.org/2001/XMLSchema",
-			# 		"premis": "info:lc/xmlns/premis-v2",
-			# 	}
-			# 	self.premis_root = etree.Element('premis', nsmap=ns)
-			# 	self.premis_tree = etree.ElementTree(self.premis_root)
-
-				# init eulxml PREMIS
-				self.premis = premis.Premis()
-				intellectual_object = premis.Object()
-
-
-
-
-	def add_event_xml(self, event):
-		
-		'''
-		accept XML string or etree element, add to PREMIS datastream
-		'''
-
-		# parse string or element
-		if type(event) == str or type(event) == unicode:
-
-			try:
-				prepped_event = etree.fromstring(event)
-			except:
-				print "could not parse element from string, attempting to inject xsi declaration after first blank space"
-				event = re.sub(r' ', ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ', event, 1) # trailing 1 allows only one replace
-				prepped_event = etree.fromstring(event)
-
-		if type(event) == etree._Element:
-			prepped_event = event
-
-		self.premis_root.append(prepped_event)
+		else:
+			raise Exception("a pid is required to initialize a PREMISClient instance")
 
 
 	def update(self):
 
 		# update
 		if self.premis_ds:
-			self.premis_ds.content = self.as_string(pretty_print=False)
+			self.premis_ds.content = self.premis.to_xml()
 			return self.premis_ds.save()
 
 		# init and save
 		else:
 			self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M')
 			self.premis_ds.label = "PREMIS"
-			self.premis_ds.content = self.as_string(pretty_print=False)
+			self.premis_ds.content = self.premis.to_xml()
 			return self.premis_ds.save()
 
 
-	def as_string(self, pretty_print=2):
+	def serialize(self):
 		
-		return etree.tostring(self.premis_tree, pretty_print=pretty_print)
+		# return using pypremis .to_xml() method
+		return self.premis.to_xml()
+
+
+	def add_jms_event(self, msg):
+
+		# debug
+		logging.info(msg)
+
+		# parse jms event, expecting instance of FedoraJMSWorker from WSUDOR_Indexer
+		
+
+
+
+
 
 
 ########################################################################

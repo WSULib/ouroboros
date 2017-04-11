@@ -8,6 +8,9 @@ import os
 import rdflib
 import time
 
+# set logging level
+logging.basicConfig(level=logging.INFO)
+
 print '''
                 ::+:/`
          :----:+ssoo+:.`

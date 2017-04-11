@@ -395,6 +395,12 @@ class WSUDOR_GenObject(object):
         return self.ohandle.getDatastreamObject('IIIF_MANIFEST').content
 
 
+    # PREMIS client
+    @helpers.LazyProperty
+    def premis(self):
+        return models.PREMISClient(pid=self.pid)
+
+
     def calc_object_size(self):
 
         stime = time.time()
@@ -2021,6 +2027,8 @@ class WSUDOR_GenObject(object):
             else:
                 isLit = False
             self.ohandle.api.addRelationship(self.ohandle, *triple, isLiteral=isLit)
+
+
 
 
 

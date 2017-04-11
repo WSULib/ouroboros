@@ -140,17 +140,16 @@ class FedoraJMSWorker(object):
 		if self.methodName in ['purgeObject']:
 			self.queue_action = 'prune'
 
-
 		# finally, queue object and log
 		if self.queue_action:
 			self.queue_object()
-			# self.log_premis_event()
+			self.log_premis_event()
 
 
 	def log_premis_event(self):
 
 		# finally, log PREMIS event
-		PREMISWorker.log_jms_event.delay(self.pid, self.body)
+		PREMISWorker.log_jms_event.delay(self)
 
 
 	def _determine_ds(self):
@@ -163,6 +162,7 @@ class FedoraJMSWorker(object):
 
 
 	def queue_object(self):
+		logging.info("logging PREMIS event")
 		IndexRouter.queue_object(self.pid, self.author, 1, self.queue_action)
 
 
@@ -520,17 +520,16 @@ class PREMISWorker(object):
 	# method for logging PREMIS events when reported by Fedora JMS
 	@staticmethod
 	@celery.task(max_retries=3, name="log_jms_event", trail=True)
-	def log_jms_event(pid, frame_body):
+	def log_jms_event(jms_worker):
 
 		# debugging
 		logging.info("PREMISWorker: logging event")
-		logging.info(frame_body)
 
 		# init PREMIS client
-		premis_client = WSUDOR_Manager.models.PREMISClient(pid=pid)
+		premis_client = WSUDOR_Manager.models.PREMISClient(pid=jms_worker.pid.encode('utf-8'))
 
 		# write event
-		premis_client.add_event_xml(frame_body)
+		premis_client.add_jms_event(jms_worker)
 
 		# save
 		return premis_client.update()

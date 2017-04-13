@@ -585,6 +585,7 @@ class PREMISClient(object):
 		self.premis_ds = False
 		self.premis = False
 		self.tempfile = None
+		self.object_identifiers = []
 
 		# if pid provided, attempt to retrieve PREMIS
 		if pid:
@@ -616,6 +617,13 @@ class PREMISClient(object):
 			raise Exception("a pid is required to initialize a PREMISClient instance")
 
 
+	def get_object_identifiers(self):
+		for o in self.premis.get_object_list():
+			o_id = o.get_objectIdentifier()[0]
+			self.object_identifiers.append( (o.get_objectCategory(), o_id.get_objectIdentifierType(), o_id.get_objectIdentifierValue()) )
+		return self.object_identifiers
+
+
 	def update(self):
 
 		# update
@@ -640,13 +648,54 @@ class PREMISClient(object):
 	def add_jms_event(self, msg):
 
 		# debug
-		logging.info(msg)
+		logging.info("############ DEBUG ############")
+		logging.info(msg.body)
+		logging.info(len(msg.body))
+		# logging.info(msg.parsed_body)
+		# logging.info(msg.categories)
+		logging.info("############ DEBUG ############")
+
+		# if datastream worked on, determine if in PREMIS record?
+
+
+		# prepare detail message
+		eventDetail = "Fedora Commons Java Messaging Service (JMS); action %s, pid %s".encode('utf-8') % ( msg.methodName.encode('utf-8'), msg.pid.encode('utf-8') )
+		eventDetail = json.dumps(msg.parsed_body)
 
 		# parse jms event, expecting instance of FedoraJMSWorker from WSUDOR_Indexer
-		
+		event_dict = {
+			'id':pypremis.nodes.EventIdentifier('urn', msg.parsed_body['entry']['id'].encode('utf=8')),
+			'type':msg.parsed_body['entry']['title']['#text'].encode('utf=8'),
+			'date':msg.parsed_body['entry']['updated'].encode('utf=8'),			
+			'detail':pypremis.nodes.EventDetailInformation(eventDetail=eventDetail),
+			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', msg.pid.encode('utf-8'), 'intellectual entity')
+		}
 
+		# set as event
+		'''
+		self,
+        eventIdentifier,
+        eventType,
+        eventDateTime,
+        eventDetailInformation=None,
+        eventOutcomeInformation=None,
+        linkingAgentIdentifier=None,
+        linkingObjectIdentifier=None
+		event = pypremis.nodes.Event()
+		'''
+		event = pypremis.nodes.Event(
+				event_dict['id'],
+				event_dict['type'],
+				event_dict['date'],
+				eventDetailInformation=event_dict['detail'],
+				linkingObjectIdentifier=event_dict['loi']
+			)
 
+		# add event to premis record
+		self.premis.add_event(event)
 
+		# update
+		self.update()
 
 
 

@@ -650,12 +650,10 @@ class PREMISClient(object):
 		# debug
 		logging.info("############ DEBUG ############")
 		logging.info(msg.body)
-		logging.info(len(msg.body))
-		# logging.info(msg.parsed_body)
-		# logging.info(msg.categories)
 		logging.info("############ DEBUG ############")
 
 		# if datastream worked on, determine if in PREMIS record?
+		
 
 
 		# prepare detail message

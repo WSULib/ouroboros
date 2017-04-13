@@ -114,7 +114,7 @@ class FedoraJMSWorker(object):
 		logging.debug(self.body)
 
 		# capture modifications to datastream
-		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference','purgeDatastream']:
+		if self.methodName in ['addDatastream','modifyDatastreamByValue','modifyDatastreamByReference','purgeDatastream']:
 			self._determine_ds()
 			if self.ds not in localConfig.INDEXER_SKIP_DATASTREAMS:
 				self.queue_action = 'index'
@@ -143,12 +143,12 @@ class FedoraJMSWorker(object):
 		# finally, queue object and log
 		if self.queue_action:
 			self.queue_object()
-			self.log_premis_event()
+			# self.log_premis_event()
 
 
 	def log_premis_event(self):
 
-		# finally, log PREMIS event
+		# log PREMIS event
 		PREMISWorker.log_jms_event.delay(self)
 
 

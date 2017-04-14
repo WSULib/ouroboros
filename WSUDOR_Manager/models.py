@@ -653,7 +653,7 @@ class PREMISClient(object):
 		logging.info("############ DEBUG ############")
 
 		# if datastream worked on, determine if in PREMIS record?
-		
+
 
 
 		# prepare detail message

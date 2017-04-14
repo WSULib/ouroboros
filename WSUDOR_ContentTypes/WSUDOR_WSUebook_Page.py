@@ -417,9 +417,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
 		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
-
-		A lot are failing because the TIFFS are compressed, PNG files.  We need a secondary attempt
-		that converts to uncompressed TIFF first.
 		'''
 
 		# iterate through datastreams and look for JP2s

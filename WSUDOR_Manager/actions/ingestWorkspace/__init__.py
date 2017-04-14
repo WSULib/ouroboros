@@ -970,7 +970,7 @@ def ingestBag_callback(job_package):
 	print "Retrieved row: %s / %s" % (o.ingest_id,o.object_title)
 	
 	# set ingested link
-	remote_repo_host = localConfig.REMOTE_REPOSITORIES[job_package['form_data']['dest_repo']]['FRONT_END_HOST']
+	remote_repo_host = localConfig.REMOTE_REPOSITORIES[job_package['form_data']['dest_repo']]['PUBLIC_HOST']
 	o.ingested = "http://%s/item/%s" % (remote_repo_host, o.pid)
 	# o.ingested = job_package['form_data']['dest_repo']
 	return o._commit()

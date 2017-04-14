@@ -1103,9 +1103,6 @@ class WSUDOR_GenObject(object):
         '''
         Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
         Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
-
-        A lot are failing because the TIFFS are compressed, PNG files.  We need a secondary attempt
-        that converts to uncompressed TIFF first.
         '''
 
         # iterate through datastreams and look for JP2s
@@ -1198,7 +1195,6 @@ class WSUDOR_GenObject(object):
             return False
 
 
-
     # from Loris
     def _from_jp2(self,jp2):
 
@@ -1217,13 +1213,11 @@ class WSUDOR_GenObject(object):
         return (width,height)
 
 
-
     # from Loris
     def _extract_with_pillow(self, fp):
         im = Image.open(fp)
         width,height = im.size
         return (width,height)
-
 
 
     def _imageOrientation(self,dimensions):
@@ -1301,7 +1295,6 @@ class WSUDOR_GenObject(object):
         return tests
 
 
-
     # regnerate derivative JP2s
     def checkJP2(self, regenJP2_on_fail=True, tests=['all']):
 
@@ -1344,74 +1337,6 @@ class WSUDOR_GenObject(object):
 
         if not self.checkJP2():
             self.regenJP2()
-
-
-    # # regnerate derivative JP2s
-    # def regen_objMeta(self):
-    #   '''
-    #   Function to regen objMeta.  When we decided to let the bag info stored in Fedora not validate,
-    #   opened up the door for editing the objMeta file if things change.
-
-    #   Add non-derivative datastreams to objMeta, remove objMeta datastreams that no longer exist
-    #   '''
-
-    #   # get list of current datastreams, sans known derivatives
-    #   new_datastreams = []
-    #   prunable_datastreams = []
-    #   original_datastreams = [ ds['ds_id'] for ds in self.objMeta['datastreams'] ]
-    #   known_derivs = [
-    #       'BAGIT_META',
-    #       'DC',
-    #       'MODS',
-    #       'OBJMETA',
-    #       'POLICY',
-    #       'PREVIEW',
-    #       'RELS-EXT',
-    #       'RELS-INT',
-    #       'THUMBNAIL',
-    #       'HTML_FULL'
-    #   ]
-    #   known_suffixes = [
-    #       '_JP2',
-    #       '_PREVIEW',
-    #       '_THUMBNAIL',
-    #       '_ACCESS'
-    #   ]
-
-    #   # look for new datastreams not present in objMeta
-    #   for ds in self.ohandle.ds_list:
-    #       if ds not in known_derivs and len([suffix for suffix in known_suffixes if ds.endswith(suffix)]) == 0 and ds not in original_datastreams:
-    #           new_datastreams.append(ds)
-    #   print "new datastreams:",new_datastreams
-
-    #   # add new datastream to objMeta
-    #   for ds in new_datastreams:
-    #       ds_handle = self.ohandle.ds_list[ds]
-    #       new_ds = {
-    #           'ds_id':ds,
-    #           'filename':ds,
-    #           'internal_relationships':{},
-    #           'label':ds_handle.label,
-    #           'mimetype':ds_handle.mimeType
-    #       }
-    #       self.objMeta['datastreams'].append(new_ds)
-
-    #   # look for datastreams in objMeta that should be removed
-    #   for ds in self.objMeta['datastreams']:
-    #       if ds['ds_id'] not in self.ohandle.ds_list:
-    #           prunable_datastreams.append(ds['ds_id'])
-    #   print "prunable datastreams",prunable_datastreams
-
-    #   # prune datastream from objMeta
-    #   self.objMeta['datastreams'] = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] not in prunable_datastreams ]
-
-    #   # resulting objMeta datastreams
-    #   print "Resulting objMeta datastreams",self.objMeta['datastreams']
-
-    #   # write current objMeta to fedora datastream
-    #   objMeta_handle = self.ohandle.getDatastreamObject('OBJMETA')
-    #   objMeta_handle.content = json.dumps(self.objMeta)
-    #   objMeta_handle.save()
 
 
     # remove object from Loris, Varnish, and other caches

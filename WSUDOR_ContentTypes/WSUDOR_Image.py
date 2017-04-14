@@ -422,65 +422,65 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# regnerate derivative JP2s
-    def regenJP2(self, regenIIIFManifest=False, target_ds=None, clear_cache=True):
-        '''
-        Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
-        Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
-        '''
+	def regenJP2(self, regenIIIFManifest=False, target_ds=None, clear_cache=True):
+		'''
+		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
+		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
+		'''
 
-        # iterate through datastreams and look for JP2s
-        if target_ds is None:
-            jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
-        else:
-            jp2_ds_list = [target_ds]
+		# iterate through datastreams and look for JP2s
+		if target_ds is None:
+			jp2_ds_list = [ ds for ds in self.ohandle.ds_list if self.ohandle.ds_list[ds].mimeType == "image/jp2" ]
+		else:
+			jp2_ds_list = [target_ds]
 
-        for i, ds in enumerate(jp2_ds_list):
+		for i, ds in enumerate(jp2_ds_list):
 
-            print "converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list)))
+			print "converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list)))
 
-            # jp2 handle
-            jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
+			# jp2 handle
+			jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
 
-            # get original ds_handle
-            orig = ds.split("_JP2")[0]
-            try:
-                orig_ds_handle = self.ohandle.getDatastreamObject(orig)
-            except:
-                print "could not find original for",orig
+			# get original ds_handle
+			orig = ds.split("_JP2")[0]
+			try:
+				orig_ds_handle = self.ohandle.getDatastreamObject(orig)
+			except:
+				print "could not find original for",orig
 
-            # write temp original and set as inPath
-            guessed_ext = utilities.mimetypes.guess_extension(orig_ds_handle.mimetype)
-            print "guessed extension for temporary orig handle:",guessed_ext
-            temp_orig_handle = Derivative.write_temp_file(orig_ds_handle, suffix=guessed_ext)
+			# write temp original and set as inPath
+			guessed_ext = utilities.mimetypes.guess_extension(orig_ds_handle.mimetype)
+			print "guessed extension for temporary orig handle:",guessed_ext
+			temp_orig_handle = Derivative.write_temp_file(orig_ds_handle, suffix=guessed_ext)
 
-            # # gen temp new jp2            
-            jp2 = ImageDerivative(temp_orig_handle.name)
-            jp2_result = jp2.makeJP2()
+			# # gen temp new jp2            
+			jp2 = ImageDerivative(temp_orig_handle.name)
+			jp2_result = jp2.makeJP2()
 
-            if jp2_result:
-                with open(jp2.output_handle.name) as fhand:
-                    jp2_ds_handle.content = fhand.read()
-                jp2_ds_handle.save()
+			if jp2_result:
+				with open(jp2.output_handle.name) as fhand:
+					jp2_ds_handle.content = fhand.read()
+				jp2_ds_handle.save()
 
-                # cleanup
-                jp2.output_handle.unlink(jp2.output_handle.name)
-                temp_orig_handle.unlink(temp_orig_handle.name)
-            else:
-                # cleanup
-                jp2.output_handle.unlink(jp2.output_handle.name)
-                temp_orig_handle.unlink(temp_orig_handle.name)
-                raise Exception("Could not create JP2")
+				# cleanup
+				jp2.output_handle.unlink(jp2.output_handle.name)
+				temp_orig_handle.unlink(temp_orig_handle.name)
+			else:
+				# cleanup
+				jp2.output_handle.unlink(jp2.output_handle.name)
+				temp_orig_handle.unlink(temp_orig_handle.name)
+				raise Exception("Could not create JP2")
 
-            # if regenIIIFManifest
-            if regenIIIFManifest:
-                print "regenerating IIIF manifest"
-                self.genIIIFManifest()
+			# if regenIIIFManifest
+			if regenIIIFManifest:
+				print "regenerating IIIF manifest"
+				self.genIIIFManifest()
 
-            if clear_cache:
-                print "clearing cache"
-                self.removeObjFromCache()
+			if clear_cache:
+				print "clearing cache"
+				self.removeObjFromCache()
 
-            return True
+			return True
 
 
 	# create dictionary comprehensive of all associated images

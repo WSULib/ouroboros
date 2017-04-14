@@ -1095,7 +1095,11 @@ class WSUDOR_GenObject(object):
 
 
     def add_to_indexer_queue(self, priority=1, username=None, action='index'):
-        IndexRouter.queue_object(self.pid, priority=priority, username=username, action=action)
+        return IndexRouter.queue_object(self.pid, priority=priority, username=username, action=action)
+
+
+    def alter_in_indexer_queue(self, action):
+        return IndexRouter.alter_queue_action(self.pid, action)        
 
 
     # regnerate derivative JP2s

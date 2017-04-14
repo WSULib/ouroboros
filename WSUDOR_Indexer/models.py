@@ -26,6 +26,10 @@ import localConfig
 
 
 
+##################################################################################
+# Fedora Java Messaging Service (JMS)
+##################################################################################
+
 # Fedora JMS worker instantiated by Twisted
 class FedoraJMSConsumer(object):
 
@@ -167,6 +171,10 @@ class FedoraJMSWorker(object):
 
 
 
+##################################################################################
+# Indexing / PREMIS
+##################################################################################
+
 # Indexer class
 class IndexRouter(object):
 
@@ -175,12 +183,19 @@ class IndexRouter(object):
 	Most methods are classmethods, as they accept input and requests from various locales
 	'''
 
+	routable_actions = ['index','prune']
+
 	@classmethod
 	def poll(self):
 		stime = time.time()
 		# refresh connection every poll
 		db.session.close()
-		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
+		queue_row = indexer_queue.query \
+			.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))) \
+			.filter(indexer_queue.action.in_(self.routable_actions)) \
+			.order_by(indexer_queue.priority.desc()) \
+			.order_by(indexer_queue.timestamp.asc()) \
+			.first()
 		# if result, push to router
 		if queue_row != None:			
 			self.route(queue_row)
@@ -200,14 +215,20 @@ class IndexRouter(object):
 				IndexWorker.index.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
 
-
 		# prune object from solr
 		elif queue_row.action == 'prune':
 			if localConfig.INDEXER_AUTOINDEX:
 				IndexWorker.prune.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
 
+		# prune object from solr
+		elif queue_row.action == 'hold':
+			pass
+
 		else:
+			'''
+			Is this necessary?  Or do we just want to skip unknown action by default and let them linger?
+			'''
 			logging.info("IndexRouter: routing action `%s` not known, sending to exceptions" % queue_row.action)	
 			self.add_exception(queue_row, dequeue=True)
 
@@ -225,7 +246,7 @@ class IndexRouter(object):
 		# check if in working table
 		if indexer_working.query.filter_by(pid = pid, action = action).count() == 0:
 
-			logging.info("IndexRouter: queuing %s" % pid)
+			logging.info("IndexRouter: queuing %s, action %s" % (pid,action))
 			queue_tuple = (pid, username, priority, action)
 			iqp = indexer_queue(*queue_tuple)
 			db.session.add(iqp)
@@ -240,6 +261,16 @@ class IndexRouter(object):
 
 		else:
 			logging.info("IndexRouter: %s is currently in working, skipping queue" % pid)
+
+
+	@classmethod
+	def alter_queue_action(self, pid, action):
+		# get row
+		iqp = indexer_queue.query.filter_by(pid=pid).first()
+		# alter status
+		iqp.action = action
+		# saved
+		db.session.commit()
 
 
 	@classmethod
@@ -393,9 +424,7 @@ class postIndexWorker(Task):
 	def after_return(self, *args, **kwargs):
 
 		# debug
-		logging.info("postIndexWorker: BEGIN DEBUG")
 		logging.info(args)
-		logging.info("postIndexWorker: END DEBUG")
 
 		queue_row = args[3][0]
 
@@ -454,63 +483,6 @@ class IndexWorker(object):
 			IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
 
 
-# WSUDOR_Indexer queue table
-class indexer_queue(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
-	username = db.Column(db.String(255))
-	priority = db.Column(db.Integer)
-	action = db.Column(db.String(255))
-	timestamp = db.Column(db.DateTime, default=datetime.now)
-
-	def __init__(self, pid, username, priority, action):
-		self.pid = pid
-		self.username = username
-		self.priority = priority
-		self.action = action
-
-	def __repr__(self):
-		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
-
-
-class indexer_working(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
-	username = db.Column(db.String(255))
-	priority = db.Column(db.Integer)
-	action = db.Column(db.String(255))
-	timestamp = db.Column(db.DateTime, default=datetime.now)
-
-	def __init__(self, pid, username, priority, action):
-		self.pid = pid
-		self.username = username
-		self.priority = priority
-		self.action = action
-
-	def __repr__(self):
-		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
-
-
-class indexer_exception(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
-	username = db.Column(db.String(255))
-	priority = db.Column(db.Integer)
-	action = db.Column(db.String(255))
-	timestamp = db.Column(db.DateTime, default=datetime.now)
-	msg = db.Column(db.String(2048))
-
-	def __init__(self, pid, username, priority, action, msg):
-		self.pid = pid
-		self.username = username
-		self.priority = priority
-		self.action = action
-		self.msg = msg
-
-	def __repr__(self):
-		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
-
-
 class PREMISWorker(object):
 
 	'''
@@ -533,6 +505,71 @@ class PREMISWorker(object):
 
 		# save
 		return premis_client.update()
+
+
+
+##################################################################################
+# Database Models
+##################################################################################
+
+# WSUDOR_Indexer queue table
+class indexer_queue(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	pid = db.Column(db.String(255), unique=True)
+	username = db.Column(db.String(255))
+	priority = db.Column(db.Integer)
+	action = db.Column(db.String(255))
+	timestamp = db.Column(db.DateTime, default=datetime.now)
+
+	def __init__(self, pid, username, priority, action):
+		self.pid = pid
+		self.username = username
+		self.priority = priority
+		self.action = action
+
+	def __repr__(self):
+		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
+
+
+class indexer_working(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	pid = db.Column(db.String(255), unique=True)
+	username = db.Column(db.String(255))
+	priority = db.Column(db.Integer)
+	action = db.Column(db.String(255))
+	timestamp = db.Column(db.DateTime, default=datetime.now)
+
+	def __init__(self, pid, username, priority, action):
+		self.pid = pid
+		self.username = username
+		self.priority = priority
+		self.action = action
+
+	def __repr__(self):
+		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
+
+
+class indexer_exception(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	pid = db.Column(db.String(255), unique=True)
+	username = db.Column(db.String(255))
+	priority = db.Column(db.Integer)
+	action = db.Column(db.String(255))
+	timestamp = db.Column(db.DateTime, default=datetime.now)
+	msg = db.Column(db.String(2048))
+
+	def __init__(self, pid, username, priority, action, msg):
+		self.pid = pid
+		self.username = username
+		self.priority = priority
+		self.action = action
+		self.msg = msg
+
+	def __repr__(self):
+		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
+
+
+
 		
 
 

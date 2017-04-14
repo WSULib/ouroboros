@@ -743,10 +743,10 @@ class WSUDOR_GenObject(object):
             self.update_object_size()
             
             # Index in Solr (can override from command by setting self.index_on_ingest to False)
-            if self.index_on_ingest != False:
-                self.index()
-            else:
-                print "Skipping Solr Index"
+            # if self.index_on_ingest != False:
+            #     self.index()
+            # else:
+            #     print "Skipping Solr Index"
 
             # run all ContentType specific methods that were passed here
             print "RUNNING ContentType methods..."

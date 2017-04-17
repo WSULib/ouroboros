@@ -20,6 +20,7 @@ from celery import Task
 import WSUDOR_ContentTypes
 import WSUDOR_Manager
 from WSUDOR_Manager import celery, db, fedora_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 
 # localConfig
 import localConfig
@@ -183,7 +184,7 @@ class IndexRouter(object):
 	Most methods are classmethods, as they accept input and requests from various locales
 	'''
 
-	routable_actions = ['index','prune']
+	routable_actions = ['index','prune','forget']
 
 	@classmethod
 	def poll(self):
@@ -220,6 +221,11 @@ class IndexRouter(object):
 			if localConfig.INDEXER_AUTOINDEX:
 				IndexWorker.prune.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
+
+		# prune object from solr
+		elif queue_row.action == 'forget':
+			indexer_queue.query.filter_by(id=queue_row.id).delete()
+			db.session.commit()
 
 		# prune object from solr
 		elif queue_row.action == 'hold':
@@ -478,11 +484,11 @@ class IndexWorker(object):
 			# remove from cache
 			obj.removeObjFromCache()
 			# then, prune
-			obj.prune()
-			IndexRouter.dequeue_object(queue_row = queue_row)
+			return obj.prune()
 		else:
-			logging.warning("IndexWorker: could not open object, skipping")
-			IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
+			logging.warning("IndexWorker: could not open object, manually pruning from solr")
+			solr_handle.delete_by_key(queue_row.pid)
+			return True
 
 
 class PREMISWorker(object):

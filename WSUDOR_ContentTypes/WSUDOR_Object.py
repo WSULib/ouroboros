@@ -770,7 +770,7 @@ class WSUDOR_GenObject(object):
             os.unlink(self.temp_payload)
 
         # finally, remove 'hold' action in indexer queue and return
-        self.alter_queue_action('index')
+        self.alter_in_indexer_queue('index')
         return True
 
 
@@ -1084,7 +1084,7 @@ class WSUDOR_GenObject(object):
             return self.SolrDoc.doc.__dict__
 
         #dc_title_sorting shim, force 0th value
-        if len(self.SolrDoc.doc.dc_title) > 1:
+        if hasattr(self.SolrDoc.doc,'dc_title') and len(self.SolrDoc.doc.dc_title) > 1:
             self.SolrDoc.doc.dc_title = [self.SolrDoc.doc.dc_title[0]]
 
         # update object, no commit yet

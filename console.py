@@ -2,6 +2,7 @@ print "importing WSUDOR_Manager"
 from WSUDOR_Manager import *
 from WSUDOR_Manager import jobs
 import WSUDOR_Indexer
+from WSUDOR_Indexer.models import IndexRouter
 
 # python
 import os
@@ -125,6 +126,9 @@ def tailUserCelery(user):
 
 # function to grab single object from remote repository
 def getRemoteObject(repo, PID, skip_constituents=False):
+
+	# add PID to indexer queue with 'hold' action to prevent indexing
+	IndexRouter.queue_object(PID, priority=1, username='console', action='hold')
 	
 	sync_list = [PID]
 	
@@ -145,6 +149,10 @@ def getRemoteObject(repo, PID, skip_constituents=False):
 	for i,pid in enumerate(sync_list):
 		print "retrieving %s, %d/%d..." % (pid,i,len(sync_list))
 		print eulfedora.syncutil.sync_object(dest_repo_handle.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
+
+
+	# release from indexer hold
+	IndexRouter.alter_queue_action(PID, 'index')
 
 	return True
 	

@@ -623,6 +623,15 @@ class WSUDOR_GenObject(object):
 
     # WSUDOR_Object Methods
     ############################################################################################################
+
+    # base ingest method, that runs some pre-ingest work, and eventually fires WSUDOR Content Type specific .ingestBag()
+    def ingest(self,indexObject=True):
+        # add PID to indexer queue with 'hold' action to prevent indexing
+        self.add_to_indexer_queue(action='hold')
+        # run content-type specific ingest
+        self.ingestBag(indexObject=indexObject)
+
+
     # generic, simple ingest
     def ingestBag(self, indexObject=True):
         if self.object_type != "bag":
@@ -742,12 +751,6 @@ class WSUDOR_GenObject(object):
             # calculate object size
             self.update_object_size()
             
-            # Index in Solr (can override from command by setting self.index_on_ingest to False)
-            # if self.index_on_ingest != False:
-            #     self.index()
-            # else:
-            #     print "Skipping Solr Index"
-
             # run all ContentType specific methods that were passed here
             print "RUNNING ContentType methods..."
             for func in contentTypeMethods:
@@ -766,7 +769,8 @@ class WSUDOR_GenObject(object):
             print "removing temp_payload symlink"
             os.unlink(self.temp_payload)
 
-        # finally, return
+        # finally, remove 'hold' action in indexer queue and return
+        self.alter_queue_action('index')
         return True
 
 
@@ -911,7 +915,7 @@ class WSUDOR_GenObject(object):
     #       print "exported object doesn't look good, aborting purge"
 
     #   # reingest exported tar file
-    #   bag_handle.ingestBag()
+    #   bag_handle.ingest()
 
     #   # delete exported tar
     #   if removeExportTar == True:

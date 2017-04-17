@@ -125,16 +125,17 @@ def tailUserCelery(user):
 
 
 # function to grab single object from remote repository
-def getRemoteObject(repo, PID, skip_constituents=False):
+def getRemoteObject(repo, base_pid, skip_constituents=False):
 
-	sync_list = [PID]
+	print "ingesting: %s" % base_pid
+	sync_list = [base_pid]
 	
 	# remote repo
 	dest_repo_handle = fedoraHandles.remoteRepo(repo)
 	
 	# check if remote object has constituent parts
 	if not skip_constituents:
-		constituents = dest_repo_handle.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
+		constituents = dest_repo_handle.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % base_pid)
 		print len(constituents)
 		if len(constituents) > 0:
 			for constituent in constituents:
@@ -145,7 +146,7 @@ def getRemoteObject(repo, PID, skip_constituents=False):
 	# sync objects 
 	for i,pid in enumerate(sync_list):
 
-		# add PID to indexer queue with 'hold' action to prevent indexing
+		# add sync_list to indexer queue with 'hold' action to prevent indexing
 		if pid.startswith("info:fedora/"):
 			pid = pid.split("/")[1]
 		IndexRouter.queue_object(pid, priority=1, username='console', action='hold')
@@ -157,9 +158,13 @@ def getRemoteObject(repo, PID, skip_constituents=False):
 	for i,pid in enumerate(sync_list):
 		if pid.startswith("info:fedora/"):
 			pid = pid.split("/")[1]
-		print "releasing from indexer queue hold: %s, %d/%d..." % (pid,i,len(sync_list))
 		# release from indexer hold
-		IndexRouter.alter_queue_action(pid, 'index')
+		if i > 0:
+			print "releasing from indexer queue hold: %s, %d/%d..." % (pid,i,len(sync_list))
+			IndexRouter.alter_queue_action(pid, 'forget')
+
+	# finally, let primary object index
+	IndexRouter.alter_queue_action(base_pid, 'index')
 
 	return True
 	

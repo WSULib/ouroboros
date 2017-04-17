@@ -127,9 +127,6 @@ def tailUserCelery(user):
 # function to grab single object from remote repository
 def getRemoteObject(repo, PID, skip_constituents=False):
 
-	# add PID to indexer queue with 'hold' action to prevent indexing
-	IndexRouter.queue_object(PID, priority=1, username='console', action='hold')
-	
 	sync_list = [PID]
 	
 	# remote repo
@@ -147,12 +144,22 @@ def getRemoteObject(repo, PID, skip_constituents=False):
 			
 	# sync objects 
 	for i,pid in enumerate(sync_list):
+
+		# add PID to indexer queue with 'hold' action to prevent indexing
+		if pid.startswith("info:fedora/"):
+			pid = pid.split("/")[1]
+		IndexRouter.queue_object(pid, priority=1, username='console', action='hold')
+
 		print "retrieving %s, %d/%d..." % (pid,i,len(sync_list))
 		print eulfedora.syncutil.sync_object(dest_repo_handle.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
 
-
-	# release from indexer hold
-	IndexRouter.alter_queue_action(PID, 'index')
+	# ingest complete, remove all from indexer queue hold
+	for i,pid in enumerate(sync_list):
+		if pid.startswith("info:fedora/"):
+			pid = pid.split("/")[1]
+		print "releasing from indexer queue hold: %s, %d/%d..." % (pid,i,len(sync_list))
+		# release from indexer hold
+		IndexRouter.alter_queue_action(pid, 'index')
 
 	return True
 	

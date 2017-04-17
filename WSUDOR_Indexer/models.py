@@ -129,7 +129,7 @@ class FedoraJMSWorker(object):
 
 		# capture ingests
 		if self.methodName in ['ingest']:
-			self.queue_action = 'index'
+			self.queue_action = 'hold'
 
 		# RDF relationships
 		if self.methodName in ['addRelationship','purgeRelationship']:

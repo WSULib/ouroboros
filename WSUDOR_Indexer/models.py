@@ -351,7 +351,9 @@ class IndexRouter(object):
 
 
 	@classmethod	
-	def remove_all_exceptions(self):
+	def clear_all_queues(self):
+		indexer_queue.query.delete()
+		indexer_working.query.delete()
 		indexer_exception.query.delete()
 		db.session.commit()
 

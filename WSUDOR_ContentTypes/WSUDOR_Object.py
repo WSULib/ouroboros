@@ -1083,10 +1083,19 @@ class WSUDOR_GenObject(object):
             print "DEBUG: printing only"
             return self.SolrDoc.doc.__dict__
 
-        else:
-            # update object, no commit yet
-            self.SolrDoc.update()
+        #dc_title_sorting shim, force 0th value
+        if len(self.SolrDoc.doc.dc_title) > 1:
+            self.SolrDoc.doc.dc_title = [self.SolrDoc.doc.dc_title[0]]
+
+        # update object, no commit yet
+        result = self.SolrDoc.update()
+        print result.status
+        if result.status == 200:
             return True
+        else:
+            print "error indexing, status: %s" % result.status
+            print result.raw_content
+            return False
 
 
     def prune(self):

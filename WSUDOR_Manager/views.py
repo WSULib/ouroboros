@@ -1708,14 +1708,16 @@ def indexing_index(action, group):
         if group == 'reindex':
             print "purging and adding all to queue"
 
-    # pruning
+    # exceptions
     if action == 'exceptions':
         if group == 'all':
             print "rerunning exceptions"
             IndexRouter.queue_all_exceptions()
-        if group == 'clear':
-            print "removing exceptions"
-            IndexRouter.remove_all_exceptions()
+    
+    #   quques
+    if group == 'clear':
+            print "clearing all queues"
+            IndexRouter.clear_all_queues()
 
     # redierct to status
     return redirect('indexing')

@@ -164,7 +164,11 @@ def getRemoteObject(repo, base_pid, skip_constituents=False):
 			IndexRouter.alter_queue_action(pid, 'forget')
 
 	# finally, let primary object index
-	IndexRouter.alter_queue_action(base_pid, 'index')
+	IndexRouter.alter_queue_action(base_pid, 'forget')
+
+	# refresh
+	obj = w(base_pid)
+	obj.refresh()
 
 	return True
 	

@@ -97,8 +97,8 @@ IIIF Image API
 def loris_image(image_id,region,size,rotation,quality,format):
 	
 	# parse pid and datastream from image_id
-	pid = image_id.split("fedora:")[1].split("|")[0]
-	ds = image_id.split("fedora:")[1].split("|")[1]
+	# pid = image_id.split("fedora:")[1].split("|")[0]
+	# ds = image_id.split("fedora:")[1].split("|")[1]
 
 	# instantiate IIIFImageClient
 	ic = IIIFImageClient(
@@ -111,14 +111,14 @@ def loris_image(image_id,region,size,rotation,quality,format):
 		fmt=format
 	)
 
-	# run restrictions
-	for func in restrictions:
-		if "THUMBNAIL" not in ds:
-			ic = func(pid,ds,ic)
+	# # run restrictions
+	# for func in restrictions:
+	# 	if "THUMBNAIL" not in ds:
+	# 		ic = func(pid,ds,ic)
 
-	# run improvements
-	for func in improvements:
-		ic = func(pid,ds,ic)
+	# # run improvements
+	# for func in improvements:
+	# 	ic = func(pid,ds,ic)
 	
 	# debug url
 	image_url = str(ic)

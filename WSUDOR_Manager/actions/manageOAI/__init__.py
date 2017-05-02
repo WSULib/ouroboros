@@ -119,9 +119,9 @@ def serverWide():
 	return render_template("manageOAI_serverWide.html",collection_tups=collection_tups,APP_HOST=localConfig.APP_HOST)
 
 
-# @manageOAI.route('/manageOAI/objectRelated', methods=['POST', 'GET'])
-# @utilities.objects_needed
-# def objectRelated():
+@manageOAI.route('/manageOAI/objectRelated', methods=['POST', 'GET'])
+@utilities.objects_needed
+def objectRelated():
 
 	# from WSUDOR_Manager import forms
 
@@ -196,7 +196,7 @@ def serverWide():
 
 	# return render_template("manageOAI_objectRelated.html",shared_relationships=shared_relationships,form=form,active_sets=active_sets,total_sets=total_sets)
 
-	# return render_template("manageOAI_objectRelated.html")
+	return render_template("manageOAI_objectRelated.html")
 
 
 # generate OAI identifiers for objects
@@ -365,10 +365,10 @@ def exposeToDPLA_worker(job_package):
 
 	# get PID
 	PID = job_package['PID']		
-	obj_ohandle = fedora_handle.get_object(PID)	
+	obj_ohandle = fedora_handle.get_object(PID)
 
 	# add relationship
-	return obj_ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", "info:fedora/wayne:collectionDPLAOAI")# expose 
+	return obj_ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", "info:fedora/wayne:collectionDPLAOAI")
 
 
 # remove objects to DPLA OAI-PMH set

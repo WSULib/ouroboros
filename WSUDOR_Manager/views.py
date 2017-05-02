@@ -105,7 +105,10 @@ def about():
 def userPage():
 
     # set username in session
-    username = session['username']
+    try:
+        username = session['username']
+    except KeyError:
+        return redirect("logout")
 
     # retrieve user data from DB
     user = models.User.query.filter_by(username=username).first()

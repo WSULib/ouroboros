@@ -14,6 +14,7 @@ import re
 import urllib
 import os
 import sys
+import time
 
 
 from localConfig import *
@@ -298,10 +299,12 @@ def fedora_binary(pid, ds):
     }
 
     # ping fedora for datastream headers
-    ds_response = fedora_handle.api.getDatastreamDissemination(pid, ds, head=True) 
+    stime = time.time()
+    ds_profile = fedora_handle.get_object(pid).getDatastreamProfile(ds)
+    logging.info("fedora request: %s" % (time.time() - stime))
 
     # contruct filename, by current version
-    filename = "info:fedora/"+pid+"/"+ds+"/"+ds+".0"
+    filename = "info:fedora/"+pid+"/"+ds+"/"+ds_profile.version_id
     
     # hash filename and determine anticipated folder structured
     hashed_filename = hashlib.md5(urllib.unquote(filename))
@@ -310,13 +313,12 @@ def fedora_binary(pid, ds):
     filename_quoted = urllib.quote_plus(filename).replace('_','%5F')   
 
     # determine extension
-    ds_mimetype = ds_response.headers['Content-Type']
-    extensions = mimetypes.guess_all_extensions(ds_mimetype)
+    extensions = mimetypes.guess_all_extensions(ds_profile.mimetype)
     if extensions[0] not in ['.jpe']:
         symlink_extension = extensions[0]
     else:
         symlink_extension = extensions[1]
-    logging.info("mimetype %s, guessed extension %s" % (symlink_extension, ds_mimetype))
+    logging.info("mimetype %s, guessed extension %s" % (symlink_extension, ds_profile.mimetype))
 
     # check for / generate symlink
     symlink_filename = hashed_filename.hexdigest() + symlink_extension

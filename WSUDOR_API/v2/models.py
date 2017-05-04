@@ -764,61 +764,6 @@ class UserWhoami(Resource):
 		# return response		
 		return response.generate_response()
 
-# Utility
-class FedoraBinary(Resource):
-
-	def get(self, pid, datastream):
-
-		# init ResponseObject
-		response = ResponseObject()
-
-		# determine datastream path, create or return symlink, and return
-		##########################################################################################
-		returnDict = {}
-
-		filename = "info:fedora/"+pid+"/"+datastream+"/"+datastream+".0"
-		
-		# get hash folder	
-		hashed_filename = hashlib.md5(urllib.unquote(filename))
-		dataFolder = hashed_filename.hexdigest()[0:2]
-		logging.info("anticipated datastreamStore folder: %s" % dataFolder)
-		filename_quoted = urllib.quote_plus(filename)	
-		# peculiars for Fedora
-		##########################
-		filename_quoted = filename_quoted.replace('_','%5F')
-		##########################
-
-		# symlink
-		path_prefix = "/tmp/Ouroboros/symlinks/"
-		'''
-		Convert this to mimetype file naming
-		'''
-		file_path = path_prefix+hashed_filename.hexdigest()+".jp2" 	
-		returnDict['symlink'] = file_path
-
-		# exists
-		if os.path.exists(file_path):
-			logging.info("symlink found, returning")
-		# create
-		else:				
-			source_prefix = "/opt/fedora/data/datastreamStore/"
-			source_path = source_prefix+dataFolder+"/"+filename_quoted
-			if os.path.exists(source_path):
-				logging.info("found: %s" % source_path)
-				os.symlink(source_path, file_path)
-				logging.info("Datastream symlink created.  Returning file_path.")
-			else:
-				logging.info("could not find: %s, returning false" % source_path)
-				returnDict['symlink'] = False
-		##########################################################################################
-
-		# build response
-		response.status_code = 200
-		response.body = {
-			'fedora_binary': returnDict
-		}
-		return response.generate_response()
-
 		
 # Testing
 #################################################################################

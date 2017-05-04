@@ -6,7 +6,7 @@ from flask import request, redirect, Response, jsonify, stream_with_context, Blu
 
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
-from WSUDOR_Manager import fedora_handle, redisHandles
+from WSUDOR_Manager import fedora_handle, redisHandles, utilities
 
 from eulfedora.models import DatastreamObject, XmlDatastreamObject
 
@@ -97,37 +97,46 @@ IIIF Image API
 def loris_image(image_id,region,size,rotation,quality,format):
 	
 	# parse pid and datastream from image_id
-	# pid = image_id.split("fedora:")[1].split("|")[0]
-	# ds = image_id.split("fedora:")[1].split("|")[1]
+	pid = image_id.split("|")[0]
+	ds = image_id.split("|")[1]
 
-	# instantiate IIIFImageClient
-	ic = IIIFImageClient(
-		api_endpoint=localConfig.LORIS_API_ENDPOINT,
-		image_id=image_id,
-		region=region,
-		size=size,
-		rotation=rotation,
-		quality=quality,
-		fmt=format
-	)
+	# use utilities.fedora_binary() to check for / generate symlink
+	fedora_binary = utilities.fedora_binary(pid,ds)
 
-	# # run restrictions
-	# for func in restrictions:
-	# 	if "THUMBNAIL" not in ds:
-	# 		ic = func(pid,ds,ic)
+	if fedora_binary['symlink_filename']:
 
-	# # run improvements
-	# for func in improvements:
-	# 	ic = func(pid,ds,ic)
-	
-	# debug url
-	image_url = str(ic)
-	print image_url
-	r = requests.get(str(ic), stream=True)
+		# instantiate IIIFImageClient
+		ic = IIIFImageClient(
+			api_endpoint=localConfig.LORIS_API_ENDPOINT,
+			image_id=fedora_binary['symlink_filename'],
+			region=region,
+			size=size,
+			rotation=rotation,
+			quality=quality,
+			fmt=format
+		)
 
-	# stream_with_context
-	# http://flask.pocoo.org/snippets/118/
-	return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
+		# run restrictions
+		for func in restrictions:
+			if "THUMBNAIL" not in ds:
+				ic = func(pid,ds,ic)
+
+		# run improvements
+		for func in improvements:
+			ic = func(pid,ds,ic)
+		
+		# debug url
+		image_url = str(ic)
+		print image_url
+		r = requests.get(str(ic), stream=True)
+
+		# stream_with_context
+		# http://flask.pocoo.org/snippets/118/
+		return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
+
+	# an error was had, return 500
+	else:
+		return False
 
 
 ###################

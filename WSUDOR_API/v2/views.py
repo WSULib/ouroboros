@@ -49,9 +49,6 @@ api.add_resource(models.SearchLimiters, '/search_limiters', endpoint='search_lim
 # Users
 api.add_resource(models.UserWhoami, '/user/<string:username>/whoami', endpoint='user_whoami')
 
-# Utility
-api.add_resource(models.FedoraBinary, '/fb/<string:pid>/<string:datastream>', endpoint='fb')
-
 # TESTING
 api.add_resource(models.HelloWorld, '/hello/<string:name>', endpoint='helloworld')
 api.add_resource(models.ArgParsing, '/goober', endpoint='goober_integrity')

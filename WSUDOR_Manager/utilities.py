@@ -11,6 +11,9 @@ import mimetypes
 import xmlrpclib
 from lxml import etree
 import re
+import urllib
+import os
+import sys
 
 
 from localConfig import *
@@ -276,3 +279,60 @@ class Email():
                 print e.__doc__
                 print e.message
                 return False
+
+
+# FedoraBinary
+def fedora_binary(pid,datastream):
+    
+    # establish return dictionary
+    fedora_binary = {
+        'pid':pid,
+        'datastream':datastream
+    }
+
+    # contruct filename
+    filename = "info:fedora/"+pid+"/"+datastream+"/"+datastream+".0"
+    
+    # get hash folder   
+    hashed_filename = hashlib.md5(urllib.unquote(filename))
+    dataFolder = hashed_filename.hexdigest()[0:2]
+    logging.info("anticipated datastreamStore folder: %s" % dataFolder)
+    filename_quoted = urllib.quote_plus(filename)   
+    filename_quoted = filename_quoted.replace('_','%5F')
+
+    # symlink
+    path_prefix = "/tmp/Ouroboros/symlinks/"
+    '''
+    Convert this to mimetype file naming
+    '''
+    symlink_filename = hashed_filename.hexdigest()+".jp2"
+    fedora_binary['symlink_filename'] = symlink_filename
+    file_path = path_prefix + symlink_filename
+    fedora_binary['symlink_full_path'] = file_path
+
+    # exists
+    if os.path.exists(file_path):
+        logging.info("symlink found, returning")
+    
+    # create
+    else:               
+        source_prefix = "/opt/fedora/data/datastreamStore/"
+        source_path = source_prefix+dataFolder + "/" + filename_quoted
+        if os.path.exists(source_path):
+            logging.info("found: %s" % source_path)
+            os.symlink(source_path, file_path)
+            logging.info("Datastream symlink created.  Returning file_path.")
+        else:
+            logging.info("could not find: %s, returning false" % source_path)
+            fedora_binary['symlink_full_path'] = False
+
+    # return
+    return fedora_binary
+
+
+
+
+
+
+
+

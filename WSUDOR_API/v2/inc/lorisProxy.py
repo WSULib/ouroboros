@@ -92,14 +92,13 @@ def loris_info(image_id):
 	# use utilities.fedora_binary() to check for / generate symlink
 	fedora_binary = utilities.fedora_binary(pid,ds)
 
-	if fedora_binary['symlink_filename']:
+	if fedora_binary['loris_image_id']:
 
 		# instantiate IIIFImageClient
-		ic = IIIFImageClient(api_endpoint=localConfig.LORIS_API_ENDPOINT, image_id=fedora_binary['symlink_filename'])
+		ic = IIIFImageClient(api_endpoint=localConfig.LORIS_API_ENDPOINT, image_id=fedora_binary['loris_image_id'])
 
 		# debug url
 		info_url = ic.info()
-		print "loris info url: %s" % info_url
 		r = requests.get(info_url).json()
 
 		# replace ID with pid / datastream
@@ -135,12 +134,12 @@ def loris_image(image_id,region,size,rotation,quality,format):
 	# use utilities.fedora_binary() to check for / generate symlink
 	fedora_binary = utilities.fedora_binary(pid,ds)
 
-	if fedora_binary['symlink_filename']:
+	if fedora_binary['loris_image_id']:
 
 		# instantiate IIIFImageClient
 		ic = IIIFImageClient(
 			api_endpoint=localConfig.LORIS_API_ENDPOINT,
-			image_id=fedora_binary['symlink_filename'],
+			image_id=fedora_binary['loris_image_id'],
 			region=region,
 			size=size,
 			rotation=rotation,
@@ -159,7 +158,6 @@ def loris_image(image_id,region,size,rotation,quality,format):
 		
 		# debug url
 		image_url = str(ic)
-		print image_url
 		r = requests.get(str(ic), stream=True)
 
 		# stream_with_context

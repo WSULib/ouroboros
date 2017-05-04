@@ -286,28 +286,31 @@ class Email():
 def fedora_binary(pid, ds):
 
     # establish return dictionary
+    symlink_hash = hashlib.md5("%s%s" % (pid,ds)).hexdigest()
     fedora_binary = {
         'pid':pid,
         'ds':ds,
-        'symlink_hash':hashlib.md5("%s%s" % (pid,ds)).hexdigest()
+        'symlink_hash':symlink_hash,
+        'symlink_dir':"%s/%s" % (FEDORA_BINARY_SYMLINKS.rstrip('/'), symlink_hash[0:2]),
+        'loris_image_id':False
     }
 
-    # check if symlink exists through globbing
-    symlink_globs = glob.glob('%s%s.*' % (FEDORA_BINARY_SYMLINKS,fedora_binary['symlink_hash']))
+    # check if symlink exists through globbing            
+    symlink_globs = glob.glob('%s/%s.*' % (fedora_binary['symlink_dir'], fedora_binary['symlink_hash']))
     if len(symlink_globs) > 0:
-        logging.info("symlink found, returning")
-        logging.info(symlink_globs)
+        logging.debug("symlink found, returning")
         fedora_binary['symlink_filename'] = symlink_globs[0].split('/')[-1]
         fedora_binary['symlink_full_path'] = symlink_globs[0]
+        fedora_binary['loris_image_id'] = "%s/%s" % (fedora_binary['symlink_hash'][0:2], fedora_binary['symlink_filename'])
+        logging.debug(fedora_binary)
         return fedora_binary
 
     # if not found, create and return
     else:
-
         # ping fedora for datastream headers
         stime = time.time()
         ds_profile = fedora_handle.get_object(pid).getDatastreamProfile(ds)
-        logging.info("fedora request: %s" % (time.time() - stime))
+        logging.debug("fedora request: %s" % (time.time() - stime))
 
         # contruct filename, by current version
         filename = "info:fedora/"+pid+"/"+ds+"/"+ds_profile.version_id
@@ -315,7 +318,7 @@ def fedora_binary(pid, ds):
         # hash filename and determine anticipated folder structured
         hashed_filename = hashlib.md5(urllib.unquote(filename))
         dataFolder = hashed_filename.hexdigest()[0:2]
-        logging.info("anticipated datastreamStore folder: %s" % dataFolder)
+        logging.debug("anticipated datastreamStore folder: %s" % dataFolder)
         filename_quoted = urllib.quote_plus(filename).replace('_','%5F')
 
         # determine extension
@@ -324,26 +327,31 @@ def fedora_binary(pid, ds):
             symlink_extension = extensions[0]
         else:
             symlink_extension = extensions[1]
-        logging.info("mimetype %s, guessed extension %s" % (symlink_extension, ds_profile.mimetype))
+        logging.debug("mimetype %s, guessed extension %s" % (symlink_extension, ds_profile.mimetype))
+
+        # generate symlink directory if needed
+        if not os.path.exists(fedora_binary['symlink_dir']):
+            logging.debug("symlink dir: %s not found, creating" % fedora_binary['symlink_dir'])
+            os.mkdir(fedora_binary['symlink_dir'])
 
         # generate symlink
-        symlink_filename = "%s%s" % (fedora_binary['symlink_hash'],symlink_extension)
-        fedora_binary['symlink_filename'] = symlink_filename
-        file_path = FEDORA_BINARY_SYMLINKS + symlink_filename
-        fedora_binary['symlink_full_path'] = file_path
+        fedora_binary['symlink_filename'] = "%s%s" % (fedora_binary['symlink_hash'], symlink_extension)
+        fedora_binary['symlink_full_path'] = "%s/%s" % (fedora_binary['symlink_dir'], fedora_binary['symlink_filename'])
+        fedora_binary['loris_image_id'] = "%s/%s" % (fedora_binary['symlink_hash'][0:2], fedora_binary['symlink_filename'])
 
         # create
         source_prefix = "/opt/fedora/data/datastreamStore/"
         source_path = source_prefix+dataFolder + "/" + filename_quoted
         if os.path.exists(source_path):
-            logging.info("found: %s" % source_path)
-            os.symlink(source_path, file_path)
-            logging.info("Datastream symlink created.  Returning file_path.")
+            logging.debug("found: %s" % source_path)
+            os.symlink(source_path, fedora_binary['symlink_full_path'])
+            logging.debug("Datastream symlink created.  Returning file_path.")
         else:
-            logging.info("could not find: %s, returning false" % source_path)
+            logging.debug("could not find: %s, returning false" % source_path)
             fedora_binary['symlink_full_path'] = False
 
         # return
+        logging.debug(fedora_binary)
         return fedora_binary
 
 

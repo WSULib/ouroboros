@@ -113,7 +113,7 @@ class Item(Resource):
 		# get object if not yet set
 		if not skip_check:
 			if skip_load:
-				logging.info("skipping WSUDOR object load, checking instance in Fedora")
+				logging.debug("skipping WSUDOR object load, checking instance in Fedora")
 				self.obj = fedora_handle.get_object(pid).exists
 				if not self.obj:
 					abort(404, message='%s not found in Fedora' % pid)

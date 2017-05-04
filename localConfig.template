@@ -109,9 +109,8 @@ BITSTREAM_CLEARED_USERNAMES = [
 # Readux
 READUX_BASE_URL = "http://localhost/readux"
 
-# Abbyy synced folder
-ABBYY_INCOMING = "/tmp/abbyy/incoming"
-ABBYY_OUTPUT = "/tmp/abbyy/output"
+# fedora_binary symlinks
+FEDORA_BINARY_SYMLINKS = '/tmp/Ouroboros/symlinks'
 
 ################################
 # sensitive information

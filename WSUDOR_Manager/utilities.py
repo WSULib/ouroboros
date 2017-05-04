@@ -17,7 +17,7 @@ import sys
 
 
 from localConfig import *
-from WSUDOR_Manager import models, app, fedoraHandles, celery
+from WSUDOR_Manager import models, app, fedora_handle, celery
 from eulfedora.server import Repository
 
 
@@ -282,32 +282,46 @@ class Email():
 
 
 # FedoraBinary
-def fedora_binary(pid,datastream):
+def fedora_binary(pid, ds):
+
+    '''
+    TODO
+
+        - sniff mimetype with header call, to set symlink extension
+            - consider checking for symlink prior to header call? would not have symlink yet, but could look for hash in file prefix
+    '''
     
     # establish return dictionary
     fedora_binary = {
         'pid':pid,
-        'datastream':datastream
+        'ds':ds
     }
 
-    # contruct filename
-    filename = "info:fedora/"+pid+"/"+datastream+"/"+datastream+".0"
+    # ping fedora for datastream headers
+    ds_response = fedora_handle.api.getDatastreamDissemination(pid, ds, head=True) 
+
+    # contruct filename, by current version
+    filename = "info:fedora/"+pid+"/"+ds+"/"+ds+".0"
     
-    # get hash folder   
+    # hash filename and determine anticipated folder structured
     hashed_filename = hashlib.md5(urllib.unquote(filename))
     dataFolder = hashed_filename.hexdigest()[0:2]
     logging.info("anticipated datastreamStore folder: %s" % dataFolder)
-    filename_quoted = urllib.quote_plus(filename)   
-    filename_quoted = filename_quoted.replace('_','%5F')
+    filename_quoted = urllib.quote_plus(filename).replace('_','%5F')   
 
-    # symlink
-    path_prefix = "/tmp/Ouroboros/symlinks/"
-    '''
-    Convert this to mimetype file naming
-    '''
-    symlink_filename = hashed_filename.hexdigest()+".jp2"
+    # determine extension
+    ds_mimetype = ds_response.headers['Content-Type']
+    extensions = mimetypes.guess_all_extensions(ds_mimetype)
+    if extensions[0] not in ['.jpe']:
+        symlink_extension = extensions[0]
+    else:
+        symlink_extension = extensions[1]
+    logging.info("mimetype %s, guessed extension %s" % (symlink_extension, ds_mimetype))
+
+    # check for / generate symlink
+    symlink_filename = hashed_filename.hexdigest() + symlink_extension
     fedora_binary['symlink_filename'] = symlink_filename
-    file_path = path_prefix + symlink_filename
+    file_path = FEDORA_BINARY_SYMLINKS + symlink_filename
     fedora_binary['symlink_full_path'] = file_path
 
     # exists

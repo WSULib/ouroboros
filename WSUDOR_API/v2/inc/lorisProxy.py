@@ -78,14 +78,30 @@ Requires the following in Apache:
 @lorisProxy_blueprint.route("/lorisProxy/<image_id>/info.json", methods=['POST', 'GET'])
 def loris_info(image_id):
 
-	# instantiate IIIFImageClient
-	ic = IIIFImageClient(api_endpoint=localConfig.LORIS_API_ENDPOINT,image_id=image_id)
+	# DEBUG
+	# strip fedora:
+	image_id = image_id.replace("fedora:","")
 
-	# debug url
-	info_url = ic.info()
-	print "loris info url: %s" % info_url
-	r = requests.get(info_url).json()
-	return jsonify(r)
+	# parse pid and datastream from image_id
+	pid = image_id.split("|")[0]
+	ds = image_id.split("|")[1]
+
+	# use utilities.fedora_binary() to check for / generate symlink
+	fedora_binary = utilities.fedora_binary(pid,ds)
+
+	if fedora_binary['symlink_filename']:
+
+		# instantiate IIIFImageClient
+		ic = IIIFImageClient(api_endpoint=localConfig.LORIS_API_ENDPOINT, image_id=fedora_binary['symlink_filename'])
+
+		# debug url
+		info_url = ic.info()
+		print "loris info url: %s" % info_url
+		r = requests.get(info_url).json()
+		return jsonify(r)
+
+	else:
+		return False
 
 
 # Loris Image API
@@ -95,6 +111,10 @@ IIIF Image API
 '''
 @lorisProxy_blueprint.route("/lorisProxy/<image_id>/<region>/<size>/<rotation>/<quality>.<format>", methods=['POST', 'GET'])
 def loris_image(image_id,region,size,rotation,quality,format):
+
+	# DEBUG
+	# strip fedora:
+	image_id = image_id.replace("fedora:","")
 	
 	# parse pid and datastream from image_id
 	pid = image_id.split("|")[0]
@@ -296,3 +316,12 @@ def _pareRotation(degs):
 		return degs
 	else:
 		return _pareRotation(degs - 360)
+
+
+
+
+
+
+
+
+

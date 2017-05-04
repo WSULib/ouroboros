@@ -8,6 +8,9 @@ from flask import request, redirect, Response, jsonify, stream_with_context, Blu
 from WSUDOR_API import WSUDOR_API_app
 from WSUDOR_Manager import fedora_handle, redisHandles, utilities
 
+# Logging
+from WSUDOR_API import logging
+
 from eulfedora.models import DatastreamObject, XmlDatastreamObject
 
 import requests
@@ -98,6 +101,16 @@ def loris_info(image_id):
 		info_url = ic.info()
 		print "loris info url: %s" % info_url
 		r = requests.get(info_url).json()
+
+		# replace ID with pid / datastream
+		'''
+		When viewers like Mirador request an info.json file for a PID / Datastream,
+		it uses that @id to inform region requests later.  We convert the PID / DS to 
+		an internal symlink, which is passed to Loris, but this ID is returned from the info.json.
+		We want outgoing info.json to return the PID / DS, so we replace here.
+		'''
+		r['@id'] = "%s://%s/loris/%s|%s" % (localConfig.IIIF_IPREZI_PROTOCOL, localConfig.IIIF_MANIFEST_TARGET_HOST, pid, ds)
+
 		return jsonify(r)
 
 	else:
@@ -113,7 +126,6 @@ IIIF Image API
 def loris_image(image_id,region,size,rotation,quality,format):
 
 	# DEBUG
-	# strip fedora:
 	image_id = image_id.replace("fedora:","")
 	
 	# parse pid and datastream from image_id

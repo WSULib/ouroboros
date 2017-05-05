@@ -126,8 +126,8 @@ IIIF Image API
 def loris_image(image_id,region,size,rotation,quality,format):
 
 	# DEBUG
-	logging.info("sleeping %s" % image_id)
-	time.sleep(1)
+	# logging.info("sleeping %s" % image_id)
+	# time.sleep(1)
 	image_id = image_id.replace("fedora:","")
 	
 	# parse pid and datastream from image_id
@@ -165,7 +165,6 @@ def loris_image(image_id,region,size,rotation,quality,format):
 
 		# stream_with_context
 		# http://flask.pocoo.org/snippets/118/
-		logging.info("finished %s" % image_id)
 		return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
 
 	# an error was had, return 500

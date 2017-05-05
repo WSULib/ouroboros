@@ -52,6 +52,7 @@ api.add_resource(models.UserWhoami, '/user/<string:username>/whoami', endpoint='
 # TESTING
 api.add_resource(models.HelloWorld, '/hello/<string:name>', endpoint='helloworld')
 api.add_resource(models.ArgParsing, '/goober', endpoint='goober_integrity')
+api.add_resource(models.Async, '/async/<int:delay>', endpoint='async')
 
 
 

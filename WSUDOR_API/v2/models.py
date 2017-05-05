@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import urllib
+import uuid
 
 # Ouroboros config
 import localConfig
@@ -803,3 +804,21 @@ class ArgParsing(Resource):
 			'pecularities_of_tronic': args['tronic'],
 			'bevy_of_colors': args['colors']
 		}
+
+
+class Async(Resource):
+
+	def get(self, delay):
+		time.sleep(delay)
+
+		return "delay %s, %ss complete" % (str(uuid.uuid4()), delay)
+
+
+
+
+
+
+
+
+
+

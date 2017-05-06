@@ -3,11 +3,17 @@ from klein import Klein
 import time
 app = Klein()
 
+i = 0
+
+def timer(response):
+	global i
+	i = i + 1
+	return "\nrequest: %s" % i
+
 @app.route('/', branch=True)
-def google(request):
-    # d = treq.get('http://localhost/loris_local/dc/dc19ffeaa05903be1a5ed5016631b7fe.jp2/info.json')
+def async_test(request):
     d = treq.get('http://localhost/api/item/wayne:vmc14515/loris/vmc14515_JP2/info.json')
-    d.addCallback(treq.content)
+    d.addCallback(timer)
     return d
 
 

@@ -19,10 +19,12 @@ import uuid
 import hashlib
 from contextlib import closing
 import rdflib
-import time
 
 # use piffle for IIIF client
 from piffle.iiif import IIIFImageClient
+
+from threading import Thread
+from time import sleep
 
 
 lorisProxy_blueprint = Blueprint('lorisProxy_v2', __name__)
@@ -78,6 +80,10 @@ Requires the following in Apache:
 # ROUTES
 ###################
 
+def myTimer(seconds):
+    sleep(seconds)
+    myFunction()
+
 # Loris Info 
 @lorisProxy_blueprint.route("/lorisProxy/<image_id>/info.json", methods=['POST', 'GET'])
 def loris_info(image_id):
@@ -126,8 +132,6 @@ IIIF Image API
 def loris_image(image_id,region,size,rotation,quality,format):
 
 	# DEBUG
-	# logging.info("sleeping %s" % image_id)
-	# time.sleep(1)
 	image_id = image_id.replace("fedora:","")
 	
 	# parse pid and datastream from image_id

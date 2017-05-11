@@ -83,7 +83,7 @@ def loris_info(image_id):
 
 	# debug url
 	info_url = ic.info()
-	print "loris info url: %s" % info_url
+	# print "loris info url: %s" % info_url
 	r = requests.get(info_url).json()
 	return jsonify(r)
 
@@ -122,7 +122,7 @@ def loris_image(image_id,region,size,rotation,quality,format):
 	
 	# debug url
 	image_url = str(ic)
-	print image_url
+	# print "loris image url: %s" % image_url
 	r = requests.get(str(ic), stream=True)
 
 	# stream_with_context
@@ -175,7 +175,7 @@ def downsizeImage(pid, ds, ic):
 
 		# derive size request
 		size_d = ic.size.as_dict()
-		print size_d
+		# print size_d
 
 		# full requested
 		if size_d['full']:
@@ -194,7 +194,7 @@ def downsizeImage(pid, ds, ic):
 
 		# downsize if triggered
 		if downsize:
-			print "downsizing from %s to !%s,%s for Reuther" % (ic.size.as_dict(), target_resolution, target_resolution)
+			# print "downsizing from %s to !%s,%s for Reuther" % (ic.size.as_dict(), target_resolution, target_resolution)
 			ic.size.set_options(
 				width=target_resolution,
 				height=target_resolution,
@@ -224,7 +224,7 @@ def checkRotation(pid,ds,ic):
 	# check for rotation relationships
 	try:
 		rotation_string = fedora_handle.risearch.get_objects('info:fedora/%s/%s' % (pid, ds), 'info:fedora/fedora-system:def/relations-internal#needsRotation').next()
-		print "Rotating: %s" % rotation_string
+		# print "Rotating: %s" % rotation_string
 	except StopIteration:
 		return ic
 	
@@ -232,7 +232,7 @@ def checkRotation(pid,ds,ic):
 	try:
 
 		rotation_d = ic.dict_opts()['rotation']
-		print rotation_d
+		# print rotation_d
 
 		# pop '!' for mirrored, allow to mirrors to cancel (see elif)
 		if rotation_string.startswith('!') and rotation_d['mirrored'] == False:
@@ -253,7 +253,7 @@ def checkRotation(pid,ds,ic):
 			try:
 				rotation_int = int(rotation_string)
 			except:
-				print "could not glean int from rotation string, defaulting to 0"
+				# print "could not glean int from rotation string, defaulting to 0"
 				rotation_int = 0
 
 		# adjust final rotation (if > 360)
@@ -283,7 +283,7 @@ improvements = [
 # returns expected results
 def _pareRotation(degs):
 	if degs < 360:			
-		print "returning %s" % degs		
+		# print "returning %s" % degs		
 		return degs
 	else:
 		return _pareRotation(degs - 360)

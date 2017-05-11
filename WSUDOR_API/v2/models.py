@@ -11,7 +11,7 @@ import localConfig
 from WSUDOR_API import logging
 
 # modules
-from flask import redirect
+from flask import redirect, Response
 import flask_restful
 from flask_restful import abort, fields, reqparse, Resource
 
@@ -27,6 +27,7 @@ import utilities
 from inc.bitStream import BitStream
 from inc.lorisProxy import loris_image, loris_info
 from inc.iiif_manifest import iiif_manifest, iiif_annotation_list
+from inc.oai import OAIProvider
 
 
 # ResponseObject
@@ -759,6 +760,46 @@ class UserWhoami(Resource):
 
 		# return response		
 		return response.generate_response()
+
+
+# OAI-PMH
+#################################################################################
+class OAIServer(Resource):
+
+	def get(self):
+
+		'''
+		- create XML response object
+		- create record class for object
+		'''
+
+		# parse OAI-PMH arguments
+		parser = reqparse.RequestParser(bundle_errors=True)
+		oai_verbs = ('GetRecord','Identify','ListIdentifiers','ListMetadataFormats','ListRecords','ListSets')
+		parser.add_argument('verb', type=str, choices=oai_verbs, help='OAI-PMH verb required: %s' % str(oai_verbs))
+		parser.add_argument('set', type=str, help='OAI-PMH set')
+		parser.add_argument('metadataPrefix', type=str, help='OAI-PMH metadataPrefix')
+		parser.add_argument('from', type=str, help='OAI-PMH from')
+		parser.add_argument('until', type=str, help='OAI-PMH until')
+		parser.add_argument('resumptionToken', type=str, help='OAI-PMH resumptionToken')
+		args = parser.parse_args(strict=True)
+
+		# debug
+		logging.info(args)
+		test_pids = ['wayne:vmc14515','wayne:vmc15687','wayne:MSS-001-006-005','wayne:LincolnLettersFHC205771']
+		oai_xml_response = '''<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+<responseDate>PUT DATE HERE</responseDate><request verb="%s" set="%s" metadataPrefix="%s">http://metadata.library.wayne.edu/repox/OAIHandler</request>
+''' % (args['verb'],args['set'],args['metadataPrefix'])
+
+		for pid in test_pids:
+			obj = WSUDOR_Object(pid)
+			oai_xml_response += obj.MODS_XML
+
+		oai_xml_response += "</OAI-PMH>"
+
+		# build and return response
+		response = Response(oai_xml_response, mimetype="text/xml")
+		return response
 
 		
 # Testing

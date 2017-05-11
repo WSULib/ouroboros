@@ -45,6 +45,8 @@ solr_bookreader_handle = solrHandles.solr_bookreader_handle
 print "creating WSUDOR shortcuts"
 w = WSUDOR_ContentTypes.WSUDOR_Object
 
+from WSUDOR_API.v2.inc.oai import OAIProvider, OAIRecord, OAItest
+
 print "importing eulfedora"
 import eulfedora
 

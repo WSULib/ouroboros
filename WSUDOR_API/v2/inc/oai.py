@@ -73,11 +73,12 @@ class OAIProvider(object):
 	'''
 	def scaffold(self):
 		
-		# build root node and attributes
-		self.root_node = etree.Element('OAI-PMH')
-		self.root_node.attrib['xmlns'] = "http://www.openarchives.org/OAI/2.0/"
-		self.root_node.attrib['{http://www.openarchives.org/OAI/2.0/}xsi'] = 'http://www.w3.org/2001/XMLSchema-instance'
-		self.root_node.attrib['{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'] = 'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd'
+		# build root node, nsmap, and attributes		
+		NSMAP = {
+			None:'http://www.openarchives.org/OAI/2.0/'
+		}
+		self.root_node = etree.Element('OAI-PMH', nsmap=NSMAP)
+		self.root_node.set('{http://www.w3.org/2001/XMLSchema-instance}schemaLocation', 'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd')
 
 		# set verb node
 		self.verb_node = etree.Element(self.args['verb'])
@@ -119,6 +120,16 @@ class OAIRecord(object):
 		pass
 
 
+def OAItest():
+
+	# init OAIProvider
+	op = OAIProvider({'verb':'ListRecords'})
+
+	# scaffold
+	op.scaffold()
+
+	# serialize
+	return op.serialize()
 	
 
 

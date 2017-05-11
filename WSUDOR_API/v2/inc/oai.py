@@ -4,6 +4,7 @@
 import datetime
 from lxml import etree
 import time
+import hashlib
 
 # Ouroboros config
 import localConfig
@@ -12,8 +13,15 @@ import localConfig
 from WSUDOR_API import logging
 
 # WSUDOR_Manager
-from WSUDOR_Manager import fedora_handle
+from WSUDOR_Manager import fedora_handle, redisHandles
 from WSUDOR_Manager.solrHandles import solr_search_handle
+
+
+'''
+Next Steps
+	1) to accomodate ListRecord / ListIdentifiers, break out the header information for OAIRecord, as they both shares
+		- initiate, fire header, then option to write identifier or record
+'''
 
 
 # metadataPrefix map
@@ -35,18 +43,23 @@ class OAIProvider(object):
 	def __init__(self, args):
 		self.args = args
 		self.request_timestamp = datetime.datetime.now()
+
 		self.search_params = { 
 			'q': '*:*',
 			'sort': 'id asc',
 			'start': 0,
 			'rows': 5,
-			'fq': [
-				'rels_itemID:*',
-				'rels_isMemberOfOAISet:"info\:fedora/wayne\:collectionDPLAOAI"'
-			],
-			'fl': [ 'id','rels_itemID'],
+			'fq': ['rels_itemID:*'],
+			'fl': ['id','rels_itemID'],
 			'wt': 'json',
 		}
+
+		# set set, if present
+		if self.args['set']:
+			self.search_params['fq'].append('rels_isMemberOfOAISet:"%s"' % self.args['set'].replace(":","\:"))
+
+		# begin scaffolding
+		self.scaffold()
 
 
 	# generate XML root node with OAI-PMH scaffolding
@@ -100,10 +113,7 @@ class OAIProvider(object):
 		self.request_node.text = 'http://digidev.library.wayne.edu/api/oai'
 		self.root_node.append(self.request_node)
 
-		# set verb node
-		'''
-		This is where the different verbs deviate
-		'''
+		# set verb node		
 		self.verb_node = etree.Element(self.args['verb'])
 		self.root_node.append(self.verb_node)
 
@@ -117,17 +127,17 @@ class OAIProvider(object):
 		# update search params
 		# WILL DO HERE
 
-		# fire search
-		self.search_results = solr_search_handle.search(**self.search_params)
+		# # fire search
+		# self.search_results = solr_search_handle.search(**self.search_params)
 
-		# inti OAIRecord
-		for i, doc in enumerate(self.search_results.documents):
-			logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'], args=self.args)
-			self.verb_node.append(record.oai_record_node)
+		# # inti OAIRecord
+		# for i, doc in enumerate(self.search_results.documents):
+		# 	logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
+		# 	record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'], args=self.args)
+		# 	self.verb_node.append(record.oai_record_node)
 
-		# finally, set resumption token
-		self.set_resumption_token()
+		# # finally, set resumption token
+		# self.set_resumption_token()
 
 
 	def set_resumption_token(self):
@@ -181,7 +191,23 @@ class OAIProvider(object):
 
 	# ListIdentifiers
 	def _ListIdentifiers(self):
-		pass
+
+		# modify search params
+		search_params['fl'] = ['rels_itemID']
+		
+		# fire search
+		self.search_results = solr_search_handle.search(**self.search_params)
+
+		# inti OAIRecord
+		for i, doc in enumerate(self.search_results.documents):
+			logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
+			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'], args=self.args)
+			self.verb_node.append(record.oai_record_node)
+
+		# finally, set resumption token
+		self.set_resumption_token()
+		
+		return self.serialize()
 
 
 	# ListMetadataFormats
@@ -192,8 +218,18 @@ class OAIProvider(object):
 	# ListRecords
 	def _ListRecords(self):
 
-		self.scaffold()
-		self.retrieve_records()
+		# fire search
+		self.search_results = solr_search_handle.search(**self.search_params)
+
+		# inti OAIRecord
+		for i, doc in enumerate(self.search_results.documents):
+			logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
+			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'], args=self.args)
+			self.verb_node.append(record.oai_record_node)
+
+		# finally, set resumption token
+		self.set_resumption_token()
+		
 		return self.serialize()
 
 
@@ -261,9 +297,10 @@ class OAIRecord(object):
 		datestamp_node.text = '2017-05-10' # UPDATE - when modified? can get this from eulfedora...
 		header_node.append(datestamp_node)
 
-		setSpec_node = etree.Element('setSpec')
-		setSpec_node.text = self.args['set']
-		header_node.append(setSpec_node)
+		if self.args['set']:
+			setSpec_node = etree.Element('setSpec')
+			setSpec_node.text = self.args['set']
+			header_node.append(setSpec_node)
 
 		self.oai_record_node.append(header_node)
 

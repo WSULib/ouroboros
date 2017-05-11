@@ -1,7 +1,7 @@
-print "importing WSUDOR_Manager"
 from WSUDOR_Manager import *
 from WSUDOR_Manager import jobs
 import WSUDOR_Indexer
+logging.debug("importing WSUDOR_Manager")
 
 # python
 import os
@@ -30,25 +30,25 @@ osso+o.                  `+//ooysoo
 
   <-- Ouroboros says hissss -->'''
 
-print "importing fedora handles"
+logging.debug("importing fedora handles")
 fedora_handle = fedoraHandles.fedora_handle
 from WSUDOR_Manager import fedoraHandles
 
-print "importing solr handles"
+logging.debug("importing solr handles")
 solr_handle = solrHandles.solr_handle
 solr_bookreader_handle = solrHandles.solr_bookreader_handle
 
-print "creating WSUDOR shortcuts"
+logging.debug("creating WSUDOR shortcuts")
 w = WSUDOR_ContentTypes.WSUDOR_Object
 
-print "importing eulfedora"
+logging.debug("importing eulfedora")
 import eulfedora
 
-print "creating MySQL shortcut - `m()` with root password"
+logging.debug("creating MySQL shortcut - `m()` with root password")
 def my():
 	return os.system('mysql -u root -p WSUDOR_Manager')
 
-print "creating bash shortcut - 'bash'"
+logging.debug("creating bash shortcut - 'bash'")
 def bash():
 	return os.system('bash')
 
@@ -56,56 +56,56 @@ def bash():
 def tableWipe():
 	try:
 		db.session.execute('DROP TABLE ingest_workspace_object;')
-		print "ingest_workspace_object dropped."
+		logging.debug("ingest_workspace_object dropped.")
 	except:
-		print "ingest_workspace_object not found..."
+		logging.debug("ingest_workspace_object not found...")
 	try:
 		db.session.execute('DROP TABLE ingest_workspace_job;')
-		print "ingest_workspace_job dropped."
+		logging.debug("ingest_workspace_job dropped.")
 	except:
-		print "ingest_workspace_job not found..."
+		logging.debug("ingest_workspace_job not found...")
 	try:
 		db.session.execute('DROP TABLE user;')
-		print "user dropped."
+		logging.debug("user dropped.")
 	except:
-		print "user not found..."
+		logging.debug("user not found...")
 	try:
 		db.session.execute('DROP TABLE ingest_MODS;')
-		print "ingest_MODS dropped."
+		logging.debug("ingest_MODS dropped.")
 	except:
-		print "ingest_MODS not found..."
+		logging.debug("ingest_MODS not found...")
 	try:
 		db.session.execute('DROP TABLE job_rollback;')
-		print "job_rollback dropped."
+		logging.debug("job_rollback dropped.")
 	except:
-		print "job_rollback not found..."
+		logging.debug("job_rollback not found...")
 	try:
 		db.session.execute('DROP TABLE user_jobs;')
-		print "user_jobs dropped."
+		logging.debug("user_jobs dropped.")
 	except:
-		print "user_jobs not found..."
+		logging.debug("user_jobs not found...")
 	try:
 		db.session.execute('DROP TABLE user_pids;')
-		print "user_pids dropped."
+		logging.debug("user_pids dropped.")
 	except:
-		print "user_pids not found..."
+		logging.debug("user_pids not found...")
 	try:
 		db.session.execute('DROP TABLE xsl_transformations;')
-		print "xsl_transformations dropped."
+		logging.debug("xsl_transformations dropped.")
 	except:
-		print "xsl_transformations not found..."
+		logging.debug("xsl_transformations not found...")
 	try:
 		db.session.execute('DROP TABLE indexer_queue;')
-		print "indexer_queue dropped."
+		logging.debug("indexer_queue dropped.")
 	except:
-		print "indexer_queue not found..."
-	print "commiting..."
+		logging.debug("indexer_queue not found...")
+	logging.debug("commiting...")
 	db.session.commit()
 
-	print "recreating..."
+	logging.debug("recreating...")
 	db.create_all()
 
-	print "recreating default admin users"
+	logging.debug("recreating default admin users")
 	for user in localConfig.DEFAULT_ADMIN_USERS:
 		user = models.User(
 			user['username'],
@@ -131,17 +131,17 @@ def getRemoteObject(repo, PID, skip_constituents=False):
 	# check if remote object has constituent parts
 	if not skip_constituents:
 		constituents = dest_repo_handle.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
-		print len(constituents)
+		logging.debug(len(constituents))
 		if len(constituents) > 0:
 			for constituent in constituents:
 				# add to sync list
-				print "adding %s to sync list" % constituent[0]
+				logging.debug("adding %s to sync list" % constituent[0])
 				sync_list.append(constituent[0])
 			
 	# sync objects 
 	for i,pid in enumerate(sync_list):
-		print "retrieving %s, %d/%d..." % (pid,i,len(sync_list))
-		print eulfedora.syncutil.sync_object(dest_repo_handle.get_object(pid), fedora_handle, show_progress=False, export_context='archive')
+		logging.debug("retrieving %s, %d/%d..." % (pid,i,len(sync_list)))
+		logging.debug(eulfedora.syncutil.sync_object(dest_repo_handle.get_object(pid), fedora_handle, show_progress=False, export_context='archive'))
 
 	return True
 	
@@ -154,7 +154,7 @@ def cloneRemoteObject(repo, PID):
 def getIngestWorkspaceRows(job_num):
 	iwjob = models.ingest_workspace_job.query.filter_by(id=job_num).first()
 	iwrows = models.ingest_workspace_object.query.filter_by(job=iwjob)
-	print "returning tuple of (job_handle, job_rows)"
+	logging.debug("returning tuple of (job_handle, job_rows)")
 	return (iwjob,iwrows)
 	
 def getSeedObjects(target_repo):
@@ -189,9 +189,9 @@ def getSeedObjects(target_repo):
 	# get objects and index
 	for index, pid in enumerate(seed_pids):
 		# try:
-		print "##############################################################################"
-		print "working on %s / %s" % (index, len(seed_pids))
-		print "##############################################################################"
+		logging.debug("##############################################################################")
+		logging.debug("working on %s / %s" % (index, len(seed_pids)))
+		logging.debug("##############################################################################")
 		try:
 			remote_get = getRemoteObject(target_repo,pid)
 
@@ -207,17 +207,17 @@ def getSeedObjects(target_repo):
 					try:
 						obj.refresh()
 					except:
-						print "could not index %s" % pid
+						logging.debug("could not index %s" % pid)
 				else:
 					raise Exception
 			except:
-				print "-------------------------------------------------------------------------------"
-				print "FAILURE: %s" % pid
-				print "-------------------------------------------------------------------------------"
+				logging.debug("-------------------------------------------------------------------------------")
+				logging.debug("FAILURE: %s" % pid)
+				logging.debug("-------------------------------------------------------------------------------")
 		except:
-			print "Could not get remote object: %s" % pid
+			logging.debug("Could not get remote object: %s" % pid)
 
-	print 'finis.'
+	logging.debug('finis.')
 
 	
 	

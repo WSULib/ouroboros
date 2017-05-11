@@ -7,9 +7,10 @@
 # Modules
 import cgi
 import MySQLdb
+from WSUDOR_Manager import logging
  
 # CGI header
-print "Content-Type: text/plain\n\n"
+logging.debug("Content-Type: text/plain\n\n")
  
  
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -92,7 +93,7 @@ class DataTablesServer:
 		output = output[:-1]
 		output += '] }'
 		 
-		print output
+		logging.debug(output)
 	 
 	 
 	#
@@ -144,7 +145,7 @@ class DataTablesServer:
 	#	
 	def ordering( self ):
 		order = ""
-		print dir(self)
+		logging.debug(dir(self))
 		if ( self.cgi['iSortCol_0'].value != "" ) and ( self.cgi['iSortingCols'].value > 0 ):
 			order = "ORDER BY  "
 			for i in range( int(self.cgi['iSortingCols'].value) ):

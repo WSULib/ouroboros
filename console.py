@@ -1,12 +1,16 @@
+logging.debug("importing WSUDOR_Manager")
 from WSUDOR_Manager import *
 from WSUDOR_Manager import jobs
 import WSUDOR_Indexer
-logging.debug("importing WSUDOR_Manager")
+from WSUDOR_Indexer.models import IndexRouter
 
 # python
 import os
 import rdflib
 import time
+
+# set logging level
+logging.basicConfig(level=logging.INFO)
 
 print '''
                 ::+:/`
@@ -121,16 +125,17 @@ def tailUserCelery(user):
 
 
 # function to grab single object from remote repository
-def getRemoteObject(repo, PID, skip_constituents=False):
-	
-	sync_list = [PID]
+def getRemoteObject(repo, base_pid, skip_constituents=False):
+
+	print "ingesting: %s" % base_pid
+	sync_list = [base_pid]
 	
 	# remote repo
 	dest_repo_handle = fedoraHandles.remoteRepo(repo)
 	
 	# check if remote object has constituent parts
 	if not skip_constituents:
-		constituents = dest_repo_handle.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % PID)
+		constituents = dest_repo_handle.risearch.spo_search(None,"fedora-rels-ext:isConstituentOf","info:fedora/%s" % base_pid)
 		logging.debug(len(constituents))
 		if len(constituents) > 0:
 			for constituent in constituents:
@@ -140,8 +145,30 @@ def getRemoteObject(repo, PID, skip_constituents=False):
 			
 	# sync objects 
 	for i,pid in enumerate(sync_list):
+
+		# add sync_list to indexer queue with 'hold' action to prevent indexing
+		if pid.startswith("info:fedora/"):
+			pid = pid.split("/")[1]
+		IndexRouter.queue_object(pid, priority=1, username='console', action='hold')
+
 		logging.debug("retrieving %s, %d/%d..." % (pid,i,len(sync_list)))
 		logging.debug(eulfedora.syncutil.sync_object(dest_repo_handle.get_object(pid), fedora_handle, show_progress=False, export_context='archive'))
+
+	# ingest complete, remove all from indexer queue hold
+	for i,pid in enumerate(sync_list):
+		if pid.startswith("info:fedora/"):
+			pid = pid.split("/")[1]
+		# release from indexer hold
+		if i > 0:
+			print "releasing from indexer queue hold: %s, %d/%d..." % (pid,i,len(sync_list))
+			IndexRouter.alter_queue_action(pid, 'forget')
+
+	# finally, let primary object index
+	IndexRouter.alter_queue_action(base_pid, 'forget')
+
+	# refresh
+	obj = w(base_pid)
+	obj.refresh()
 
 	return True
 	

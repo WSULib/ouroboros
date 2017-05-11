@@ -109,7 +109,7 @@ def createObj_worker():
 		
 		# open new handle
 		bag_handle = WSUDOR_ContentTypes.WSUDOR_GenObject(payload=working_dir, object_type='bag')
-		ingest_result = bag_handle.ingestBag()
+		ingest_result = bag_handle.ingest()
 
 		# render
 		return render_template('createBag_confirm.html',status="result for %s was %s" % (form_data['pid'],ingest_result))

@@ -213,7 +213,7 @@ def bagIngest_worker(job_package):
 		# ingest bag
 		try:
 			# because we're sending remotely, not indexing locally
-			ingest_bag = bag_handle.ingestBag(indexObject=False)
+			ingest_bag = bag_handle.ingest(indexObject=False)
 		except Exception, e:
 			raise Exception(e)
 			return False
@@ -247,7 +247,7 @@ def bagIngest_worker(job_package):
 	else:
 		# ingest bag
 		try:
-			ingest_bag = bag_handle.ingestBag()
+			ingest_bag = bag_handle.ingest()
 			# fire ingestWorkspace callback if checked
 			if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:
 				print "firing ingest callback"

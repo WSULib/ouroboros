@@ -20,11 +20,16 @@ from celery import Task
 import WSUDOR_ContentTypes
 import WSUDOR_Manager
 from WSUDOR_Manager import celery, db, fedora_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 
 # localConfig
 import localConfig
 
 
+
+##################################################################################
+# Fedora Java Messaging Service (JMS)
+##################################################################################
 
 # Fedora JMS worker instantiated by Twisted
 class FedoraJMSConsumer(object):
@@ -114,7 +119,7 @@ class FedoraJMSWorker(object):
 		logging.debug(self.body)
 
 		# capture modifications to datastream
-		if self.methodName in ['modifyDatastreamByValue','modifyDatastreamByReference','purgeDatastream']:
+		if self.methodName in ['addDatastream','modifyDatastreamByValue','modifyDatastreamByReference','purgeDatastream']:
 			self._determine_ds()
 			if self.ds not in localConfig.INDEXER_SKIP_DATASTREAMS:
 				self.queue_action = 'index'
@@ -125,7 +130,7 @@ class FedoraJMSWorker(object):
 
 		# capture ingests
 		if self.methodName in ['ingest']:
-			self.queue_action = 'index'
+			self.queue_action = 'hold'
 
 		# RDF relationships
 		if self.methodName in ['addRelationship','purgeRelationship']:
@@ -140,7 +145,6 @@ class FedoraJMSWorker(object):
 		if self.methodName in ['purgeObject']:
 			self.queue_action = 'prune'
 
-
 		# finally, queue object and log
 		if self.queue_action:
 			self.queue_object()
@@ -149,8 +153,8 @@ class FedoraJMSWorker(object):
 
 	def log_premis_event(self):
 
-		# finally, log PREMIS event
-		PREMISWorker.log_jms_event.delay(self.pid, self.body)
+		# log PREMIS event
+		PREMISWorker.log_jms_event.delay(self)
 
 
 	def _determine_ds(self):
@@ -163,9 +167,14 @@ class FedoraJMSWorker(object):
 
 
 	def queue_object(self):
+		logging.info("logging PREMIS event")
 		IndexRouter.queue_object(self.pid, self.author, 1, self.queue_action)
 
 
+
+##################################################################################
+# Indexing / PREMIS
+##################################################################################
 
 # Indexer class
 class IndexRouter(object):
@@ -175,12 +184,19 @@ class IndexRouter(object):
 	Most methods are classmethods, as they accept input and requests from various locales
 	'''
 
+	routable_actions = ['index','prune','forget']
+
 	@classmethod
 	def poll(self):
 		stime = time.time()
 		# refresh connection every poll
 		db.session.close()
-		queue_row = indexer_queue.query.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))).order_by(indexer_queue.priority.desc()).order_by(indexer_queue.timestamp.asc()).first()
+		queue_row = indexer_queue.query \
+			.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))) \
+			.filter(indexer_queue.action.in_(self.routable_actions)) \
+			.order_by(indexer_queue.priority.desc()) \
+			.order_by(indexer_queue.timestamp.asc()) \
+			.first()
 		# if result, push to router
 		if queue_row != None:			
 			self.route(queue_row)
@@ -200,14 +216,25 @@ class IndexRouter(object):
 				IndexWorker.index.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
 
-
 		# prune object from solr
 		elif queue_row.action == 'prune':
 			if localConfig.INDEXER_AUTOINDEX:
 				IndexWorker.prune.delay(queue_row)
 				self.dequeue_object(queue_row = queue_row)
 
+		# prune object from solr
+		elif queue_row.action == 'forget':
+			indexer_queue.query.filter_by(id=queue_row.id).delete()
+			db.session.commit()
+
+		# prune object from solr
+		elif queue_row.action == 'hold':
+			pass
+
 		else:
+			'''
+			Is this necessary?  Or do we just want to skip unknown action by default and let them linger?
+			'''
 			logging.info("IndexRouter: routing action `%s` not known, sending to exceptions" % queue_row.action)	
 			self.add_exception(queue_row, dequeue=True)
 
@@ -225,7 +252,7 @@ class IndexRouter(object):
 		# check if in working table
 		if indexer_working.query.filter_by(pid = pid, action = action).count() == 0:
 
-			logging.info("IndexRouter: queuing %s" % pid)
+			logging.info("IndexRouter: queuing %s, action %s" % (pid,action))
 			queue_tuple = (pid, username, priority, action)
 			iqp = indexer_queue(*queue_tuple)
 			db.session.add(iqp)
@@ -240,6 +267,16 @@ class IndexRouter(object):
 
 		else:
 			logging.info("IndexRouter: %s is currently in working, skipping queue" % pid)
+
+
+	@classmethod
+	def alter_queue_action(self, pid, action):
+		# get row
+		iqp = indexer_queue.query.filter_by(pid=pid).first()
+		# alter status
+		iqp.action = action
+		# saved
+		db.session.commit()
 
 
 	@classmethod
@@ -320,7 +357,9 @@ class IndexRouter(object):
 
 
 	@classmethod	
-	def remove_all_exceptions(self):
+	def clear_all_queues(self):
+		indexer_queue.query.delete()
+		indexer_working.query.delete()
 		indexer_exception.query.delete()
 		db.session.commit()
 
@@ -393,9 +432,7 @@ class postIndexWorker(Task):
 	def after_return(self, *args, **kwargs):
 
 		# debug
-		logging.info("postIndexWorker: BEGIN DEBUG")
 		logging.info(args)
-		logging.info("postIndexWorker: END DEBUG")
 
 		queue_row = args[3][0]
 
@@ -447,17 +484,46 @@ class IndexWorker(object):
 			# remove from cache
 			obj.removeObjFromCache()
 			# then, prune
-			obj.prune()
-			IndexRouter.dequeue_object(queue_row = queue_row)
+			return obj.prune()
 		else:
-			logging.warning("IndexWorker: could not open object, skipping")
-			IndexRouter.dequeue_object(queue_row = queue_row, is_exception=True)
+			logging.warning("IndexWorker: could not open object, manually pruning from solr")
+			solr_handle.delete_by_key(queue_row.pid)
+			return True
 
+
+class PREMISWorker(object):
+
+	'''
+	Class to log PREMIS events for objects
+	'''
+
+	# method for logging PREMIS events when reported by Fedora JMS
+	@staticmethod
+	@celery.task(max_retries=3, name="log_jms_event", trail=True)
+	def log_jms_event(jms_worker):
+
+		# debugging
+		logging.info("PREMISWorker: logging event")
+
+		# init PREMIS client
+		premis_client = WSUDOR_Manager.models.PREMISClient(pid=jms_worker.pid.encode('utf-8'))
+
+		# write event
+		premis_client.add_jms_event(jms_worker)
+
+		# save
+		return premis_client.update()
+
+
+
+##################################################################################
+# Database Models
+##################################################################################
 
 # WSUDOR_Indexer queue table
 class indexer_queue(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
+	pid = db.Column(db.String(255), unique=True)
 	username = db.Column(db.String(255))
 	priority = db.Column(db.Integer)
 	action = db.Column(db.String(255))
@@ -475,7 +541,7 @@ class indexer_queue(db.Model):
 
 class indexer_working(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
+	pid = db.Column(db.String(255), unique=True)
 	username = db.Column(db.String(255))
 	priority = db.Column(db.Integer)
 	action = db.Column(db.String(255))
@@ -493,7 +559,7 @@ class indexer_working(db.Model):
 
 class indexer_exception(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	pid = db.Column(db.String(255), unique=True) # consider making this the primary key?
+	pid = db.Column(db.String(255), unique=True)
 	username = db.Column(db.String(255))
 	priority = db.Column(db.Integer)
 	action = db.Column(db.String(255))
@@ -511,29 +577,7 @@ class indexer_exception(db.Model):
 		return '<id %s, pid %s, priority %s, timestamp %s, username %s>' % (self.id, self.pid, self.priority, self.timestamp, self.username)
 
 
-class PREMISWorker(object):
 
-	'''
-	Class to log PREMIS events for objects
-	'''
-
-	# method for logging PREMIS events when reported by Fedora JMS
-	@staticmethod
-	@celery.task(max_retries=3, name="log_jms_event", trail=True)
-	def log_jms_event(pid, frame_body):
-
-		# debugging
-		logging.info("PREMISWorker: logging event")
-		logging.info(frame_body)
-
-		# init PREMIS client
-		premis_client = WSUDOR_Manager.models.PREMISClient(pid=pid)
-
-		# write event
-		premis_client.add_event_xml(frame_body)
-
-		# save
-		return premis_client.update()
 		
 
 

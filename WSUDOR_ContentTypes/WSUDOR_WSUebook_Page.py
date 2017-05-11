@@ -67,6 +67,10 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	
 	def ingest(self, book_obj, page_num):
 
+		'''
+		overrides .ingest() method from WSUDOR_Object
+		'''
+
 		# set book_obj to self
 		self.book_obj = book_obj
 
@@ -76,6 +80,10 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# new pid
 		npid = "wayne:%s_Page_%s" % (self.book_obj.pid.split(":")[1], page_num)
 		print "Page pid: %s" % npid
+		self.pid = npid
+
+		# set status as hold
+		self.add_to_indexer_queue(action='hold')
 
 		# creating new self	
 		self.ohandle = fedora_handle.get_object(npid)
@@ -94,7 +102,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		policy_handle = eulfedora.models.DatastreamObject(self.ohandle, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 		policy_handle.label = "POLICY"
-		policy_handle.save()				
+		policy_handle.save()
 
 		# for each file type in pages dict, pass page obj and process
 		for ds in page_dict:
@@ -116,7 +124,13 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder", page_num)
 
 		# save page object
-		return self.ohandle.save()
+		self.ohandle.save()
+
+		# set status as hold
+		self.alter_in_indexer_queue('forget')
+
+		# return
+		return True
 
 
 	def ingestMissingPage(self, book_obj, page_num, from_bag=True):
@@ -417,9 +431,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 		Function to recreate derivative JP2s based on JP2DerivativeMaker class in inc/derivatives
 		Operates with assumption that datastream ID "FOO_JP2" is derivative as datastream ID "FOO"
-
-		A lot are failing because the TIFFS are compressed, PNG files.  We need a secondary attempt
-		that converts to uncompressed TIFF first.
 		'''
 
 		# iterate through datastreams and look for JP2s

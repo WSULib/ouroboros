@@ -196,7 +196,7 @@ def createContainer_worker():
 
 	# open new handle
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(payload=working_dir, object_type='bag')
-	ingest_result = bag_handle.ingestBag()
+	ingest_result = bag_handle.ingest()
 
 	# cleanup
 	shutil.rmtree(working_dir)
@@ -396,7 +396,7 @@ def createDocument_worker(parent_PID):
 
 	# open new handle
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(payload=working_dir, object_type='bag')
-	ingest_result = bag_handle.ingestBag()
+	ingest_result = bag_handle.ingest()
 
 	# cleanup
 	# shutil.rmtree(working_dir)

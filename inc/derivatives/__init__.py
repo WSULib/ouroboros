@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import tempfile
+from eulfedora.models import XmlDatastreamObject
 
 class Derivative(object):
 
@@ -37,7 +38,13 @@ class Derivative(object):
 			f =  tempfile.NamedTemporaryFile(prefix='ouroboros_', suffix=suffix, dir='/tmp/Ouroboros/', delete=False)
 
 		# write ds_handle to temp file
-		f.write(ds_handle.content)
+		# if XmlDatastreamObject, serialize:
+		if type(ds_handle) == XmlDatastreamObject:
+			f.write(ds_handle.content.serialize())
+		# else, write content
+		else:
+			f.write(ds_handle.content)
+		
 		f.close()
 
 		# return f

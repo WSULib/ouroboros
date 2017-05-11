@@ -105,7 +105,10 @@ def about():
 def userPage():
 
     # set username in session
-    username = session['username']
+    try:
+        username = session['username']
+    except KeyError:
+        return redirect("logout")
 
     # retrieve user data from DB
     user = models.User.query.filter_by(username=username).first()
@@ -1708,14 +1711,16 @@ def indexing_index(action, group):
         if group == 'reindex':
             logging.debug("purging and adding all to queue")
 
-    # pruning
+    # exceptions
     if action == 'exceptions':
         if group == 'all':
             logging.debug("rerunning exceptions")
             IndexRouter.queue_all_exceptions()
-        if group == 'clear':
-            logging.debug("removing exceptions")
-            IndexRouter.remove_all_exceptions()
+
+    #   queues
+    if group == 'clear':
+            logging.debug("clearing all queues")
+            IndexRouter.clear_all_queues()
 
     # redierct to status
     return redirect('indexing')

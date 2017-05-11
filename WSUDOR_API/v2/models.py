@@ -786,19 +786,12 @@ class OAIServer(Resource):
 
 		# debug
 		logging.info(args)
-		test_pids = ['wayne:vmc14515','wayne:vmc15687','wayne:MSS-001-006-005','wayne:LincolnLettersFHC205771']
-		oai_xml_response = '''<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-<responseDate>PUT DATE HERE</responseDate><request verb="%s" set="%s" metadataPrefix="%s">http://metadata.library.wayne.edu/repox/OAIHandler</request>
-''' % (args['verb'],args['set'],args['metadataPrefix'])
-
-		for pid in test_pids:
-			obj = WSUDOR_Object(pid)
-			oai_xml_response += obj.MODS_XML
-
-		oai_xml_response += "</OAI-PMH>"
+		
+		# init OAIProvider
+		op = OAIProvider(args)
 
 		# build and return response
-		response = Response(oai_xml_response, mimetype="text/xml")
+		response = Response(op.generate_response(), mimetype="text/xml")
 		return response
 
 		

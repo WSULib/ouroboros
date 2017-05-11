@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # python modules
+import datetime
 from lxml import etree
 import time
 
@@ -33,12 +34,12 @@ class OAIProvider(object):
 
 	def __init__(self, args):
 		self.args = args
-		self.record_nodes = []
+		self.request_timestamp = datetime.datetime.now()
 		self.search_params = { 
 			'q': '*:*',
 			'sort': 'id asc',
 			'start': 0,
-			'rows': 100,
+			'rows': 5,
 			'fq': [
 				'rels_itemID:*',
 				'rels_isMemberOfOAISet:"info\:fedora/wayne\:collectionDPLAOAI"'
@@ -48,32 +49,28 @@ class OAIProvider(object):
 		}
 
 
-	# query and retrieve records
-	def retrieve(self):
-		pass
-
-
 	# generate XML root node with OAI-PMH scaffolding
-	'''
-	Target example:
-
-	<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-	<responseDate>2017-05-11T13:43:11Z</responseDate>
-
-		<request verb="ListRecords" set="wsudor_dpla" metadataPrefix="wsu_mods">http://metadata.library.wayne.edu/repox/OAIHandler</request>
-
-		<VERB GOES HERE>
-
-			<!-- record loop here -->
-			<record>...</record>
-			<record>...</record>
-
-			<!-- resumptionToken -->
-			<resumptionToken expirationDate="2017-05-11T14:43:12Z" completeListSize="44896" cursor="0">1494510192035:wsudor_dpla:wsu_mods:250:44896::</resumptionToken>
-		</VERB ENDS HERE>
-	</OAI-PMH>
-	'''
 	def scaffold(self):
+
+		'''
+		Target example:
+
+		<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+		<responseDate>2017-05-11T13:43:11Z</responseDate>
+
+			<request verb="ListRecords" set="wsudor_dpla" metadataPrefix="wsu_mods">http://metadata.library.wayne.edu/repox/OAIHandler</request>
+
+			<VERB GOES HERE>
+
+				<!-- record loop here -->
+				<record>...</record>
+				<record>...</record>
+
+				<!-- resumptionToken -->
+				<resumptionToken expirationDate="2017-05-11T14:43:12Z" completeListSize="44896" cursor="0">1494510192035:wsudor_dpla:wsu_mods:250:44896::</resumptionToken>
+			</VERB ENDS HERE>
+		</OAI-PMH>
+		'''
 		
 		# build root node, nsmap, and attributes		
 		NSMAP = {
@@ -87,7 +84,7 @@ class OAIProvider(object):
 		<responseDate>2017-05-11T13:43:11Z</responseDate>
 		'''
 		self.responseDate_node = etree.Element('responseDate')
-		self.responseDate_node.text = '2017-05-11T14:43:12Z'
+		self.responseDate_node.text = self.request_timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
 		self.root_node.append(self.responseDate_node)
 		
 		# set request node
@@ -96,16 +93,19 @@ class OAIProvider(object):
 		'''
 		self.request_node = etree.Element('request')
 		self.request_node.attrib['verb'] = self.args['verb']
-		self.request_node.attrib['set'] = self.args['set']
-		self.request_node.attrib['metadataPrefix'] = self.args['metadataPrefix']
+		if self.args['set']:
+			self.request_node.attrib['set'] = self.args['set']
+		if self.args['metadataPrefix']:
+			self.request_node.attrib['metadataPrefix'] = self.args['metadataPrefix']
 		self.request_node.text = 'http://digidev.library.wayne.edu/api/oai'
 		self.root_node.append(self.request_node)
 
 		# set verb node
+		'''
+		This is where the different verbs deviate
+		'''
 		self.verb_node = etree.Element(self.args['verb'])
 		self.root_node.append(self.verb_node)
-
-		
 
 
 	def retrieve_records(self):
@@ -132,12 +132,16 @@ class OAIProvider(object):
 
 	def set_resumption_token(self):
 
+		'''
+		All of these values need updating
+		'''
+
 		# set resumption token node and attributes
 		self.resumptionToken_node = etree.Element('resumptionToken')
-		self.resumptionToken_node.attrib['expirationDate'] = "2017-05-11T14:43:12Z"
-		self.resumptionToken_node.attrib['completeListSize'] = "44896"
-		self.resumptionToken_node.attrib['cursor'] = "0"
-		self.resumptionToken_node.text = 'THIS_IS_AN_AMAZING_TOKEN'
+		self.resumptionToken_node.attrib['expirationDate'] = "2017-05-11T14:43:12Z" # UPDATE
+		self.resumptionToken_node.attrib['completeListSize'] = "44896" # UPDATE
+		self.resumptionToken_node.attrib['cursor'] = "0" # UPDATE
+		self.resumptionToken_node.text = 'THIS_IS_AN_AMAZING_TOKEN' # UPDATE
 		self.verb_node.append(self.resumptionToken_node)
 
 
@@ -145,6 +149,57 @@ class OAIProvider(object):
 	def serialize(self):
 		return etree.tostring(self.root_node)
 
+
+	# convenience function to run all internal methods
+	def generate_response(self):
+
+		# read args, route verb to verb handler
+		verb_routes = {
+			'GetRecord':self._GetRecord,
+			'Identify':self._Identify,
+			'ListIdentifiers':self._ListIdentifiers,
+			'ListMetadataFormats':self._ListMetadataFormats,
+			'ListRecords':self._ListRecords,
+			'ListSets':self._ListSets
+		}
+
+		if self.args['verb'] in verb_routes.keys():
+			return verb_routes[self.args['verb']]()
+		else:
+			raise Exception("Verb not found.")
+
+
+	# GetRecord
+	def _GetRecord(self):
+		pass
+
+
+	# Identify
+	def _Identify(self):
+		pass
+
+
+	# ListIdentifiers
+	def _ListIdentifiers(self):
+		pass
+
+
+	# ListMetadataFormats
+	def _ListMetadataFormats(self):
+		pass
+
+
+	# ListRecords
+	def _ListRecords(self):
+
+		self.scaffold()
+		self.retrieve_records()
+		return self.serialize()
+
+
+	# ListSets
+	def _ListSets(self):
+		pass
 
 
 
@@ -203,7 +258,7 @@ class OAIRecord(object):
 		header_node.append(identifier_node)
 
 		datestamp_node = etree.Element('datestamp')
-		datestamp_node.text = '2017-05-10' # UPDATE
+		datestamp_node.text = '2017-05-10' # UPDATE - when modified? can get this from eulfedora...
 		header_node.append(datestamp_node)
 
 		setSpec_node = etree.Element('setSpec')
@@ -221,7 +276,7 @@ class OAIRecord(object):
 def OAItest():
 
 	# init OAIProvider
-	op = OAIProvider({'verb':'ListRecords','set':'none','metadataPrefix':'dc'})
+	op = OAIProvider({'verb':'ListRecords','set':'none','metadataPrefix':'mods'})
 
 	# scaffold
 	op.scaffold()

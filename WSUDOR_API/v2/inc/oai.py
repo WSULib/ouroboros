@@ -38,6 +38,10 @@ else:
 	}
 
 
+class MetadataPrefix(Exception):
+	pass
+
+
 class OAIProvider(object):
 
 	'''
@@ -133,12 +137,15 @@ class OAIProvider(object):
 		for i, doc in enumerate(self.search_results.documents):
 			logging.info('adding identifier %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
 			# init record
-			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-			# include full metadata in record
-			if include_metadata:
-				 record.include_metadata()
-			# append to verb_node
-			self.verb_node.append(record.oai_record_node)
+			try:
+				record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+				# include full metadata in record
+				if include_metadata:
+					 record.include_metadata()
+				# append to verb_node
+				self.verb_node.append(record.oai_record_node)
+			except MetadataPrefix:
+				logging.info("skipping %s" % doc['id'])
 
 		# finally, set resumption token
 		self.set_resumption_token()
@@ -281,18 +288,21 @@ class OAIRecord(object):
 		self.oai_record_node = None
 
 		# get metadata
-		self.get_metadata()
+		self.get_fedora_object()
 
 		# build record node
 		self.init_record_node()
 
 
-	def get_metadata(self):
+	def get_fedora_object(self):
 
 		# retrive metadata from Fedora
 		self.fedora_object = fedora_handle.get_object(self.pid)
-		self.metadata_datastream = self.fedora_object.getDatastreamObject(self.target_datastream)
-		self.metadata_xml = self.metadata_datastream.content
+		if self.target_datastream in self.fedora_object.ds_list:
+			self.metadata_datastream = self.fedora_object.getDatastreamObject(self.target_datastream)
+			self.metadata_xml = self.metadata_datastream.content
+		else:
+			raise MetadataPrefix("%s does not have datastream %s" % (self.pid, self.target_datastream))
 
 
 	def init_record_node(self):

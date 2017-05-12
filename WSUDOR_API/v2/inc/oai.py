@@ -18,18 +18,23 @@ from WSUDOR_Manager.solrHandles import solr_search_handle
 
 
 '''
-Next Steps
-	1) to accomodate ListRecord / ListIdentifiers, break out the header information for OAIRecord, as they both shares
-		- initiate, fire header, then option to write identifier or record
+ToDo
+
+- resumption token
+- other verbs
+	- 
 '''
 
 
-# metadataPrefix map
-metadataPrefix_hash = {
-	'mods':'MODS',
-	'oai_dc':'DC',
-	'dc':'DC'
-}
+# attempt to load metadataPrefix map from localConfig, otherwise default
+if hasattr(localConfig,'OAI_METADATAPREFIX_HASH'):
+	metadataPrefix_hash = localConfig.OAI_METADATAPREFIX_HASH
+else:
+	metadataPrefix_hash = {
+		'mods':'MODS',
+		'oai_dc':'DC',
+		'dc':'DC'
+	}
 
 
 class OAIProvider(object):
@@ -118,28 +123,6 @@ class OAIProvider(object):
 		self.root_node.append(self.verb_node)
 
 
-	def retrieve_records(self):
-		'''
-		1) depending on resumptionToken, ping solr for pids
-		2) loop through pids, init OAIRecord for each, and append XML node from Eulfedora to self.verb_node
-		'''
-
-		# update search params
-		# WILL DO HERE
-
-		# # fire search
-		# self.search_results = solr_search_handle.search(**self.search_params)
-
-		# # inti OAIRecord
-		# for i, doc in enumerate(self.search_results.documents):
-		# 	logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-		# 	record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'], args=self.args)
-		# 	self.verb_node.append(record.oai_record_node)
-
-		# # finally, set resumption token
-		# self.set_resumption_token()
-
-
 	def set_resumption_token(self):
 
 		'''
@@ -181,27 +164,60 @@ class OAIProvider(object):
 
 	# GetRecord
 	def _GetRecord(self):
-		pass
+		
+		# fire search
+		self.search_params['q'] = 'rels_itemID:%s' % self.args['identifier'].replace(":","\:")
+		self.search_results = solr_search_handle.search(**self.search_params)
+
+		# check one result
+		if self.search_results.total_results == 1:
+			doc = self.search_results.documents[0]
+
+			# init OAIRecord
+			logging.info('retrieving node: %s' % (doc['id']))
+			# init record
+			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+			# include full metadata in record
+			record.include_metadata()
+			# append to verb_node
+			self.verb_node.append(record.oai_record_node)
+
+			return self.serialize()
+
+		else:
+			raise Exception("identifier not found")
 
 
 	# Identify
 	def _Identify(self):
-		pass
+
+		'''
+		This can be filled out more...
+		'''
+
+		# init OAIRecord
+		logging.info('generating identify node')
+		
+		# write Identify node
+		description_node = etree.Element('description')
+		description_node.text = 'WSUDOR, integrated OAI-PMH'
+		self.verb_node.append(description_node)
+
+		return self.serialize()
 
 
 	# ListIdentifiers
 	def _ListIdentifiers(self):
 
-		# modify search params
-		search_params['fl'] = ['rels_itemID']
-		
 		# fire search
 		self.search_results = solr_search_handle.search(**self.search_params)
 
 		# inti OAIRecord
 		for i, doc in enumerate(self.search_results.documents):
-			logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'], args=self.args)
+			logging.info('adding identifier %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
+			# init record
+			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+			# append to verb_node
 			self.verb_node.append(record.oai_record_node)
 
 		# finally, set resumption token
@@ -224,7 +240,11 @@ class OAIProvider(object):
 		# inti OAIRecord
 		for i, doc in enumerate(self.search_results.documents):
 			logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'], args=self.args)
+			# init record
+			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+			# include full metadata in record
+			record.include_metadata()
+			# append to verb_node
 			self.verb_node.append(record.oai_record_node)
 
 		# finally, set resumption token
@@ -242,7 +262,7 @@ class OAIProvider(object):
 class OAIRecord(object):
 
 	'''
-	Initialize OAIRecord with pid.
+	Initialize OAIRecord with pid and args
 	
 	Target XML schema:
 	<header>
@@ -260,7 +280,7 @@ class OAIRecord(object):
 	def __init__(self, pid=False, itemID=False, args=False):
 
 		self.pid = pid
-		self.itemID = itemID[0]
+		self.itemID = itemID
 		self.args = args
 		self.metadataPrefix = self.args['metadataPrefix']
 		self.target_datastream = metadataPrefix_hash[self.metadataPrefix]
@@ -270,7 +290,7 @@ class OAIRecord(object):
 		self.get_metadata()
 
 		# build record node
-		self.build_record_node()
+		self.init_record_node()
 
 
 	def get_metadata(self):
@@ -281,7 +301,7 @@ class OAIRecord(object):
 		self.metadata_xml = self.metadata_datastream.content
 
 
-	def build_record_node(self):
+	def init_record_node(self):
 
 		# init node
 		self.oai_record_node = etree.Element('record')
@@ -294,7 +314,7 @@ class OAIRecord(object):
 		header_node.append(identifier_node)
 
 		datestamp_node = etree.Element('datestamp')
-		datestamp_node.text = '2017-05-10' # UPDATE - when modified? can get this from eulfedora...
+		datestamp_node.text = self.metadata_datastream.last_modified().strftime('%Y-%m-%d')
 		header_node.append(datestamp_node)
 
 		if self.args['set']:
@@ -304,26 +324,16 @@ class OAIRecord(object):
 
 		self.oai_record_node.append(header_node)
 
+
+	def include_metadata(self):
+
 		# metadate node
 		metadata_node = etree.Element('metadata')
 		metadata_node.append(self.metadata_xml.node)
 		self.oai_record_node.append(metadata_node)
 
 
-def OAItest():
 
-	# init OAIProvider
-	op = OAIProvider({'verb':'ListRecords','set':'none','metadataPrefix':'mods'})
-
-	# scaffold
-	op.scaffold()
-
-	# retrieve records
-	op.retrieve_records()
-
-	# serialize
-	print op.serialize()
-	
 
 
 

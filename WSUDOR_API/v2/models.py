@@ -779,6 +779,7 @@ class OAIServer(Resource):
 		parser.add_argument('verb', type=str, choices=oai_verbs, help='OAI-PMH verb required: %s' % str(oai_verbs))
 		parser.add_argument('set', type=str, help='OAI-PMH set')
 		parser.add_argument('metadataPrefix', type=str, help='OAI-PMH metadataPrefix')
+		parser.add_argument('identifier', type=str, help='OAI-PMH identifier')
 		parser.add_argument('from', type=str, help='OAI-PMH from')
 		parser.add_argument('until', type=str, help='OAI-PMH until')
 		parser.add_argument('resumptionToken', type=str, help='OAI-PMH resumptionToken')
@@ -791,8 +792,7 @@ class OAIServer(Resource):
 		op = OAIProvider(args)
 
 		# build and return response
-		response = Response(op.generate_response(), mimetype="text/xml")
-		return response
+		return Response(op.generate_response(), mimetype="text/xml")
 
 		
 # Testing

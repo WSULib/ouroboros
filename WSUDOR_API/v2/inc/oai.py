@@ -205,27 +205,9 @@ class OAIProvider(object):
 	# GetRecord
 	def _GetRecord(self):
 		
-		# fire search
 		self.search_params['q'] = 'rels_itemID:%s' % self.args['identifier'].replace(":","\:")
-		self.search_results = solr_search_handle.search(**self.search_params)
-
-		# check one result
-		if self.search_results.total_results == 1:
-			doc = self.search_results.documents[0]
-
-			# init OAIRecord
-			logging.info('retrieving node: %s' % (doc['id']))
-			# init record
-			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-			# include full metadata in record
-			record.include_metadata()
-			# append to verb_node
-			self.verb_node.append(record.oai_record_node)
-
-			return self.serialize()
-
-		else:
-			raise Exception("identifier not found")
+		self.retrieve_records(include_metadata=True)
+		return self.serialize()
 
 
 	# Identify
@@ -249,19 +231,6 @@ class OAIProvider(object):
 	# ListIdentifiers
 	def _ListIdentifiers(self):
 
-		# # fire search
-		# self.search_results = solr_search_handle.search(**self.search_params)
-
-		# # inti OAIRecord
-		# for i, doc in enumerate(self.search_results.documents):
-		# 	logging.info('adding identifier %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-		# 	# init record
-		# 	record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-		# 	# append to verb_node
-		# 	self.verb_node.append(record.oai_record_node)
-
-		# # finally, set resumption token
-		# self.set_resumption_token()
 		self.retrieve_records()
 		return self.serialize()
 
@@ -274,21 +243,6 @@ class OAIProvider(object):
 	# ListRecords
 	def _ListRecords(self):
 
-		# # fire search
-		# self.search_results = solr_search_handle.search(**self.search_params)
-
-		# # inti OAIRecord
-		# for i, doc in enumerate(self.search_results.documents):
-		# 	logging.info('adding record %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-		# 	# init record
-		# 	record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-		# 	# include full metadata in record
-		# 	record.include_metadata()
-		# 	# append to verb_node
-		# 	self.verb_node.append(record.oai_record_node)
-
-		# # finally, set resumption token
-		# self.set_resumption_token()
 		self.retrieve_records(include_metadata=True)
 		return self.serialize()
 

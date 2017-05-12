@@ -2,6 +2,7 @@
 
 # python modules
 import datetime
+import json
 from lxml import etree
 import time
 import hashlib
@@ -53,7 +54,7 @@ class OAIProvider(object):
 			'q': '*:*',
 			'sort': 'id asc',
 			'start': 0,
-			'rows': 5,
+			'rows': localConfig.OAI_RECORDS_PAGINATION,
 			'fq': ['rels_itemID:*'],
 			'fl': ['id','rels_itemID'],
 			'wt': 'json',
@@ -128,14 +129,21 @@ class OAIProvider(object):
 		'''
 		All of these values need updating
 		'''
+		# set resumption token
+		if self.search_params['start'] + self.search_params['rows'] < self.search_results.total_results:
 
-		# set resumption token node and attributes
-		self.resumptionToken_node = etree.Element('resumptionToken')
-		self.resumptionToken_node.attrib['expirationDate'] = "2017-05-11T14:43:12Z" # UPDATE
-		self.resumptionToken_node.attrib['completeListSize'] = "44896" # UPDATE
-		self.resumptionToken_node.attrib['cursor'] = "0" # UPDATE
-		self.resumptionToken_node.text = 'THIS_IS_AN_AMAZING_TOKEN' # UPDATE
-		self.verb_node.append(self.resumptionToken_node)
+			# prepare token
+			token = hashlib.md5(self.request_timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')).hexdigest()
+			self.search_params['start'] = self.search_params['start'] + self.search_params['rows'] 
+			redisHandles.r_oai.setex(token, 3600, json.dumps({'args':self.args,'search_params':self.search_params}))
+
+			# set resumption token node and attributes
+			self.resumptionToken_node = etree.Element('resumptionToken')
+			self.resumptionToken_node.attrib['expirationDate'] = (self.request_timestamp + datetime.timedelta(0,3600)).strftime('%Y-%m-%dT%H:%M:%SZ')
+			self.resumptionToken_node.attrib['completeListSize'] = str(self.search_results.total_results)
+			self.resumptionToken_node.attrib['cursor'] = str(self.search_results.start)
+			self.resumptionToken_node.text = token
+			self.verb_node.append(self.resumptionToken_node)
 
 
 	# serialize record nodes as XML response
@@ -156,11 +164,23 @@ class OAIProvider(object):
 			'ListSets':self._ListSets
 		}
 
+		# check for resumption token
+		if self.args['resumptionToken']:
+			logging.info('following resumption token, altering search_params')
+			# retrieve token params and alter args and search_params
+			resumption_params = json.loads(redisHandles.r_oai.get(self.args['resumptionToken']))
+			self.args = resumption_params['args']
+			self.search_params = resumption_params['search_params']
+
 		if self.args['verb'] in verb_routes.keys():
 			return verb_routes[self.args['verb']]()
 		else:
 			raise Exception("Verb not found.")
 
+
+	######################################
+	# OAI-PMH Verbs
+	######################################
 
 	# GetRecord
 	def _GetRecord(self):

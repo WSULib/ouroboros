@@ -20,10 +20,8 @@ from WSUDOR_Manager.solrHandles import solr_search_handle
 
 '''
 ToDo
-
-- requesting metadata prefix for records that don't have it
+- skipping records without metadataPrefix, but results are truncated for page...
 - other verbs
-	- 
 '''
 
 

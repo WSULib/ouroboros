@@ -17,6 +17,14 @@ from WSUDOR_API import logging
 from WSUDOR_Manager import fedora_handle, redisHandles
 from WSUDOR_Manager.solrHandles import solr_search_handle
 
+################################################################################################
+# DEBUG FROM PROD
+################################################################################################
+from mysolr import Solr
+solr_search_handle = Solr('http://digital.library.wayne.edu/solr4/fedobjs', version=4)
+from WSUDOR_Manager import fedoraHandles
+fedora_handle = fedoraHandles.remoteRepo('prod')
+################################################################################################
 
 '''
 ToDo
@@ -126,27 +134,79 @@ class OAIProvider(object):
 		self.root_node.append(self.verb_node)
 
 
+	# def retrieve_records(self, include_metadata=False):
+
+	# 	'''
+	# 	To make this async: need a solution that doesn't rely on a specialized async http request, e.g. http_client from tornado
+	# 		- more complicated: need a sperate thread / process to fire OAIRecord, because complex
+	# 		- but, then, add to self.verb_node
+	# 	'''
+
+	# 	# fire search
+	# 	self.search_results = solr_search_handle.search(**self.search_params)
+
+	# 	# inti OAIRecord
+	# 	for i, doc in enumerate(self.search_results.documents):
+	# 		logging.info('adding identifier %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
+	# 		# init record
+	# 		try:
+	# 			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+	# 			# include full metadata in record
+	# 			if include_metadata:
+	# 				 record.include_metadata()
+	# 			# append to verb_node
+	# 			self.verb_node.append(record.oai_record_node)
+	# 		except MetadataPrefix:
+	# 			logging.info("skipping %s" % doc['id'])
+
+	# 	# finally, set resumption token
+	# 	self.set_resumption_token()
+
+
 	def retrieve_records(self, include_metadata=False):
+
+		'''
+		To make this async: need a solution that doesn't rely on a specialized async http request, e.g. http_client from tornado
+			- more complicated: need a sperate thread / process to fire OAIRecord, because complex
+			- but, then, add to self.verb_node
+		'''
+
+		import threading
 
 		# fire search
 		self.search_results = solr_search_handle.search(**self.search_params)
 
-		# inti OAIRecord
-		for i, doc in enumerate(self.search_results.documents):
-			logging.info('adding identifier %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-			# init record
-			try:
-				record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-				# include full metadata in record
-				if include_metadata:
-					 record.include_metadata()
-				# append to verb_node
-				self.verb_node.append(record.oai_record_node)
-			except MetadataPrefix:
-				logging.info("skipping %s" % doc['id'])
+		self.record_nodes = []
 
-		# finally, set resumption token
-		self.set_resumption_token()
+		def worker(doc,i):
+			"""thread worker function"""
+			print 'Worker %s' % i
+			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+			# global record_nodes
+			self.record_nodes.append(record.oai_record_node)
+			return True
+
+		threads = []
+
+		for i, doc in enumerate(self.search_results.documents):
+			t = threading.Thread(target=worker, args=(doc,i))
+			threads.append(t)
+			# t.start()
+			# t.join()
+
+		for t in threads:
+			t.start()
+
+		for t in threads:
+			t.join()
+
+		logging.info('assigned threads, waiting for completion...')
+		# time.sleep(5)
+		logging.info(self.record_nodes)
+
+		# add to verb node
+		for oai_record_node in self.record_nodes:
+			self.verb_node.append(oai_record_node)
 
 
 	def set_resumption_token(self):

@@ -109,9 +109,16 @@ BITSTREAM_CLEARED_USERNAMES = [
 # Readux
 READUX_BASE_URL = "http://localhost/readux"
 
-# Abbyy synced folder
-ABBYY_INCOMING = "/tmp/abbyy/incoming"
-ABBYY_OUTPUT = "/tmp/abbyy/output"
+# fedora_binary symlinks
+FEDORA_BINARY_SYMLINKS = '/var/cache/ouroboros/fedora_binary_symlinks' # no trailing slash
+
+# integrated OAI-PMH server
+OAI_METADATAPREFIX_HASH = {
+	'mods':'MODS',
+	'oai_dc':'DC',
+	'dc':'DC'
+}
+OAI_RECORDS_PAGINATION = 500
 
 ################################
 # sensitive information

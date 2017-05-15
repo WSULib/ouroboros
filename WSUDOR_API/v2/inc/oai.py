@@ -129,17 +129,21 @@ class OAIProvider(object):
 		'''
 		asynchronous record retrieval from Fedora
 		'''
+
 		stime = time.time()
 		logging.info("retrieving records for verb %s" % (self.args['verb']))
 
 		# global to threads
 		self.record_nodes = []
 
+		# limit search to metadataPrefix provided
+		self.search_params['fq'].append('attr_obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )		
+
 		# fire search
 		self.search_results = solr_search_handle.search(**self.search_params)
 		with ThreadPoolExecutor(max_workers=5) as executor:
 			for i, doc in enumerate(self.search_results.documents):
-				executor.submit(self.record_thread_worker, doc, i, include_metadata)
+				executor.submit(self.record_thread_worker, doc, include_metadata)
 
 		# add to verb node
 		for oai_record_node in self.record_nodes:
@@ -153,7 +157,7 @@ class OAIProvider(object):
 		logging.info("%s record(s) returned in %sms" % (len(self.record_nodes), (float(etime) - float(stime)) * 1000))
 
 
-	def record_thread_worker(self, doc, i, include_metadata):
+	def record_thread_worker(self, doc, include_metadata):
 
 		'''
 		thread-based worker function for self.retrieve_records()

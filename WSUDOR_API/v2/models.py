@@ -768,11 +768,6 @@ class OAIServer(Resource):
 
 	def get(self):
 
-		'''
-		- create XML response object
-		- create record class for object
-		'''
-
 		# parse OAI-PMH arguments
 		parser = reqparse.RequestParser(bundle_errors=True)
 		oai_verbs = ('GetRecord','Identify','ListIdentifiers','ListMetadataFormats','ListRecords','ListSets')
@@ -786,7 +781,7 @@ class OAIServer(Resource):
 		args = parser.parse_args(strict=True)
 
 		# debug
-		logging.info(args)
+		logging.debug("OAI-PMH request args: %s" % args)
 		
 		# init OAIProvider
 		op = OAIProvider(args)

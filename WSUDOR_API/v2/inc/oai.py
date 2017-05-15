@@ -22,17 +22,16 @@ from WSUDOR_Manager.solrHandles import solr_search_handle
 ################################################################################################
 # DEBUG FROM PROD
 ################################################################################################
-from mysolr import Solr
-solr_search_handle = Solr('http://digital.library.wayne.edu/solr4/fedobjs', version=4)
-from WSUDOR_Manager import fedoraHandles
-fedora_handle = fedoraHandles.remoteRepo('prod')
+# from mysolr import Solr
+# solr_search_handle = Solr('http://digital.library.wayne.edu/solr4/fedobjs', version=4)
+# from WSUDOR_Manager import fedoraHandles
+# fedora_handle = fedoraHandles.remoteRepo('prod')
 ################################################################################################
 
 
 '''
 ToDo
 - skipping records without metadataPrefix, but results are truncated for page...
-- other verbs
 '''
 
 
@@ -41,14 +40,28 @@ if hasattr(localConfig,'OAI_METADATAPREFIX_HASH'):
 	metadataPrefix_hash = localConfig.OAI_METADATAPREFIX_HASH
 else:
 	metadataPrefix_hash = {
-		'mods':'MODS',
-		'oai_dc':'DC',
-		'dc':'DC'
+		'mods':{
+				'ds_id':'MODS',
+				'schema':'http://www.loc.gov/standards/mods/v3/mods.xsd',
+				'namespace':'http://www.loc.gov/mods/v3'
+			},
+		'oai_dc':{
+				'ds_id':'DC',
+				'schema':'http://www.openarchives.org/OAI/2.0/oai_dc.xsd',
+				'namespace':'http://purl.org/dc/elements/1.1/'
+			},
+		'dc':{
+				'ds_id':'DC',
+				'schema':'http://www.openarchives.org/OAI/2.0/oai_dc.xsd',
+				'namespace':'http://purl.org/dc/elements/1.1/'
+			},
 	}
+
 
 
 class MetadataPrefix(Exception):
 	pass
+
 
 
 class OAIProvider(object):
@@ -75,7 +88,7 @@ class OAIProvider(object):
 
 		# set set, if present
 		if self.args['set']:
-			self.search_params['fq'].append('rels_isMemberOfOAISet:"%s"' % self.args['set'].replace(":","\:"))
+			self.search_params['fq'].append('rels_isMemberOfOAISet:"info:fedora/%s"' % self.args['set'].replace(":","\:"))
 
 		# begin scaffolding
 		self.scaffold()
@@ -84,26 +97,6 @@ class OAIProvider(object):
 	# generate XML root node with OAI-PMH scaffolding
 	def scaffold(self):
 
-		'''
-		Target example:
-
-		<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-		<responseDate>2017-05-11T13:43:11Z</responseDate>
-
-			<request verb="ListRecords" set="wsudor_dpla" metadataPrefix="wsu_mods">http://metadata.library.wayne.edu/repox/OAIHandler</request>
-
-			<VERB GOES HERE>
-
-				<!-- record loop here -->
-				<record>...</record>
-				<record>...</record>
-
-				<!-- resumptionToken -->
-				<resumptionToken expirationDate="2017-05-11T14:43:12Z" completeListSize="44896" cursor="0">1494510192035:wsudor_dpla:wsu_mods:250:44896::</resumptionToken>
-			</VERB ENDS HERE>
-		</OAI-PMH>
-		'''
-		
 		# build root node, nsmap, and attributes		
 		NSMAP = {
 			None:'http://www.openarchives.org/OAI/2.0/'
@@ -136,53 +129,14 @@ class OAIProvider(object):
 		self.verb_node = etree.Element(self.args['verb'])
 		self.root_node.append(self.verb_node)
 
-	# SYNC
-	# def retrieve_records(self, include_metadata=False):
-
-	# 	'''
-	# 	To make this async: need a solution that doesn't rely on a specialized async http request, e.g. http_client from tornado
-	# 		- more complicated: need a sperate thread / process to fire OAIRecord, because complex
-	# 		- but, then, add to self.verb_node
-	# 	'''
-
-	# 	# fire search
-	# 	self.search_results = solr_search_handle.search(**self.search_params)
-
-	# 	# inti OAIRecord
-	# 	for i, doc in enumerate(self.search_results.documents):
-	# 		logging.info('adding identifier %s/%s, node: %s' % (i, self.search_results.total_results, doc['id']))
-	# 		# init record
-	# 		try:
-	# 			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-	# 			# include full metadata in record
-	# 			if include_metadata:
-	# 				 record.include_metadata()
-	# 			# append to verb_node
-	# 			self.verb_node.append(record.oai_record_node)
-	# 		except MetadataPrefix:
-	# 			logging.info("skipping %s" % doc['id'])
-
-	# 	# finally, set resumption token
-	# 	self.set_resumption_token()
-
-
-	# ASYNC
-	def record_thread_worker(self, doc, i, include_metadata):
-		"""thread worker function"""
-		try:
-			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-			# include full metadata in record
-			if include_metadata:
-				 record.include_metadata()
-			# append to record_nodes
-			self.record_nodes.append(record.oai_record_node)
-			return True
-		except MetadataPrefix:
-			logging.info("skipping %s" % doc['id'])
-			return False
-
 
 	def retrieve_records(self, include_metadata=False):
+
+		'''
+		asynchronous record retrieval from Fedora
+		'''
+		stime = time.time()
+		logging.info("retrieving records for verb %s" % (self.args['verb']))
 
 		# global to threads
 		self.record_nodes = []
@@ -200,12 +154,32 @@ class OAIProvider(object):
 		# finally, set resumption token
 		self.set_resumption_token()
 
+		# report
+		etime = time.time()
+		logging.info("%s record(s) returned in %sms" % (len(self.record_nodes), (float(etime) - float(stime)) * 1000))
+
+
+	def record_thread_worker(self, doc, i, include_metadata):
+
+		'''
+		thread-based worker function for self.retrieve_records()
+		'''
+
+		try:
+			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+			# include full metadata in record
+			if include_metadata:
+				 record.include_metadata()
+			# append to record_nodes
+			self.record_nodes.append(record.oai_record_node)
+			return True
+		except MetadataPrefix:
+			logging.info("skipping %s" % doc['id'])
+			return False
+
 
 	def set_resumption_token(self):
 
-		'''
-		All of these values need updating
-		'''
 		# set resumption token
 		if self.search_params['start'] + self.search_params['rows'] < self.search_results.total_results:
 
@@ -221,11 +195,6 @@ class OAIProvider(object):
 			self.resumptionToken_node.attrib['cursor'] = str(self.search_results.start)
 			self.resumptionToken_node.text = token
 			self.verb_node.append(self.resumptionToken_node)
-
-
-	# serialize record nodes as XML response
-	def serialize(self):
-		return etree.tostring(self.root_node)
 
 
 	# convenience function to run all internal methods
@@ -250,9 +219,16 @@ class OAIProvider(object):
 			self.search_params = resumption_params['search_params']
 
 		if self.args['verb'] in verb_routes.keys():
-			return verb_routes[self.args['verb']]()
+			# fire verb reponse building
+			verb_routes[self.args['verb']]()
+			return self.serialize()
 		else:
 			raise Exception("Verb not found.")
+	
+
+	# serialize record nodes as XML response
+	def serialize(self):
+		return etree.tostring(self.root_node)
 
 
 	######################################
@@ -270,10 +246,6 @@ class OAIProvider(object):
 	# Identify
 	def _Identify(self):
 
-		'''
-		This can be filled out more...
-		'''
-
 		# init OAIRecord
 		logging.info('generating identify node')
 		
@@ -282,31 +254,61 @@ class OAIProvider(object):
 		description_node.text = 'WSUDOR, integrated OAI-PMH'
 		self.verb_node.append(description_node)
 
-		return self.serialize()
-
 
 	# ListIdentifiers
 	def _ListIdentifiers(self):
 
 		self.retrieve_records()
-		return self.serialize()
 
 
 	# ListMetadataFormats
 	def _ListMetadataFormats(self):
-		pass
+
+		# iterate through available metadataFormats
+		for mf in metadataPrefix_hash.keys():
+
+			mf_node = etree.Element('metadataFormat')
+
+			# write metadataPrefix node
+			prefix = etree.SubElement(mf_node,'metadataPrefix')
+			prefix.text = mf
+
+			# write schema node
+			schema = etree.SubElement(mf_node,'schema')
+			schema.text = metadataPrefix_hash[mf]['schema']
+
+			# write schema node
+			namespace = etree.SubElement(mf_node,'metadataNamespace')
+			namespace.text = metadataPrefix_hash[mf]['namespace']
+
+			# append to verb_node and return
+			self.verb_node.append(mf_node)
 
 
 	# ListRecords
 	def _ListRecords(self):
 
 		self.retrieve_records(include_metadata=True)
-		return self.serialize()
 
 
 	# ListSets
 	def _ListSets(self):
-		pass
+
+		# get collections
+		search_results = solr_search_handle.search(**{
+				'q':'*:*',
+				'fq':['rels_itemID:*','rels_hasContentModel:*Collection'],
+				'fl':['id','rels_itemID','dc_title']
+			})
+
+		# generate response
+		for oai_set in search_results.documents:
+			set_node = etree.Element('set')
+			setSpec = etree.SubElement(set_node,'setSpec')
+			setSpec.text = oai_set['id']
+			setName = etree.SubElement(set_node,'setName')
+			setName.text = oai_set['dc_title'][0]
+			self.verb_node.append(set_node)
 
 
 
@@ -314,18 +316,6 @@ class OAIRecord(object):
 
 	'''
 	Initialize OAIRecord with pid and args
-	
-	Target XML schema:
-	<header>
-		<identifier>
-		oai:digital.library.wayne.eduwsudor_dpla:oai:digital.library.wayne.edu:wayne:CFAIEB01c010
-		</identifier>
-		<datestamp>2017-05-10</datestamp>
-		<setSpec>wsudor_dpla</setSpec>
-	</header>
-	<metadata>
-		<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
-	</metadata>
 	'''
 
 	def __init__(self, pid=False, itemID=False, args=False):
@@ -334,7 +324,7 @@ class OAIRecord(object):
 		self.itemID = itemID
 		self.args = args
 		self.metadataPrefix = self.args['metadataPrefix']
-		self.target_datastream = metadataPrefix_hash[self.metadataPrefix]
+		self.target_datastream = metadataPrefix_hash[self.metadataPrefix]['ds_id']
 		self.oai_record_node = None
 
 		# get metadata

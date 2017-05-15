@@ -22,6 +22,7 @@ import uuid, json, os
 import bagit
 from lxml import etree
 import mimetypes
+from WSUDOR_Manager import logging
 
 
 # define required `BagClass` class
@@ -58,7 +59,7 @@ class BagClass(object):
 			ns = MODS_root.nsmap
 			self.MODS_handle = MODS_root.xpath('//mods:mods', namespaces=ns)[0]
 		except:
-			print "could not parse MODS from DB string"			
+			logging.debug("could not parse MODS from DB string")
 
 		# future
 		self.objMeta_handle = None
@@ -103,7 +104,7 @@ class BagClass(object):
 		# determine remote_location by parsing filename
 		filename_parts = filename.split("_")
 		remote_location = self.files_location + "/" + "/".join(filename_parts)
-		print "attemping symlink from %s to %s" % (remote_location,bag_location)
+		logging.debug("attemping symlink from %s to %s" % (remote_location,bag_location))
 		os.symlink(remote_location, bag_location)
 
 		# Set the representative image for the object
@@ -118,7 +119,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.collection_identifier+self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:%s" % (self.full_identifier)

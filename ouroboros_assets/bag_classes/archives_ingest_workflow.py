@@ -5,9 +5,8 @@ import bagit
 from lxml import etree
 import mimetypes
 import metsrw
-from WSUDOR_Manager import logging
 
-from WSUDOR_Manager import utilities, models
+from WSUDOR_Manager import utilities, models, logging
 from inc import WSUDOR_bagger
 
 

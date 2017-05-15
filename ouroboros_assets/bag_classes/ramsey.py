@@ -5,6 +5,7 @@ import bagit
 from inc import WSUDOR_bagger
 from lxml import etree
 from sets import Set
+from WSUDOR_Manager import logging
 
 '''
 This can be rewritten, with some instructions for making the books on disk.  
@@ -84,11 +85,11 @@ class BagClass(object):
 		
 		# get identifier
 		identifier = self.MODS_handle['MODS_element'].xpath('//mods:identifier[@type="local"]', namespaces=self.MODS_handle['MODS_ns'])[0].text
-		print "identifier: %s" % identifier
+		logging.debug("identifier: %s" % identifier)
 
 		# get title
 		book_title = self.MODS_handle['MODS_element'].xpath('mods:titleInfo/mods:title',namespaces=self.MODS_handle['MODS_ns'])[0].text
-		print "full title:",book_title
+		logging.debug("full title: %s" % book_title)
 
 		# instantiate object with quick variables
 		objMeta_primer = {
@@ -103,15 +104,15 @@ class BagClass(object):
 		self.objMeta_handle = self.ObjMeta(**objMeta_primer)
 
 		# iterate through SORTED binaries and create symlinks and write to objMeta		
-		print "creating symlinks and writing to objMeta"
-		print "looking in %s" % self.files_location
+		logging.debug("creating symlinks and writing to objMeta")
+		logging.debug("looking in %s" % self.files_location)
 
 		# get binary_files location
 		sm = json.loads(self.object_row.struct_map)
 		file_part = sm['mets:div']['mets:fptr']['@FILEID']
-		print "file part is %s" % file_part
+		logging.debug("file part is %s" % file_part)
 		d = "/".join([self.files_location, file_part, "etext_files_%s" % file_part])
-		print "full path is %s" % d
+		logging.debug("full path is %s" % d)
 
 		binary_files = [ binary for binary in os.listdir(d) ]
 		binary_files.sort() #sort
@@ -174,7 +175,7 @@ class BagClass(object):
 		Sort list of page numbers, use lowest.
 		'''		
 		# page_num_list.sort()
-		# print "Setting is represented to page num %s, ds_id %s" % page_num_list[0]
+		# logging.debug("Setting is represented to page num %s, ds_id %s" % page_num_list[0])
 		# self.objMeta_handle.isRepresentedBy = page_num_list[0][1]
 		self.objMeta_handle.isRepresentedBy = "IMAGE_1"
 

@@ -4,6 +4,7 @@ import uuid, json, os
 import bagit
 from lxml import etree
 import mimetypes
+from WSUDOR_Manager import logging
 
 
 # define required `BagClass` class

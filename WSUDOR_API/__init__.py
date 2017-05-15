@@ -3,9 +3,10 @@
 import urllib
 
 import localConfig
+from localConfig import logging
 
 # setup logging for WSUDOR_API
-import logging
+logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
 
 # modules / packages import
 from flask import Flask, render_template, g, redirect, jsonify, request

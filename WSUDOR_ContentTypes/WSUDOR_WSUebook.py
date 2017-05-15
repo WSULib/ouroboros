@@ -34,6 +34,7 @@ from WSUDOR_Manager import redisHandles, helpers, utilities
 
 # localconfig
 import localConfig
+from localConfig import *
 
 # derivatives
 # from inc.derivatives import JP2DerivativeMaker

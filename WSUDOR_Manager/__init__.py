@@ -19,6 +19,7 @@ if len(sys.argv) == 1:
 else:
 	run_context = 'celery'
 
+logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
 
 
 ##########################################################################################

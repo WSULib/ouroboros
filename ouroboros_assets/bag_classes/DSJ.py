@@ -4,6 +4,7 @@ import uuid, json, os
 import bagit
 from inc import WSUDOR_bagger
 from lxml import etree
+from WSUDOR_Manager import logging
 
 
 # define required `BagClass` class
@@ -60,7 +61,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:%s" % (self.full_identifier)
@@ -74,7 +75,7 @@ class BagClass(object):
 		
 		# get identifier
 		identifier = self.MODS_handle['MODS_element'].xpath('//mods:identifier[@type="local"]', namespaces=self.MODS_handle['MODS_ns'])[0].text
-		print "identifier: %s" % identifier
+		logging.debug("identifier: %s" % identifier)
 
 		# get volume / issue
 		volume = self.MODS_handle['MODS_element'].xpath('//mods:detail[@type="volume"]/mods:number', namespaces=self.MODS_handle['MODS_ns'])[0].text
@@ -82,13 +83,13 @@ class BagClass(object):
 
 		# gen full identifier
 		self.full_identifier = "DSJv" + volume + "i" + issue + identifier
-		print "full identifier: %s " % self.full_identifier		
+		logging.debug("full identifier: %s " % self.full_identifier)
 
 		# get title for DSJ
 		book_title = self.MODS_handle['MODS_element'].xpath('mods:titleInfo/mods:title',namespaces=self.MODS_handle['MODS_ns'])[0].text
 		book_sub_title = self.MODS_handle['MODS_element'].xpath('mods:titleInfo/mods:subTitle',namespaces=self.MODS_handle['MODS_ns'])[0].text
 		full_title = " ".join([book_title,book_sub_title])
-		print "full title:",full_title
+		logging.debug("full title: %s" % full_title)
 
 		# instantiate object with quick variables
 		objMeta_primer = {
@@ -103,8 +104,8 @@ class BagClass(object):
 		self.objMeta_handle = self.ObjMeta(**objMeta_primer)
 
 		# iterate through SORTED binaries and create symlinks and write to objMeta		
-		print "creating symlinks and writing to objMeta"
-		print "looking in %s" % self.files_location
+		logging.debug("creating symlinks and writing to objMeta")
+		logging.debug("looking in %s" % self.files_location)
 
 		# find DSJ folder by walking input
 		identifier_suffix = identifier.split("DSJ")[1]
@@ -112,7 +113,7 @@ class BagClass(object):
 			for dir in dirs:
 				if dir.endswith(identifier_suffix):
 					d = "/".join([ root, dir ])
-		print "target dir is %s" % d
+		logging.debug("target dir is %s" % d)
 
 		binary_files = [ binary for binary in os.listdir(d) if not binary.startswith('DSJ') ]
 		binary_files.sort() #sort
@@ -122,7 +123,7 @@ class BagClass(object):
 			if ebook_binary == ".DS_Store" or ebook_binary.endswith('bak') or ebook_binary == "Thumbs.db":
 				continue
 
-			print "working on %s" % ebook_binary
+			logging.debug("working on %s" % ebook_binary)
 
 			# write symlink
 			source = "/".join([ d, ebook_binary ])

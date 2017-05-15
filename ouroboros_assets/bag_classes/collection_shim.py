@@ -6,7 +6,7 @@ from inc import WSUDOR_bagger
 from lxml import etree
 from sets import Set
 import mimetypes
-
+from WSUDOR_Manager import logging
 
 # define required `BagClass` class
 class BagClass(object):
@@ -90,7 +90,7 @@ class BagClass(object):
 		datastreams_dir = self.obj_dir + "/datastreams"
 
 		# collection art file
-		print "Looking in: %s" % self.files_location
+		logging.debug("Looking in: %s" % self.files_location)
 		
 		# get remote_location from 
 		fd = json.loads(self.object_row.job.file_index) # loads from MySQL

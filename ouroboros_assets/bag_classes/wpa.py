@@ -23,7 +23,7 @@ import bagit
 from lxml import etree
 import mimetypes
 
-from WSUDOR_Manager import models
+from WSUDOR_Manager import models, logging
 
 
 # define required `BagClass` class
@@ -58,7 +58,7 @@ class BagClass(object):
 			ns = MODS_tree.nsmap
 			self.MODS_handle = MODS_root.xpath('//mods:mods', namespaces=ns)[0]
 		except:
-			print "could not parse MODS from DB string"		
+			logging.debug("could not parse MODS from DB string")
 
 		# future
 		self.objMeta_handle = None
@@ -105,12 +105,12 @@ class BagClass(object):
 
 		# determine remote_location by parsing filename		
 		filename_root = filename.split("wpa_")[1]
-		print "Looking for:", filename_root
+		logging.debug("Looking for: %s" % filename_root)
 		
 		# get remote_location from 
 		fd = json.loads(self.object_row.job.file_index) # loads from MySQL
 		filename_path = fd[filename_root]
-		print "target filename path is:",filename_path
+		logging.debug("target filename path is: %s" % filename_path)
 		remote_location = filename_path
 		
 		# create symlink
@@ -129,7 +129,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:%s" % (self.full_identifier)
@@ -164,7 +164,7 @@ class BagClass(object):
 
 		for div in child_divs:
 			if 'mets:fptr' in div.keys():
-				print "fptr found!  must be image"
+				logging.debug("fptr found!  must be image")
 				fptr_found = True				
 				break
 			
@@ -182,7 +182,7 @@ class BagClass(object):
 
 
 
-		print 'content type is: %s' % self.content_type
+		logging.debug('content type is: %s' % self.content_type)
 
 		# write known relationships
 		self.objMeta_handle.object_relationships = [
@@ -216,9 +216,9 @@ class BagClass(object):
 			parent_DMDID = parent.attrib['DMDID']
 			parent_obj = models.ingest_workspace_object.query.filter_by(job_id=self.object_row.job.id, DMDID=parent_DMDID).first()
 			parent_pid = parent_obj.pid
-			print "parent found %s / %s" % (parent_obj.object_title, parent_pid)
+			logging.debug("parent found %s / %s" % (parent_obj.object_title, parent_pid))
 		except:
-			print "Parent not found, setting collection PID"
+			logging.debug("Parent not found, setting collection PID")
 			parent_pid = "wayne:collection%s" % (self.collection_identifier)
 
 		# write parent

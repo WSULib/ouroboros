@@ -21,6 +21,7 @@ import eulfedora
 
 # localConfig
 import localConfig
+from localConfig import logging
 
 # WSUDOR
 import WSUDOR_ContentTypes

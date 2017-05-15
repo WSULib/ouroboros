@@ -32,7 +32,7 @@ def ebook_v3_conversion(pid):
 	stime = time.time()
 
 	# export old book object with airlock
-	print "attempting backup of source object"
+	logging.debug("attempting backup of source object")
 	try:
 		os.system('python /opt/eulfedora/scripts/repo-cp --config /home/ouroboros/.repocpcfg --export-format archive --omit-checksums local /tmp/Ouroboros/airlock_hold %s' % pid)
 	except:
@@ -68,7 +68,7 @@ def ebook_v3_conversion(pid):
 	# report
 	etime = time.time()
 	ttime = float(etime - stime)
-	print "Finished %s in %f seconds" % (pid,ttime)
+	logging.debug("Finished %s in %f seconds" % (pid,ttime))
 
 
 def createBookObj(wobj):
@@ -88,7 +88,7 @@ def createBookObj(wobj):
 	# temporary pid
 	tpid = "wayne:_%s" % wobj.pid.split(":")[1]
 
-	print "------------> working on %s" % tpid
+	logging.debug("------------> working on %s" % tpid)
 
 	# creating temp tobj	
 	tobj = fedora_handle.get_object(tpid)
@@ -102,7 +102,7 @@ def createBookObj(wobj):
 
 	# write POLICY datastream
 	# NOTE: 'E' management type required, not 'R'
-	print "Using policy:",wobj.objMeta['policy']
+	logging.debug("Using policy:",wobj.objMeta['policy'])
 	policy_suffix = wobj.objMeta['policy'].split("info:fedora/")[1]
 	policy_handle = eulfedora.models.DatastreamObject(tobj, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
 	policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -112,7 +112,7 @@ def createBookObj(wobj):
 	# migrate datastreams
 	for ds in ds_migrate:
 
-		print "---> working on",ds
+		logging.debug("---> working on",ds)
 
 		# open source ds
 		sds = wobj.ohandle.getDatastreamObject(ds)
@@ -123,12 +123,12 @@ def createBookObj(wobj):
 
 		# XML ds
 		if type(sds) == eulfedora.models.XmlDatastreamObject:
-			print "retrieving XML type content"
+			logging.debug("retrieving XML type content")
 			nds.ds_location = "http://localhost/fedora/objects/%s/datastreams/%s/content" % (wobj.pid, ds)
 
 		# RDF ds
 		if type(sds) == eulfedora.models.RdfDatastreamObject:
-			print "retrieving RDF type content"
+			logging.debug("retrieving RDF type content")
 			rdf_content = requests.get("http://localhost/fedora/objects/%s/datastreams/%s/content" % (wobj.pid, ds)).content
 			rdf_content_scrubbed = rdf_content.replace(wobj.pid, tpid)
 
@@ -142,21 +142,21 @@ def createBookObj(wobj):
 
 		# Generic ds
 		else:
-			print "writing generic type content"
+			logging.debug("writing generic type content")
 			nds.content = sds.content
 
 		# saving datastream
-		print "saving datastream %s" % ds
+		logging.debug("saving datastream %s" % ds)
 		nds.save()
 
 		# cleanup
 		if 'filename' in locals() and os.path.exists(filename):
-			print "removing temporary XML file",filename
+			logging.debug("removing temporary XML file",filename)
 			os.remove(filename)
 
 
 	# save new object
-	print "saving temp book object"
+	logging.debug("saving temp book object")
 	tobj.save()
 
 	return tobj
@@ -169,7 +169,7 @@ def createPageObj(wobj, page_num, page_dict):
 	# if page_num > 5:
 	# 	return False
 
-	print "------------> working on page %s" % page_num
+	logging.debug("------------> working on page %s" % page_num)
 
 	# new pid
 	npid = "wayne:%s_Page_%s" % (wobj.pid.split(":")[1], page_num)
@@ -186,7 +186,7 @@ def createPageObj(wobj, page_num, page_dict):
 
 	# write POLICY datastream
 	# NOTE: 'E' management type required, not 'R'
-	print "Using policy:",wobj.objMeta['policy']
+	logging.debug("Using policy:",wobj.objMeta['policy'])
 	policy_suffix = wobj.objMeta['policy'].split("info:fedora/")[1]
 	policy_handle = eulfedora.models.DatastreamObject(nobj, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
 	policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -219,7 +219,7 @@ def createPageObj(wobj, page_num, page_dict):
 			# open source datastream
 			sds = wobj.ohandle.getDatastreamObject(target_ids[ds])
 
-			print "---> working on", sds.label
+			logging.debug("---> working on", sds.label)
 
 			# write objMeta as datastream
 			nds = eulfedora.models.FileDatastreamObject(nobj, ds, ds, mimetype=sds.mimetype, control_group='M')
@@ -229,8 +229,8 @@ def createPageObj(wobj, page_num, page_dict):
 
 		except Exception,e:
 
-			print e
-			print "could not recreate %s" % ds
+			logging.debug(e)
+			logging.debug("could not recreate %s" % ds)
 
 	# write RDF relationships
 	nobj.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")
@@ -259,11 +259,11 @@ def replaceSourceObj(wobj, tobj):
 		fhand.write(FOXML)
 
 	# purge old object
-	print "purging old book object..."
+	logging.debug("purging old book object...")
 	fedora_handle.purge_object(wobj.pid)
 
 	# ingest new object
-	print "ingesting new book object..."
+	logging.debug("ingesting new book object...")
 	# import new book object with airlock
 	os.system('python /opt/eulfedora/scripts/repo-cp --config /home/ouroboros/.repocpcfg --export-format archive --omit-checksums /tmp/Ouroboros/airlock local')
 
@@ -272,16 +272,16 @@ def replaceSourceObj(wobj, tobj):
 	nwobj.indexToSolr()
 
 	# purge temporary object
-	print "purging temporary book object"
+	logging.debug("purging temporary book object")
 	fedora_handle.purge_object(tobj.pid)
 
 	# cleanup
-	print "cleaning up..."
+	logging.debug("cleaning up...")
 	if os.path.exists(FOXML_filename):
-		print "removing temp FOXML",FOXML_filename
+		logging.debug("removing temp FOXML",FOXML_filename)
 		os.remove(FOXML_filename)
 	if os.path.exists('/tmp/Ouroboros/airlock_hold/%s.xml' % wobj.pid):
-		print "removing held backup"
+		logging.debug("removing held backup")
 		os.remove('/tmp/Ouroboros/airlock_hold/%s.xml' % wobj.pid)
 
 	return nwobj
@@ -290,31 +290,31 @@ def replaceSourceObj(wobj, tobj):
 
 def rollback(pid, rollback_type):
 
-	print "rolled back v3 conversion for %s, writing to log" % pid
+	logging.debug("rolled back v3 conversion for %s, writing to log" % pid)
 	with open('/tmp/Ouroboros/ebook_v3_conversion.log','a') as fhand:
 		fhand.write("\n%s - %s failed at %s" % (datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'), pid, rollback_type))
 
 	if rollback_type == 'initial_backup':
-		print "could not export backup, aborting."
+		logging.debug("could not export backup, aborting.")
 		return False
 	
 	# book failed, rollback and return
 	elif rollback_type == 'book':
-		print "rolling back from bad book ingest"
+		logging.debug("rolling back from bad book ingest")
 		# delete temp book
 		tpid = "wayne:_%s" % pid.split(":")[1]
 		try:
 			fedora_handle.purge_object(tpid)
-			print "temp book found, purged"
+			logging.debug("temp book found, purged")
 		except:
-			print "temp book not found, skipping rollback purge"
+			logging.debug("temp book not found, skipping rollback purge")
 		
 		# finally, return
 		return False
 
 	# pages failed, rollback, then run book rollback
 	elif rollback_type == 'pages':
-		print "rolling back from bad pages ingest"
+		logging.debug("rolling back from bad pages ingest")
 
 		# find page objects
 		pages = fedora_handle.find_objects("%s_Page_*" % pid)
@@ -326,7 +326,7 @@ def rollback(pid, rollback_type):
 
 	# fail near end, roll back all
 	elif rollback_type == 'replace':
-		print "rolling back from bad source replace ingest"
+		logging.debug("rolling back from bad source replace ingest")
 
 		# rollback pages (which calls book)
 		rollback(pid, 'pages')

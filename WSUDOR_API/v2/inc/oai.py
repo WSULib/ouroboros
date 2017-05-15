@@ -29,12 +29,6 @@ from WSUDOR_Manager.solrHandles import solr_search_handle
 ################################################################################################
 
 
-'''
-ToDo
-- skipping records without metadataPrefix, but results are truncated for page...
-'''
-
-
 # attempt to load metadataPrefix map from localConfig, otherwise default
 if hasattr(localConfig,'OAI_METADATAPREFIX_HASH'):
 	metadataPrefix_hash = localConfig.OAI_METADATAPREFIX_HASH

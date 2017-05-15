@@ -926,16 +926,6 @@ class WSUDOR_GenObject(object):
     #   return PID,"Reingested."
 
 
-
-    # Solr Indexing
-    def indexToSolr(self, printOnly=False):
-
-        # derive Dublin Core
-        self.DCfromMODS()
-
-        return actions.solrIndexer.solrIndexer('modifyObject', self.pid, human_hash=False, printOnly=printOnly)
-
-
     def previewSolrDict(self):
         '''
         Function to run current WSUDOR object through indexSolr() transforms
@@ -1036,6 +1026,9 @@ class WSUDOR_GenObject(object):
             setattr(self.SolrDoc.doc, "obj_size_wsudor_human", size_dict['wsudor_total_size'][1] )
         except:
             print "Could not determine object size, skipping"
+
+        # Add list of datastreams
+        setattr(self.SolrDoc.doc, "attr_obj_datastreams", self.ohandle.ds_list.keys() )
 
 
         #######################################################################################

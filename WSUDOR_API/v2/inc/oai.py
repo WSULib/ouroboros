@@ -137,7 +137,8 @@ class OAIProvider(object):
 		self.record_nodes = []
 
 		# limit search to metadataPrefix provided
-		self.search_params['fq'].append('attr_obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )		
+		self.search_params['fq'].append('obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )		
+		logging.info(self.search_params)
 
 		# fire search
 		self.search_results = solr_search_handle.search(**self.search_params)

@@ -1028,7 +1028,7 @@ class WSUDOR_GenObject(object):
             print "Could not determine object size, skipping"
 
         # Add list of datastreams
-        setattr(self.SolrDoc.doc, "attr_obj_datastreams", self.ohandle.ds_list.keys() )
+        setattr(self.SolrDoc.doc, "obj_datastreams", self.ohandle.ds_list.keys() )
 
 
         #######################################################################################

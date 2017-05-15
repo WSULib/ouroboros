@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 import requests
 import rdflib
 from collections import defaultdict, OrderedDict
-import logging
+from localConfig import logging
 
 # library for working with LOC BagIt standard
 import bagit

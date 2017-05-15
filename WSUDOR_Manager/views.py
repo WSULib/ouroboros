@@ -600,7 +600,7 @@ def fireTaskWorker(task_name,task_inputs_key):
         In the case of custom_loop's, using this task_handle to fire instead of taskFactory
         '''
         task_handle = getattr(actions, task_name)
-        logging.debug("We've got task handle: "+task_handle)
+        logging.debug("We've got task handle: %s" % (task_handle))
     except:
         return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/{{APP_PREFIX}}/userPage'>user page</a>.")
 

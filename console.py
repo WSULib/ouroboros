@@ -1,6 +1,6 @@
-logging.debug("importing WSUDOR_Manager")
 from WSUDOR_Manager import *
 from WSUDOR_Manager import jobs
+logging.debug("importing WSUDOR_Manager")
 import WSUDOR_Indexer
 from WSUDOR_Indexer.models import IndexRouter
 
@@ -8,9 +8,6 @@ from WSUDOR_Indexer.models import IndexRouter
 import os
 import rdflib
 import time
-
-# set logging level
-logging.basicConfig(level=logging.INFO)
 
 print '''
                 ::+:/`

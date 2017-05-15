@@ -23,7 +23,7 @@ from urllib import unquote, quote_plus, urlopen
 from collections import deque
 import struct
 from PIL import Image
-import logging
+from localConfig import logging
 import ssl
 import operator
 from dateutil import parser

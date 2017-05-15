@@ -1,5 +1,5 @@
 import json
-import logging
+from localConfig import logging
 from stompest.async import Stomp
 from stompest.async.listener import SubscriptionListener
 from stompest.config import StompConfig

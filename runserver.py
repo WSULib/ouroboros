@@ -7,7 +7,6 @@ from twisted.web.server import NOT_DONE_YET
 from twisted.web import server, resource
 from twisted.python import log
 import json
-import logging
 import subprocess
 import sys
 
@@ -21,9 +20,6 @@ import time
 
 # local
 from localConfig import *
-
-# set logging
-logging.basicConfig(stream=sys.stdout, level=LOGGING_LEVEL)
 
 # import WSUDOR_Manager app
 from WSUDOR_Manager import app as WSUDOR_Manager_app

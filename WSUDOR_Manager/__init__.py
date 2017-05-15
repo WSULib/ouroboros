@@ -13,12 +13,6 @@ from eulfedora.server import Repository
 from celery import Celery
 import xmlrpclib
 
-# import logging
-# logging.getLogger('').handlers = []
-# logging.basicConfig(level=LOGGING_LEVEL)
-# logging.FileHandler('/home/ouroboros/ouroboros.log')
-
-
 # sniff out context
 if len(sys.argv) == 1:
 	run_context = 'ouroboros'
@@ -157,7 +151,8 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.userna
 			self.sup_server.supervisor.reloadConfig()
 			self.sup_server.supervisor.addProcessGroup('celery-%s' % self.username)
 		except Exception, e:
-			logging.debug("could not start supervisor process",e)
+			logging.debug("could not start supervisor process")
+			logging.debug(e)
 			return False
 
 

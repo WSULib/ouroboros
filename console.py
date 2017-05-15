@@ -127,7 +127,7 @@ def tailUserCelery(user):
 # function to grab single object from remote repository
 def getRemoteObject(repo, base_pid, skip_constituents=False):
 
-	print "ingesting: %s" % base_pid
+	logging.info("ingesting: %s" % base_pid)
 	sync_list = [base_pid]
 	
 	# remote repo
@@ -160,7 +160,7 @@ def getRemoteObject(repo, base_pid, skip_constituents=False):
 			pid = pid.split("/")[1]
 		# release from indexer hold
 		if i > 0:
-			print "releasing from indexer queue hold: %s, %d/%d..." % (pid,i,len(sync_list))
+			logging.debug("releasing from indexer queue hold: %s, %d/%d..." % (pid,i,len(sync_list)))
 			IndexRouter.alter_queue_action(pid, 'forget')
 
 	# finally, let primary object index

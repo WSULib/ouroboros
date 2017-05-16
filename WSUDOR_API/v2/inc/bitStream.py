@@ -5,7 +5,7 @@ import localConfig
 from flask import request, redirect, Response, jsonify, stream_with_context, Blueprint
 
 # WSUDOR_API_app
-from WSUDOR_Manager import fedora_handle, redisHandles
+from WSUDOR_Manager import fedora_handle, redisHandles, logging
 from WSUDOR_Manager.utilities import mimetypes
 
 from eulfedora.models import DatastreamObject, XmlDatastreamObject
@@ -57,7 +57,7 @@ class BitStream(object):
 		try:
 			self.auth = self._determine_auth()
 		except Exception, e:
-			print e
+			logging.debug(e)
 			self.msg = "authorization failed"
 			self.status_code = 500
 			self.auth = False
@@ -140,7 +140,7 @@ class BitStream(object):
 					if self.token == 'request':
 						
 						return_token = str(uuid.uuid4()) # random token
-						print "setting token: %s" % return_token
+						logging.debug("setting token: %s" % return_token)
 						redisHandles.r_catchall.set(return_token, self.unique_id)
 						self.msg = {
 							"token":return_token,
@@ -176,7 +176,7 @@ class BitStream(object):
 							OR, keep and remove after certain time?
 						if not, return error
 					'''
-					print 'token verified for obj/ds, removing token: %s' % self.token
+					logging.debug('token verified for obj/ds, removing token: %s' % self.token)
 					redisHandles.r_catchall.delete(self.token)
 					return True
 
@@ -222,7 +222,7 @@ class BitStream(object):
 		# if key and key match
 		if key == localConfig.BITSTREAM_KEY:
 
-			print "generating all bitStream tokens..."
+			logging.debug("generating all bitStream tokens...")
 
 			# return dict
 			response_dict = {}
@@ -243,7 +243,7 @@ class BitStream(object):
 
 				except:
 					
-					print "could not generate bitstream for %s" % DS
+					logging.debug("could not generate bitstream for %s" % DS)
 					response_dict[DS] = {
 						'msg': "could not generate bitstream for %s" % DS
 					}
@@ -251,7 +251,7 @@ class BitStream(object):
 			return response_dict
 
 		else:
-			print "bitstream key not recognized"
+			logging.debug("bitstream key not recognized")
 			return False
 
 

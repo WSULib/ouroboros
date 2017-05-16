@@ -21,13 +21,12 @@ import eulfedora
 
 # localConfig
 import localConfig
-from localConfig import logging
 
 # WSUDOR
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers
+from WSUDOR_Manager import redisHandles, helpers, logging
 
 
 class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):

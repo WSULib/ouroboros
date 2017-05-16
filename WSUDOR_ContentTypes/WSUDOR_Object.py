@@ -23,7 +23,6 @@ from urllib import unquote, quote_plus, urlopen
 from collections import deque
 import struct
 from PIL import Image
-from localConfig import logging
 import ssl
 import operator
 from dateutil import parser
@@ -50,7 +49,7 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import fedoraHandles
-from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db
+from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db, logging
 from WSUDOR_Indexer.models import IndexRouter
 
 # derivatives

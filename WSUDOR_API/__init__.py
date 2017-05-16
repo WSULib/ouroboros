@@ -3,7 +3,7 @@
 import urllib
 
 import localConfig
-from localConfig import logging
+from localConfig import logging, LOGGING_STREAM, LOGGING_LEVEL
 
 # setup logging for WSUDOR_API
 logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)

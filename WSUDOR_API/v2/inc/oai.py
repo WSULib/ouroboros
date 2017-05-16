@@ -19,16 +19,6 @@ from WSUDOR_Manager import fedora_handle, redisHandles
 from WSUDOR_Manager.solrHandles import solr_search_handle
 
 
-################################################################################################
-# DEBUG FROM PROD
-################################################################################################
-# from mysolr import Solr
-# solr_search_handle = Solr('http://digital.library.wayne.edu/solr4/fedobjs', version=4)
-# from WSUDOR_Manager import fedoraHandles
-# fedora_handle = fedoraHandles.remoteRepo('prod')
-################################################################################################
-
-
 # attempt to load metadataPrefix map from localConfig, otherwise provide default
 if hasattr(localConfig,'OAI_METADATAPREFIX_HASH'):
 	metadataPrefix_hash = localConfig.OAI_METADATAPREFIX_HASH
@@ -140,9 +130,9 @@ class OAIProvider(object):
 			return self.raise_error('cannotDisseminateFormat','The metadataPrefix %s is not allowed' % self.args['metadataPrefix'])
 
 		# fire search
-		logging.info(self.search_params)
+		logging.debug("OAI-PMH record search params: %s" % self.search_params)
 		self.search_results = solr_search_handle.search(**self.search_params)
-		logging.info(self.search_results.total_results)
+		logging.debug("OAI-PMH record search results: %s records found that meet verb and arg criteria" % self.search_results.total_results)
 
 		# if results none, and GetRecord
 		if self.search_results.total_results == 0 and self.args['verb'] in ['GetRecord']:

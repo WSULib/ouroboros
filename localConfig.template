@@ -114,11 +114,23 @@ FEDORA_BINARY_SYMLINKS = '/var/cache/ouroboros/fedora_binary_symlinks' # no trai
 
 # integrated OAI-PMH server
 OAI_METADATAPREFIX_HASH = {
-	'mods':'MODS',
-	'oai_dc':'DC',
-	'dc':'DC'
+	'mods':{
+			'ds_id':'MODS',
+			'schema':'http://www.loc.gov/standards/mods/v3/mods.xsd',
+			'namespace':'http://www.loc.gov/mods/v3'
+		},
+	'oai_dc':{
+			'ds_id':'DC',
+			'schema':'http://www.openarchives.org/OAI/2.0/oai_dc.xsd',
+			'namespace':'http://purl.org/dc/elements/1.1/'
+		},
+	'dc':{
+			'ds_id':'DC',
+			'schema':'http://www.openarchives.org/OAI/2.0/oai_dc.xsd',
+			'namespace':'http://purl.org/dc/elements/1.1/'
+		}
 }
-OAI_RECORDS_PAGINATION = 500
+OAI_RECORDS_PAGINATION = 250
 
 ################################
 # sensitive information

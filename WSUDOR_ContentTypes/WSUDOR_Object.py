@@ -1028,7 +1028,12 @@ class WSUDOR_GenObject(object):
             print "Could not determine object size, skipping"
 
         # Add list of datastreams
-        setattr(self.SolrDoc.doc, "obj_datastreams", self.ohandle.ds_list.keys() )
+        '''
+        Removed because it pollutes search with datastream words like "POLICY",
+        and potential security/access concern if all datastreams are easily known.
+        '''
+        # setattr(self.SolrDoc.doc, "obj_datastreams", self.ohandle.ds_list.keys() )
+        setattr(self.SolrDoc.doc, "admin_datastreams", "|".join(self.ohandle.ds_list.keys()) )
 
 
         #######################################################################################

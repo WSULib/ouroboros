@@ -29,7 +29,7 @@ from WSUDOR_Manager.solrHandles import solr_search_handle
 ################################################################################################
 
 
-# attempt to load metadataPrefix map from localConfig, otherwise default
+# attempt to load metadataPrefix map from localConfig, otherwise provide default
 if hasattr(localConfig,'OAI_METADATAPREFIX_HASH'):
 	metadataPrefix_hash = localConfig.OAI_METADATAPREFIX_HASH
 else:
@@ -80,8 +80,6 @@ class OAIProvider(object):
 		# set set, if present
 		if self.args['set']:
 			self.search_params['fq'].append('rels_isMemberOfOAISet:"info:fedora/%s"' % self.args['set'].replace(":","\:"))
-
-
 
 		# begin scaffolding
 		self.scaffold()
@@ -134,14 +132,17 @@ class OAIProvider(object):
 
 		# limit search to metadataPrefix provided
 		if self.args['metadataPrefix'] in metadataPrefix_hash.keys():
-			self.search_params['fq'].append('obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
+			# self.search_params['fq'].append('obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
+			self.search_params['fq'].append('admin_datastreams:*%s*' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
+		elif not self.args['metadataPrefix']:
+			return self.raise_error('cannotDisseminateFormat','metadataPrefix is required for verb: %s' % (self.args['verb']))
 		else:
 			return self.raise_error('cannotDisseminateFormat','The metadataPrefix %s is not allowed' % self.args['metadataPrefix'])
 
 		# fire search
+		logging.info(self.search_params)
 		self.search_results = solr_search_handle.search(**self.search_params)
-
-		logging.info(self.search_results.documents)
+		logging.info(self.search_results.total_results)
 
 		# if results none, and GetRecord
 		if self.search_results.total_results == 0 and self.args['verb'] in ['GetRecord']:
@@ -255,10 +256,6 @@ class OAIProvider(object):
 		return etree.tostring(self.root_node)
 
 
-	######################################
-	# OAI-PMH Verbs
-	######################################
-
 	# GetRecord
 	def _GetRecord(self):
 		
@@ -270,7 +267,7 @@ class OAIProvider(object):
 	def _Identify(self):
 
 		# init OAIRecord
-		logging.info('generating identify node')
+		logging.debug('generating identify node')
 		
 		# write Identify node
 		description_node = etree.Element('description')
@@ -293,14 +290,12 @@ class OAIProvider(object):
 
 		if self.args['identifier']:
 			try:
-				logging.info("identifier provided for ListMetadataFormats, confirming that identifier exists...")
+				logging.debug("identifier provided for ListMetadataFormats, confirming that identifier exists...")
 				search_results = solr_search_handle.search(**{'q':'rels_itemID:%s' % self.args['identifier'].replace(":","\:"),'fl':['id']})
-				logging.info(search_results.documents)
 				if search_results.total_results > 0:
 					fedora_object = fedora_handle.get_object(search_results.documents[0]['id'])
 					if fedora_object.exists:
 						logging.info("record found, returning allowed metadataPrefixs")
-						logging.info(inv_metadataPrefix_hash)
 						for ds in fedora_object.ds_list:
 							if ds in inv_metadataPrefix_hash.keys():
 
@@ -349,12 +344,10 @@ class OAIProvider(object):
 				self.verb_node.append(mf_node)
 
 
-
 	# ListRecords
 	def _ListRecords(self):
 
 		self.retrieve_records(include_metadata=True)
-
 
 
 	# ListSets

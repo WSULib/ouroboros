@@ -50,12 +50,7 @@ else:
 				'namespace':'http://purl.org/dc/elements/1.1/'
 			},
 	}
-
-
-
-class MetadataPrefix(Exception):
-	pass
-
+inv_metadataPrefix_hash = {  metadataPrefix_hash[k]['ds_id']:{'prefix':k,'schema':metadataPrefix_hash[k]['schema'],'namespace':metadataPrefix_hash[k]['namespace']} for k in metadataPrefix_hash.keys() }
 
 
 class OAIProvider(object):
@@ -67,8 +62,10 @@ class OAIProvider(object):
 	'''
 
 	def __init__(self, args):
+
 		self.args = args
 		self.request_timestamp = datetime.datetime.now()
+		self.record_nodes = []
 
 		self.search_params = { 
 			'q': '*:*',
@@ -83,6 +80,8 @@ class OAIProvider(object):
 		# set set, if present
 		if self.args['set']:
 			self.search_params['fq'].append('rels_isMemberOfOAISet:"info:fedora/%s"' % self.args['set'].replace(":","\:"))
+
+
 
 		# begin scaffolding
 		self.scaffold()
@@ -133,15 +132,25 @@ class OAIProvider(object):
 		stime = time.time()
 		logging.info("retrieving records for verb %s" % (self.args['verb']))
 
-		# global to threads
-		self.record_nodes = []
-
 		# limit search to metadataPrefix provided
-		self.search_params['fq'].append('obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )		
-		logging.info(self.search_params)
+		if self.args['metadataPrefix'] in metadataPrefix_hash.keys():
+			self.search_params['fq'].append('obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
+		else:
+			return self.raise_error('cannotDisseminateFormat','The metadataPrefix %s is not allowed' % self.args['metadataPrefix'])
 
 		# fire search
 		self.search_results = solr_search_handle.search(**self.search_params)
+
+		logging.info(self.search_results.documents)
+
+		# if results none, and GetRecord
+		if self.search_results.total_results == 0 and self.args['verb'] in ['GetRecord']:
+			return self.raise_error('idDoesNotExist','The identifier %s is not found.' % self.args['identifier'])
+
+		# if results none, and ListIdentifiers or ListRecords
+		if self.search_results.total_results == 0 and self.args['verb'] in ['ListIdentifiers','ListRecords']:
+			return self.raise_error('noRecordsMatch','No records were found.')
+
 		with ThreadPoolExecutor(max_workers=5) as executor:
 			for i, doc in enumerate(self.search_results.documents):
 				executor.submit(self.record_thread_worker, doc, include_metadata)
@@ -164,17 +173,13 @@ class OAIProvider(object):
 		thread-based worker function for self.retrieve_records()
 		'''
 
-		try:
-			record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
-			# include full metadata in record
-			if include_metadata:
-				 record.include_metadata()
-			# append to record_nodes
-			self.record_nodes.append(record.oai_record_node)
-			return True
-		except MetadataPrefix:
-			logging.info("skipping %s" % doc['id'])
-			return False
+		record = OAIRecord(pid=doc['id'], itemID=doc['rels_itemID'][0], args=self.args)
+		# include full metadata in record
+		if include_metadata:
+			 record.include_metadata()
+		# append to record_nodes
+		self.record_nodes.append(record.oai_record_node)
+		return True
 
 
 	def set_resumption_token(self):
@@ -209,21 +214,41 @@ class OAIProvider(object):
 			'ListSets':self._ListSets
 		}
 
+		# check verb
+		if self.args['verb'] not in verb_routes.keys():
+			return self.raise_error('badVerb','The verb %s is not allowed, must be GetRecord, Identify, ListIdentifiers, ListMetadataFormats, ListRecords, or ListSets' % self.args['verb'])
+
 		# check for resumption token
 		if self.args['resumptionToken']:
 			logging.debug('following resumption token, altering search_params')
 			# retrieve token params and alter args and search_params
-			resumption_params = json.loads(redisHandles.r_oai.get(self.args['resumptionToken']))
-			self.args = resumption_params['args']
-			self.search_params = resumption_params['search_params']
+			resumption_params_raw = redisHandles.r_oai.get(self.args['resumptionToken'])
+			if resumption_params_raw is not None:
+				resumption_params = json.loads()
+				self.args = resumption_params['args']
+				self.search_params = resumption_params['search_params']
+			# raise error
+			else:
+				return self.raise_error('badResumptionToken', 'The resumptionToken %s is not found' % self.args['resumptionToken'])
 
-		if self.args['verb'] in verb_routes.keys():
-			# fire verb reponse building
-			verb_routes[self.args['verb']]()
-			return self.serialize()
-		else:
-			raise Exception("Verb not found.")
-	
+		# fire verb reponse building
+		verb_routes[self.args['verb']]()
+		return self.serialize()
+
+
+	def raise_error(self, error_code, error_msg):
+
+		# remove verb node
+		self.root_node.remove(self.verb_node)
+
+		# create error node and append
+		error_node = etree.SubElement(self.root_node, 'error')
+		error_node.attrib['code'] = error_code
+		error_node.text = error_msg
+
+		# serialize and return
+		return self.serialize()
+
 
 	# serialize record nodes as XML response
 	def serialize(self):
@@ -239,7 +264,6 @@ class OAIProvider(object):
 		
 		self.search_params['q'] = 'rels_itemID:%s' % self.args['identifier'].replace(":","\:")
 		self.retrieve_records(include_metadata=True)
-		return self.serialize()
 
 
 	# Identify
@@ -263,31 +287,74 @@ class OAIProvider(object):
 	# ListMetadataFormats
 	def _ListMetadataFormats(self):
 
-		# iterate through available metadataFormats
-		for mf in metadataPrefix_hash.keys():
+		'''
+		List all metadataformats, or optionally, available metadataformats for one item based on datastreams
+		'''
 
-			mf_node = etree.Element('metadataFormat')
+		if self.args['identifier']:
+			try:
+				logging.info("identifier provided for ListMetadataFormats, confirming that identifier exists...")
+				search_results = solr_search_handle.search(**{'q':'rels_itemID:%s' % self.args['identifier'].replace(":","\:"),'fl':['id']})
+				logging.info(search_results.documents)
+				if search_results.total_results > 0:
+					fedora_object = fedora_handle.get_object(search_results.documents[0]['id'])
+					if fedora_object.exists:
+						logging.info("record found, returning allowed metadataPrefixs")
+						logging.info(inv_metadataPrefix_hash)
+						for ds in fedora_object.ds_list:
+							if ds in inv_metadataPrefix_hash.keys():
 
-			# write metadataPrefix node
-			prefix = etree.SubElement(mf_node,'metadataPrefix')
-			prefix.text = mf
+								mf_node = etree.Element('metadataFormat')
 
-			# write schema node
-			schema = etree.SubElement(mf_node,'schema')
-			schema.text = metadataPrefix_hash[mf]['schema']
+								# write metadataPrefix node
+								prefix = etree.SubElement(mf_node,'metadataPrefix')
+								prefix.text = inv_metadataPrefix_hash[ds]['prefix']
 
-			# write schema node
-			namespace = etree.SubElement(mf_node,'metadataNamespace')
-			namespace.text = metadataPrefix_hash[mf]['namespace']
+								# write schema node
+								schema = etree.SubElement(mf_node,'schema')
+								schema.text = inv_metadataPrefix_hash[ds]['schema']
 
-			# append to verb_node and return
-			self.verb_node.append(mf_node)
+								# write schema node
+								namespace = etree.SubElement(mf_node,'metadataNamespace')
+								namespace.text = inv_metadataPrefix_hash[ds]['namespace']
+
+								# append to verb_node and return
+								self.verb_node.append(mf_node)
+					else:
+						raise Exception('record could not be located')		
+				else:
+					raise Exception('record could not be located')
+			except:
+				return self.raise_error('idDoesNotExist','The identifier %s is not found.' % self.args['identifier'])
+			
+		else:
+			# iterate through available metadataFormats and return
+			for mf in metadataPrefix_hash.keys():
+
+				mf_node = etree.Element('metadataFormat')
+
+				# write metadataPrefix node
+				prefix = etree.SubElement(mf_node,'metadataPrefix')
+				prefix.text = mf
+
+				# write schema node
+				schema = etree.SubElement(mf_node,'schema')
+				schema.text = metadataPrefix_hash[mf]['schema']
+
+				# write schema node
+				namespace = etree.SubElement(mf_node,'metadataNamespace')
+				namespace.text = metadataPrefix_hash[mf]['namespace']
+
+				# append to verb_node and return
+				self.verb_node.append(mf_node)
+
 
 
 	# ListRecords
 	def _ListRecords(self):
 
 		self.retrieve_records(include_metadata=True)
+
 
 
 	# ListSets
@@ -337,11 +404,8 @@ class OAIRecord(object):
 
 		# retrive metadata from Fedora
 		self.fedora_object = fedora_handle.get_object(self.pid)
-		if self.target_datastream in self.fedora_object.ds_list:
-			self.metadata_datastream = self.fedora_object.getDatastreamObject(self.target_datastream)
-			self.metadata_xml = self.metadata_datastream.content
-		else:
-			raise MetadataPrefix("%s does not have datastream %s" % (self.pid, self.target_datastream))
+		self.metadata_datastream = self.fedora_object.getDatastreamObject(self.target_datastream)
+		self.metadata_xml = self.metadata_datastream.content
 
 
 	def init_record_node(self):

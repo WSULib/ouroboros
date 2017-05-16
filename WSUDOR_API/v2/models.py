@@ -770,8 +770,9 @@ class OAIServer(Resource):
 
 		# parse OAI-PMH arguments
 		parser = reqparse.RequestParser(bundle_errors=True)
-		oai_verbs = ('GetRecord','Identify','ListIdentifiers','ListMetadataFormats','ListRecords','ListSets')
-		parser.add_argument('verb', type=str, choices=oai_verbs, help='OAI-PMH verb required: %s' % str(oai_verbs))
+		# oai_verbs = ('GetRecord','Identify','ListIdentifiers','ListMetadataFormats','ListRecords','ListSets')
+		# parser.add_argument('verb', type=str, choices=oai_verbs, help='OAI-PMH verb required: %s' % str(oai_verbs))
+		parser.add_argument('verb', type=str, help='OAI-PMH verb')
 		parser.add_argument('set', type=str, help='OAI-PMH set')
 		parser.add_argument('metadataPrefix', type=str, help='OAI-PMH metadataPrefix')
 		parser.add_argument('identifier', type=str, help='OAI-PMH identifier')

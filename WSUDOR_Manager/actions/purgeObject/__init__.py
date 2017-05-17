@@ -14,7 +14,7 @@ from flask.ext.login import login_required
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.jobs import getSelPIDs
-from WSUDOR_Manager import utilities, roles
+from WSUDOR_Manager import utilities, roles, logging
 
 
 
@@ -50,7 +50,7 @@ def purgeObject_worker(job_package):
 
 	# check object state
 	if obj_handle.ohandle.state != "D":		
-		print "Skipping, object state not 'Deleted (D)'"
+		logging.debug("Skipping, object state not 'Deleted (D)'")
 		raise Exception("Skipping, object state not 'Deleted (D)'")
 
 	else:

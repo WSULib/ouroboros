@@ -17,7 +17,7 @@ import shutil
 
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import utilities, forms, roles
+from WSUDOR_Manager import utilities, forms, roles, logging
 from WSUDOR_Manager.utilities import mimetypes
 from inc import WSUDOR_bagger
 
@@ -63,7 +63,7 @@ def createContainer():
 def createContainer_worker():
 	
 	form_data = request.form
-	print form_data
+	logging.debug(form_data)
 
 	unique_identifier = "LearningObject_%s" % str(uuid.uuid4())
 	pid = "wayne:"+unique_identifier
@@ -113,7 +113,7 @@ def createContainer_worker():
 
 	# add optional associated objects
 	if "associated_objects" in form_data:
-		print "writing associated object relationships"
+		logging.debug("writing associated object relationships")
 		associated_objects = [obj.strip() for obj in form_data['associated_objects'].split(',')]
 		for obj in associated_objects:
 			if obj != '':
@@ -124,7 +124,7 @@ def createContainer_worker():
 
 	# prepare new working dir & recall original
 	working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
-	print "creating working dir at", working_dir
+	logging.debug("creating working dir at %s" % working_dir)
 	# create if doesn't exist
 	if not os.path.exists(working_dir):
 		os.mkdir(working_dir)			
@@ -171,16 +171,16 @@ def createContainer_worker():
 			'subject_string':subject_string,
 			'rights':form_data['rights']
 		}
-	print raw_MODS
+	logging.debug(raw_MODS)
 	with open('%s/MODS.xml' % working_dir,'w') as f:
 		f.write(raw_MODS)
 
 	# write objMeta
-	print "writing:",om_handle.toJSON()
+	logging.debug("writing: %s" % om_handle.toJSON())
 	om_handle.writeToFile('%s/objMeta.json' % (working_dir))
 
 	# bagify
-	print 'bagifying'	
+	logging.debug('bagifying')
 	bag = WSUDOR_bagger.make_bag(working_dir, {
 		'Object PID' : pid
 	})
@@ -189,10 +189,10 @@ def createContainer_worker():
 	# purge if already exists
 	if 'purge' in form_data:
 		try:
-			print "purging object"
+			logging.debug("purging object")
 			fedora_handle.purge_object(form_data['pid'])
 		except:
-			print "object not found, skipping purge"
+			logging.debug("object not found, skipping purge")
 
 	# open new handle
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(payload=working_dir, object_type='bag')
@@ -230,7 +230,7 @@ def createDocument(PID):
 def createDocument_worker(parent_PID):
 
 	form_data = request.form
-	print form_data
+	logging.debug(form_data)
 
 	# open parent handle
 	obj = WSUDOR_ContentTypes.WSUDOR_Object(parent_PID)
@@ -249,7 +249,7 @@ def createDocument_worker(parent_PID):
 		"content_type":"WSUDOR_%s" % form_data['CM'], 
 		"policy":"info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
 	}
-	print known_values
+	logging.debug(known_values)
 
 	# instantiate ObjMeta object
 	om_handle = ObjMeta(**known_values)
@@ -280,7 +280,7 @@ def createDocument_worker(parent_PID):
 
 	# prepare new working dir & recall original
 	working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
-	print "creating working dir at", working_dir
+	logging.debug("creating working dir at %s" % working_dir)
 	# create if doesn't exist
 	if not os.path.exists(working_dir):
 		os.mkdir(working_dir)			
@@ -327,7 +327,7 @@ def createDocument_worker(parent_PID):
 			'subject_string':subject_string,
 			'rights':form_data['rights']
 		}
-	print raw_MODS
+	logging.debug(raw_MODS)
 	with open('%s/MODS.xml' % working_dir,'w') as f:
 		f.write(raw_MODS)
 
@@ -345,12 +345,12 @@ def createDocument_worker(parent_PID):
 	elif form_data['dataType'] == 'upload':
 		# writes to temp file in /tmp/Ouroboros
 		if 'upload' in request.files and request.files['upload'].filename != '':
-			print "Form provided file, uploading and reading file to variable"
+			logging.debug("Form provided file, uploading and reading file to variable")
 			with open(target_filename,'w') as fhand:
 				fhand.write(request.files['upload'].read())
 
 	else:
-		print "file could not be found"
+		logging.debug("file could not be found")
 		return False
 
 	filename = form_data['filename']
@@ -376,11 +376,11 @@ def createDocument_worker(parent_PID):
 	om_handle.isRepresentedBy = ds_id
 
 	# write objMeta
-	print "writing:",om_handle.toJSON()
+	logging.debug("writing: %s" % om_handle.toJSON())
 	om_handle.writeToFile('%s/objMeta.json' % (working_dir))
 
 	# bagify
-	print 'bagifying'	
+	logging.debug('bagifying')
 	bag = WSUDOR_bagger.make_bag(working_dir, {
 		'Object PID' : pid
 	})
@@ -389,10 +389,10 @@ def createDocument_worker(parent_PID):
 	# purge if already exists
 	if 'purge' in form_data:
 		try:
-			print "purging object"
+			logging.debug("purging object")
 			fedora_handle.purge_object(form_data['pid'])
 		except:
-			print "object not found, skipping purge"
+			logging.debug("object not found, skipping purge")
 
 	# open new handle
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(payload=working_dir, object_type='bag')

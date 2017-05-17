@@ -5,7 +5,7 @@ import redis
 import WSUDOR_Manager.jobs as jobs
 import WSUDOR_Manager.redisHandles as redisHandles
 import WSUDOR_Manager.models as models
-from WSUDOR_Manager import app,db
+from WSUDOR_Manager import app, db, logging
 from flask import session
 
 
@@ -141,7 +141,7 @@ class postTask(Task):
 		# obj_loop jobs
 		##################################################################
 		if job_package['job_type'] == 'obj_loop':
-			print "Cleaning up for obj_loop task"
+			logging.debug("Cleaning up for obj_loop task")
 			PID = job_package['PID']
 			# release PID from PIDlock
 			redisHandles.r_PIDlock.delete(PID)
@@ -151,7 +151,7 @@ class postTask(Task):
 		# custom_loop jobs
 		##################################################################
 		if job_package['job_type'] == 'custom_loop':
-			print "Cleaning up for custom_loop task"
+			logging.debug("Cleaning up for custom_loop task")
 			redisHandles.r_job_handle.set(task_id, status)
 
 		# increments completed tasks		
@@ -202,7 +202,7 @@ def obj_loop_taskFactory(**kwargs):
 		# bump step
 		step += 1		
 
-	print "Finished assigning tasks"
+	logging.debug("Finished assigning tasks")
 
 
 @celery.task(base=postTask, bind=True, max_retries=3, name="obj_loop_taskWrapper",trail=True)

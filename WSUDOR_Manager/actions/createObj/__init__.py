@@ -14,7 +14,7 @@ import bagit
 
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import utilities, roles
+from WSUDOR_Manager import utilities, roles, logging
 
 from WSUDOR_Manager.models import ObjMeta
 
@@ -44,7 +44,7 @@ def index():
 def createObj_worker():
 	
 	form_data = request.form
-	print form_data
+	logging.debug(form_data)
 
 	# instantiate object with quick variables
 	known_values = {
@@ -72,19 +72,19 @@ def createObj_worker():
 
 	# prepare new working dir & recall original
 	working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
-	print "creating working dir at", working_dir
+	logging.debug("creating working dir at %s" % working_dir)
 	# create if doesn't exist
 	if not os.path.exists(working_dir):
 		os.mkdir(working_dir)			
 	os.system("mkdir %s/datastreams" % (working_dir))
 
 	# write objMeta
-	print "writing:",om_handle.toJSON()
+	logging.debug("writing: %s" % om_handle.toJSON())
 	om_handle.writeToFile('%s/objMeta.json' % (working_dir))
 
 	if 'bagify' in form_data:
 		# bagify
-		print 'bagifying'
+		logging.debug('bagifying')
 		bag = bagit.make_bag("%s" % (working_dir), {		
 			'Object PID' : form_data['pid']
 		})
@@ -95,14 +95,14 @@ def createObj_worker():
 		# purge if already exists
 		if 'purge' in form_data:
 			try:
-				print "purging object"
+				logging.debug("purging object")
 				fedora_handle.purge_object(form_data['pid'])
 			except:
-				print "object not found, skipping purge"
+				logging.debug("object not found, skipping purge")
 
 		# bagify
 		if 'bagify' not in form_data:
-			print 'bagifying'
+			logging.debug('bagifying')
 			bag = bagit.make_bag("%s" % (working_dir), {		
 				'Object PID' : form_data['pid']
 			})

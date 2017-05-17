@@ -4,7 +4,7 @@
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import jobs, models, db, utilities, roles
+from WSUDOR_Manager import jobs, models, db, utilities, roles, logging
 from localConfig import *
 from flask import Blueprint, render_template, abort, request
 from flask.ext.login import login_required
@@ -86,7 +86,7 @@ def editRELS_advanced():
 			if "relations-external" in p or "WSUDOR-Fedora-Relations" in p:
 				riquery_filtered.append((p,o))	
 		except:
-			print "Could not parse RDF relationship"
+			logging.debug("Could not parse RDF relationship")
 	riquery_filtered.sort() #mild sorting applied to group WSUDOR or RELS-EXT		
 
 	# Raw Datastream via Fedora API
@@ -127,7 +127,7 @@ def editRELS_shared():
 				where_statement += "<fedora:%s> $predicate $object . " % (PID)
 		query_statement = "select $predicate $object from <#ri> where {{ %s }}" % (where_statement)		
 
-		# print query_statement
+		# logging.debug(query_statement)
 		
 		base_URL = "http://%s:%s@localhost/fedora/risearch" % (FEDORA_USER, FEDORA_PASSWORD)
 		payload = {
@@ -165,7 +165,7 @@ def editRELS_shared():
 			except:
 				curr_set = set(chunk_list)
 
-		print curr_set
+		logging.debug(curr_set)
 		shared_relationships = curr_set
 		
 
@@ -233,7 +233,7 @@ def editRELS_purge_worker(job_package):
 	predicate_string = form_data['predicate'].encode('utf-8').strip()
 	object_string = form_data['object'].encode('utf-8').strip()
 
-	print "Removing the following predicate / subject: %s /%s" % (predicate_string, object_string)
+	logging.debug("Removing the following predicate / subject: %s /%s" % (predicate_string, object_string))
 		
 	return obj_ohandle.purge_relationship(predicate_string, object_string)
 
@@ -284,7 +284,7 @@ def editRELS_edit_worker(job_package):
 
 	# check diff - if ratio == 100, XML is identical, simply reordered by RDF query
 	diff_ratio = fuzz.token_set_ratio(raw_xml,pre_mod_xml)	
-	print "difference ratio",diff_ratio
+	logging.debug("difference ratio: %s" % diff_ratio)
 	if diff_ratio == 100:
 		return "RDF XML un-modified, skipping DB insert and Fedora updating."
 
@@ -315,7 +315,7 @@ def editRELS_edit_worker(job_package):
 		newDS.content = new_raw	
 
 		# save constructed object
-		print newDS.save()
+		logging.debug(newDS.save())
 
 
 @roles.auth(['admin'], is_celery=True)
@@ -356,7 +356,7 @@ def editRELS_regex_worker(job_package):
 	newDS.content = new_string	
 
 	# save constructed object
-	print newDS.save()
+	logging.debug(newDS.save())
 
 
 

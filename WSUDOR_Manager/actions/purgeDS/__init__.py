@@ -4,7 +4,7 @@
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.forms import purgeDSForm
 from WSUDOR_Manager.jobs import getSelPIDs
-from WSUDOR_Manager import utilities, roles
+from WSUDOR_Manager import utilities, roles, logging
 from flask import Blueprint, render_template, request
 
 
@@ -24,14 +24,14 @@ def index():
 
 	# get PIDs	
 	PIDs = getSelPIDs()	
-	print PIDs[PIDnum]
+	logging.debug(PIDs[PIDnum])
 
 	obj_ohandle = fedora_handle.get_object(PIDs[PIDnum])		
 	obj_ohandle = obj_ohandle.ds_list
 	dsIDs = []
 	for (name, loc) in obj_ohandle.items():
 		dsIDs.extend([name])
-	print dsIDs
+	logging.debug(dsIDs)
 
 	form = purgeDSForm()	
 	return render_template("purgeDS.html",form=form,PID=PIDs[PIDnum],dsIDs=dsIDs,PIDnum=PIDnum)
@@ -40,11 +40,11 @@ def index():
 @roles.auth(['admin'], is_celery=True)
 def purgeDS_worker(job_package):
 
-	print job_package
+	logging.debug(job_package)
 	form_data = job_package['form_data']	
-	print form_data
+	logging.debug(form_data)
 
 	PID = job_package['PID']		
-	print PID
+	logging.debug(PID)
 
 	return fedora_handle.api.purgeDatastream(PID, form_data['dsID'], form_data['logMessage'], form_data['startDT'], form_data['endDT'], form_data['force'])

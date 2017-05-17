@@ -1622,7 +1622,7 @@ class WSUDOR_GenObject(object):
 
         # 2) look for DMDID_prefix + orig_filename
         dmd = METS_root.xpath('//mets:dmdSec[@ID="%s%s"]' % (DMDID_prefix, orig_filename), namespaces=METS_root.nsmap)
-        logging.debug("%s" % dmd #DEBUG)
+        logging.debug("%s" % dmd)
         if len(dmd) == 1:
             logging.debug("one DMD section found!")
         elif len(dmd) > 1:
@@ -1635,7 +1635,7 @@ class WSUDOR_GenObject(object):
 
         # 3) if found, grab MODS from METS
         enriched_MODS = dmd[0].xpath('.//mods:mods',namespaces=METS_root.nsmap)
-        logging.debug("%s" % enriched_MODS # DEBUG)
+        logging.debug("%s" % enriched_MODS)
         if len(enriched_MODS) == 1:
             logging.debug("MODS found")
         elif len(enriched_MODS) > 1:

@@ -526,7 +526,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for page in self.pages_from_rels:
 
 			try:
-				print "Working on page %d / %d" % (page, len(self.pages_from_rels))
+				logging.debug("Working on page %d / %d" % (page, len(self.pages_from_rels)))
 
 				# index in Solr bookreader core
 				data = {
@@ -543,7 +543,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				raise Exception("Could not index page %d" % page)
 
 		# commit
-		print solr_bookreader_handle.commit()
+		logging.debug("%s" % solr_bookreader_handle.commit())
 
 
 	# method to regenerate full-text HTML
@@ -557,10 +557,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# iterarte through pages
 		for page_num in self.pages_from_rels:
 			page = self.pages_from_rels[page_num]
-			print "working on %s" % page
+			logging.debug("working on %s" % page)
 			html_handle = page.getDatastreamObject('HTML')
 			html_parsed = BeautifulSoup(html_handle.content)
-			print "HTML document parsed..."
+			logging.debug("HTML document parsed...")
 			#sets div with page_ID
 			self.html_concat = self.html_concat + '<div id="page_ID_%s" class="html_page">' % (page_num)
 			#Set in try / except block, as some HTML documents contain no elements within <body> tag
@@ -568,13 +568,13 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				for block in html_parsed.body:
 					self.html_concat = self.html_concat + unicode(block)
 			except:
-				print "<body> tag is empty, skipping. Adding page_ID anyway."
+				logging.debug("<body> tag is empty, skipping. Adding page_ID anyway.")
 
 			#closes page_ID / div
 			self.html_concat = self.html_concat + "</div>"
 
 		# HTML (based on concatenated HTML from self.html_concat)
-		print "Saving new, ordered HTML_FULL"
+		logging.debug("Saving new, ordered HTML_FULL")
 		html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
 		html_full_handle.label = "Full HTML for item"
 		html_full_handle.content = self.html_concat.encode('utf-8')
@@ -593,7 +593,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		if sendFiles:
 			# fire off page images to Abbyy
-			print "sending files to Abbyy"
+			logging.debug("sending files to Abbyy")
 			for page_num in pages_from_rels:
 				page = WSUDOR_ContentTypes.WSUDOR_Object(pages_from_rels[page_num])
 				page.sendAbbyyFiles()
@@ -601,7 +601,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		if checkFiles:
 			# poll for finished OCR process
 			ocr_list = []
-			print "polling for OCR process to complete"
+			logging.debug("polling for OCR process to complete")
 			while len(pages_from_rels) > 0:			
 				for page_num in pages_from_rels:
 					page = WSUDOR_ContentTypes.WSUDOR_Object(pages_from_rels[page_num])
@@ -614,7 +614,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					if len(pages_from_rels) == 0:
 						break
 				else:
-					print "time elapsed %s" % str(time.time()-stime)
+					logging.debug("time elapsed %s" % str(time.time()-stime))
 					time.sleep(5)
 
 		if updateFiles:
@@ -625,7 +625,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				page.updateAbbyyFiles(cleanup=True)
 
 		# finis
-		print "total time elapsed: %s seconds" % str(time.time()-stime)
+		logging.debug("total time elapsed: %s seconds" % str(time.time()-stime))
 		return True
 
 
@@ -667,7 +667,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.SolrDoc.doc.int_fullText = ds_stripped_content
 
 		# finally, index each page to /bookreader core
-		print "running page indexer"
+		logging.debug("running page indexer")
 		self.indexPageText()
 
 
@@ -711,7 +711,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				- application/rdf+xml
 		'''
 
-		print "generating virtual ScannedBook object"
+		logging.debug("generating virtual ScannedBook object")
 
 		virtual_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualBook)
 		virtual_book_handle.create(self)
@@ -730,7 +730,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				- applicaiton/rdf+xml
 		'''
 
-		print "generating virtual ScannedVolume object"
+		logging.debug("generating virtual ScannedVolume object")
 
 		virtual_volume_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualVolume)
 		virtual_volume_handle.create(self)
@@ -752,7 +752,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			- RELS-EXT
 				- applicaiton/rdf+xml
 		'''
-		print "generating virtual ScannedPage object"
+		logging.debug("generating virtual ScannedPage object")
 
 		for page_num in self.pages_from_rels:
 
@@ -775,9 +775,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 
 		for obj in sparql_response:
-			print "Purging virtual object: %s" % obj['virtobj']
+			logging.debug("Purging virtual object: %s" % obj['virtobj'])
 			fedora_handle.purge_object( obj['virtobj'].split("info:fedora/")[-1] )
-			print "Removing from Readux solr core..."
+			logging.debug("Removing from Readux solr core...")
 			readux_solr_handle.delete_by_key(obj['virtobj'].split("info:fedora/")[-1], commit=False)
 
 		# commit solr purges
@@ -797,10 +797,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 
 		for obj in sparql_response:
-			print "Indexing object: %s" % obj['virtobj']
+			logging.debug("Indexing object: %s" % obj['virtobj'])
 			index_url = "http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) 
-			print index_url
-			print requests.get(index_url).content
+			logging.debug("%s" % index_url)
+			logging.debug("%s" % requests.get(index_url).content)
 
 		# generate TEI
 		TEI_result = self.generateTEI()
@@ -809,11 +809,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	def generateTEI(self):
-		print "generating TEI..."
+		logging.debug("generating TEI...")
 		try:
 			return os.system('/usr/local/lib/venvs/ouroboros/bin/python /opt/readux/manage.py add_pagetei -u %s_Readux_VirtualVolume' % self.pid)
 		except:
-			print "Could not generate TEI"
+			logging.debug("Could not generate TEI")
 			return False
 
 
@@ -826,14 +826,14 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		self.createReaduxVirtualObjects()
 
-		print "waiting for risearch to catch up..."
+		logging.debug("waiting for risearch to catch up...")
 		while True:
 			sparql_count = fedora_handle.risearch.sparql_count('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 			if sparql_count < 1:
 				time.sleep(.5)
 				continue
 			else:
-				print 'proxy objects indexed in risearch, continuing'
+				logging.debug('proxy objects indexed in risearch, continuing')
 				break
 
 		self.indexReaduxVirtualObjects(action='index')

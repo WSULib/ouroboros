@@ -26,7 +26,7 @@ import localConfig
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers
+from WSUDOR_Manager import redisHandles, helpers, logging
 
 
 class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -93,7 +93,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write POLICY datastream
 			# NOTE: 'E' management type required, not 'R'
-			print "Using policy:",self.objMeta['policy']
+			logging.debug("Using policy: %s" % self.objMeta['policy'])
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -109,7 +109,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships
 			for relationship in self.objMeta['object_relationships']:
-				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				logging.debug("Writing relationship: %s" % (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 			
 			# writes derived RELS-EXT
@@ -118,7 +118,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
-			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
+			logging.debug("Writing ContentType relationship: info:fedora/fedora-system:def/relations-external#hasContentModel %s" % content_type_string)
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel",content_type_string)
 
@@ -152,7 +152,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
   </mods:extension>
 </mods:mods>
 				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
-				print raw_MODS
+				logging.debug("%s" % raw_MODS)
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
@@ -161,7 +161,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				# set file_path
 				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				print "Operating on:",file_path
+				logging.debug("Operating on: %s" % file_path)
 
 				# original
 				orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
@@ -180,7 +180,7 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				# make thumb for PDF
 				if ds['mimetype'] == "application/pdf":
-					print "Creating derivative thumbnail from PDF"					
+					logging.debug("Creating derivative thumbnail from PDF")
 					temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
 					os.system('convert -thumbnail 200x200 -background white %s[0] %s' % (file_path, temp_filename))
 					thumb_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_THUMBNAIL" % (ds['ds_id']), "%s_THUMBNAIL" % (ds['label']), mimetype="image/jpeg", control_group='M')
@@ -207,8 +207,8 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# exception handling
 		except Exception,e:
-			print traceback.format_exc()
-			print "Image Ingest Error:",e
+			logging.debug("%s" % traceback.format_exc())
+			logging.debug("Image Ingest Error: %s" % e)
 			return False
 
 

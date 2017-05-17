@@ -23,7 +23,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers
+from WSUDOR_Manager import redisHandles, helpers, logging
 
 # localConfig
 import localConfig
@@ -109,7 +109,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write POLICY datastream
 			# NOTE: 'E' management type required, not 'R'
-			print "Using policy:",self.objMeta['policy']
+			logging.debug("Using policy: %s" % self.objMeta['policy'])
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -125,7 +125,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
-				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				logging.debug("Writing relationship: %s %s" % (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 			
 			# writes derived RELS-EXT
@@ -141,7 +141,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
-			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
+			logging.debug("Writing ContentType relationship: info:fedora/fedora-system:def/relations-external#hasContentModel %s" % content_type_string)
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
 			# write MODS datastream
@@ -159,11 +159,11 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			for ds in self.objMeta['datastreams']:
 
 				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				print "Looking for:",file_path
+				logging.debug("Looking for: %s" % file_path)
 
 				# if no 'order' key, or not integer (e.g. None), assign incrementing number
 				if 'order' not in ds.keys() or not isinstance( ds['order'], int ):
-					print "Could not find valid 'order' key for datastream dictionary, assigning",len(self.objMeta['datastreams']) + count
+					logging.debug("Could not find valid 'order' key for datastream dictionary, assigning %s" % (len(self.objMeta['datastreams']) + count))
 					ds['order'] = len(self.objMeta['datastreams']) + count
 					# bump ds counter
 					count += 1
@@ -180,9 +180,9 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				mp3_file_handle = audio_file_handle.export(temp_filename,format="mp3")
 				mp3_file_handle.close()
 				if os.path.getsize(temp_filename) < 1:
-					print "Converted file is empty, could not create derivative MP3."
+					logging.debug("Converted file is empty, could not create derivative MP3.")
 				else:
-					print "Derivative mp3 created."
+					logging.debug("Derivative mp3 created.")
 				mp3_ds_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "%s_MP3" % (ds['ds_id']), "%s_MP3" % (ds['label']), mimetype="audio/mpeg", control_group='M')
 				mp3_ds_handle.label = ds['label']
 				mp3_ds_handle.content = open(temp_filename)
@@ -229,7 +229,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				
 
 			# write PLAYLIST datastream with playlist_list
-			print "Generating PLAYLIST datastream"
+			logging.debug("Generating PLAYLIST datastream")
 			for ds in playlist_list:
 				ds['thumbnail'] = "http://localhost/fedora/objects/%s/datastreams/%s_THUMBNAIL/content" % (self.ohandle.pid, ds['ds_id'])
 				ds['preview'] = "http://localhost/fedora/objects/%s/datastreams/%s_PREVIEW/content" % (self.ohandle.pid, ds['ds_id'])
@@ -260,8 +260,8 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# exception handling
 		except Exception,e:
-			print traceback.format_exc()
-			print "Image Ingest Error:",e
+			logging.debug("%s" % traceback.format_exc())
+			logging.debug("Image Ingest Error: %s" % e)
 			return False
 
 

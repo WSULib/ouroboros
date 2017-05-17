@@ -24,7 +24,7 @@ from eulfedora.models import  Relation, ReverseRelation, FileDatastream, XmlData
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers, utilities
+from WSUDOR_Manager import redisHandles, helpers, utilities, logging
 
 # localconfig
 import localConfig
@@ -62,7 +62,7 @@ class WSUDOR_Readux_VirtualCollection(DigitalObject):
 		self.pid = wsudor_collection.pid + "_Readux_VirtualCollection"
 
 		# init
-		print "Initializing %s" % (self.pid)
+		logging.debug("Initializing %s" % (self.pid))
 		self.save()
 
 		# Dublin Core
@@ -142,7 +142,7 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 		self.pid = wsudor_book.pid + "_Readux_VirtualBook"
 
 		# init
-		print "Initializing %s" % (self.pid)
+		logging.debug("Initializing %s" % (self.pid))
 		self.save()
 
 		# Dublin Core
@@ -151,7 +151,7 @@ class WSUDOR_Readux_VirtualBook(DigitalObject):
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
-		print "Using policy:",wsudor_book.objMeta['policy']
+		logging.debug("Using policy: %s" % wsudor_book.objMeta['policy'])
 		policy_suffix = wsudor_book.objMeta['policy'].split("info:fedora/")[1]
 		policy_handle = eulfedora.models.DatastreamObject(self,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -260,7 +260,7 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		self.pid = pid_prefix + "_Readux_VirtualVolume"
 
 		# init
-		print "Initializing %s" % (self.pid)
+		logging.debug("Initializing %s" % (self.pid))
 		self.save()
 
 		# Dublin Core
@@ -269,7 +269,7 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
-		print "Using policy:",wsudor_book.objMeta['policy']
+		logging.debug("Using policy: %s" % wsudor_book.objMeta['policy'])
 		policy_suffix = wsudor_book.objMeta['policy'].split("info:fedora/")[1]
 		policy_handle = eulfedora.models.DatastreamObject(self,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -324,7 +324,7 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 		Merge alto XMLs 
 		BLUFF FOR NOW
 		'''
-		print "Writing METS ALTO XML"
+		logging.debug("Writing METS ALTO XML")
 		ocr_handle = eulfedora.models.DatastreamObject(self, "OCR", "Fulltext PDF for item", mimetype="text/xml", control_group='M')
 		ocr_handle.label = "OCR from Abbyy"
 		ocr_handle.content = "</empty>"
@@ -332,7 +332,7 @@ class WSUDOR_Readux_VirtualVolume(DigitalObject):
 
 
 		# PDF
-		print "Writing full-text PDF"
+		logging.debug("Writing full-text PDF")
 		pdf_handle = eulfedora.models.DatastreamObject(self, "PDF", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
 		pdf_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/PDF_FULL/content" % (wsudor_book.pid) 
 		pdf_handle.label = "Fulltext PDF for item"
@@ -393,12 +393,12 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		self.pid = pid_prefix + "_Readux_VirtualPage_%s" % (page_num)
 
 		# init
-		print "Initializing %s" % (self.pid)
+		logging.debug("Initializing %s" % (self.pid))
 		self.save()
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
-		print "Using policy:",wsudor_book.objMeta['policy']
+		logging.debug("Using policy: %s" % wsudor_book.objMeta['policy'])
 		policy_suffix = wsudor_book.objMeta['policy'].split("info:fedora/")[1]
 		policy_handle = eulfedora.models.DatastreamObject(self,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -449,14 +449,14 @@ class WSUDOR_Readux_VirtualPage(DigitalObject):
 		self.rels_ext.save()
 
 		# source-image
-		print "Linking Image"
+		logging.debug("Linking Image")
 		source_image_handle = eulfedora.models.DatastreamObject(self, "source-image", "source-image", mimetype="image/jp2", control_group="E")
 		source_image_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/JP2/content" % (page_handle.pid)
 		source_image_handle.label = "source-image"
 		source_image_handle.save()
 
 		# text
-		print "Writing 'text' datastream, aka 'alto'"
+		logging.debug("Writing 'text' datastream, aka 'alto'")
 		alto_handle = eulfedora.models.DatastreamObject(self, "text", "text", mimetype="text/xml", control_group='M')
 		alto_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/ALTOXML/content" % (page_handle.pid)
 		alto_handle.label = "text"

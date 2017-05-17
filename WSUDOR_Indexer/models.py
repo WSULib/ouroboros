@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 import time
 import urllib
 import xmltodict
+import re
 
 # celery
 from celery import Task
@@ -404,7 +405,9 @@ class IndexRouter(object):
 
 		# for each in list, add to queue
 		for pid in modified_objects:
-			self.queue_object(pid, username, priority, action)
+			# skip control objectcs for queue_modified()
+			if not re.match(r'(emory-control|fedora-system|wayne:WSUDOR).*', pid.pid):
+				self.queue_object(pid, username, priority, action)
 
 		# set new last_index_date
 		self.update_last_index_date()
@@ -417,10 +420,15 @@ class IndexRouter(object):
 
 		# for each in list, add to queue
 		for pid in all_pids:
-			self.queue_object(pid, username, priority, action)
+			# skip control objectcs for queue_all()
+			if not re.match(r'(emory-control|fedora-system|wayne:WSUDOR).*', pid.pid):
+				self.queue_object(pid, username, priority, action)
 
 		# set new last_index_date
 		self.update_last_index_date()
+
+
+
 
 
 
@@ -489,6 +497,14 @@ class IndexWorker(object):
 			logging.warning("IndexWorker: could not open object, manually pruning from solr")
 			solr_handle.delete_by_key(queue_row.pid)
 			return True
+
+
+	@classmethod
+	# run this blocking, usually precedes queue_all() for reindex 
+	def purge_all(self):
+		logging.info("IndexWorker: purging all documents in solr core")
+		solr_handle.delete_by_query('*:*')
+		return True
 
 
 class PREMISWorker(object):

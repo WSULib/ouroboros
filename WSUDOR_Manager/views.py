@@ -25,7 +25,7 @@ from datetime import datetime
 from datetime import timedelta
 
 # WSUDOR_Manager
-from WSUDOR_Indexer.models import IndexRouter, indexer_queue, indexer_working, indexer_exception
+from WSUDOR_Indexer.models import IndexRouter, IndexWorker, indexer_queue, indexer_working, indexer_exception
 from WSUDOR_Manager import app
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
@@ -1710,6 +1710,10 @@ def indexing_index(action, group):
 
         if group == 'reindex':
             print "purging and adding all to queue"
+            # purge all with IndexWorker directly
+            IndexWorker.purge_all()
+            # reindex all
+            IndexRouter.queue_all(username=username, priority=1, action='index')
 
     # exceptions
     if action == 'exceptions':

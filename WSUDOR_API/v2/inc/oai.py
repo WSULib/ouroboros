@@ -46,9 +46,8 @@ inv_metadataPrefix_hash = {  metadataPrefix_hash[k]['ds_id']:{'prefix':k,'schema
 class OAIProvider(object):
 
 	'''
-	Initializing OAIProvider 
-	This is because the OAI-PMH protocol shares verbs with reserved words in Python (e.g. "set", or "from").
-	Easier to work with as a dictionary, and maintain the original OAI-PMH vocab.
+	Because the OAI-PMH protocol shares verbs with reserved words in Python (e.g. "set", or "from"),
+	easier to keep the HTTP request args work with as a dictionary, and maintain the original OAI-PMH vocab.
 	'''
 
 	def __init__(self, args):
@@ -86,17 +85,11 @@ class OAIProvider(object):
 		self.root_node.set('{http://www.w3.org/2001/XMLSchema-instance}schemaLocation', 'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd')
 
 		# set responseDate node
-		'''
-		<responseDate>2017-05-11T13:43:11Z</responseDate>
-		'''
 		self.responseDate_node = etree.Element('responseDate')
 		self.responseDate_node.text = self.request_timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
 		self.root_node.append(self.responseDate_node)
 		
 		# set request node
-		'''
-		<request verb="ListRecords" set="wsudor_dpla" metadataPrefix="wsu_mods">http://metadata.library.wayne.edu/repox/OAIHandler</request>
-		'''
 		self.request_node = etree.Element('request')
 		self.request_node.attrib['verb'] = self.args['verb']
 		if self.args['set']:
@@ -122,7 +115,6 @@ class OAIProvider(object):
 
 		# limit search to metadataPrefix provided
 		if self.args['metadataPrefix'] in metadataPrefix_hash.keys():
-			# self.search_params['fq'].append('obj_datastreams:%s' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
 			self.search_params['fq'].append('admin_datastreams:*%s*' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
 		elif not self.args['metadataPrefix']:
 			return self.raise_error('cannotDisseminateFormat','metadataPrefix is required for verb: %s' % (self.args['verb']))
@@ -207,7 +199,7 @@ class OAIProvider(object):
 
 		# check verb
 		if self.args['verb'] not in verb_routes.keys():
-			return self.raise_error('badVerb','The verb %s is not allowed, must be GetRecord, Identify, ListIdentifiers, ListMetadataFormats, ListRecords, or ListSets' % self.args['verb'])
+			return self.raise_error('badVerb','The verb %s is not allowed, must be from: %s' % (self.args['verb'],str(verb_routes.keys())) )
 
 		# check for resumption token
 		if self.args['resumptionToken']:
@@ -275,9 +267,10 @@ class OAIProvider(object):
 	def _ListMetadataFormats(self):
 
 		'''
-		List all metadataformats, or optionally, available metadataformats for one item based on datastreams
+		List all metadataformats, or optionally, available metadataformats for one item based on available metadata datastreams
 		'''
 
+		# identifier provided
 		if self.args['identifier']:
 			try:
 				logging.debug("identifier provided for ListMetadataFormats, confirming that identifier exists...")
@@ -312,6 +305,7 @@ class OAIProvider(object):
 			except:
 				return self.raise_error('idDoesNotExist','The identifier %s is not found.' % self.args['identifier'])
 			
+		# no identifier, return all available metadataPrefixes
 		else:
 			# iterate through available metadataFormats and return
 			for mf in metadataPrefix_hash.keys():

@@ -406,7 +406,7 @@ class IndexRouter(object):
 		# for each in list, add to queue
 		for pid in modified_objects:
 			# skip control objectcs for queue_modified()
-			if not re.match(r'(emory-control|fedora-system|wayne:WSUDOR).*', pid.pid):
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
 				self.queue_object(pid, username, priority, action)
 
 		# set new last_index_date
@@ -421,7 +421,7 @@ class IndexRouter(object):
 		# for each in list, add to queue
 		for pid in all_pids:
 			# skip control objectcs for queue_all()
-			if not re.match(r'(emory-control|fedora-system|wayne:WSUDOR).*', pid.pid):
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
 				self.queue_object(pid, username, priority, action)
 
 		# set new last_index_date

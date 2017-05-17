@@ -7,13 +7,13 @@ from WSUDOR_Manager import celery, utilities, fedoraHandles
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models, roles
+from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models, roles, logging
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 try:
 	import ouroboros_assets
 except:
-	print "could not load git submodule 'ouroboros_assets'"
+	logging.debug("could not load git submodule 'ouroboros_assets'")
 import localConfig
 
 from flask import Blueprint, render_template, abort, request, redirect, session, jsonify, Response

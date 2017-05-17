@@ -7,7 +7,7 @@ import json
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.forms import solrSearch
-from WSUDOR_Manager import utilities
+from WSUDOR_Manager import utilities, logging
 from flask import Blueprint, render_template, abort, request, redirect
 import eulfedora
 
@@ -67,7 +67,7 @@ def process():
 @roles.auth(['admin'], is_celery=True)
 def createObjectIndex_worker(collection_PID_suffix):
 	
-	print "Operating on:",collection_PID_suffix
+	logging.debug("Operating on: %s" % collection_PID_suffix)
 
 	# build query
 	query = {
@@ -79,12 +79,12 @@ def createObjectIndex_worker(collection_PID_suffix):
 
 	# get collection length
 	total_results = solr_handle.search(**query).total_results
-	print "Iterating through %s objects..." % (total_results)
+	logging.debug("Iterating through %s objects..." % (total_results))
 	total_iterations = total_results / query['rows']
 	if total_results % query['rows'] > 0:
 		total_iterations += 1
 
-	print "Total iterations:",total_iterations
+	logging.debug("Total iterations: %s" % total_iterations)
 
 	# iterate through objects
 	cursor = 0
@@ -93,14 +93,14 @@ def createObjectIndex_worker(collection_PID_suffix):
 	for iteration in range(0,total_iterations):
 		# perform new query
 		query['start'] = iteration * query['rows']
-		print query
+		logging.debug(query)
 		results = solr_handle.search(**query)		
 
 		# for each in smaller query
 		for doc in results.documents:
 			
 			PID = doc['id']
-			print "%s gets index: %s" % (PID, cursor)
+			logging.debug("%s gets index: %s" % (PID, cursor))
 						
 			# retrieve COLLINDEX JSON, edit current collection index, resubmit			
 			obj_ohandle = fedora_handle.get_object(PID)
@@ -128,7 +128,7 @@ def createObjectIndex_worker(collection_PID_suffix):
 
 			# save constructed object
 			result = DS_handle.save()
-			print "Result for %s: %s" % (PID, result)
+			logging.debug("Result for %s: %s" % (PID, result))
 
 			# bump counter
 			cursor += 1

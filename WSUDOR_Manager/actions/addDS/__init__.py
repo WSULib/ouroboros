@@ -3,7 +3,7 @@
 # handles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.forms import addDSForm
-from WSUDOR_Manager import utilities, roles
+from WSUDOR_Manager import utilities, roles, logging
 from flask import Blueprint, render_template, abort
 from flask.ext.login import login_required
 import eulfedora
@@ -25,7 +25,7 @@ def index():
 def addDS_worker(job_package):
 	
 	form_data = job_package['form_data']	
-	print form_data
+	logging.debug(form_data)
 	
 	PID = job_package['PID']		
 	obj_ohandle = fedora_handle.get_object(PID)

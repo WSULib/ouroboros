@@ -6,7 +6,7 @@ from WSUDOR_Manager import celery
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, actions, roles
+from WSUDOR_Manager import redisHandles, jobs, models, db, actions, roles, logging
 from flask import Blueprint, render_template, abort, request, redirect, session
 
 #python modules
@@ -24,7 +24,7 @@ def pruneSolr_factory(job_package):
 	solr_total = solr_handle.search(q='*:*', fl='id').total_results
 
 	# set estimated tasks
-	print "Antipcating",solr_total,"tasks...."	
+	logging.debug("Antipcating",solr_total,"tasks...."	)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), solr_total)
 
 	# iterate through solr objects
@@ -40,7 +40,7 @@ def pruneSolr_factory(job_package):
 		# iterate
 		for doc in solr_result.documents:
 			doc_id = doc['id']
-			print "pruneSolr checking %s" % (doc_id)
+			logging.debug("pruneSolr checking %s" % (doc_id))
 
 			job_package['doc_id'] = doc_id
 			
@@ -76,7 +76,7 @@ def pruneSolr_worker(job_package, PID=False):
 		doc_id = job_package['doc_id']
 		
 		if not fedora_handle.get_object(doc_id).exists:
-			print "Did not find object in Fedora, pruning from Solr..."
+			logging.debug("Did not find object in Fedora, pruning from Solr...")
 			solr_handle.delete_by_key(doc_id)
 			return "PRUNED"
 		else:

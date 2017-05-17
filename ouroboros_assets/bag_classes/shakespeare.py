@@ -5,7 +5,7 @@ import bagit
 from inc import WSUDOR_bagger
 from lxml import etree
 from sets import Set
-from WSDUOR_Manager import logging
+from WSUDOR_Manager import logging
 
 '''
 Assuming self.file_location is directory of loose files from Abbyy

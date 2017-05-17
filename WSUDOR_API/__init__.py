@@ -37,7 +37,7 @@ class ReverseProxied(object):
 	def __init__(self, app, prefix=''):
 		self.app = app
 		self.prefix = prefix		
-		print prefix
+		logging.debug("%s" % prefix)
 
 	def __call__(self, environ, start_response):
 		script_name = environ.get('HTTP_X_SCRIPT_NAME', '')

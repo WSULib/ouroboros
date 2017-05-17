@@ -5,7 +5,7 @@ import bagit
 from inc import WSUDOR_bagger
 from lxml import etree
 from sets import Set
-from WSUDOR_Manager import logging
+from WSDUOR_Manager import logging
 
 '''
 Assuming self.file_location is directory of loose files from Abbyy
@@ -68,7 +68,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:%s" % (self.full_identifier)

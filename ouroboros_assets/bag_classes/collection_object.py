@@ -13,16 +13,16 @@ class BagClass(object):
 		
 	# class is expecting a healthy amount of input from `ingestWorkspace` script, and object row
 	def __init__(self, object_row, ObjMeta, bag_root_dir, files_location, purge_bags):
-		print "object_row"
-		print object_row
-		print "ObjMeta"
-		print ObjMeta
-		print "bag_root_dir"
-		print bag_root_dir
-		print "files_location"
-		print files_location
-		print "purge_bags"
-		print purge_bags
+		logging.debug("object_row")
+		logging.debug("%s" % object_row)
+		logging.debug("ObjMeta")
+		logging.debug("%s" % ObjMeta)
+		logging.debug("bag_root_dir")
+		logging.debug("%s" % bag_root_dir)
+		logging.debug("files_location")
+		logging.debug("%s" % files_location)
+		logging.debug("purge_bags")
+		logging.debug("%s" % purge_bags)
 		# hardcoded
 		self.name = 'Collection'  # human readable name, ideally matching filename, for this bag creating class
 		self.content_type = 'WSUDOR_Collection'  # not required, but easy place to set the WSUDOR_ContentType
@@ -63,7 +63,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:collection%s" % (self.full_identifier)
@@ -90,7 +90,7 @@ class BagClass(object):
 		datastreams_dir = self.obj_dir + "/datastreams"
 
 		# collection art file
-		print "Looking in: %s" % self.files_location
+		logging.debug("Looking in: %s" % self.files_location)
 		
 		# get remote_location from 
 		fd = json.loads(self.object_row.job.file_index) # loads from MySQL
@@ -100,7 +100,7 @@ class BagClass(object):
 
 		if len(art_files) == 1:
 
-			print art_files[0]
+			logging.debug("%s" % art_files[0])
 			
 			filename, remote_location = art_files[0]
 
@@ -134,7 +134,7 @@ class BagClass(object):
 			self.objMeta_handle.isRepresentedBy = 'COLLECTIONART'
 		
 		else:
-			print "Could not locate Collection Art, skipping."
+			logging.debug("Could not locate Collection Art, skipping.")
 		
 
 		################################################################		

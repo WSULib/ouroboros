@@ -63,7 +63,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:collection%s" % (self.full_identifier)

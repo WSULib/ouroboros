@@ -23,6 +23,7 @@ from urllib import unquote, quote_plus, urlopen
 from collections import deque
 import struct
 from PIL import Image
+from localConfig import logging
 import ssl
 import operator
 from dateutil import parser
@@ -49,7 +50,7 @@ import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import fedoraHandles
-from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db, logging
+from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db
 from WSUDOR_Indexer.models import IndexRouter
 
 # derivatives
@@ -78,7 +79,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
 
             # prepare new working dir & recall original
             working_dir = "/tmp/Ouroboros/"+str(uuid.uuid4())
-            print "object_type is bag, creating working dir at", working_dir
+            logging.debug("object_type is bag, creating working dir at %s" % working_dir)
             orig_payload = payload
 
             '''
@@ -87,30 +88,30 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
             # set 'working_dir' to new location in /tmp/Ouroboros
             '''
             if os.path.isdir(payload):
-                print "directory detected, symlinking"
+                logging.debug("directory detected, symlinking")
                 # shutil.copytree(payload,working_dir)
                 os.symlink(payload, working_dir)
 
 
             # tar file or gz
             elif payload.endswith(('.tar','.gz')):
-                print "tar / gz detected, decompressing"
+                logging.debug("tar / gz detected, decompressing")
                 tar_handle = tarfile.open(payload,'r')
                 tar_handle.extractall(path=working_dir)
                 payload = working_dir
 
             elif payload.endswith('zip'):
-                print "zip file detected, unzipping"
+                logging.debug("zip file detected, unzipping")
                 with zipfile.ZipFile(payload, 'r') as z:
                     z.extractall(working_dir)
 
             # if the working dir has a sub-dir, assume that's the object directory proper
             if len(os.listdir(working_dir)) == 1 and os.path.isdir("/".join((working_dir, os.listdir(working_dir)[0]))):
-                print "we got a sub-dir"
+                logging.debug("we got a sub-dir")
                 payload = "/".join((working_dir,os.listdir(working_dir)[0]))
             else:
                 payload = working_dir
-            print "payload is:",payload
+            logging.debug("payload is: %s" % payload)
 
             # read objMeta.json
             path = payload + '/data/objMeta.json'
@@ -128,7 +129,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
                 payload = fedora_handle.get_object(payload)
 
             if payload.exists == False:
-                print "Object does not exist, cannot instantiate as WSUDOR type object."
+                logging.debug("Object does not exist, cannot instantiate as WSUDOR type object.")
                 return False
 
             # GET WSUDOR_X object content_model
@@ -147,7 +148,7 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
                         pref_type = pref_type[0].split(":")[-1]
                         content_type = pref_type
                     except:
-                        print "More than one hasContentModel found, but no preferredContentModel.  Aborting."
+                        logging.debug("More than one hasContentModel found, but no preferredContentModel.  Aborting.")
                         return False
 
                 content_type = "WSUDOR_"+str(content_type)
@@ -155,22 +156,22 @@ def WSUDOR_Object(payload, orig_payload=False, object_type="WSUDOR"):
             # fallback, grab straight from OBJMETA datastream / only fires for v2 objects
             except:
                 if "OBJMETA" in payload.ds_list:
-                    print "Race conditions detected, grabbing content_type from objMeta"
+                    logging.debug("Race conditions detected, grabbing content_type from objMeta")
                     objmeta = json.loads(payload.getDatastreamObject('OBJMETA').content)
                     content_type = objmeta['content_type']
 
-        # print "Our content type is:",content_type
+        # logging.debug("Our content type is:",content_type)
 
     except Exception,e:
-        print traceback.format_exc()
-        print e
+        logging.debug("%s" % traceback.format_exc())
+        logging.debug("%s" % e)
         return False
 
     # need check if valid subclass of WSUDOR_GenObject
     try:
         return getattr(WSUDOR_ContentTypes, str(content_type))(object_type = object_type, content_type = content_type, payload = payload, orig_payload = orig_payload)
     except:
-        print "Could not find appropriate ContentType, returning False."
+        logging.debug("Could not find appropriate ContentType, returning False.")
         return False
 
 
@@ -238,7 +239,7 @@ class WSUDOR_GenObject(object):
                 path = payload + '/data/objMeta.json'
                 fhand = open(path,'r')
                 self.objMeta = json.loads(fhand.read())
-                print "objMeta.json loaded for:",self.objMeta['id'],"/",self.objMeta['label']
+                logging.debug("objMeta.json loaded for: %s/%s" % (self.objMeta['id'],self.objMeta['label']))
 
                 # instantiate bag propoerties
                 self.pid = self.objMeta['id']
@@ -272,8 +273,8 @@ class WSUDOR_GenObject(object):
 
 
         except Exception,e:
-            print traceback.format_exc()
-            print e
+            logging.debug("%s" % traceback.format_exc())
+            logging.debug("%s" % e)
 
 
         try:
@@ -404,7 +405,7 @@ class WSUDOR_GenObject(object):
 
         stime = time.time()
 
-        print "calculating object and constituent sizes"
+        logging.debug("calculating object and constituent sizes")
 
         size_dict = {
             'datastreams':{}
@@ -440,7 +441,7 @@ class WSUDOR_GenObject(object):
         size_dict['wsudor_total_size'] = (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
 
         # return
-        print "elapsed: %s" % (time.time() - stime)
+        logging.debug("elapsed: %s" % (time.time() - stime))
         return size_dict
 
     def update_object_size(self):
@@ -455,7 +456,7 @@ class WSUDOR_GenObject(object):
 
         stime = time.time()
 
-        print "updating object size"
+        logging.debug("updating object size")
 
         size_dict = self.calc_object_size()
 
@@ -480,7 +481,7 @@ class WSUDOR_GenObject(object):
 
         # write/update all rels
         for rel_tuple in rels_to_write:
-            print rel_tuple
+            logging.debug("%s" % rel_tuple)
             # check if relationship exists
             vals = fedora_handle.risearch.get_objects(rel_tuple[1],rel_tuple[2])
             for val in vals:
@@ -488,7 +489,7 @@ class WSUDOR_GenObject(object):
             fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
 
         # return size_dict
-        print "elapsed: %s" % (time.time() - stime)
+        logging.debug("elapsed: %s" % (time.time() - stime))
         return size_dict
 
 
@@ -512,18 +513,18 @@ class WSUDOR_GenObject(object):
                 sparql_response = fedora_handle.risearch.sparql_query('select $ds_id $filesize WHERE { <info:fedora/%s> <info:fedora/fedora-system:def/view#disseminates> $ds_id . $ds_id <http://www.loc.gov/premis/rdf/v1#hasSize> $filesize . }' % (self.pid))            
                 size_dict['datastreams'] = { ds['ds_id'].split("/")[-1]: (int(ds['filesize']), utilities.sizeof_fmt(int(ds['filesize'])) ) for ds in sparql_response }
             except:
-                print "RDF for datastream sizes not found."
+                logging.debug("RDF for datastream sizes not found.")
 
             # else, return RDF object size
             try:
                 fedora_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize').next())
             except:
-                print "RDF for Fedora object size not found."
+                logging.debug("RDF for Fedora object size not found.")
                 fedora_obj_size = 0
             try:
                 wsudor_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize').next())
             except:
-                print "RDF for WSUDOR object size not found."
+                logging.debug("RDF for WSUDOR object size not found.")
                 wsudor_obj_size = 0
             
             size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
@@ -645,7 +646,7 @@ class WSUDOR_GenObject(object):
             self.ohandle.label = self.objMeta['label']
 
             # write POLICY datastream (NOTE: 'E' management type required, not 'R')
-            print "Using policy:",self.objMeta['policy']
+            logging.debug("Using policy: %s" % self.objMeta['policy'])
             policy_suffix = self.objMeta['policy']
             policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
             policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -660,7 +661,7 @@ class WSUDOR_GenObject(object):
 
             # write explicit RELS-EXT relationships
             for relationship in self.objMeta['object_relationships']:
-                print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+                logging.debug("Writing relationship: %s %s" % (str(relationship['predicate']),str(relationship['object'])))
                 self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 
             # writes derived RELS-EXT
@@ -691,7 +692,7 @@ class WSUDOR_GenObject(object):
   </mods:extension>
 </mods:mods>
                 ''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
-                print raw_MODS
+                logging.debug("%s" % raw_MODS)
                 MODS_handle.content = raw_MODS
                 MODS_handle.save()
 
@@ -704,8 +705,8 @@ class WSUDOR_GenObject(object):
 
         # exception handling
         except Exception,e:
-            print traceback.format_exc()
-            print "Volume Ingest Error:",e
+            logging.debug("%s" % traceback.format_exc())
+            logging.debug("Volume Ingest Error: %s" % e)
             return False
 
 
@@ -739,7 +740,7 @@ class WSUDOR_GenObject(object):
             try:
                 self.genIIIFManifest(on_demand=True)
             except:
-                print "failed on generating IIIF manifest"
+                logging.debug("failed on generating IIIF manifest")
 
         # register with OAI
         self.registerOAI()
@@ -751,21 +752,21 @@ class WSUDOR_GenObject(object):
             self.update_object_size()
             
             # run all ContentType specific methods that were passed here
-            print "RUNNING ContentType methods..."
+            logging.debug("RUNNING ContentType methods...")
             for func in contentTypeMethods:
                 func()
 
         else:
-            print "skipping index of object"
+            logging.debug("skipping index of object")
 
         # CLEANUP
         # delete temp_payload, might be dir or symlink
         try:
-            print "removing temp_payload directory"
+            logging.debug("removing temp_payload directory")
             shutil.rmtree(self.temp_payload)
         except OSError, e:
             # might be symlink
-            print "removing temp_payload symlink"
+            logging.debug("removing temp_payload symlink")
             os.unlink(self.temp_payload)
 
         # finally, remove 'hold' action in indexer queue and return
@@ -816,7 +817,7 @@ class WSUDOR_GenObject(object):
     #   # export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
     #   def writeDS(write_tuple):
     #       ds_id=write_tuple[0]
-    #       print "WORKING ON",ds_id
+    #       logging.debug("WORKING ON",ds_id)
 
     #       ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
 
@@ -825,7 +826,7 @@ class WSUDOR_GenObject(object):
 
     #           # XML ds model
     #           if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
-    #               print "FIRING XML WRITER"
+    #               logging.debug("FIRING XML WRITER")
     #               with open(write_tuple[1],'w') as fhand:
     #                   fhand.write(ds_handle.content.serialize())
 
@@ -834,26 +835,26 @@ class WSUDOR_GenObject(object):
     #           Why is this not writing tiffs?
     #           '''
     #           else:
-    #               print "FIRING GENERIC WRITER"
+    #               logging.debug("FIRING GENERIC WRITER")
     #               with open(write_tuple[1],'wb') as fhand:
     #                   for chunk in ds_handle.get_chunked_content():
     #                       fhand.write(chunk)
 
     #       else:
-    #           print "Content was NONE for",ds_id,"- skipping..."
+    #           logging.debug("Content was NONE for",ds_id,"- skipping...")
 
 
     #   # write original datastreams
     #   for ds in self.objMeta['datastreams']:
-    #       print "writing %s" % ds
+    #       logging.debug("writing %s" % ds)
     #       writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
 
     #   # include RELS
     #   if preserveRelationships == True:
-    #       print "preserving current relationships and writing to RELS-EXT and RELS-INT"
+    #       logging.debug("preserving current relationships and writing to RELS-EXT and RELS-INT")
     #       for rels_ds in ['RELS-EXT','RELS-INT']:
-    #           print "writing %s" % rels_ds
+    #           logging.debug("writing %s" % rels_ds)
     #           writeDS((rels_ds,"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
 
 
@@ -898,11 +899,11 @@ class WSUDOR_GenObject(object):
     #   # get PID
     #   PID = self.pid
 
-    #   print "Roundrip Ingesting:",PID
+    #   logging.debug("Roundrip Ingesting:",PID)
 
     #   # export bag, returning the file structure location of tar file
     #   export_tar = self.exportBag(returnTargetDir=True, preserveRelationships=preserveRelationships)
-    #   print "Location of export tar file:",export_tar
+    #   logging.debug("Location of export tar file:",export_tar)
 
     #   # open bag
     #   bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_tar, object_type='bag')
@@ -911,14 +912,14 @@ class WSUDOR_GenObject(object):
     #   if bag_handle != False:
     #       fedora_handle.purge_object(PID)
     #   else:
-    #       print "exported object doesn't look good, aborting purge"
+    #       logging.debug("exported object doesn't look good, aborting purge")
 
     #   # reingest exported tar file
     #   bag_handle.ingest()
 
     #   # delete exported tar
     #   if removeExportTar == True:
-    #       print "Removing export tar..."
+    #       logging.debug("Removing export tar...")
     #       os.remove(export_tar)
 
     #   # return
@@ -942,7 +943,7 @@ class WSUDOR_GenObject(object):
         try:
             return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly=True)
         except:
-            print "Could not run indexSolr() transform."
+            logging.debug("Could not run indexSolr() transform.")
             return False
 
 
@@ -950,7 +951,7 @@ class WSUDOR_GenObject(object):
     def index(self, printOnly=False):
 
         # generate human values
-        print "preparing 'human_hash' values..."
+        logging.debug("preparing 'human_hash' values...")
         human_hash = {
             'collections': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:Collection','fl':'id dc_title','rows':1000}).documents },
             'content_types': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:ContentModel','fl':'id dc_title','rows':1000}).documents }
@@ -960,7 +961,7 @@ class WSUDOR_GenObject(object):
         try:
             self.DCfromMODS()
         except:
-            print "could not re-derive DC from MODS"
+            logging.debug("could not re-derive DC from MODS")
 
         # initialize blank document and set pid
         self.SolrDoc.doc = helpers.BlankObject()
@@ -988,9 +989,9 @@ class WSUDOR_GenObject(object):
                         # append to list
                         getattr(self.SolrDoc.doc, fname).append(fvalue)
                 except:
-                    print "Could not add",each
+                    logging.debug("Could not add %s" % each)
         except:
-            print "Could not find or index datastream MODS"
+            logging.debug("Could not find or index datastream MODS")
 
         # DC
         try:
@@ -1005,9 +1006,9 @@ class WSUDOR_GenObject(object):
                         # append to list
                         getattr(self.SolrDoc.doc, fname).append(fvalue)
                 except:
-                    print "Could not add",each
+                    logging.debug("Could not add %s" % each)
         except:
-            print "Could not find or index datastream DC"
+            logging.debug("Could not find or index datastream DC")
 
         # RELS-EXT
         try:
@@ -1022,9 +1023,9 @@ class WSUDOR_GenObject(object):
                         # append to list
                         getattr(self.SolrDoc.doc, fname).append(fvalue)
                 except:
-                    print "Could not add",each
+                    logging.debug("Could not add %s" % each)
         except:
-            print "Could not find or index datastream RELS-EXT"
+            logging.debug("Could not find or index datastream RELS-EXT")
 
         # Add object and datastream sizes
         try:
@@ -1034,7 +1035,7 @@ class WSUDOR_GenObject(object):
             setattr(self.SolrDoc.doc, "obj_size_wsudor_i", size_dict['wsudor_total_size'][0] )
             setattr(self.SolrDoc.doc, "obj_size_wsudor_human", size_dict['wsudor_total_size'][1] )
         except:
-            print "Could not determine object size, skipping"
+            logging.debug("Could not determine object size, skipping")
 
 
         #######################################################################################
@@ -1044,8 +1045,8 @@ class WSUDOR_GenObject(object):
         # derive human readable fields, 'human_*'
         collections = getattr(self.SolrDoc.doc, 'rels_isMemberOfCollection', False)
         if collections:
-            print "deriving human collection names"
-            print collections
+            logging.debug("deriving human collection names")
+            logging.debug("%s" % collections)
             for pid in collections:
                 pid = pid.split("/")[1]
                 if pid in human_hash['collections']:
@@ -1054,8 +1055,8 @@ class WSUDOR_GenObject(object):
 
         content_types = getattr(self.SolrDoc.doc, 'rels_hasContentModel', False)
         if content_types:
-            print "deriving human content types"
-            print content_types
+            logging.debug("deriving human content types")
+            logging.debug("%s" % content_types)
             for pid in content_types:
                 pid = pid.split("/")[1]
                 if pid in human_hash['content_types']:
@@ -1079,7 +1080,7 @@ class WSUDOR_GenObject(object):
         
         if printOnly == True:
             # print and return dicitonary, but do NOT update, commit, or replicate
-            print "DEBUG: printing only"
+            logging.debug("DEBUG: printing only")
             return self.SolrDoc.doc.__dict__
 
         #dc_title_sorting shim, force 0th value
@@ -1088,12 +1089,12 @@ class WSUDOR_GenObject(object):
 
         # update object, no commit yet
         result = self.SolrDoc.update()
-        print result.status
+        logging.debug("%s" % result.status)
         if result.status == 200:
             return True
         else:
-            print "error indexing, status: %s" % result.status
-            print result.raw_content
+            logging.debug("error indexing, status: %s" % result.status)
+            logging.debug("%s" % result.raw_content)
             return False
 
 
@@ -1129,7 +1130,7 @@ class WSUDOR_GenObject(object):
 
         for i, ds in enumerate(jp2_ds_list):
 
-            print "converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list)))
+            logging.debug("converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list))))
 
             # jp2 handle
             jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
@@ -1139,11 +1140,11 @@ class WSUDOR_GenObject(object):
             try:
                 orig_ds_handle = self.ohandle.getDatastreamObject(orig)
             except:
-                print "could not find original for",orig
+                logging.debug("could not find original for %s" % orig)
 
             # write temp original and set as inPath
             guessed_ext = utilities.mimetypes.guess_extension(orig_ds_handle.mimetype)
-            print "guessed extension for temporary orig handle:",guessed_ext
+            logging.debug("guessed extension for temporary orig handle: %s" % guessed_ext)
             temp_orig_handle = Derivative.write_temp_file(orig_ds_handle, suffix=guessed_ext)
 
             # # gen temp new jp2            
@@ -1166,18 +1167,18 @@ class WSUDOR_GenObject(object):
 
             # if regenIIIFManifest
             if regenIIIFManifest:
-                print "regenerating IIIF manifest"
+                logging.debug("regenerating IIIF manifest")
                 self.genIIIFManifest()
 
             if clear_cache:
-                print "clearing cache"
+                logging.debug("clearing cache")
                 self.removeObjFromCache()
 
             return True
 
 
     def _checkJP2Codestream(self,ds):
-        print "Checking integrity of JP2 with jpylyzer..."
+        logging.debug("Checking integrity of JP2 with jpylyzer...")
 
         temp_filename = "/tmp/Ouroboros/%s.jp2" % uuid.uuid4()
 
@@ -1196,18 +1197,18 @@ class WSUDOR_GenObject(object):
             os.remove(temp_filename)
             # good JP2
             if type(codestream_check) == etpatch.Element:
-                print "codestream found"
+                logging.debug("codestream found")
                 return True
             elif type(codestream_check) == None:
-                print "codestream not found"
+                logging.debug("codestream not found")
                 return False
             else:
-                print "codestream check inconclusive, returning false"
+                logging.debug("codestream check inconclusive, returning false")
                 return False
         except:
             # remove temp file
             os.remove(temp_filename)
-            print "codestream check inconclusive, returning false"
+            logging.debug("codestream check inconclusive, returning false")
             return False
 
 
@@ -1248,61 +1249,61 @@ class WSUDOR_GenObject(object):
 
 
     def _checkJP2Orientation(self,ds):
-        print "Checking aspect ratio of JP2 with Loris"
+        logging.debug("Checking aspect ratio of JP2 with Loris")
 
         # check jp2
-        print "checking jp2 dimensions..."
+        logging.debug("checking jp2 dimensions...")
         ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
-        print ds_url
+        logging.debug("%s" % ds_url)
         uf = urlopen(ds_url)
         jp2_dimensions = self._from_jp2(uf)
-        print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
+        logging.debug("JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions))
 
         # check original
-        print "checking original dimensions..."
+        logging.debug("checking original dimensions...")
         ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
-        print ds_url
+        logging.debug("%s" % ds_url)
         uf = urlopen(ds_url)
         orig_dimensions = self._extract_with_pillow(uf)
-        print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
+        logging.debug("Original dimensions: %s %s" % (orig_dimensions, self._imageOrientation(orig_dimensions)))
 
         if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
-            print "same orientation"
+            logging.debug("same orientation")
             return True
         else:
             return False
 
 
     def _checkJP2OrientationAndSize(self, ds):
-        print "Checking aspect ratio and size of %s with Loris" % ds
+        logging.debug("Checking aspect ratio and size of %s with Loris" % ds)
 
         # check jp2
-        print "checking jp2 dimensions..."
+        logging.debug("checking jp2 dimensions...")
         ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds)
-        print ds_url
+        logging.debug("%s" % ds_url)
         uf = urlopen(ds_url)
         jp2_dimensions = self._from_jp2(uf)
-        print "JP2 dimensions:", jp2_dimensions, self._imageOrientation(jp2_dimensions)
+        logging.debug("JP2 dimensions: %s %s" % (jp2_dimensions, self._imageOrientation(jp2_dimensions)))
 
         # check original
-        print "checking original dimensions..."
+        logging.debug("checking original dimensions...")
         ds_url = '%s/objects/%s/datastreams/%s/content' % (localConfig.REMOTE_REPOSITORIES['local']['FEDORA_ROOT'], self.pid, ds.split("_JP2")[0])
-        print ds_url
+        logging.debug("%s" % ds_url)
         uf = urlopen(ds_url)
         orig_dimensions = self._extract_with_pillow(uf)
-        print "Original dimensions:", orig_dimensions, self._imageOrientation(orig_dimensions)
+        logging.debug("Original dimensions: %s %s" % (orig_dimensions, self._imageOrientation(orig_dimensions)))
 
         # check orientation
         tests = True
         if self._imageOrientation(jp2_dimensions) == self._imageOrientation(orig_dimensions):
-            print "same orientation"
+            logging.debug("same orientation")
             tests = True
         else:
             tests = False
 
         # check size
         if jp2_dimensions == orig_dimensions:
-            print "same size"
+            logging.debug("same size")
             tests = True
         else:
             tests = False
@@ -1326,7 +1327,7 @@ class WSUDOR_GenObject(object):
 
         for i,ds in enumerate(jp2_ds_list):
 
-            print "checking %s, %s / %s" % (ds,i,len(jp2_ds_list))
+            logging.debug("checking %s, %s / %s" % (ds,i,len(jp2_ds_list)))
 
             # check codesteram present
             if 'all' in tests or 'codestream' in tests:
@@ -1336,7 +1337,7 @@ class WSUDOR_GenObject(object):
             if 'all' in tests or 'orientation' in tests:
                 checks.append( self._checkJP2OrientationAndSize(ds) )
 
-            print "Final checks:", checks
+            logging.debug("Final checks: %s" % checks)
 
             # if regen on check fail
         if regenJP2_on_fail and False in checks:
@@ -1349,7 +1350,7 @@ class WSUDOR_GenObject(object):
         Use checkJP2 to check, fire JP2 if bad
         '''
 
-        print "Checking integrity of JP2 with jpylyzer..."
+        logging.debug("Checking integrity of JP2 with jpylyzer...")
 
         if not self.checkJP2():
             self.regenJP2()
@@ -1397,7 +1398,7 @@ class WSUDOR_GenObject(object):
                     for ds in constituent.ds_list:
                         self._removeDatastreamFromLorisCache(constituent.pid, ds)
                 except:
-                    print "could not remove constituent %s from cache, possible already purged" % constituent
+                    logging.debug("could not remove constituent %s from cache, possible already purged" % constituent)
 
         return True
 
@@ -1412,7 +1413,7 @@ class WSUDOR_GenObject(object):
         Now, requires datastream to purge from cache.
         '''
 
-        print "Removing object from Loris caches..."
+        logging.debug("Removing object from Loris caches...")
 
         # read config file for Loris
         data = StringIO.StringIO('\n'.join(line.strip() for line in open('/etc/loris2/loris2.conf')))
@@ -1429,18 +1430,18 @@ class WSUDOR_GenObject(object):
 
         # clear from fedora resolver cache
         try:
-            print "removing instance: %s" % ident
+            logging.debug("removing instance: %s" % ident)
             file_structure = ''
             ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
             file_structure_list = [ident_hash[0:2]] + [ident_hash[i:i+3] for i in range(2, len(ident_hash), 3)]
             for piece in file_structure_list:
                 file_structure = os.path.join(file_structure, piece)
                 final_file_structure = "%s/fedora/wayne/%s" % ( image_cache, file_structure )
-            print "removing dir: %s" % final_file_structure
+            logging.debug("removing dir: %s" % final_file_structure)
             shutil.rmtree(final_file_structure)
             return True
         except:
-            print "could not remove from fedora resolver cache"
+            logging.debug("could not remove from fedora resolver cache")
             return False
 
 
@@ -1459,7 +1460,7 @@ class WSUDOR_GenObject(object):
 
         '''
         
-        print "-------------------- firing objectRefresh --------------------"
+        logging.debug("-------------------- firing objectRefresh --------------------")
 
         # update object size in Solr
         self.update_object_size()
@@ -1493,13 +1494,13 @@ class WSUDOR_GenObject(object):
         '''
 
         # handle string or eulfedora handle
-        print dest_repo,type(dest_repo)
+        logging.debug("%s %s" % (dest_repo,type(dest_repo)))
         if type(dest_repo) == str or type(dest_repo) == unicode:
             dest_repo_handle = fedoraHandles.remoteRepo(dest_repo)
         elif type(dest_repo) == eulfedora.server.Repository:
             dest_repo_handle = dest_repo
         else:
-            print "destination eulfedora not found, try again"
+            logging.debug("destination eulfedora not found, try again")
             return False
             
         # generate list of objects to send
@@ -1516,15 +1517,15 @@ class WSUDOR_GenObject(object):
             if len(constituents) > 0:
                 for constituent in constituents:
                     # add to sync list
-                    print "adding %s to sync list" % constituent[0]
+                    logging.debug("adding %s to sync list" % constituent[0])
                     sync_list.append(constituent[0].split("/")[-1])
                     
         # iterate and send
         for i,pid in enumerate(sync_list):
-            print "sending %s, %d/%d..." % (pid, i+1, len(sync_list))
+            logging.debug("sending %s, %d/%d..." % (pid, i+1, len(sync_list)))
 
             # remove IIIF manifest
-            print "removing IIIF Manifest before transfer"          
+            logging.debug("removing IIIF Manifest before transfer")
             fedora_handle.api.purgeDatastream(self.ohandle,'IIIF_MANIFEST')
 
             # use syncutil
@@ -1543,26 +1544,26 @@ class WSUDOR_GenObject(object):
             # indexing both
             if refresh_remote and refresh_remote_constituents:
                 for i,pid in enumerate(sync_list):
-                    print "refreshing remote object in remote repository %s, %d/%d..." % (pid, i+1, len(sync_list))
+                    logging.debug("refreshing remote object in remote repository %s, %d/%d..." % (pid, i+1, len(sync_list)))
                     refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], pid)
-                    print refresh_remote_url
+                    logging.debug("%s" % refresh_remote_url)
                     r = requests.get( refresh_remote_url )
-                    print r.content
+                    logging.debug("%s" % r.content)
             
             # index self pid only
             elif refresh_remote and not refresh_remote_constituents:
-                print "refreshing remote object in remote repository %s, 1/1..." % (self.pid)
+                logging.debug("refreshing remote object in remote repository %s, 1/1..." % (self.pid))
                 refresh_remote_url = '%s/tasks/objectRefresh/%s' % (localConfig.REMOTE_REPOSITORIES[dest_repo]['OUROBOROS_BASE_URL'], self.pid)
-                print refresh_remote_url
+                logging.debug("%s" % refresh_remote_url)
                 r = requests.get( refresh_remote_url )
-                print r.content
+                logging.debug("%s" % r.content)
                 
             else:
-                print "skipping remote refresh"
+                logging.debug("skipping remote refresh")
                 
         # cannot refresh
         else:
-            print "Cannot refresh remote.  It is likely you passed an Eulfedora Repository object.  To refresh remote, please provide string of remote repository that aligns with localConfig"
+            logging.debug("Cannot refresh remote.  It is likely you passed an Eulfedora Repository object.  To refresh remote, please provide string of remote repository that aligns with localConfig")
 
 
 
@@ -1585,17 +1586,17 @@ class WSUDOR_GenObject(object):
 
         # 1) read <mods:extension>/<orig_filename>
         orig_filename = MODS_handle.content.node.xpath('//mods:extension/orig_filename', namespaces=METS_root.nsmap)
-        print orig_filename
+        logging.debug("%s" % orig_filename)
         if len(orig_filename) == 1:
             orig_filename = orig_filename[0].text
         elif len(orig_filename) > 1:
-            print "multiple orig_filename elements found, aborting"
+            logging.debug("multiple orig_filename elements found, aborting")
             return False
         elif len(orig_filename) == 0:
-            print "no orig_filename elements found, aborting"
+            logging.debug("no orig_filename elements found, aborting")
             return False
         else:
-            print "could not determine orig_filename"
+            logging.debug("could not determine orig_filename")
             return False
 
         '''
@@ -1612,36 +1613,36 @@ class WSUDOR_GenObject(object):
         try:
             int(parts[-1])
             file_ext_present = False
-            print "assuming NOT file extension - keeping orig_filename"
+            logging.debug("assuming NOT file extension - keeping orig_filename")
         except:
             file_ext_present = True
-            print "assuming file extension present - stripping"
+            logging.debug("assuming file extension present - stripping")
             orig_filename = ".".join(parts[:-1])
 
 
         # 2) look for DMDID_prefix + orig_filename
         dmd = METS_root.xpath('//mets:dmdSec[@ID="%s%s"]' % (DMDID_prefix, orig_filename), namespaces=METS_root.nsmap)
-        print dmd #DEBUG
+        logging.debug("%s" % dmd #DEBUG)
         if len(dmd) == 1:
-            print "one DMD section found!"
+            logging.debug("one DMD section found!")
         elif len(dmd) > 1:
-            print "multiple DMD sections found, aborting"
+            logging.debug("multiple DMD sections found, aborting")
             return False
         elif len(dmd) == 0:
-            print "no DMD sections found, aborting"
+            logging.debug("no DMD sections found, aborting")
             return False
 
 
         # 3) if found, grab MODS from METS
         enriched_MODS = dmd[0].xpath('.//mods:mods',namespaces=METS_root.nsmap)
-        print enriched_MODS # DEBUG
+        logging.debug("%s" % enriched_MODS # DEBUG)
         if len(enriched_MODS) == 1:
-            print "MODS found"
+            logging.debug("MODS found")
         elif len(enriched_MODS) > 1:
-            print "multiple MODS found, aborting"
+            logging.debug("multiple MODS found, aborting")
             return False
         elif len(enriched_MODS) == 0:
-            print "no MODS found, aborting"
+            logging.debug("no MODS found, aborting")
             return False
 
 
@@ -1651,7 +1652,7 @@ class WSUDOR_GenObject(object):
 
 
         # 5) recreate <mods:extension>/<orig_filename> if lost (taken from MODS export)
-        print "ensuring that <orig_filename> endures"
+        logging.debug("ensuring that <orig_filename> endures")
 
         # reinit MODS and ohandle
         self.ohandle = fedora_handle.get_object(self.pid)
@@ -1713,17 +1714,17 @@ class WSUDOR_GenObject(object):
     # add OAI identifers and set memberships
     def registerOAI(self):
         # generate OAI identifier
-        print self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid))
-        print "created OAI identifier"
+        logging.debug("%s" % self.ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid)))
+        logging.debug("created OAI identifier")
 
         # affiliate with collection set(s)
         try:
             collections = self.isMemberOfCollections
             for collection in collections:
-                print self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)
-                print "registered with collection %s" % collection
+                logging.debug("%s %s" % (self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)))
+                logging.debug("registered with collection %s" % collection)
         except:
-            print "could not affiliate with collection"
+            logging.debug("could not affiliate with collection")
 
 
     # send Object to Problem Object staging space (i.e. in user_pids table)
@@ -1756,7 +1757,7 @@ class WSUDOR_GenObject(object):
         else:
 
             # purge constituent objets
-            print "purging Constituents if present"
+            logging.debug("purging Constituents if present")
             if getattr(self, 'purgeConstituents', None):
                 self.purgeConstituents()
 
@@ -1768,11 +1769,11 @@ class WSUDOR_GenObject(object):
             self.removeObjFromCache()
 
             # remove from Solr
-            print "purging from solr"
+            logging.debug("purging from solr")
             solr_handle.delete_by_key(self.pid)
 
             # purge object
-            print "purging from fedora"
+            logging.debug("purging from fedora")
             fedora_handle.purge_object(self.pid)
 
             return True
@@ -1900,7 +1901,7 @@ class WSUDOR_GenObject(object):
         XMLroot = etree.fromstring(MODS_handle.content.serialize())
 
         # transform downloaded MODS to DC with LOC stylesheet
-        print "XSLT Transforming: %s" % (self.pid)
+        logging.debug("XSLT Transforming: %s" % (self.pid))
         # Saxon transformation
         XSLhand = open('inc/xsl/MODS_to_DC.xsl','r')
         xslt_tree = etree.parse(XSLhand)
@@ -1918,7 +1919,7 @@ class WSUDOR_GenObject(object):
                 # do here
             DS_handle.content = str(DC)
             derive_results = DS_handle.save()
-            print "DCfromMODS result:",derive_results
+            logging.debug("DCfromMODS result: %s" % derive_results)
             return derive_results
 
         else:
@@ -1950,9 +1951,9 @@ class WSUDOR_GenObject(object):
         triples = self.rdf_triples
 
         # purge all
-        print "PURGING ALL RELATIONSHIPS"
+        logging.debug("PURGING ALL RELATIONSHIPS")
         for triple in triples:
-            print triple
+            logging.debug("%s" % triple)
             if type(triple[2]) == rdflib.term.Literal:
                 isLit = True
             else:
@@ -1960,9 +1961,9 @@ class WSUDOR_GenObject(object):
             self.ohandle.api.purgeRelationship(self.ohandle, *triple, isLiteral=isLit)
         
         # re-add
-        print "RE-ADDING ALL RELATIONSHIPS"
+        logging.debug("RE-ADDING ALL RELATIONSHIPS")
         for triple in triples:
-            print triple
+            logging.debug("%s" % triple)
             if type(triple[2]) == rdflib.term.Literal:
                 isLit = True
             else:

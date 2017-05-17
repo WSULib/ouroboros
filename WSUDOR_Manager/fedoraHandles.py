@@ -1,13 +1,13 @@
 # fedora handles
 from eulfedora.server import Repository
 from localConfig import *
-from WSUDOR_Manager import fedora_handle, app
+from WSUDOR_Manager import fedora_handle, app, logging
 
 
 # if celery worker, fire fedora_handle with auth credentials
 if fedora_handle == False:
 
-	print "creating user authenticated fedora_handle"
+	logging.debug("creating user authenticated fedora_handle")
 	
 	# if not generic celery user
 	if app.config['USERNAME'] != "celery":

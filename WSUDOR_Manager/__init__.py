@@ -13,14 +13,13 @@ from eulfedora.server import Repository
 from celery import Celery
 import xmlrpclib
 
-import logging
-
 # sniff out context
 if len(sys.argv) == 1:
 	run_context = 'ouroboros'
 else:
 	run_context = 'celery'
 
+logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
 
 
 ##########################################################################################
@@ -64,7 +63,7 @@ app = Flask(__name__)
 
 # if using app prefix, wrap Flask app in ReverseProxied class from above
 if localConfig.APP_PREFIX_USE:
-	print "wrapping WSUDOR_Manager for reverse proxy"
+	logging.debug("wrapping WSUDOR_Manager for reverse proxy")
 	app.wsgi_app = ReverseProxied(app.wsgi_app)
 	app.config["APPLICATION_ROOT"] = "/%s" % localConfig.APP_PREFIX
 
@@ -85,14 +84,14 @@ If celery worker -- with multiple args -- fire fedora_handle based on username
 	- set fedora_handle to False, knowing it will get built in fedora_handle
 '''
 if run_context == 'ouroboros':
-	print "generating generic fedora_handle and generic celery worker"	
+	logging.debug("generating generic fedora_handle and generic celery worker")
 	fedora_handle = Repository(FEDORA_ROOT, localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD, 'wayne')
 	fire_cw = True
 
 else:
-	print "generating user authenticated fedora_handle"
+	logging.debug("generating user authenticated fedora_handle")
 	app.config['USERNAME'] = sys.argv[5]
-	print "app.config username is", app.config['USERNAME']
+	logging.debug("app.config username is", app.config['USERNAME'])
 	fedora_handle = False
 	fire_cw = False
 
@@ -109,14 +108,14 @@ class CeleryWorker(object):
 	def __init__(self,username):
 		self.username = username
 		if self.username == 'celery':
-			print "celery for indexer, setting concurrency to %s" % localConfig.INDEXER_CELERY_CONCURRENCY
+			logging.debug("celery for indexer, setting concurrency to %s" % localConfig.INDEXER_CELERY_CONCURRENCY)
 			self.celery_concurrency = localConfig.INDEXER_CELERY_CONCURRENCY
 		else:
-			print "celery instance for %s, setting concurrency to %s" % (self.username, localConfig.CELERY_CONCURRENCY)
+			logging.debug("celery instance for %s, setting concurrency to %s" % (self.username, localConfig.CELERY_CONCURRENCY))
 			self.celery_concurrency = localConfig.CELERY_CONCURRENCY
 
 	def _writeConfFile(self):
-		print "adding celery conf file"
+		logging.debug("adding celery conf file")
 		# fire the suprevisor celery worker process
 		celery_process = '''[program:celery-%(username)s]
 command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=%(celery_concurrency)s -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
@@ -133,27 +132,28 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.userna
 				fhand.write(celery_process)
 			return filename
 		else:
-			print "Conf files exists, skipping"
+			logging.debug("Conf files exists, skipping")
 			return False
 
 
 	def _removeConfFile(self):
-		print "remove celery conf file"
+		logging.debug("remove celery conf file")
 		filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
 		if os.path.exists(filename):
 			return os.remove(filename)
 		else:
-			print "could not find conf file, skipping"
+			logging.debug("could not find conf file, skipping")
 			return False
 
 
 	def _startSupervisorProcess(self):
-		print "adding celery proccessGroup from supervisor"
+		logging.debug("adding celery proccessGroup from supervisor")
 		try:
 			self.sup_server.supervisor.reloadConfig()
 			self.sup_server.supervisor.addProcessGroup('celery-%s' % self.username)
 		except Exception, e:
-			print "could not start supervisor process",e
+			logging.debug("could not start supervisor process")
+			logging.debug(e)
 			return False
 
 
@@ -161,15 +161,15 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.userna
 		try:
 			self.sup_server.supervisor.stopProcess('celery-%s' % self.username)
 		except:
-			print "could not stop process"
+			logging.debug("could not stop process")
 		try:
 			self.sup_server.supervisor.startProcess('celery-%s' % self.username)
 		except:
-			print "could not start process"
+			logging.debug("could not start process")
 
 
 	def _stopSupervisorProcess(self):
-		print "stopping celery proccessGroup from supervisor"           
+		logging.debug("stopping celery proccessGroup from supervisor")
 		try:
 			process_group = 'celery-%s' % self.username
 			self.sup_server.supervisor.stopProcess(process_group)
@@ -179,7 +179,7 @@ stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.userna
 
 
 	def _removeSupervisorProcess(self):
-		print "manually removing celery proccessGroup from supervisor"           
+		logging.debug("manually removing celery proccessGroup from supervisor")
 		try:
 			process_group = 'celery-%s' % self.username
 			self.sup_server.supervisor.removeProcessGroup(process_group)
@@ -226,7 +226,7 @@ celery = make_celery(app)
 # assuming Ouroboros Celery worker
 if fire_cw and localConfig.WSUDOR_MANAGER_FIRE:
 	# fire celery worker
-	print "firing generic celery worker"
+	logging.debug("firing generic celery worker")
 	cw = CeleryWorker("celery")
 	cw.start()
 
@@ -269,22 +269,22 @@ try:
 	if not os.path.exists('/tmp/Ouroboros'):
 		os.mkdir('/tmp/Ouroboros')
 except OSError as e:
-	print e
-	print "could not make /tmp/Ouroboros"
+	logging.debug(e)
+	logging.debug("could not make /tmp/Ouroboros")
 
 try:
 	if not os.path.exists('/tmp/Ouroboros/ingest_workspace'):
 		os.mkdir('/tmp/Ouroboros/ingest_workspace')
 except OSError as e:
-	print e
-	print "could not make /tmp/Ouroboros/ingest_workspace"
+	logging.debug(e)
+	logging.debug("could not make /tmp/Ouroboros/ingest_workspace")
 
 try:
 	if not os.path.exists('/home/ouroboros/ingest_jobs'):
 		os.mkdir('/home/ouroboros/ingest_jobs')
 except OSError as e:
-	print e
-	print "could not make /home/ouroboros/ingest_jobs"
+	logging.debug(e)
+	logging.debug("could not make /home/ouroboros/ingest_jobs")
 
 
 

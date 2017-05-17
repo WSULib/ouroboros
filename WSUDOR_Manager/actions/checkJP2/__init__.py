@@ -12,7 +12,7 @@ from flask import Blueprint, render_template, redirect, abort
 
 from WSUDOR_ContentTypes import WSUDOR_Object
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import utilities, roles
+from WSUDOR_Manager import utilities, roles, logging
 
 
 checkJP2 = Blueprint('checkJP2', __name__, template_folder='templates', static_folder="static")
@@ -30,7 +30,7 @@ def index():
 def checkJP2_worker(job_package):
 
 	form_data = job_package['form_data']
-	print form_data
+	logging.debug(form_data)
 
 	tests = []
 

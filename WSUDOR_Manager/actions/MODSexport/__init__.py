@@ -7,7 +7,7 @@ from WSUDOR_Manager import celery
 # handles
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.forms import importMODS
-from WSUDOR_Manager import utilities, jobs, redisHandles, jobs, models, db, actions, roles
+from WSUDOR_Manager import utilities, jobs, redisHandles, jobs, models, db, actions, roles, logging
 from flask import Blueprint, render_template, abort, session, make_response, request, redirect
 from flask.ext.login import login_required
 import eulfedora
@@ -153,7 +153,7 @@ def MODSexport_import():
 @celery.task(name="MODSimport_factory")
 def MODSimport_factory(job_package):
 
-	print "FIRING MODSimport_factory"
+	logging.debug("FIRING MODSimport_factory")
 
 	# get form data
 	form_data = job_package['form_data']	
@@ -172,7 +172,7 @@ def MODSimport_factory(job_package):
 	MODS_collection = unicode(MODS_collection, 'utf-8')
 	XMLroot = etree.fromstring(MODS_collection.encode('utf-8'))	
 	MODS_list = XMLroot.findall('{http://www.loc.gov/mods/v3}mods')
-	print MODS_list
+	logging.debug(MODS_list)
 
 	# update job info
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(MODS_list))
@@ -181,18 +181,18 @@ def MODSimport_factory(job_package):
 	step = 1
 	for MODS_elem in MODS_list:
 
-		print "Loading %s / %s" % (step, len(MODS_list))
+		logging.debug("Loading %s / %s" % (step, len(MODS_list)))
 
 		# read <mods:extension><PID>, pass this as PID
 		PID_search = MODS_elem.findall("{http://www.loc.gov/mods/v3}extension/PID")
 		if len(PID_search) == 0:
-			print "Could not find PID, skipping"
+			logging.debug("Could not find PID, skipping")
 			# bump step
 			step += 1
 			continue
 		else:
 			PID = PID_search[0].text
-			print "FOUND THE PID:",PID
+			logging.debug("FOUND THE PID: %s" % PID)
 
 		# write MODS to temp file
 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".xml"
@@ -217,7 +217,7 @@ def MODSimport_factory(job_package):
 		# bump step
 		step += 1
 
-	print "Finished firing MODS import workers"
+	logging.debug("Finished firing MODS import workers")
 
 
 @roles.auth(['admin','metadata'], is_celery=True)
@@ -228,7 +228,7 @@ def MODSimport_worker(job_package):
 
 	PID = job_package['PID']
 	MODS = job_package['MODS']	
-	print "Updating MODS for %s" % (PID)
+	logging.debug("Updating MODS for %s" % (PID))
 
 	# open temp MODS file, read, delete
 	fhand = open(MODS,'r')

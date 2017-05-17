@@ -1,8 +1,0 @@
-Idea here will be to use RDF querying for objects with state = "Deleted"
-<info:fedora/fedora-system:FedoraObject-3.0> <info:fedora/fedora-system:def/model#state> <info:fedora/fedora-system:def/model#Active> .
-
-- Will probably need some kind of pruning, maybe use datatables?
-	- at LEAST print out the PIDs...
-- Consider two-key authentication from two users...
-- Purge with optional backup!
-

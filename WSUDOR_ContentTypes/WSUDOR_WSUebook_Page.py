@@ -22,7 +22,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers, utilities
+from WSUDOR_Manager import redisHandles, helpers, utilities, logging
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
@@ -79,7 +79,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# new pid
 		npid = "wayne:%s_Page_%s" % (self.book_obj.pid.split(":")[1], page_num)
-		print "Page pid: %s" % npid
+		logging.debug("Page pid: %s" % npid)
 		self.pid = npid
 
 		# set status as hold
@@ -97,24 +97,23 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
-		print "Using policy:",self.book_obj.objMeta['policy']
+		logging.debug("Using policy: %s" % self.book_obj.objMeta['policy'])
 		policy_suffix = self.book_obj.objMeta['policy'].split("info:fedora/")[1]
 		policy_handle = eulfedora.models.DatastreamObject(self.ohandle, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 		policy_handle.label = "POLICY"
 		policy_handle.save()
-
 		# for each file type in pages dict, pass page obj and process
 		for ds in page_dict:
 
 			if ds['ds_id'].startswith('IMAGE'):
-				print "processing image..."
+				logging.debug("processing image...")
 				self.processImage(ds)
 			if ds['ds_id'].startswith('HTML'):
-				print "processing HTML..."
+				logging.debug("processing HTML...")
 				self.processHTML(ds)
 			if ds['ds_id'].startswith('ALTOXML'):
-				print "processing ALTO..."
+				logging.debug("processing ALTO...")
 				self.processALTOXML(ds)
 
 		# write RDF relationships
@@ -153,20 +152,20 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# write POLICY datastream
 		# NOTE: 'E' management type required, not 'R'
-		print "Using policy:",self.book_obj.objMeta['policy']
+		logging.debug("Using policy: %s" % self.book_obj.objMeta['policy'])
 		policy_suffix = self.book_obj.objMeta['policy'].split("info:fedora/")[1]
 		policy_handle = eulfedora.models.DatastreamObject(self.ohandle, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 		policy_handle.label = "POLICY"
 		policy_handle.save()				
 
-		print "Processing HTML placeholder"
+		logging.debug("Processing HTML placeholder")
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "HTML", "HTML", mimetype="text/html", control_group='M')
 		generic_handle.label = "HTML"
 		generic_handle.content = "<p>[Page %s Intentionally Left Blank]</p>" % (page_num)
 		generic_handle.save()
 
-		print "Processing IMAGE placeholder"
+		logging.debug("Processing IMAGE placeholder")
 		# passes 'from_bag' param		
 		self.processImage(None, exists=False, page_num=page_num, from_bag=from_bag)
 
@@ -177,7 +176,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageExists", False)
 
 		# create IMAGE, HTML, ALTOXML for missing page
-		print "Processing ALTOXML placeholder"
+		logging.debug("Processing ALTOXML placeholder")
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'ALTOXML', 'ALTOXML', mimetype="text/xml", control_group='M')
 		generic_handle.label = 'ALTOXML'
 		generic_handle.content = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><alto xmlns="http://www.loc.gov/standards/alto/ns-v2#" xmlns:xlink="http://www.w3.org/1999/xlink"    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"    xsi:schemaLocation="http://www.loc.gov/standards/alto/ns-v2# http://www.loc.gov/standards/alto/alto-v2.0.xsd">    <Description>        <MeasurementUnit>pixel</MeasurementUnit>        <OCRProcessing ID="IdOcr">            <ocrProcessingStep>                <processingSoftware>                    <softwareCreator>ABBYY</softwareCreator>                    <softwareName>ABBYY Recognition Server</softwareName>                    <softwareVersion>4.0</softwareVersion>                </processingSoftware>            </ocrProcessingStep>        </OCRProcessing>    </Description>    <Styles>        <ParagraphStyle ID="StyleId-FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF-" ALIGN="Left" LEFT="0"            RIGHT="0" FIRSTLINE="0"/>    </Styles>    <Layout>        <Page ID="Page1" PHYSICAL_IMG_NR="1">            <PrintSpace HEIGHT="%s" WIDTH="%s" VPOS="0" HPOS="0"/>        </Page>    </Layout></alto>' % (self.faux_width, self.faux_height)
@@ -191,9 +190,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	def processImage(self, ds, exists=True, page_num=None, from_bag=True):
 
 		if exists:
-			print "Processing derivative"
+			logging.debug("Processing derivative")
 			file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
-			print "Looking for:",file_path
+			logging.debug("Looking for: %s" % file_path)
 
 		if not exists:
 
@@ -203,11 +202,11 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				for ds in first_page_dict:
 					if ds['ds_id'].startswith('IMAGE'):
 						file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
-						print "looking for dimensions from this file:",file_path
+						logging.debug("looking for dimensions from this file: %s" % file_path)
 						with Image.open(file_path) as im:
 							width, height = im.size
 							self.faux_width, self.faux_height = im.size # save for use in ALTOXML
-							print "dimensions:",width,height
+							logging.debug("dimensions: %s %s" (width,height))
 
 			# get dimensions from iiif_manifest
 			if not from_bag:
@@ -215,7 +214,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				page_info = im['sequences'][0]['canvases'][0]
 				width, height = (page_info['width'],page_info['height'])
 				self.faux_width, self.faux_height = (page_info['width'],page_info['height']) # save for use in ALTOXML
-				print "dimensions:",width,height
+				logging.debug("dimensions: %s %s" (width,height))
 
 			# write temp file
 			missing_page_output_handle = Derivative.create_temp_file(suffix='.tif')
@@ -240,12 +239,12 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# optionally de-increment to be sure it is less than criteria
 			fontsize -= 1
 			font = ImageFont.truetype("WSUDOR_ContentTypes/assets/Roboto-Regular.ttf", fontsize)
-			print 'final font size',fontsize
+			logging.debug('final font size %s' % fontsize)
 
 			w, h = font.getsize(txt)
 			draw.text(((W-w)/2,(H-h)/2), txt, font=font, fill="black")
 			im.save(file_path, "TIFF")
-			print "written to",file_path
+			logging.debug("written to %s" % file_path)
 
 		# original
 		orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'IMAGE', 'IMAGE', mimetype='image/tiff', control_group='M')
@@ -277,7 +276,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		if jp2_result:
 			with open(jp2.output_handle.name) as fhand:
 				jp2_handle.content = fhand.read()
-			print "Result for",ds,jp2_handle.save()
+			logging.debug("Result for %s" % ds,jp2_handle.save())
 			jp2.output_handle.unlink(jp2.output_handle.name)
 		else:
 			raise Exception("Could not create JP2")
@@ -290,9 +289,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	def processHTML(self, ds):
 
-		print "Processing HTML"
+		logging.debug("Processing HTML")
 		file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
-		print "Looking for:",file_path
+		logging.debug("Looking for: %s" % file_path)
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "HTML", "HTML", mimetype=ds['mimetype'], control_group='M')
 		generic_handle.label = "HTML"
 		generic_handle.content = open(file_path)
@@ -302,7 +301,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# add HTML to self.html_concat
 			fhand = open(file_path)
 			html_parsed = BeautifulSoup(fhand)
-			print "HTML document parsed..."
+			logging.debug("HTML document parsed...")
 			#sets div with page_ID
 			self.book_obj.html_concat = self.book_obj.html_concat + '<div id="page_ID_%s" class="html_page">' % (ds['order'])
 			#Set in try / except block, as some HTML documents contain no elements within <body> tag
@@ -310,7 +309,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				for block in html_parsed.body:
 					self.book_obj.html_concat = self.book_obj.html_concat + unicode(block)
 			except:
-				print "<body> tag is empty, skipping. Adding page_ID anyway."
+				logging.debug("<body> tag is empty, skipping. Adding page_ID anyway.")
 
 			#closes page_ID / div
 			self.book_obj.html_concat = self.book_obj.html_concat + "</div>"
@@ -318,9 +317,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	def processALTOXML(self, ds):
-		print "Processing ALTO XML"
+		logging.debug("Processing ALTO XML")
 		file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
-		print "Looking for:",file_path
+		logging.debug("Looking for: %s" % file_path)
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'ALTOXML', 'ALTOXML', mimetype=ds['mimetype'], control_group='M')
 		generic_handle.label = 'ALTOXML'
 		generic_handle.content = open(file_path)
@@ -333,12 +332,12 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		2) Wait for return?
 		'''
 
-		print "sending image file to abbyy for %s" % self.pid
+		logging.debug("sending image file to abbyy for %s" % self.pid)
 
 		# open image handle
 		image_handle = self.ohandle.getDatastreamObject('IMAGE')
 		image_filename = '%s/%s%s' % (localConfig.ABBYY_INCOMING, self.pid.replace(":","_"), utilities.mimetypes.guess_extension(image_handle.mimetype))
-		print image_filename
+		logging.debug("%s" % image_filename)
 
 		# write to file
 		with open(image_filename, 'w') as fd:
@@ -362,7 +361,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# loop through and wait for files
 		if set(abbyy_output).issubset(os.listdir(localConfig.ABBYY_OUTPUT)):
-			print "OCR complete for %s" % self.pid
+			logging.debug("OCR complete for %s" % self.pid)
 			return abbyy_output
 		else:
 			return False
@@ -372,7 +371,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		'''update datastreams with abbyy output'''
 
-		print "updating ABYYY files for %s" % self.pid
+		logging.debug("updating ABYYY files for %s" % self.pid)
 
 		# prep filenames
 		abbyy_output = {			
@@ -385,29 +384,29 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# HTML
 		with open(abbyy_output['HTML'],'r') as fd:
 			if 'HTML' in self.ohandle.ds_list:
-				print "updating HTML"
+				logging.debug("updating HTML")
 				ds_handle = self.ohandle.getDatastreamObject('HTML')
 				ds_handle.content = fd.read()
 				ds_handle.save()
 			else:
-				print "creating HTML datastream"
+				logging.debug("creating HTML datastream")
 				ds_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "HTML", "HTML", mimetype="text/html", control_group='M')
 				ds_handle.label = "HTML"
 				ds_handle.content = fd.read()
 				ds_handle.save()
 		
 		# TXT
-		print "skipping txt for now..."
+		logging.debug("skipping txt for now...")
 		
 		# ALTOXML
 		with open(abbyy_output['ALTOXML'],'r') as fd:
 			if 'ALTOXML' in self.ohandle.ds_list:
-				print "updating ALTOXML"
+				logging.debug("updating ALTOXML")
 				ds_handle = self.ohandle.getDatastreamObject('ALTOXML')
 				ds_handle.content = fd.read()
 				ds_handle.save()
 			else:
-				print "creating ALTOXML datastream"
+				logging.debug("creating ALTOXML datastream")
 				ds_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "ALTOXML", "ALTOXML", mimetype="text/xml", control_group='M')
 				ds_handle.label = "ALTOXML"
 				ds_handle.content = fd.read()
@@ -417,7 +416,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 		Will require updating full-text PDF
 		'''
-		print "skipping pdf for now..."
+		logging.debug("skipping pdf for now...")
 
 
 		# cleanup
@@ -441,22 +440,22 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		for i, ds in enumerate(jp2_ds_list):
 
-			print "converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list)))
+			logging.debug("converting %s, %s / %s" % (ds,str(i+1),str(len(jp2_ds_list))))
 
 			# jp2 handle
 			jp2_ds_handle = self.ohandle.getDatastreamObject(ds)
 
 			# get original ds_handle
-			print "for WSUebook_Page type, known original as 'IMAGE'"
+			logging.debug("for WSUebook_Page type, known original as 'IMAGE'")
 			orig = 'IMAGE'
 			try:
 				orig_ds_handle = self.ohandle.getDatastreamObject(orig)
 			except:
-				print "could not find original for",orig
+				logging.debug("could not find original for %s" % orig)
 
 			# write temp original and set as inPath
 			guessed_ext = utilities.mimetypes.guess_extension(orig_ds_handle.mimetype)
-			print "guessed extension for temporary orig handle:",guessed_ext
+			logging.debug("guessed extension for temporary orig handle: %s" % guessed_ext)
 			temp_orig_handle = Derivative.write_temp_file(orig_ds_handle, suffix=guessed_ext)
 
 			# # gen temp new jp2			
@@ -479,11 +478,11 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# if regenIIIFManifest
 			if regenIIIFManifest:
-				print "regenerating IIIF manifest"
+				logging.debug("regenerating IIIF manifest")
 				self.genIIIFManifest()
 
 			if clear_cache:
-				print "clearing cache"
+				logging.debug("clearing cache")
 				self.removeObjFromCache()
 
 			return True
@@ -496,14 +495,14 @@ This might be where we can fix the gray TIFFs
 '''
 def imMode(im):
 	# check for 16-bit tiffs
-	print "Image mode:",im.mode
+	logging.debug("Image mode: %s" % im.mode)
 	if im.mode in ['I;16','I;16B']:
-		print "I;16 tiff detected, converting..."
+		logging.debug("I;16 tiff detected, converting...")
 		im.mode = 'I'
 		im = im.point(lambda i:i*(1./256)).convert('L')
 	# else if not RGB, convert
 	elif im.mode != "RGB" :
-		print "Converting to RGB"
+		logging.debug("Converting to RGB")
 		im = im.convert("RGB")
 
 	return im

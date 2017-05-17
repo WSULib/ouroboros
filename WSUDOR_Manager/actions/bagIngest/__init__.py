@@ -7,7 +7,7 @@ from WSUDOR_Manager import celery
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, forms, roles
+from WSUDOR_Manager import redisHandles, jobs, models, db, forms, roles, logging
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 import localConfig
@@ -65,7 +65,7 @@ def bagIngest_factory(job_package):
 		job_package['bag_dir'] = bag_dir
 
 		# set estimated tasks
-		print "Antipcating 1 tasks...."	
+		logging.debug("Antipcating 1 tasks....")
 		redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), 1)
 
 		step = 1
@@ -82,7 +82,7 @@ def bagIngest_factory(job_package):
 		# bump step
 		step += 1
 
-		print "Finished firing ingest workers"
+		logging.debug("Finished firing ingest workers")
 
 
 	# Multiple Ingest Type
@@ -95,23 +95,23 @@ def bagIngest_factory(job_package):
 		# create working directory in workspace
 		bag_dir = payloadExtractor(payload_location,ingest_type)
 		if bag_dir == False:
-			print "Aborting"
+			logging.debug("Aborting")
 			return False
-		print "Bag dir at this point:",bag_dir
+		logging.debug("Bag dir at this point: %s" % bag_dir)
 
 		# all items inside bag_dir	
 		bag_dirs_tuple = os.walk(bag_dir).next()
 
 		# dirs
 		if len(bag_dirs_tuple[1]) > 0:
-			print "Directories detected, continuing"
+			logging.debug("Directories detected, continuing")
 
 		# archives
 		if len(bag_dirs_tuple[2]) > 0:
-			print "Archive files detected. Extracting and continuing."
+			logging.debug("Archive files detected. Extracting and continuing.")
 			for archive in bag_dirs_tuple[2]:
 				archive_filename = bag_dirs_tuple[0] + "/" + archive
-				print archive_filename
+				logging.debug(archive_filename)
 
 				# extract to temp dir
 				tar_handle = tarfile.open(archive_filename)
@@ -123,16 +123,16 @@ def bagIngest_factory(job_package):
 
 		# dirs
 		bag_dirs = [ bag_dirs_tuple[0] + "/" + bag_name for bag_name in bag_dirs_tuple[1] ]
-		print bag_dirs
+		logging.debug(bag_dirs)
 
 		# set estimated tasks
-		print "Antipcating",len(bag_dirs),"tasks...."	
+		logging.debug("Antipcating %s tasks" % len(bag_dirs))
 		redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(bag_dirs))
 
 		# iterate through bags
 		step = 1
 		for bag_dir in bag_dirs:
-			print "Ingesting %s / %s" % (step, len(bag_dirs))
+			logging.debug("Ingesting %s / %s" % (step, len(bag_dirs)))
 			job_package['bag_dir'] = bag_dir
 			
 			# fire task via custom_loop_taskWrapper			
@@ -148,7 +148,7 @@ def bagIngest_factory(job_package):
 			# bump step
 			step += 1
 
-		print "Finished firing ingest workers"
+		logging.debug("Finished firing ingest workers")
 
 
 @roles.auth(['admin'], is_celery=True)
@@ -157,29 +157,29 @@ def bagIngest_worker(job_package):
 	bag_dir = job_package['bag_dir']
 
 	# load bag_handle and ingest	
-	print "Working on:",bag_dir
+	logging.debug("Working on: %s" % bag_dir)
 	bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_dir, object_type="bag")
 	if bag_dir == 'Could not load WSUDOR or Bag object.':
-		print "Aborting, bag_handle initiziation was unsuccessful."
+		logging.debug("Aborting, bag_handle initiziation was unsuccessful.")
 		return False
 
 	# validate bag for WSUDOR ingest	
 	valid_results = bag_handle.validIngestBag()
 	if valid_results['verdict'] != True:
-		print "Bag is not valid for the following reasons, aborting.", valid_results
+		logging.debug("Bag is not valid for the following reasons, aborting: %s" % valid_results)
 		return False
 
 	# optional flags
 	###########################################################################################
 	# overwrite
 	if 'overwrite' in job_package['form_data']:
-		print "purging object if exists"
+		logging.debug("purging object if exists")
 		if fedora_handle.get_object(bag_handle.pid).exists:
 			try:
 				obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_handle.pid)
 				obj_handle.purge(override_state=True)
 			except:
-				print "falling back on raw fedora object purge"
+				logging.debug("falling back on raw fedora object purge")
 				fedora_handle.purge_object(bag_handle.pid)
 
 	# push to remote
@@ -219,18 +219,18 @@ def bagIngest_worker(job_package):
 			return False
 
 		# push to remote repo
-		print "sending object..."
+		logging.debug("sending object...")
 
 		# Use object method
 		obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(bag_handle.pid)
 		obj_handle.sendObject(dest_repo, refresh_remote=refresh_remote, overwrite=overwrite, export_context=export_context, omit_checksums=omit_checksums)	
 
 		# delete local object (and constituent objects)
-		print "purging Constituents if present"
+		logging.debug("purging Constituents if present")
 		if getattr(obj_handle, 'purgeConstituents', None):
 			obj_handle.purgeConstituents()
 
-		print "finally, removing object"
+		logging.debug("finally, removing object")
 		fedora_handle.purge_object(obj_handle.pid)
 
 		# remove from Solr	
@@ -238,7 +238,7 @@ def bagIngest_worker(job_package):
 
 		# fire ingestWorkspace callback if checked
 		if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:
-			print "firing ingest callback"			
+			logging.debug("firing ingest callback")
 			actions.actions.ingestBag_callback.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 
 		return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
@@ -250,7 +250,7 @@ def bagIngest_worker(job_package):
 			ingest_bag = bag_handle.ingest()
 			# fire ingestWorkspace callback if checked
 			if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:
-				print "firing ingest callback"
+				logging.debug("firing ingest callback")
 				actions.actions.ingestBag_callback.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 			return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 		except Exception, e:
@@ -268,7 +268,7 @@ def payloadExtractor(payload_location,ingest_type):
 
 	# payload as archive
 	if os.path.isfile(payload_location):
-		print "payload_location is a file, extracting archive of BagIt directory(s)"
+		logging.debug("payload_location is a file, extracting archive of BagIt directory(s)")
 		archive_filename = os.path.basename(payload_location)
 
 		# move file
@@ -296,13 +296,13 @@ def payloadExtractor(payload_location,ingest_type):
 
 	# payload as directory
 	elif os.path.isdir(payload_location):
-		print "payload_location is a dir, no extraction required"
+		logging.debug("payload_location is a dir, no extraction required")
 		bag_dir = payload_location
 		return bag_dir
 
 
 	# payload not file or dir
 	else:
-		print "payload_location does not appear to be a valid directory or file, or cannot be found at all.  Aborting."
+		logging.debug("payload_location does not appear to be a valid directory or file, or cannot be found at all.  Aborting.")
 		return False
 

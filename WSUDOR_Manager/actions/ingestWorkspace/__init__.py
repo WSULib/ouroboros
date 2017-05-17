@@ -7,13 +7,13 @@ from WSUDOR_Manager import celery, utilities, fedoraHandles
 from WSUDOR_Manager.forms import RDF_edit
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models, roles
+from WSUDOR_Manager import redisHandles, jobs, models, db, forms, models, roles, logging
 import WSUDOR_Manager.actions as actions
 import WSUDOR_ContentTypes
 try:
 	import ouroboros_assets
 except:
-	print "could not load git submodule 'ouroboros_assets'"
+	logging.debug("could not load git submodule 'ouroboros_assets'")
 import localConfig
 
 from flask import Blueprint, render_template, abort, request, redirect, session, jsonify, Response
@@ -83,8 +83,8 @@ def job(job_id):
 
 	# SET SESSIONS VARS
 	# set session filters if present
-	print "checking for filters..."
-	print request.args
+	logging.debug("checking for filters...")
+	logging.debug(request.args)
 
 	# row range
 	if "row_range" in request.args:
@@ -93,7 +93,7 @@ def job(job_id):
 			session['row_s'] = row_s
 			session['row_e'] = row_e
 		except:
-			print "range malformed, cleaning session"
+			logging.debug("range malformed, cleaning session")
 			utilities.sessionVarClean(session,'row_s')
 			utilities.sessionVarClean(session,'row_e')
 
@@ -120,7 +120,7 @@ def job(job_id):
 		utilities.sessionVarClean(session,'aem_enriched')
 
 	# SET SESSIONS VARS
-	print "filtered rows stored in Redis"
+	logging.debug("filtered rows stored in Redis")
 	current_row_set = currentRowsSet(job_id,session)
 	redisHandles.r_catchall.set('%s_crows_%s' % (session['username'],job_id),json.dumps(list(current_row_set)))
 
@@ -138,19 +138,19 @@ def deleteJob(job_id):
 	'''
 
 	# clean job
-	print "removing job"
+	logging.debug("removing job")
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
 	j._delete()
 
 	# clean object
-	print "removing associated objects with job"
+	logging.debug("removing associated objects with job")
 	jos = models.ingest_workspace_object.query.filter_by(job_id=job_id)
 	for o in jos:		
 		o._delete()
 	db.session.commit()
 
 	# remove working directory
-	print "removing ingest_jobs directory"
+	logging.debug("removing ingest_jobs directory")
 	os.system('rm -r /home/ouroboros/ingest_jobs/ingest_job_%s' % job_id)
 
 	return redirect('/%s/tasks/ingestWorkspace' % localConfig.APP_PREFIX)
@@ -236,14 +236,14 @@ def deleteObject(job_id,ingest_id):
 
 
 	# clean job
-	print "removing object"
+	logging.debug("removing object")
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
 	o = models.ingest_workspace_object.query.filter_by(job=j, ingest_id=ingest_id).first()
 	o._delete()
 	db.session.commit()
 
 	# remove working directory
-	print "removing ingest_jobs directory"
+	logging.debug("removing ingest_jobs directory")
 	os.system('rm -r /home/ouroboros/ingest_jobs/ingest_job_%s' % job_id)
 
 	return redirect('/%s/tasks/ingestWorkspace/job/%s' % (localConfig.APP_PREFIX, job_id))
@@ -278,7 +278,7 @@ def job_pids(job_id, output_type):
 def toggle_cover_placeholder(job_id,ingest_id):
 
 	# clean job
-	print "removing object"
+	logging.debug("removing object")
 	j = models.ingest_workspace_job.query.filter_by(id=job_id).first()
 	o = models.ingest_workspace_object.query.filter_by(job=j, ingest_id=ingest_id).first()
 	
@@ -287,12 +287,12 @@ def toggle_cover_placeholder(job_id,ingest_id):
 
 	# if true, set false
 	if 'cover_placeholder' in om.__dict__ and om.cover_placeholder:
-		print "cover placeholder is currently TRUE, setting to FALSE"
+		logging.debug("cover placeholder is currently TRUE, setting to FALSE")
 		om.cover_placeholder = False
 		o.objMeta = om.toJSON()
 
 	elif 'cover_placeholder' not in om.__dict__ or not om.cover_placeholder:
-		print "cover placeholder is currently FALSE, setting to TRUE"
+		logging.debug("cover placeholder is currently FALSE, setting to TRUE")
 		om.cover_placeholder = True
 		o.objMeta = om.toJSON()
 
@@ -389,7 +389,7 @@ def viewSQLData(table,id,column,mimetype):
 @celery.task(name="createJob_factory")
 def createJob_factory(job_package):
 	
-	print "FIRING createJob_factory"
+	logging.debug("FIRING createJob_factory")
 
 	# get form data
 	form_data = job_package['form_data']	
@@ -475,7 +475,7 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 	# iterate through and add components
 	for i, sm_part in enumerate(sm_parts):
 		
-		print "Creating ingest_workspace_object row %s / %s" % (step, len(sm_parts))
+		logging.debug("Creating ingest_workspace_object row %s / %s" % (step, len(sm_parts)))
 		job_package['step'] = step
 
 		# set internal id (used for selecting when making bags and ingesting)
@@ -500,10 +500,10 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 			if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
 				job_package['object_title'] = sm_part.attrib['LABEL']
 			else:
-				print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
+				logging.debug("label not found for %s, using DMDID" % sm_part.attrib['DMDID'])
 				job_package['object_title'] = sm_part.attrib['DMDID']
 
-			# print "StructMap part ID: %s" % job_package['DMDID']
+			# logging.debug("StructMap part ID: %s" % job_package['DMDID'])
 
 			# store structMap section as python dictionary
 			sm_dict = xmltodict.parse(etree.tostring(sm_part))
@@ -526,8 +526,8 @@ def createJob_WSU_METS(form_data, job_package, METSroot, sm, collection_level_di
 			job_package['premis_events'] = None
 
 		except:
-			print "ERROR"
-			print traceback.print_exc()
+			logging.debug("ERROR")
+			logging.debug(traceback.print_exc())
 
 		# fire task via custom_loop_taskWrapper			
 		result = actions.actions.custom_loop_taskWrapper.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
@@ -574,9 +574,9 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 	
 	# iterate through and add components
 	for i, fs in enumerate(orig_files):
-		print i,fs.label
+		logging.debug("%s %s" % (i,fs.label))
 
-		print "Creating ingest_workspace_object row %s / %s" % (step, len(orig_files))
+		logging.debug("Creating ingest_workspace_object row %s / %s" % (step, len(orig_files)))
 		job_package['step'] = step
 
 		# set internal id (used for selecting when making bags and ingesting)
@@ -602,7 +602,7 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 
 		# parse amdSec and PREMIS events
 		if len(fs.admids) > 0:
-			print "amdSec ids:", fs.admids
+			logging.debug("amdSec ids: %s" % fs.admids)
 			job_package['AMDID'] = fs.admids[0]			
 			amdSec = mets.tree.xpath("//mets:amdSec[@ID='%s']" % (job_package['AMDID']), namespaces=mets.tree.getroot().nsmap)[0]
 			events_list = []
@@ -616,7 +616,7 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 			job_package['premis_events'] = None
 
 		
-		print "StructMap part ID: %s" % job_package['DMDID']
+		logging.debug("StructMap part ID: %s" % job_package['DMDID'])
 
 		'''
 		It's possible we shouldn't write this entire struct_map to celery job?
@@ -664,7 +664,7 @@ def createJob_Archivematica_METS(form_data,job_package,metsrw_handle,j):
 @roles.auth(['admin'], is_celery=True)
 def createJob_worker(job_package):
 
-	print "Adding ingest_workspace_object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+	logging.debug("Adding ingest_workspace_object for %s / %s" % (job_package['DMDID'],job_package['object_title']))
 
 	# MODS file
 	if job_package['MODS_temp_filename']:
@@ -711,10 +711,10 @@ def createJob_worker(job_package):
 @celery.task(name="createBag_factory")
 def createBag_factory(job_package):
 	
-	print "FIRING createBag_factory"
+	logging.debug("FIRING createBag_factory")
 	
 	# DEBUG
-	# print job_package
+	# logging.debug(job_package)
 
 	# get form data
 	form_data = job_package['form_data']	
@@ -745,15 +745,15 @@ def createBag_factory(job_package):
 		if 'binary_index' in form_data and form_data['binary_index'] == 'on':
 			
 			j = models.ingest_workspace_job.query.filter_by(id=int(form_data['job_id'])).first()
-			print "adding file index for %s" % j.name
+			logging.debug("adding file index for %s" % j.name)
 			time.sleep(5)
 
-			print "updating file index for bags"
+			logging.debug("updating file index for bags")
 			fd = {}
 			for root, directories, files in os.walk (form_data['files_location'], followlinks=False):
 				for filename in files:
 					filePath = os.path.join(root,filename)
-					print "adding",filePath
+					logging.debug("adding %s" % filePath)
 					fd[filename] = filePath
 
 			# add to job in MySQL
@@ -765,7 +765,7 @@ def createBag_factory(job_package):
 	time.sleep(2)
 	for row in object_rows:
 
-		print "Creating bag for ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
+		logging.debug("Creating bag for ingest_id: %s, count %s / %s" % (row, step, len(object_rows)))
 		job_package['step'] = step
 
 		# set row
@@ -790,7 +790,7 @@ def createBag_factory(job_package):
 @roles.auth(['admin'], is_celery=True)
 def createBag_worker(job_package):
 
-	print "FIRING createBag_worker"
+	logging.debug("FIRING createBag_worker")
 
 	# get form data
 	form_data = job_package['form_data']
@@ -803,10 +803,10 @@ def createBag_worker(job_package):
 
 	# get object row
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
-	print "Working on: %s" % o.object_title
+	logging.debug("Working on: %s" % o.object_title)
 
 	# load bag class
-	print "loading bag class for %s" % form_data['bag_creation_class']	
+	logging.debug("loading bag class for %s" % form_data['bag_creation_class']	)
 	bag_class_handle = getattr(ouroboros_assets.bag_classes, form_data['bag_creation_class'])
 
 	# load collection class (if needed)
@@ -822,7 +822,7 @@ def createBag_worker(job_package):
 		}
 	except:
 		MODS_handle = False
-		print "could not load MODS as etree element"
+		logging.debug("could not load MODS as etree element")
 
 	# attempt to pre-load METS with metsrw
 	try:
@@ -832,18 +832,18 @@ def createBag_worker(job_package):
 		o.metsrw_parsed = metsrw.METSDocument.fromfile(temp_filename)
 		os.remove(temp_filename)
 	except:
-		print "could not pre-parse METS file with metsrw"
+		logging.debug("could not pre-parse METS file with metsrw")
 
 	# if not purging bags, and previous bag_path already found, skip
 	if purge_bags == False and o.bag_path != None:
-		print "skipping bag creation for %s / %s, already exists" % (o.object_title,o.DMDID)
+		logging.debug("skipping bag creation for %s / %s, already exists" % (o.object_title,o.DMDID))
 		bag_result = False	
 
 	# else, create bags (either overwriting or creating new)
 	else:
 		# instantiate bag_class_worker from class
 		if o.object_type == 'collection':
-			print "firing collection object bag creator"
+			logging.debug("firing collection object bag creator")
 			class_handle = collection_class_handle
 		else:
 			class_handle = bag_class_handle
@@ -898,10 +898,10 @@ def ingestBag_factory(job_package):
 	offloads to actions/bagIngest.bagIngest_worker()
 	'''
 
-	print "FIRING ingestBag_factory"
+	logging.debug("FIRING ingestBag_factory")
 	
 	# DEBUG
-	print job_package
+	# logging.debug(job_package)
 
 	# get form data
 	form_data = job_package['form_data']
@@ -923,7 +923,7 @@ def ingestBag_factory(job_package):
 	time.sleep(.5)
 	for row in object_rows:
 
-		print "Preparing to ingest ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
+		logging.debug("Preparing to ingest ingest_id: %s, count %s / %s" % (row, step, len(object_rows)))
 		job_package['step'] = step
 
 		# set row
@@ -950,7 +950,7 @@ def ingestBag_factory(job_package):
 			jobs.jobUpdateAssignedCount(job_package['job_num'])
 
 		else:
-			print "eitiher object not-enriched, or permission not granted to ingest non-enriched"
+			logging.debug("eitiher object not-enriched, or permission not granted to ingest non-enriched")
 
 		# bump step
 		step += 1
@@ -959,7 +959,7 @@ def ingestBag_factory(job_package):
 @celery.task(name="ingestBag_callback")
 def ingestBag_callback(job_package):
 	
-	print "FIRING ingestBag_callback"
+	logging.debug("FIRING ingestBag_callback")
 
 	'''
 	This is an opportunity check the status of the ingest.
@@ -967,7 +967,7 @@ def ingestBag_callback(job_package):
 
 	# open handle
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
-	print "Retrieved row: %s / %s" % (o.ingest_id,o.object_title)
+	logging.debug("Retrieved row: %s / %s" % (o.ingest_id,o.object_title))
 	
 	# set ingested link
 	remote_repo_host = localConfig.REMOTE_REPOSITORIES[job_package['form_data']['dest_repo']]['PUBLIC_HOST']
@@ -983,7 +983,7 @@ def ingestBag_callback(job_package):
 @celery.task(name="checkObjectStatus_factory")
 def checkObjectStatus_factory(job_package):
 	
-	print "FIRING checkObjectStatus_factory"
+	logging.debug("FIRING checkObjectStatus_factory")
 
 	# get form data
 	form_data = job_package['form_data']	
@@ -992,7 +992,7 @@ def checkObjectStatus_factory(job_package):
 	job_package['custom_task_name'] = 'checkObjectStatus_worker'
 
 	# parse object rows from range (use parseIntSet() above)
-	print form_data['object_id_range'].lower()
+	logging.debug(form_data['object_id_range'].lower())
 	if form_data['object_id_range'].lower() == "all":
 		object_rows = set(json.loads(redisHandles.r_catchall.get('%s_crows_%s' % (job_package['username'],form_data['job_id']) )))
 	else:
@@ -1006,7 +1006,7 @@ def checkObjectStatus_factory(job_package):
 	time.sleep(2)
 	for row in object_rows:
 
-		print "Preparing to check object ingest_id: %s, count %s / %s" % (row, step, len(object_rows))
+		logging.debug("Preparing to check object ingest_id: %s, count %s / %s" % (row, step, len(object_rows)))
 		job_package['step'] = step
 
 		# set row
@@ -1043,23 +1043,23 @@ def checkObjectStatus_worker(job_package):
 	}])
 	'''
 
-	print "FIRING checkObjectStatus_worker"
+	logging.debug("FIRING checkObjectStatus_worker")
 
 	# get form data
 	form_data = job_package['form_data']
 
 	# get object row
 	o = models.ingest_workspace_object.query.filter_by(ingest_id=job_package['ingest_id'],job_id=job_package['job_id']).first()
-	print "Checking status of: %s" % o.object_title
+	logging.debug("Checking status of: %s" % o.object_title)
 
 	# assume False commit
 	to_commit = False
 
 	# bag path
 	if 'check_bag_path' in form_data and form_data['check_bag_path'] == 'on':
-		print "checking bag path: %s" % o.bag_path
+		logging.debug("checking bag path: %s" % o.bag_path)
 		if o.bag_path != None and os.path.exists(o.bag_path):
-			print "bag_path found."
+			logging.debug("bag_path found.")
 		else:
 			o.bag_path = None
 			to_commit = True
@@ -1067,7 +1067,7 @@ def checkObjectStatus_worker(job_package):
 	
 	# repo status
 	if 'check_repo' in form_data and form_data['check_repo'] == 'on':
-		print "checking existence in repository against %s" % form_data['dest_repo']
+		logging.debug("checking existence in repository against %s" % form_data['dest_repo'])
 		
 		# get fedora handle
 		if form_data['dest_repo'] == 'local':
@@ -1077,7 +1077,7 @@ def checkObjectStatus_worker(job_package):
 
 		# check status
 		check_result = dest_repo.get_object(o.pid).exists
-		print "existence check: %s" % check_result
+		logging.debug("existence check: %s" % check_result)
 
 		# clean status if not found
 		if check_result:
@@ -1104,7 +1104,7 @@ def checkObjectStatus_worker(job_package):
 @celery.task(name="aem_factory")
 def aem_factory(job_package):
 
-	print "FIRING aem_factory"
+	logging.debug("FIRING aem_factory")
 
 	# get form data
 	form_data = job_package['form_data']
@@ -1125,7 +1125,7 @@ def aem_factory(job_package):
 	high_ingest_id = o.ingest_id
 
 	# add enrichment metadata
-	print "setting new enrichment metadata"
+	logging.debug("setting new enrichment metadata")
 	j.enrichment_metadata = enrichment_metadata
 	db.session.commit()
 
@@ -1147,7 +1147,7 @@ def aem_factory(job_package):
 	# get dmd parts
 	dmd_parts = [element for element in METSroot.findall('{http://www.loc.gov/METS/}dmdSec')]
 	dmd_index = { element.attrib['ID']:element for element in dmd_parts }
-	print dmd_index
+	logging.debug(dmd_index)
 
 	# update job info (need length from above)
 	redisHandles.r_job_handle.set("job_%s_est_count" % (job_package['job_num']), len(sm_parts))
@@ -1158,7 +1158,7 @@ def aem_factory(job_package):
 	# iterate through and add components
 	for i, sm_part in enumerate(sm_parts):
 		
-		print "Enriching struct_map div %s / %s" % (step, len(sm_parts))
+		logging.debug("Enriching struct_map div %s / %s" % (step, len(sm_parts)))
 		job_package['step'] = step
 
 		# try:
@@ -1179,7 +1179,7 @@ def aem_factory(job_package):
 		if "LABEL" in sm_part.attrib and sm_part.attrib['LABEL'] != '':
 			job_package['object_title'] = sm_part.attrib['LABEL']
 		else:
-			print "label not found for %s, using DMDID" % sm_part.attrib['DMDID']
+			logging.debug("label not found for %s, using DMDID" % sm_part.attrib['DMDID'])
 			job_package['object_title'] = sm_part.attrib['DMDID']
 
 		# store structMap section as python dictionary
@@ -1208,8 +1208,8 @@ def aem_factory(job_package):
 
 		# except:
 
-		# 	print "##############################################"
-		# 	print "an error was had enriching %s" % etree.tostring(sm_part)
+		# 	logging.debug("##############################################")
+		# 	logging.debug("an error was had enriching %s" % etree.tostring(sm_part))
 
 		# bump step
 		step += 1
@@ -1221,7 +1221,7 @@ def aem_factory(job_package):
 def aem_worker(job_package):
 
 	# DEBUG
-	print "This represents the intellectual parent as provided by AEM METS: %s" % job_package['sm_parent']
+	logging.debug("This represents the intellectual parent as provided by AEM METS: %s" % job_package['sm_parent'])
 
 	# grab job
 	j = models.ingest_workspace_job.query.filter_by(id=job_package['job_id']).first()
@@ -1257,7 +1257,7 @@ def aem_worker(job_package):
 
 	# intellectual object
 	if sm_part_type in intellectual_objects:
-		print "creating new object for %s / %s" % (job_package['DMDID'],job_package['object_title'])
+		logging.debug("creating new object for %s / %s" % (job_package['DMDID'],job_package['object_title']))
 
 		# check of Intellectual object already created, if so, delete
 		derived_pid = 'wayne:%s%s' % (j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1])
@@ -1271,7 +1271,7 @@ def aem_worker(job_package):
 			db.session.commit()
 
 		# insert with SQLAlchemy Core
-		print "inserting into DB"
+		logging.debug("inserting into DB")
 		db.session.execute(models.ingest_workspace_object.__table__.insert(), [{
 			'job_id': job_package['job_id'],	    
 			'object_type': "Intellectual",
@@ -1287,17 +1287,17 @@ def aem_worker(job_package):
 
 	# update file-like object
 	else:
-		print "updating descriptive information for %s / %s" % (job_package['DMDID'], job_package['object_title'])
+		logging.debug("updating descriptive information for %s / %s" % (job_package['DMDID'], job_package['object_title']))
 
 		# grab row
 		if sm_part_type == 'document':
-			print "detected document type"
+			logging.debug("detected document type")
 			o = models.ingest_workspace_object.query.filter_by(job=j, file_id=job_package['DMDID']).first()			
 
 		if sm_part_type == 'file':
-			print "detected intellectual file type"
+			logging.debug("detected intellectual file type")
 			derived_pid = 'wayne:%s%s' % (j.collection_identifier, job_package['DMDID'].split("aem_prefix_")[-1].replace(".","_"))
-			print "derived pid: %s" % derived_pid
+			logging.debug("derived pid: %s" % derived_pid)
 			o = models.ingest_workspace_object.query.filter_by(job=j, pid=derived_pid).first()
 
 		if o:
@@ -1319,7 +1319,7 @@ def aem_worker(job_package):
 
 		else:
 
-			print "couldn't find matching PID row in database for %s" % derived_pid
+			logging.debug("couldn't find matching PID row in database for %s" % derived_pid)
 
 	# commit db
 	db.session.commit()
@@ -1337,13 +1337,13 @@ def rowQueryBuild(job_id, session):
 
 	# row start
 	if "row_s" in session and "row_e" in session:
-		print "adding row range filter"
+		logging.debug("adding row range filter")
 		query = query.filter(models.ingest_workspace_object.ingest_id >= session['row_s'])
 		query = query.filter(models.ingest_workspace_object.ingest_id <= session['row_e'])
 
 	# ingested status
 	if 'ingested' in session:
-		print "adding ingest filter"
+		logging.debug("adding ingest filter")
 		if session['ingested'] == "None":
 			query = query.filter(or_(models.ingest_workspace_object.ingested == None, models.ingest_workspace_object.ingested == "0" ))
 		else:
@@ -1351,7 +1351,7 @@ def rowQueryBuild(job_id, session):
 
 	# bag created
 	if 'bag_path' in session:
-		print "adding bag created filter"
+		logging.debug("adding bag created filter")
 		if session['bag_path']:
 			query = query.filter(or_(models.ingest_workspace_object.bag_path != None, models.ingest_workspace_object.bag_path != "0" ))
 		if not session['bag_path']:
@@ -1359,12 +1359,12 @@ def rowQueryBuild(job_id, session):
 
 	# aem enriched
 	if "aem_enriched" in session:
-		print "adding aem enriched filter"
+		logging.debug("adding aem enriched filter")
 		if session['aem_enriched']:
-			print "filter: enriched"
+			logging.debug("filter: enriched")
 			query = query.filter(or_(models.ingest_workspace_object.aem_enriched != None, models.ingest_workspace_object.aem_enriched != "0" ))
 		if not session['aem_enriched']:
-			print "filter: NOT enriched"
+			logging.debug("filter: NOT enriched")
 			query = query.filter(or_(models.ingest_workspace_object.aem_enriched == None, models.ingest_workspace_object.aem_enriched == "0" ))
 
 	# return query object
@@ -1372,7 +1372,7 @@ def rowQueryBuild(job_id, session):
 
 
 def currentRowsSet(job_id,session):
-	print 'determining all current rows after filter, setting as selection'
+	logging.debug('determining all current rows after filter, setting as selection')
 	# perform query and add to set
 	query = rowQueryBuild(job_id,session)
 	selection = set()
@@ -1411,7 +1411,7 @@ def parseIntSet(nputstr=""):
 				invalid.add(i)
 	# Report invalid tokens before returning valid selection
 	if len(invalid) > 0:
-		print "Invalid set: " + str(invalid)
+		logging.debug("Invalid set: %s" % str(invalid))
 	return selection
 
 

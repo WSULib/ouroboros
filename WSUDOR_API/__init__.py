@@ -3,9 +3,10 @@
 import urllib
 
 import localConfig
+from localConfig import logging, LOGGING_STREAM, LOGGING_LEVEL
 
 # setup logging for WSUDOR_API
-import logging
+logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
 
 # modules / packages import
 from flask import Flask, render_template, g, redirect, jsonify, request
@@ -36,7 +37,7 @@ class ReverseProxied(object):
 	def __init__(self, app, prefix=''):
 		self.app = app
 		self.prefix = prefix		
-		print prefix
+		logging.debug("%s" % prefix)
 
 	def __call__(self, environ, start_response):
 		script_name = environ.get('HTTP_X_SCRIPT_NAME', '')

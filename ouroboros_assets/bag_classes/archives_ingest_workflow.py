@@ -6,7 +6,7 @@ from lxml import etree
 import mimetypes
 import metsrw
 
-from WSUDOR_Manager import utilities, models
+from WSUDOR_Manager import utilities, models, logging
 from inc import WSUDOR_bagger
 
 
@@ -43,7 +43,7 @@ class BagClass(object):
 			ns = MODS_tree.nsmap
 			self.MODS_handle = MODS_root.xpath('//mods:mods', namespaces=ns)[0]
 		except:
-			print "could not parse MODS from DB string"		
+			logging.debug("could not parse MODS from DB string"		)
 
 		# future
 		self.objMeta_handle = None
@@ -66,9 +66,9 @@ class BagClass(object):
 		self.intellectual_type = self.intellectual_type.lower()
 
 		# DEBUG
-		print "#########################################"
-		print self.intellectual_type
-		print "#########################################"
+		logging.debug("#########################################")
+		logging.debug(self.intellectual_type)
+		logging.debug("#########################################")
 
 		# set collection pid
 		self.collection_pid = "wayne:collection%s" % self.collection_identifier
@@ -86,7 +86,7 @@ class BagClass(object):
 
 			# set collection pid to collection_identifier
 			if self.intellectual_type == 'collection':
-				print "setting collection pid special"
+				logging.debug("setting collection pid special")
 				self.pid = self.collection_pid
 
 		else:			
@@ -95,7 +95,7 @@ class BagClass(object):
 
 			# set collection pid to collection_identifier
 			if self.intellectual_type == 'collection':
-				print "setting collection pid special"
+				logging.debug("setting collection pid special")
 				self.pid = self.collection_pid
 
 			self.full_identifier = self.pid.split("wayne:")[-1]
@@ -116,7 +116,7 @@ class BagClass(object):
 		# if collection, write ingest METS to bag
 		if self.intellectual_type == 'collection':
 
-			print "writing ingest and enrichmente METS files"
+			logging.debug("writing ingest and enrichmente METS files")
 
 			# archivematica METS
 			if self.object_row.job.ingest_metadata:
@@ -145,7 +145,7 @@ class BagClass(object):
 		elif self.object_type in ['Intellectual']:
 			result = self._createBag_intellectual()
 		else:
-			print "object_type %s not understood, cancelling" % self.object_type
+			logging.debug("object_type %s not understood, cancelling" % self.object_type)
 			return False
 
 		# write known relationships
@@ -202,7 +202,7 @@ class BagClass(object):
 
 		# open mets		
 		if not self.object_row.metsrw_parsed:
-			print "##################### could not find parsed METS, parsing now"
+			logging.debug("##################### could not find parsed METS, parsing now")
 			temp_filename = '/tmp/Ouroboros/%s.xml' % uuid.uuid4()
 			with open(temp_filename, 'w') as fhand:
 				fhand.write(self.object_row.job.ingest_metadata.encode('utf-8'))
@@ -218,14 +218,14 @@ class BagClass(object):
 		label = self.struct_map['ns0:div']['@LABEL']
 		fs = fsByLabel(mets, label)
 		# fs = fsByLabel(mets, self.object_title)
-		print fs
+		logging.debug(fs)
 
 		# determine parent
 		try:
 			parent_label = fs.parent.label.replace(".","_")
 			parent_pid = "wayne:%s%s" % (self.collection_identifier, parent_label)
 		except:
-			print "Parent not found, setting collection PID"
+			logging.debug("Parent not found, setting collection PID")
 			parent_pid = "wayne:collection%s" % (self.collection_identifier)
 
 		# write parent
@@ -239,12 +239,12 @@ class BagClass(object):
 			enrichment_METS = etree.fromstring(self.object_row.job.enrichment_metadata.encode('utf-8'))
 			# get parent, else default to collection
 			# try:
-			print "Looking for %s to determine parent" % self.DMDID
+			logging.debug("Looking for %s to determine parent" % self.DMDID)
 			self_div = enrichment_METS.xpath('//mets:div[@DMDID="%s"]' % (self.DMDID), namespaces=ns)[0]
 			parent_div = self_div.getparent()
 			parent_DMDID = parent_div.attrib['DMDID']
 			parent_pid = 'wayne:%s%s' % (self.collection_identifier, parent_DMDID.split("aem_prefix_")[-1].replace(".","_"))		
-			print "Anticipating and setting hasParent pid: %s" % parent_pid
+			logging.debug("Anticipating and setting hasParent pid: %s" % parent_pid)
 			self.objMeta_handle.object_relationships.append({
 				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasParent",
 				"object": "info:fedora/%s" % parent_pid
@@ -277,7 +277,7 @@ class BagClass(object):
 
 			# APPROACH #1 : use Archivematica analysis of file
 			try:
-				print "Attempting to derive mimetype from Archivematica output"
+				logging.debug("Attempting to derive mimetype from Archivematica output")
 				# get amd section
 				amd = fs.amdsecs[0]
 
@@ -294,7 +294,7 @@ class BagClass(object):
 			
 			# APPROACH #2 : fall back on file extension			
 			except:
-				print "Could not determine mime type of file from Archivematica output, attempting file extension"
+				logging.debug("Could not determine mime type of file from Archivematica output, attempting file extension")
 
 				# get file extension
 				file_ext = fs.path.split(".")[-1]				
@@ -308,7 +308,7 @@ class BagClass(object):
 				self.content_type = utilities.mime_CM_hash[derived_mime_type]
 				self.objMeta_handle.content_type = self.content_type
 			else:
-				print "could not determine mimetype from fits, skipping"
+				logging.debug("could not determine mimetype from fits, skipping")
 				return False
 
 			# write datastream
@@ -344,10 +344,10 @@ class BagClass(object):
 			parent_div = self_div.getparent()
 			parent_DMDID = parent_div.attrib['DMDID']
 			parent_pid = 'wayne:%s%s' % (self.collection_identifier, parent_DMDID.split("aem_prefix_")[-1])		
-			print "Anticipating parent pid: %s" % parent_pid
+			logging.debug("Anticipating parent pid: %s" % parent_pid)
 
 			if self.intellectual_type == 'series':
-				print "series detected, pointing parent at collection object"
+				logging.debug("series detected, pointing parent at collection object")
 				parent_pid = self.collection_pid
 
 			self.objMeta_handle.object_relationships.append({
@@ -356,7 +356,7 @@ class BagClass(object):
 			})
 
 		except:
-			print "Parent DMDID not found in enrichment METS"
+			logging.debug("Parent DMDID not found in enrichment METS")
 			if self.object_type == 'collection':
 				parent_pid = "wayne:collection%s" % (self.collection_identifier)
 				self.objMeta_handle.object_relationships.append({
@@ -364,7 +364,7 @@ class BagClass(object):
 					"object": "info:fedora/%s" % parent_pid
 				})	
 			else:
-				print "skipping parent PID"			
+				logging.debug("skipping parent PID"			)
 
 
 	# helper function to build datastream directory

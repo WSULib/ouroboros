@@ -5,6 +5,7 @@ import bagit
 from inc import WSUDOR_bagger
 from lxml import etree
 from sets import Set
+from WSUDOR_Manager import logging
 
 '''
 Assuming self.file_location is directory of loose files from Abbyy
@@ -67,7 +68,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:%s" % (self.full_identifier)
@@ -84,14 +85,14 @@ class BagClass(object):
 		# get identifier
 		try:
 			identifier = self.MODS_handle['MODS_element'].xpath('//mods:identifier[@type="local"]', namespaces=self.MODS_handle['MODS_ns'])[0].text
-			print "identifier: %s" % identifier
+			logging.debug("identifier: %s" % identifier)
 		except:
 			# fall back on self.full_identifier
 			identifier = self.full_identifier
 
 		# get title
 		book_title = self.MODS_handle['MODS_element'].xpath('mods:titleInfo/mods:title',namespaces=self.MODS_handle['MODS_ns'])[0].text
-		print "full title:",book_title
+		logging.debug("full title: %s" % book_title)
 
 		# instantiate object with quick variables
 		objMeta_primer = {
@@ -106,8 +107,8 @@ class BagClass(object):
 		self.objMeta_handle = self.ObjMeta(**objMeta_primer)
 
 		# iterate through SORTED binaries and create symlinks and write to objMeta		
-		print "creating symlinks and writing to objMeta"
-		print "looking in %s" % self.files_location
+		logging.debug("creating symlinks and writing to objMeta")
+		logging.debug("looking in %s" % self.files_location)
 
 		# get binary_files location
 		if self.files_location.endswith('/'):
@@ -178,11 +179,11 @@ class BagClass(object):
 		Sort list of page numbers, use lowest.
 		'''		
 		page_num_list.sort()
-		print "Setting is represented to page num %s, ds_id %s" % page_num_list[0]
+		logging.debug("Setting is represented to page num %s, ds_id %s" % page_num_list[0])
 		self.objMeta_handle.isRepresentedBy = page_num_list[0][1]
 
 		# write known relationships
-		self.objMeta_handle.object_relationships = [				
+		self.objMeta_handle.object_relationships = [
 			{
 				"predicate": "info:fedora/fedora-system:def/relations-external#isMemberOfCollection",
 				"object": "info:fedora/wayne:collectionWSUebooks"

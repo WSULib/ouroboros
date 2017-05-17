@@ -7,7 +7,7 @@ import time
 # proj
 import models
 from redisHandles import *
-from WSUDOR_Manager import db, celery, models
+from WSUDOR_Manager import db, celery, models, logging
 from flask import session
 
 # Job Management
@@ -92,7 +92,7 @@ def jobRemove_worker(job_num):
 def sendUserPIDs(username,PIDs,group_name):
 	stime = time.time()	
 	''' expecting username and list of PIDs'''
-	# print "Storing selected PIDs for %s" % (username)
+	# logging.debug("Storing selected PIDs for %s" % (username))
 
 	# insert into table via list comprehension
 	values_groups = [(each.encode('ascii'), username.encode('ascii'), False, group_name) for each in PIDs]
@@ -100,16 +100,16 @@ def sendUserPIDs(username,PIDs,group_name):
 	db.session.execute("INSERT INTO user_pids (PID,username,status,group_name) VALUES %s" % (values_groups_string));
 	db.session.commit()	
 
-	# print "PIDs stored"		
+	# logging.debug("PIDs stored")
 	etime = time.time()
 	ttime = (etime - stime) * 1000
-	print "Added PIDs to SQL",ttime,"ms"
+	logging.debug("Added PIDs to SQL %s ms" % ttime)
 
 
 # PID removal
 def removeUserPIDs(username,PIDs):
 	stime = time.time()	
-	print "Removing selected PIDs for %s" % (username)	
+	logging.debug("Removing selected PIDs for %s" % (username))
 	
 	# delete from table
 	targets_tuple = tuple([each.encode('ascii') for each in PIDs])	
@@ -118,8 +118,8 @@ def removeUserPIDs(username,PIDs):
 
 	etime = time.time()
 	ttime = (etime - stime) * 1000
-	print "Took this long to remove PIDs to SQL",ttime,"ms"
-	print "PIDs removed"	
+	logging.debug("Took this long to remove PIDs to SQL %s ms" % ttime)
+	logging.debug("PIDs removed")
 
 '''
 Improvement for getSelPIDs() and genPIDlet() - creator generator that suffices both?

@@ -24,7 +24,7 @@ import localConfig
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles
+from WSUDOR_Manager import redisHandles, logging
 
 # import WSUDOR_ContentTypes
 import WSUDOR_ContentTypes
@@ -96,7 +96,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			self.ohandle.label = self.objMeta['label']
 
 			# write POLICY datastream (NOTE: 'E' management type required, not 'R')
-			print "Using policy:",self.objMeta['policy']
+			logging.debug("Using policy: %s" % self.objMeta['policy'])
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -111,7 +111,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
-				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				logging.debug("Writing relationship: %s %s" (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 					
 			# writes derived RELS-EXT
@@ -131,7 +131,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				if "skip_processing" not in ds:
 					file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-					print "Looking for:",file_path
+					logging.debug("Looking for: %s" % file_path)
 
 					# original
 					orig_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
@@ -208,9 +208,9 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				# else, skip processing and write straight 1:1 datastream
 				else:
-					print "Skipping derivative processing"
+					logging.debug("Skipping derivative processing")
 					file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-					print "Looking for:",file_path
+					logging.debug("Looking for: %s" % file_path)
 
 					# original
 					generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group='M')
@@ -237,8 +237,8 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# exception handling
 		except Exception,e:
-			print traceback.format_exc()
-			print "Collection Ingest Error:",e
+			logging.debug("%s" % traceback.format_exc())
+			logging.debug("Collection Ingest Error: %s" % e)
 			return False
 
 
@@ -270,7 +270,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			try:
 				manifest.set_metadata({ field_set[0]:eval(field_set[1]) })
 			except:
-				print "Could Not Set Metadata Field, Skipping",field_set[0]
+				logging.debug("Could Not Set Metadata Field, Skipping %s" % field_set[0])
 	
 		# start anonymous sequence
 		seq = manifest.sequence(label="collection thumbs")
@@ -285,7 +285,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# iterate through component parts
 		for obj in obj_list['results']:
 			
-			print "adding",obj['memberTitle']
+			logging.debug("adding %s" % obj['memberTitle'])
 
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
 			fedora_http_ident = "fedora:%s|%s" % (obj['object'], obj['isRepBy']+"_JP2")
@@ -306,12 +306,12 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			cvs.width = img.width
 
 		# insert into Redis and return JSON string
-		print "Inserting manifest for",self.pid,"into Redis..."
+		logging.debug("Inserting manifest for %s into Redis..." % self.pid)
 
 		# report time
 		etime = time.time()
 		ttime = etime - stime
-		print "total time",ttime
+		logging.debug("total time %s" % ttime)
 
 		# redisHandles.r_iiif.set(self.pid,manifest.toString())
 		return manifest.toString()
@@ -358,7 +358,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				- application/rdf+xml
 		'''
 		
-		print "generating virtual ScannedBook object"
+		logging.debug("generating virtual ScannedBook object")
 
 		virtual_book_handle = fedora_handle.get_object(type=WSUDOR_ContentTypes.WSUDOR_Readux_VirtualCollection)
 		virtual_book_handle.create(self)
@@ -375,7 +375,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 
 		for obj in sparql_response:
-			print "Purging virtual object: %s" % obj['virtobj']
+			logging.debug("Purging virtual object: %s" % obj['virtobj'])
 			fedora_handle.purge_object( obj['virtobj'].split("info:fedora/")[-1] )
 
 		return True
@@ -390,8 +390,8 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		sparql_response = fedora_handle.risearch.sparql_query('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 
 		for obj in sparql_response:
-			print "Indexing object: %s" % obj['virtobj']
-			print requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content
+			logging.debug("Indexing object: %s" % obj['virtobj'])
+			logging.debug(requests.get("http://localhost/ouroboros/solrReaduxDoc/%s/%s" % (obj['virtobj'].split("info:fedora/")[-1],action) ).content)
 		
 		return True
 
@@ -404,14 +404,14 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		self.createReaduxVirtualObjects()
 		
-		print "waiting for risearch to catch up..."
+		logging.debug("waiting for risearch to catch up...")
 		while True:
 			sparql_count = fedora_handle.risearch.sparql_count('select $virtobj where  {{ $virtobj <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isVirtualFor> <info:fedora/%s> . }}' % (self.pid))
 			if sparql_count < 1:
 				time.sleep(.5)
 				continue
 			else:
-				print 'proxy objects indexed in risearch, continuing'
+				logging.debug('proxy objects indexed in risearch, continuing')
 				break
 
 		self.indexReaduxVirtualObjects(action='index')

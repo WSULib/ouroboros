@@ -442,7 +442,7 @@ class createSupervisorProcess(object):
 	sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
 
 	def __init__(self,supervisor_name,supervisor_process,group=False,restartGroup=False):
-		print "instantiating self"
+		logging.debug("instantiating self")
 		self.supervisor_name = supervisor_name
 		self.path = '/etc/supervisor/conf.d/'
 		self.filename = self.path+supervisor_name+".conf"
@@ -451,7 +451,7 @@ class createSupervisorProcess(object):
 		self.restartGroup = restartGroup
 
 	def _writeConfFile(self):
-		print "adding conf file"
+		logging.debug("adding conf file")
 		# fire the supervisor worker process
 		supervisor_process = self.supervisor_process
 
@@ -460,22 +460,22 @@ class createSupervisorProcess(object):
 				fhand.write(supervisor_process)
 			return self.filename
 		else:
-			print "Conf files exists, skipping"
+			logging.debug("Conf files exists, skipping")
 			return False
 
 
 	def _removeConfFile(self):
-		print "remove conf file"
+		logging.debug("remove conf file")
 		if os.path.exists(self.filename):
 			# remove conf file
 			return os.remove(self.filename)
 		else:
-			print "could not find conf file, skipping"
+			logging.debug("could not find conf file, skipping")
 			return False
 
 
 	def _startSupervisorProcess(self):
-		print "adding process to supervisor"
+		logging.debug("adding process to supervisor")
 		try:
 			self.sup_server.supervisor.reloadConfig()
 			self.sup_server.supervisor.addProcessGroup(self.supervisor_name)
@@ -484,7 +484,7 @@ class createSupervisorProcess(object):
 
 
 	def _stopSupervisorProcess(self):
-		print "stopping proccess from supervisor"
+		logging.debug("stopping proccess from supervisor")
 		try:
 			self.sup_server.supervisor.stopProcess(self.supervisor_name)
 			self.sup_server.supervisor.removeProcessGroup(self.supervisor_name)
@@ -493,14 +493,14 @@ class createSupervisorProcess(object):
 
 
 	def _removeSupervisorProcess(self):
-		print "manually removing proccess from supervisor"
+		logging.debug("manually removing proccess from supervisor")
 		try:
 			self.sup_server.supervisor.removeProcessGroup(self.supervisor_name)
 		except:
 			return False
 
 	def _setGroup(self, group):
-		print "setting group"
+		logging.debug("setting group")
 		try:
 			if not group:
 				# Set group to its default value
@@ -510,7 +510,7 @@ class createSupervisorProcess(object):
 				# Store this specific group into the current session
 				session[group] = []
 				session[group].append(self.supervisor_name)
-				print session[group]
+				logging.debug("%s" % session[group])
 			self.group = group
 		except:
 			return False
@@ -519,11 +519,11 @@ class createSupervisorProcess(object):
 		try:
 			session[self.group].pop(self.supervisor_name)
 		except:
-			print "Process not found in group"
+			logging.debug("Process not found in group")
 
 
 	def _restartGroup(self):
-		print "restarting process group"
+		logging.debug("restarting process group")
 		for each in session[self.group]:
 			self.sup_server.supervisor.stopProcessGroup(each)
 			self.sup_server.supervisor.startProcessGroup(each)
@@ -598,7 +598,7 @@ class PREMISClient(object):
 				self.premis = PremisRecord(frompath=self.tempfile.name)
 
 			else:
-				print "%s datastream not found, initializing PREMIS datastream" % ds_id
+				logging.debug("%s datastream not found, initializing PREMIS datastream" % ds_id)
 				# gen object identifier
 				object_identifier = pypremis.nodes.ObjectIdentifier('pid', pid)
 				# set format type for object
@@ -649,7 +649,7 @@ class PREMISClient(object):
 
 		# debug
 		logging.info("############ DEBUG ############")
-		logging.info(msg.body)
+		logging.info("%s" % msg.body)
 		logging.info("############ DEBUG ############")
 
 		# if datastream worked on, determine if in PREMIS record?
@@ -929,7 +929,7 @@ class SolrDT(object):
 
 		# dictionary INPUT DataTables ajax
 		self.DTinput = DTinput
-		logging.info(self.DTinput)
+		logging.info("%s" % self.DTinput)
 
 		# dictionary OUTPUT to DataTables
 		self.DToutput = DT().__dict__
@@ -990,7 +990,7 @@ class SolrDT(object):
 			logging.info("adding sort: %s" % (sort_syntax))
 			sort_fields.append(sort_syntax)
 			concat_sort_string = ", ".join(sort_fields)
-			logging.info(concat_sort_string)
+			logging.info("%s" % concat_sort_string)
 
 		# add to search_params
 		self.search_params['sort'] = concat_sort_string
@@ -1021,7 +1021,7 @@ class SolrDT(object):
 		self.paginate()
 
 		# debug
-		logging.info(self.search_params)
+		logging.info("%s" % self.search_params)
 
 		# excecute search
 		s = self.solr_handle.search(**self.search_params)

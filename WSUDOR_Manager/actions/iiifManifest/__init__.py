@@ -19,7 +19,7 @@ from flask import Blueprint, render_template, redirect, abort, request, session
 import eulfedora
 
 from WSUDOR_Manager.jobs import getSelPIDs, genPIDlet
-from WSUDOR_Manager import utilities, redisHandles, roles
+from WSUDOR_Manager import utilities, redisHandles, roles, logging
 import WSUDOR_ContentTypes
 import localConfig
 
@@ -60,10 +60,10 @@ def viewManifests(PIDnum):
 	# check Redis for manifest
 	r_response = redisHandles.r_iiif.get(PIDlet['cPID'])
 	if r_response != None:
-		print "Redis hit for manifest."
+		logging.debug("Redis hit for manifest.")
 		json_return = r_response
 	else:
-		print "Redis miss for manifest."
+		logging.debug("Redis miss for manifest.")
 		json_return = json.dumps({"status":"manifest for %s not found in redis" % PIDlet['cPID']})
 	
 

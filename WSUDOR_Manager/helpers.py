@@ -6,6 +6,7 @@ from flask import after_this_request, request
 from cStringIO import StringIO as IO
 import gzip
 import functools 
+from WSUDOR_Manager import logging
 
 
 # LazyProperty Decorator
@@ -39,7 +40,7 @@ def timing(f):
 		time1 = time.time()
 		ret = f(*args)
 		time2 = time.time()
-		print 'timer: %s() took %0.3f ms, %0.3f s' % (f.func_name, (time2-time1)*1000.0, (time2-time1))
+		logging.debug('timer: %s() took %0.3f ms, %0.3f s' % (f.func_name, (time2-time1)*1000.0, (time2-time1)))
 		return ret
 	return wrap
 

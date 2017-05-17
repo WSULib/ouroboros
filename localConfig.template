@@ -3,7 +3,9 @@
 
 # Logging
 import logging
-LOGGING_LEVEL = logging.INFO
+import sys
+LOGGING_LEVEL = logging.DEBUG
+LOGGING_STREAM = sys.stdout
 
 # Public Facing Host
 PUBLIC_HOST = "192.168.42.5"

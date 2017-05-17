@@ -269,7 +269,7 @@ def contentModels():
 
     # WSUDOR_ContentTypes
     wcts = [name for _, name, _ in pkgutil.iter_modules(['WSUDOR_ContentTypes'])]
-    print wcts
+    logging.debug(wcts)
 
     return render_template("contentModels.html", wcts=wcts)
 
@@ -369,7 +369,7 @@ def login():
 
                 # check if user enriched from ldap
                 if user.username == user.displayName:
-                    print "user has not logged in, update now?"
+                    logging.debug("user has not logged in, update now?")
 
                 # login
                 user = User.get(username)
@@ -410,14 +410,14 @@ def login():
 @app.route('/logout')
 def logout():
 
-    print "logging out..."
+    logging.debug("logging out...")
 
     # stop user-based celery log streaming
     session["username"] = ""
     logout_user()
 
     # delete WSUDOR cookie and redirect
-    print "removing WSUDOR cookie from client"
+    logging.debug("removing WSUDOR cookie from client")
     response = make_response(redirect(url_for('index')))
     response.set_cookie('WSUDOR', '', expires=0)
     return response
@@ -433,7 +433,7 @@ def logout():
 def createUser():
 
     if request.method == 'POST':
-        print "creating user: %s" % (request.form['username'])
+        logging.debug("creating user: %s" % (request.form['username']))
         roles = request.form.getlist('role')
         user = User(
             request.form['username'],
@@ -466,7 +466,7 @@ def users_view():
 def editUser(username):
 
     if request.method == 'POST':
-        print "editing user: %s" % (username)
+        logging.debug("editing user: %s" % (username))
         
         # get user
         user = models.User.get(username)
@@ -545,33 +545,33 @@ def fireTask(job_type,task_name):
     # writes to temp file in /tmp/Ouroboros
     temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())
     if 'upload' in request.files and request.files['upload'].filename != '':
-        print "Form provided file, uploading and reading file to variable"
-        # print request.files['upload']
+        logging.debug("Form provided file, uploading and reading file to variable")
+        # logging.debug(request.files['upload'])
         # write uploaded file to temp file
         with open(temp_filename,'w') as fhand:
             fhand.write(request.files['upload'].read())
         job_package['upload_data'] = temp_filename
 
     if 'upload_path' in request.form and request.form['upload_path'] != '':
-        print "Form provided path, reading file to variable"
-        # print request.form['upload_path']
+        logging.debug("Form provided path, reading file to variable")
+        # logging.debug(request.form['upload_path'])
         # create symlink from path to temp file
         os.symlink(request.form['upload_path'], temp_filename)
         job_package['upload_data'] = temp_filename
 
 
     task_inputs_key = username+"_"+task_name+"_"+str(int(time.time()))
-    print "Assigning to Redis-Cached key:",task_inputs_key
+    logging.debug("Assigning to Redis-Cached key: "+task_inputs_key)
     redisHandles.r_job_handle.set(task_inputs_key,pickle.dumps(job_package))
 
     if job_type == "obj_loop":
-        print "Firing job for obj_loop type"
+        logging.debug("Firing job for obj_loop type")
         # get PIDs to confirm
         PIDs = jobs.getSelPIDs()
         return render_template("objConfirm.html",task_name=task_name,task_inputs_key=task_inputs_key,PIDs=PIDs,username=username,localConfig=localConfig)
 
     if job_type == "custom_loop":
-        print "Firing job for custom_loop type"
+        logging.debug("Firing job for custom_loop type")
         return redirect("fireTaskWorker/%s/%s" % (task_name,task_inputs_key))
 
 
@@ -580,7 +580,7 @@ def fireTask(job_type,task_name):
 @roles.auth(['admin'])
 def cancelTask(task_inputs_key):
 
-    print redisHandles.r_job_handle.delete(task_inputs_key)
+    logging.debug(redisHandles.r_job_handle.delete(task_inputs_key))
     return redirect("userPage")
 
 
@@ -588,7 +588,7 @@ def cancelTask(task_inputs_key):
 @app.route("/fireTaskWorker/<task_name>/<task_inputs_key>", methods=['POST', 'GET'])
 def fireTaskWorker(task_name,task_inputs_key):
 
-    print "Starting task request..."
+    logging.debug("Starting task request...")
 
     # get job_package and burn it
     job_package = pickle.loads(redisHandles.r_job_handle.get(task_inputs_key))
@@ -600,7 +600,7 @@ def fireTaskWorker(task_name,task_inputs_key):
         In the case of custom_loop's, using this task_handle to fire instead of taskFactory
         '''
         task_handle = getattr(actions, task_name)
-        print "We've got task handle:",task_handle
+        logging.debug("We've got task handle: %s" % (task_handle))
     except:
         return utilities.applicationError("Task not found, or user not authorized to perform.  Return to <a href='/{{APP_PREFIX}}/userPage'>user page</a>.")
 
@@ -613,7 +613,7 @@ def fireTaskWorker(task_name,task_inputs_key):
     job_num = jobs.jobStart()
     job_package['job_num'] = job_num
 
-    print "Job Type is:",job_package['job_type']
+    logging.debug("Job Type is: "+job_package['job_type'])
 
 
     # Object Loop
@@ -626,10 +626,10 @@ def fireTaskWorker(task_name,task_inputs_key):
         PIDlist = [PID.PID for PID in userSelectedPIDs]
         etime = time.time()
         ttime = (etime - stime) * 1000
-        print "Took this long to create list from SQL query",ttime,"ms"
+        logging.debug("Took this long to create list from SQL query"+str(ttime)+"ms")
 
         # begin job and set estimated tasks
-        print "Antipcating",userSelectedPIDs.count(),"tasks...."
+        logging.debug("Anticipating "+str(userSelectedPIDs.count())+" tasks....")
         redisHandles.r_job_handle.set("job_{job_num}_est_count".format(job_num=job_num),userSelectedPIDs.count())
 
         # send to celeryTaskFactory in actions.py
@@ -673,7 +673,7 @@ def fireTaskWorker(task_name,task_inputs_key):
     db.session.add(models.user_jobs(job_num, username, celery_task_id, "init", task_name))
     db.session.commit()
 
-    print "Started job #",job_num,"Celery task #",celery_task_id
+    logging.debug("Started job #"+str(job_num)+" Celery task #"+str(celery_task_id))
     try:
         return redirect("userJobs")
     except:
@@ -716,8 +716,8 @@ def userJobs():
             job_complete_count = 0
 
         # DEBUG
-        # print job
-        # print job_est_count, job_assign_count, job_complete_count
+        # logging.debug(job)
+        # logging.debug(job_est_count, job_assign_count, job_complete_count)
 
         # compute percentage complete
         if all([job_complete_count,job_est_count]) != None and all([job_complete_count,job_est_count]) > 0:
@@ -738,7 +738,7 @@ def userJobs():
                 job.status = "running"
             else:
                 status_package['job_status'] = "pending"
-                job.status = "pending"      
+                job.status = "pending"
 
         # check if completed
         elif job_complete_count == job_est_count:
@@ -747,7 +747,7 @@ def userJobs():
             job.status = "complete"
             # update redis end time (etime)
             r_job_handle.set("job_%s_etime" % (job_num),int(time.time()))
-            print "Job Complete!  Updated in SQL."
+            logging.debug("Job Complete!  Updated in SQL.")
 
         # else, must be running
         else:
@@ -785,7 +785,7 @@ def userJobs():
             seconds_remaining = returnTimeRemaining()
             session['job_%s_time_remaining' % (job_num)] = seconds_remaining
             time_remaining = formatTime(seconds_remaining)
-            # print "updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining)
+            # logging.debug("updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining))
         else:
             time_remaining = formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
 
@@ -860,10 +860,10 @@ def jobDetails(job_num):
 
     # get parent object
     job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
-    print "job celery task id:",job_SQL.celery_task_id
+    logging.debug("job celery task id: %s" % job_SQL.celery_task_id)
 
     job_details = jobs.getTaskDetails(job_SQL.celery_task_id)
-    print job_details
+    logging.debug(job_details)
 
     # get tasks
     tasks_package = {}
@@ -896,7 +896,7 @@ def taskDetails(task_id,job_num):
             PID = "N/A"
 
     else:
-        print "We're dealing with a local job, not Celerized"
+        logging.debug("We're dealing with a local job, not Celerized")
         PID = "N/A"
         task_async = {
             "status":"N/A",
@@ -912,9 +912,9 @@ def taskDetails(task_id,job_num):
 def jobRemove(job_num):
 
     if request.method == "POST" and request.form['commit'] == "true":
-        print "Removing job %s" % (job_num)
+        logging.debug("Removing job %s" % (job_num))
         result = jobs.jobRemove_worker(job_num)
-        print result
+        logging.debug(result)
 
         return render_template("jobRemove.html",job_num=job_num,result=result)
 
@@ -927,7 +927,7 @@ def jobRemove(job_num):
 def jobRetire(job_num):
 
     result = jobs.jobRetire_worker(job_num)
-    print result
+    logging.debug(result)
 
     return redirect("userJobs")
 
@@ -937,7 +937,7 @@ def jobRetire(job_num):
 @roles.auth(['admin','metadata'])
 def flushPIDLock():
     result = redisHandles.r_PIDlock.flushdb()
-    print "Result of PID Lock flush:",result
+    logging.debug("Result of PID Lock flush: %s" % result)
     return render_template("flushPIDLock.html",result=result)
 
 
@@ -958,7 +958,7 @@ def retireAllJobs():
         if job.status != "complete":
             result = jobs.jobRetire_worker(job.job_num)
 
-    print "All non-complete jobs, retired"
+    logging.debug("All non-complete jobs, retired")
 
     return redirect("userJobs")
 
@@ -989,18 +989,18 @@ def flushCeleryTasks():
 @roles.auth(['admin','metadata'])
 def pushJobPIDs(job_num,result):
 
-    print "creating workspace group of PIDs that were result: %s" % result
+    logging.debug("creating workspace group of PIDs that were result: %s" % result)
 
     # get username from session
     username = session['username']
 
     # get parent object
     job_SQL = db.session.query(models.user_jobs).filter(models.user_jobs.job_num == job_num).first()
-    print "job celery task id:",job_SQL.celery_task_id
+    logging.debug("job celery task id: %s" % job_SQL.celery_task_id)
 
     # get celery parent
     job_details = jobs.getTaskDetails(job_SQL.celery_task_id)
-    print job_details
+    logging.debug(job_details)
 
     # get tasks
     PIDs = []
@@ -1015,9 +1015,9 @@ def pushJobPIDs(job_num,result):
             if task_result == result:
                 PIDs.append(PID)
 
-    print PIDs
+    logging.debug(PIDs)
 
-    print "adding to MySQL"
+    logging.debug("adding to MySQL")
 
     # get PIDs group_name
     group_name = str('%s_%s_%s' % (username,job_num,result))
@@ -1052,7 +1052,7 @@ def objPreview(PIDnum):
     PIDlet['pURL'] = "/objPreview/"+str(int(PIDnum)-1)
     PIDlet['nURL'] = "/objPreview/"+str(int(PIDnum)+1)
 
-    print "generating information about:",PIDlet['cPID']
+    logging.debug("generating information about: %s" % PIDlet['cPID'])
 
     # WSUDOR handle
     obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PIDlet['cPID'])
@@ -1095,7 +1095,7 @@ def objPreview(PIDnum):
 
         # Object size and datastreams
         size_dict = obj_handle.object_size()
-        print size_dict
+        logging.debug(size_dict)
         object_package['size_dict'] = size_dict
         object_package['size_dict_json'] = json.dumps({
             'datastreams':size_dict['datastreams'],
@@ -1110,7 +1110,7 @@ def objPreview(PIDnum):
             OAI_ID = riquery.objects().next().encode('utf-8')
             OAI_dict['ID'] = OAI_ID
         except:
-            print "No OAI Identifier found."
+            logging.debug("No OAI Identifier found.")
 
         # sets
         OAI_dict['sets'] = []
@@ -1119,10 +1119,10 @@ def objPreview(PIDnum):
             for each in riquery.objects():
                 OAI_dict['sets'].append(each)
         except:
-            print "No OAI sets found."
+            logging.debug("No OAI sets found.")
 
         object_package['OAI_package'] = OAI_dict
-        print object_package['OAI_package']
+        logging.debug(object_package['OAI_package'])
 
         # timeline
         object_package['timeline'] = obj_handle.timeline()
@@ -1180,7 +1180,7 @@ def selObjsOverview():
 def PIDmanageAction(action):
     # get username from session
     username = session['username']
-    print "Current action is:",action
+    logging.debug("Current action is: "+action)
 
     # if post AND group toggle
     if request.method == 'POST' and action == 'group_toggle':
@@ -1189,17 +1189,17 @@ def PIDmanageAction(action):
 
     # select all
     if action == "s_all":
-        print "All PIDs selected..."
+        logging.debug("All PIDs selected...")
         db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': True})
 
     # select none
     if action == "s_none":
-        print "All PIDs unselected..."
+        logging.debug("All PIDs unselected...")
         db.session.query(models.user_pids).filter(models.user_pids.username == username).update({'status': False})
 
     # select toggle
     if action == "s_toggle":
-        print "All PIDs toggling..."
+        logging.debug("All PIDs toggling...")
         db.session.execute("UPDATE user_pids SET status = CASE WHEN status = False THEN True ELSE False END WHERE username = '%s';" % (username))
 
     # delete selections
@@ -1241,7 +1241,7 @@ def PIDRowUpdate(id,action,status):
         # get PID with query
         PID = models.user_pids.query.filter(models.user_pids.id == id)[0]
         db.session.delete(PID)
-        print "Deleted PID id#",id,"from SQL database"
+        logging.debug("Deleted PID id#%sfrom SQL database" % id)
 
     # commit
     db.session.commit()
@@ -1256,7 +1256,7 @@ def updatePIDsfromSolr(update_type):
 
     # get username from session
     username = session['username']
-    print "Sending PIDs to",username
+    logging.debug("Sending PIDs to %s" % username)
 
     # retrieve PIDs
     PIDs = request.form['json_package']
@@ -1271,9 +1271,9 @@ def updatePIDsfromSolr(update_type):
 
     # remove PIDs from SQL
     if update_type == "remove":
-        print "removing each PID from SQL..."
+        logging.debug("removing each PID from SQL...")
         jobs.removeUserPIDs(username,PIDs)
-        print "...complete."
+        logging.debug("...complete.")
 
     return "Update Complete."
 
@@ -1288,7 +1288,7 @@ def quickPID():
     username = session['username']
 
     PID = request.args.get('pid')
-    print "quick adding",PID
+    logging.debug("quick adding %s" % PID)
 
     # add PID to MySQL
     PIDs = [PID]
@@ -1446,7 +1446,7 @@ def add_object_single():
         tag_group = 'None'
     else:
         tag_group = tag_group.encode('utf-8')
-    print "adding single pid:",PID,"tag group:",tag_group
+    logging.debug("adding single pid: %s tag group: %s" % (PID, tag_group))
 
     # add PID to MySQL
     PIDs = [PID]
@@ -1480,7 +1480,7 @@ def add_object_search():
 
     # rehydrate search_params
     search_params = json.loads(request.form['search_params'])
-    print search_params
+    logging.debug(search_params)
 
     # get tag name
     tag_group = request.form['tag_group']
@@ -1496,7 +1496,7 @@ def add_object_search():
     # iterate through paginated results   
     total_size = 0 
     chunk_size = 1000
-    print "iterating through results as cursor, with chunk size",chunk_size
+    logging.debug("iterating through results as cursor, with chunk size %s" % chunk_size)
     for chunk in c.fetch(rows=chunk_size):
         t_pid_list = []
         for doc in chunk.documents:
@@ -1525,11 +1525,11 @@ def workspace_json():
     # gen group list
     # user_pid_groups = db.session.query(models.user_pids).filter(models.user_pids.username == username).group_by("group_name")
     # group_names = [ each.group_name.encode('ascii','ignore') for each in user_pid_groups ]
-    # print group_names
+    # logging.debug(group_names)
 
     user_pid_groups = db.session.query(models.user_pids).with_entities(models.user_pids.username, models.user_pids.group_name).filter(models.user_pids.username == username).group_by(models.user_pids.group_name)
     group_names = [ each.group_name.encode('ascii','ignore') for each in user_pid_groups ]
-    print group_names
+    logging.debug(group_names)
 
     return jsonify({
         'groups':group_names
@@ -1614,15 +1614,15 @@ def collectionsOverview():
     # assemble sizes for collections
     object_package['coll_size_dict'] = {}
     for collection in collections:
-        print "Working on",collection
+        logging.debug("Working on %s" % collection)
         results = solr_handle.search(**{ "q":"rels_isMemberOfCollection:"+collection.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
-        print results.stats
+        logging.debug(results.stats)
 
         if results != None and results.total_results > 0 and results.stats['obj_size_i'] != None:
             collection_obj_sum = results.stats['obj_size_i']['sum']
             object_package['coll_size_dict'][collection] = (collection_obj_sum,utilities.sizeof_fmt(collection_obj_sum),results.total_results)
 
-    # print object_package['coll_size_dict']
+    # logging.debug(object_package['coll_size_dict'])
     object_package['coll_size_dict'] = json.dumps(object_package['coll_size_dict'])
 
 
@@ -1631,16 +1631,16 @@ def collectionsOverview():
 
     object_package['cm_size_dict'] = {}
     for cm in cms:
-        print "Working on",cm
+        logging.debug("Working on %s" % cm)
         cm = "info:fedora/CM:%s" % cm
         results = solr_handle.search(**{ "q":"rels_hasContentModel:"+cm.replace(":","\:"), "stats":"true", "stats.field":"obj_size_i", "rows":0 })
-        print results.stats
+        logging.debug(results.stats)
 
         if results != None and results.total_results > 0 and results.stats['obj_size_i'] != None:
             collection_obj_sum = results.stats['obj_size_i']['sum']
             object_package['cm_size_dict'][cm] = (collection_obj_sum,utilities.sizeof_fmt(collection_obj_sum),results.total_results)
 
-    # print object_package['cm_size_dict']
+    # logging.debug(object_package['cm_size_dict'])
     object_package['cm_size_dict'] = json.dumps(object_package['cm_size_dict'])
 
     return render_template("collectionsOverview.html", object_package=object_package)
@@ -1684,46 +1684,46 @@ def indexing_index(action, group):
     if action == 'index':
 
         if group == 'selected':
-            print "adding selected objects to index queue to index"
+            logging.debug("adding selected objects to index queue to index")
             pids = jobs.getSelPIDs()
             # add to index queue
             for pid in pids:
                 IndexRouter.queue_object(pid, username, 2, 'index')
 
         if group == 'modified':
-            print "adding selected objects to index queue to index"
+            logging.debug("adding selected objects to index queue to index")
             IndexRouter.queue_modified(username=username, priority=1, action='index')
 
         if group == 'all':
-            print "adding selected objects to index queue to index"
+            logging.debug("adding selected objects to index queue to index")
             IndexRouter.queue_all(username=username, priority=1, action='index')
 
     # pruning
     if action == 'prune':
 
         if group == 'selected':
-            print "adding selected objects to index queue to prune"
+            logging.debug("adding selected objects to index queue to prune")
             pids = jobs.getSelPIDs()
             # add to index queue
             for pid in pids:
                 IndexRouter.queue_object(pid, username, 2, 'prune')
 
         if group == 'reindex':
-            print "purging and adding all to queue"
             # purge all with IndexWorker directly
             IndexWorker.purge_all()
             # reindex all
             IndexRouter.queue_all(username=username, priority=1, action='index')
+            logging.debug("purging and adding all to queue")
 
     # exceptions
     if action == 'exceptions':
         if group == 'all':
-            print "rerunning exceptions"
+            logging.debug("rerunning exceptions")
             IndexRouter.queue_all_exceptions()
-    
-    #   quques
+
+    #   queues
     if group == 'clear':
-            print "clearing all queues"
+            logging.debug("clearing all queues")
             IndexRouter.clear_all_queues()
 
     # redierct to status
@@ -1812,7 +1812,7 @@ def indexing_status_exception_json():
 @roles.auth(['admin'])
 def wcts(wct):
 
-    print "Opening",wct
+    logging.debug("Opening %s" % wct)
     wct = globals()[wct]
 
     return render_template("wctUtilities.html",wct=wct)
@@ -1844,7 +1844,7 @@ def solrReaduxDoc(pid, action):
     try:
         r = requests.get('%s/indexdata/%s' % (localConfig.READUX_BASE_URL, pid)).json()
     except:
-        print "could not retrieve index data from readux, aborting"
+        logging.debug("could not retrieve index data from readux, aborting")
         return jsonify({"result":False})
 
     # fix times
@@ -1916,7 +1916,7 @@ def objAccess(pid):
 
     # Object size and datastreams
     size_dict = obj_handle.object_size()
-    print size_dict
+    logging.debug(size_dict)
     object_package['size_dict'] = size_dict
     object_package['size_dict_json'] = json.dumps({
         'datastreams':size_dict['datastreams'],
@@ -1931,7 +1931,7 @@ def objAccess(pid):
         OAI_ID = riquery.objects().next().encode('utf-8')
         OAI_dict['ID'] = OAI_ID
     except:
-        print "No OAI Identifier found."
+        logging.debug("No OAI Identifier found.")
 
     # sets
     OAI_dict['sets'] = []
@@ -1940,16 +1940,16 @@ def objAccess(pid):
         for each in riquery.objects():
             OAI_dict['sets'].append(each)
     except:
-        print "No OAI sets found."
+        logging.debug("No OAI sets found.")
 
     object_package['OAI_package'] = OAI_dict
-    print object_package['OAI_package']
+    logging.debug(object_package['OAI_package'])
 
     # bitStream tokens
     object_package['bitStream_tokens'] = BitStream.genAllTokens(pid, localConfig.BITSTREAM_KEY)
 
     # RENDER
-    print object_package['solr_package']
+    logging.debug(object_package['solr_package'])
     return render_template("admin_object_access.html", pid=pid, object_package=object_package, localConfig=localConfig)
 
 

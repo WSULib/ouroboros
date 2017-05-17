@@ -4,6 +4,7 @@ import uuid, json, os
 import bagit
 from lxml import etree
 import mimetypes
+from WSUDOR_Manager import logging
 
 
 # define required `BagClass` class
@@ -78,7 +79,7 @@ class BagClass(object):
 		# get remote_location from 
 		fd = json.loads(self.object_row.job.file_index) # loads from MySQL
 		filename_path = fd[filename_root]
-		print "target filename path is:",filename_path
+		logging.debug("target filename path is: %s" % filename_path)
 		remote_location = filename_path
 		
 		# create symlink
@@ -95,7 +96,7 @@ class BagClass(object):
 
 		# set identifier
 		self.full_identifier = self.DMDID
-		print self.full_identifier
+		logging.debug("%s" % self.full_identifier)
 
 		# generate PID
 		self.pid = "wayne:%s" % (self.full_identifier)

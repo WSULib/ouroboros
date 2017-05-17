@@ -7,8 +7,8 @@ from twisted.web.server import NOT_DONE_YET
 from twisted.web import server, resource
 from twisted.python import log
 import json
-import logging
 import subprocess
+import sys
 
 # for Ouroboros pid management
 import os
@@ -16,6 +16,7 @@ import atexit
 import lockfile
 import xmlrpclib
 import time
+
 
 # local
 from localConfig import *
@@ -33,22 +34,22 @@ from WSUDOR_Indexer.models import FedoraJMSConsumer, IndexRouter
 # Ouroboros pidfile ##############################################################
 # function to create/remove Ouroboros pidfile
 def pidfileCreate():
-    print "creating pidfile"
+    logging.debug("creating pidfile")
 
     pidfile = "/var/run/ouroboros/%s.pid" % (APP_NAME)
 
     if os.path.exists("/var/run/ouroboros/%s.pid" % (APP_NAME)):
-        print "pidlock found, investigating..."
-        
+        logging.debug("pidlock found, investigating...")
+
         # get instances of "runserver.py"
         try:
             output = subprocess.check_output(('lsof', '-i', ':%s' % WSUDOR_MANAGER_PORT))
-            print "something is already running on %s" % WSUDOR_MANAGER_PORT
+            logging.debug("something is already running on %s" % WSUDOR_MANAGER_PORT)
             raise Exception("aborting")
         except subprocess.CalledProcessError:
-            print "could not find other running instances of ouroboros, removing pidlock and continuing..."
+            logging.debug("could not find other running instances of ouroboros, removing pidlock and continuing...")
             os.system("rm /var/run/ouroboros/*")
-            time.sleep(2)           
+            time.sleep(2)
 
     with open(pidfile,"w") as fhand:
         fhand.write(str(os.getpid()))
@@ -57,31 +58,33 @@ def pidfileCreate():
     return ouroboros_pidlock
 
 def pidfileRemove():
-    print "Removing pidfile"
+    logging.debug("Removing pidfile")
     ouroboros_pidlock.release()
     os.system("rm /var/run/ouroboros/%s.pid" % (APP_NAME))
 
 
 # Ouroboros shutdown ##############################################################
 def shutdown():
-    print "received kill command, attempting to shutdown gracefully..."
+    logging.debug("received kill command, attempting to shutdown gracefully...")
+    test = 1
+    logging.debug("test%s" % test)
 
     # remove PID
     pidfileRemove()
 
     # remove generic celery task ONLY
-    print "removing generic celery tasks from supervisor"
+    logging.debug("removing generic celery tasks from supervisor")
     celery_conf_files = os.listdir('/etc/supervisor/conf.d')
     for conf in celery_conf_files:
         if conf == "celery-celery.conf":
             process_group = conf.split(".conf")[0]
-            print "stopping celery worker: %s" % process_group
+            logging.debug("stopping celery worker: %s" % process_group)
             sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
             sup_server.supervisor.stopProcessGroup(process_group)
             sup_server.supervisor.removeProcessGroup(process_group)
             os.system('rm /etc/supervisor/conf.d/%s' % conf)
 
-    print "<-- Ouroboros says thanks for playing -->"
+    logging.debug("<-- Ouroboros says thanks for playing -->")
 
 
 # twisted liseners
@@ -96,7 +99,7 @@ WSUDOR_API_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUDOR_API_
 WSUDOR_API_site = Site(WSUDOR_API_resource)
 
 def testing(result):
-    print result
+    logging.debug(result)
 
 if __name__ == '__main__':
 
@@ -106,23 +109,23 @@ if __name__ == '__main__':
 
     # WSUDOR Manager
     if WSUDOR_MANAGER_FIRE == True:
-        print "Starting WSUDOR_Manager..."
+        logging.debug("Starting WSUDOR_Manager...")
         reactor.listenTCP( WSUDOR_MANAGER_PORT, WSUDOR_Manager_site)
 
     # WSUDOR_API
     if WSUDOR_API_FIRE == True:
-        print "Starting WSUDOR_API_app..."
+        logging.debug("Starting WSUDOR_API_app...")
         reactor.listenTCP( WSUDOR_API_LISTENER_PORT, WSUDOR_API_site )
 
     # WSUDOR_Indexer
     if FEDCONSUMER_FIRE == True:
-        print "Starting Fedora JSM consumer..."
+        logging.debug("Starting Fedora JSM consumer...")
         fedora_jms_consumer = FedoraJMSConsumer()
         fedora_jms_consumer.run()
         indexer = LoopingCall(IndexRouter.poll)
         indexer.start(INDEXER_POLL_DELAY, now=False)
 
-    print '''
+    logging.debug('''
                 ::+:/`
          :----:+ssoo+:.`
       `-:+sssossysoooooo+/-`
@@ -143,6 +146,6 @@ osso+o.                  `+//ooysoo
          `-:++sosyssyyo+:.
 
   <-- Ouroboros says hissss -->
-    '''
+    ''')
 
     reactor.run()

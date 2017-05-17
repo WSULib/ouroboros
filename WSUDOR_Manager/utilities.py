@@ -14,7 +14,7 @@ import re
 
 
 from localConfig import *
-from WSUDOR_Manager import models, app, fedoraHandles, celery
+from WSUDOR_Manager import models, app, fedoraHandles, celery, logging
 from eulfedora.server import Repository
 
 
@@ -24,10 +24,10 @@ import smtplib
 
 def login(username):
 
-    print "Logging in..."
+    logging.debug("Logging in...")
 
     # fire user celery worker
-    print "firing user celery worker for: %s" % username
+    logging.debug("firing user celery worker for: %s" % username)
     cw = models.CeleryWorker(username)
     cw.start()      
 
@@ -106,13 +106,13 @@ def sizeof_fmt(num, suffix='B'):
 
 # remove duplicate elements from flat XML
 def delDuplicateElements(XML):
-    print "running XML element DUPE check"
+    logging.debug("running XML element DUPE check")
     # Use a `set` to keep track of "visited" elements with good lookup time.
     seen = set()
     # The iter method does a recursive traversal
     for el in XML.iter('*'):        
         if (el.tag, el.text) in seen:
-            print "removing duplicate XML tag: %s / %s" % (el.tag, el.text)
+            logging.debug("removing duplicate XML tag: %s / %s" % (el.tag, el.text))
             el.getparent().remove(el)
         else:
             seen.add((el.tag,el.text))
@@ -122,14 +122,14 @@ def delDuplicateElements(XML):
 
 def imMode(im):
     # check for 16-bit tiffs
-    print "Image mode:",im.mode
+    logging.debug("Image mode:",im.mode)
     if im.mode in ['I;16','I;16B']:
-        print "I;16 tiff detected, converting..."
+        logging.debug("I;16 tiff detected, converting...")
         im.mode = 'I'
         im = im.point(lambda i:i*(1./256)).convert('L')
     # else if not RGB, convert
     elif im.mode != "RGB" :
-        print "Converting to RGB"
+        logging.debug("Converting to RGB")
         im = im.convert("RGB")
 
     return im
@@ -273,6 +273,6 @@ class Email():
                 s.quit()
                 return True
             except Exception, e:
-                print e.__doc__
-                print e.message
+                logging.debug(e.__doc__)
+                logging.debug(e.message)
                 return False

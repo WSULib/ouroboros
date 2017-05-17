@@ -102,7 +102,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		policy_handle = eulfedora.models.DatastreamObject(self.ohandle, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 		policy_handle.label = "POLICY"
-		policy_handle.save()logging.debug()
+		policy_handle.save()
 		# for each file type in pages dict, pass page obj and process
 		for ds in page_dict:
 

@@ -85,7 +85,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			try:
 				pages[int(ds['order'])].append(ds)
 			except:
-				print "Presented with 'order' attribute that was not integer, skipping..."
+				logging.debug("Presented with 'order' attribute that was not integer, skipping...")
 		return pages
 
 
@@ -241,7 +241,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write POLICY datastream
 			# NOTE: 'E' management type required, not 'R'
-			print "Using policy:",self.objMeta['policy']
+			logging.debug("Using policy: %s" % self.objMeta['policy'])
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -257,7 +257,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships
 			for relationship in self.objMeta['object_relationships']:
-				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				logging.debug("Writing relationship: %s %s" % (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 
 			# writes derived RELS-EXT
@@ -266,7 +266,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
-			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
+			logging.debug("Writing ContentType relationship: info:fedora/fedora-system:def/relations-external#hasContentModel %s" % content_type_string)
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 
 			# write MODS datastream if MODS.xml exists
@@ -293,7 +293,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
   </mods:extension>
 </mods:mods>
 				''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
-				print raw_MODS
+				logging.debug("%s" % raw_MODS)
 				MODS_handle.content = raw_MODS
 				MODS_handle.save()
 
@@ -312,7 +312,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 			# write generic thumbnail and preview
-			print "writing generic thumb and preview"
+			logging.debug("writing generic thumb and preview")
 			rep_handle = eulfedora.models.DatastreamObject(self.ohandle, "THUMBNAIL", "THUMBNAIL", mimetype="image/jpeg", control_group="M")
 			rep_page_num = int(self.objMeta['isRepresentedBy'].split("_")[-1])
 			if "cover_placeholder" in self.objMeta and self.objMeta['cover_placeholder']:
@@ -344,8 +344,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# exception handling
 		except Exception,e:
-			print traceback.format_exc()
-			print "Ingest Error:",e
+			logging.debug("%s" % traceback.format_exc())
+			logging.debug("Ingest Error: %s" % e)
 			return False
 
 
@@ -353,7 +353,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	def genMissingPages(self, reindex=True):
 		
 		for page_num in self.missing_pages_from_objMeta:
-			print "Generating missing page: %s" % page_num
+			logging.debug("Generating missing page: %s" % page_num)
 			page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
 			page_obj.ingestMissingPage(self, page_num, from_bag=False)
 
@@ -368,11 +368,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for page in self.pages_from_rels:
 			try:
 				page = self.pages_from_rels[page]
-				print "purging constituent:", page.label
+				logging.debug("purging constituent: %s" % page.label)
 				obj = WSUDOR_ContentTypes.WSUDOR_Object(page.pid)
 				obj.purge(override_state=True)
 			except:
-				print "could not remove constituent: %s" % page
+				logging.debug("could not remove constituent: %s" % page)
 
 		return True
 
@@ -385,7 +385,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		else:
 			obj_dir = pdf_dir
 
-		print "writing full-text PDF"
+		logging.debug("writing full-text PDF")
 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
 		os.system("pdftk %s/*.pdf cat output %s verbose" % (obj_dir, temp_filename))
 		pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
@@ -406,19 +406,19 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		'''
 
 		# Wait until risearch catches up with constituent objects
-		print "waiting for risearch to catch up..."
+		logging.debug("waiting for risearch to catch up...")
 		stime = time.time()
 		ttime = 0
 		while ttime < 30 :
 			sparql_count = fedora_handle.risearch.sparql_count('select $page where  {{ $page <fedora-rels-ext:isConstituentOf> <info:fedora/%s> . }}' % (self.pid))
-			print sparql_count
+			logging.debug("%s" % sparql_count)
 			if sparql_count < len(self.pages_from_objMeta):
 				time.sleep(.5)
 				ttime = time.time() - stime
-				print ttime
+				logging.debug("%s" % ttime)
 				continue
 			else:
-				print 'constituent objects found in risearch, continuing'
+				logging.debug('constituent objects found in risearch, continuing')
 				break
 
 		# get solr_doc
@@ -447,7 +447,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			try:
 				manifest.set_metadata({ field_set[0] : eval(field_set[1]) })
 			except:
-				print "Could Not Set Metadata Field, Skipping",field_set[0]
+				logging.debug("Could Not Set Metadata Field, Skipping %s" % field_set[0])
 
 		# start anonymous sequence
 		seq = manifest.sequence(label="default sequence")
@@ -465,7 +465,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# open wsudor handle
 			page_handle = WSUDOR_ContentTypes.WSUDOR_Object(self.pages_from_rels[page_num])
-			print "Working on:",page_handle.ohandle.label
+			logging.debug("Working on: %s" % page_handle.ohandle.label)
 
 			# generate obj|ds self.pid as defined in loris TemplateHTTP extension
 			fedora_http_ident = "fedora:%s|JP2" % (page_handle.pid)
@@ -500,14 +500,14 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			'''
 			Automatically updates / overwrites
 			'''
-			print "Inserting annotation list for",page_handle.pid,"as object datastream..."
+			logging.debug("Inserting annotation list for %s as object datastream..." % page_handle.pid)
 			ds_handle = eulfedora.models.DatastreamObject(page_handle.ohandle, "IIIF_ANNOLIST", "IIIF_ANNOLIST", mimetype="application/json", control_group="M")
 			ds_handle.label = "IIIF_ANNOLIST"
 			ds_handle.content = annol.toString()
 			ds_handle.save()
 
 		# create datastream with IIIF manifest and return JSON string
-		print "Inserting manifest for",self.pid,"as object datastream..."
+		logging.debug("Inserting manifest for %s as object datastream..." % self.pid)
 		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "IIIF_MANIFEST", "IIIF_MANIFEST", mimetype="application/json", control_group="M")
 		ds_handle.label = "IIIF_MANIFEST"
 		ds_handle.content = manifest.toString()

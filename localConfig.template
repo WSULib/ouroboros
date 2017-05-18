@@ -65,6 +65,12 @@ INDEXER_SKIP_PID_REGEX = '(emory-control|fedora-system|wayne:WSUDOR).*'
 REDIS_BROKER_DB = 5
 REDIS_BACKEND_DB = 6
 CELERY_CONCURRENCY = 1 # number of celery workers to initialize for user (recommended 1 for stability, but can increase)
+CELERY_LOGGING_LEVEL = {
+	logging.DEBUG:'Debug',
+	logging.INFO:'Info',
+	logging.WARNING:'Warning',
+	logging.ERROR:'Error'
+}[LOGGING_LEVEL]
 
 # paths
 DATATABLES_HANDLE = "https://{APP_HOST}/cgi-bin/php_simple.php".format(APP_HOST=APP_HOST)

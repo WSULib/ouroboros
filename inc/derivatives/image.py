@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
-import logging
 import os
 import subprocess
 import time
 
-from inc.derivatives import Derivative
+from inc.derivatives import Derivative, logging
+logging = logging.getChild('image')
 
 
 # '''
@@ -143,7 +143,7 @@ class ImageDerivative(Derivative):
 
 	# get bits per sample
 	def getBitsPerSample(self):
-		logging.info("determining Bits per Sample (BPS)")
+		logging.debug("determining Bits per Sample (BPS)")
 		cmd = EXIV2 + " " + EXIV2_GET_BPS + " " + self.input_handle
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		
@@ -183,7 +183,7 @@ class ImageDerivative(Derivative):
 		self.output_handle = self.create_temp_file(file_type='named', suffix='.jp2')
 
 		inBitsPerSample = self.getBitsPerSample()
-		logging.info("generating JP2 with BPS: %s" % inBitsPerSample)
+		logging.debug("generating JP2 with BPS: %s" % inBitsPerSample)
 
 		cmd = "kdu_compress -i " + self.input_handle + " -o " + self.output_handle.name 
 		if inBitsPerSample == FORTY_EIGHT_BITS:
@@ -210,34 +210,34 @@ class ImageDerivative(Derivative):
 		if self.jp2_space == 'sLUM':
 			cmd = cmd.replace("-jp2_space sRGB","-jp2_space sLUM")
 
-		logging.info("firing Kakadu")
-		logging.info(cmd)
+		logging.debug("firing Kakadu")
+		logging.debug(cmd)
 
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()
 		
-		logging.info("output_handle name: %s" % self.output_handle.name)
-		logging.info("size of output_handle: %s" % os.path.getsize(self.output_handle.name))
+		logging.debug("output_handle name: %s" % self.output_handle.name)
+		logging.debug("size of output_handle: %s" % os.path.getsize(self.output_handle.name))
 		if os.path.exists(self.output_handle.name) and os.path.getsize(self.output_handle.name) != 0:			
-			logging.info("Created: %s" % self.output_handle.name)
+			logging.debug("Created: %s" % self.output_handle.name)
 			os.chmod(self.output_handle.name, 0644)
 			return True
 		else:
 			if os.path.exists(self.output_handle.name): os.remove(self.output_handle.name)
-			logging.info("Failed to create: %s" % self.output_handle.name)
+			logging.debug("Failed to create: %s" % self.output_handle.name)
 			# retrying
 			if self.next_iteration:
-				logging.info("trying next iteration...")
+				logging.debug("trying next iteration...")
 				time.sleep(2)
 				return self.next_iteration()
 			else:
-				logging.info('out of input file tries...aborting')
+				logging.debug('out of input file tries...aborting')
 				return False
 		
 
 
 	def uncompressOriginal(self):
-		logging.info("Converting temp tiff to uncompressed")
+		logging.debug("Converting temp tiff to uncompressed")
 		new_input_handle = self.create_temp_file(file_type='named', suffix='.tif')
 		cmd = "convert -verbose %s +compress %s" % (self.input_handle, new_input_handle.name)
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -250,7 +250,7 @@ class ImageDerivative(Derivative):
 
 
 	def createTiffFromOriginal(self):
-		logging.info("creating tiff from original image file")
+		logging.debug("creating tiff from original image file")
 		new_input_handle = self.create_temp_file(file_type='named', suffix='.tif')
 		cmd = "convert -verbose %s +compress %s" % (self.input_handle, new_input_handle.name)
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -263,7 +263,7 @@ class ImageDerivative(Derivative):
 
 
 	def newColorSpace(self):
-		logging.info("trying new jp2 color space for kakadu")
+		logging.debug("trying new jp2 color space for kakadu")
 		
 		if self.BPS in [ONE_BIT, EIGHT_BITS, SIXTEEN_BITS]:
 			self.jp2_space = 'sRGB'

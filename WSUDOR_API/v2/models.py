@@ -110,17 +110,17 @@ class Item(Resource):
 		# get object if not yet set
 		if not skip_check:
 			if skip_load:
-				logging.info("skipping WSUDOR object load, checking instance in Fedora")
+				logging.debug("skipping WSUDOR object load, checking instance in Fedora")
 				self.obj = fedora_handle.get_object(pid).exists
 				if not self.obj:
 					abort(404, message='%s not found in Fedora' % pid)
 			else:
-				logging.info("loading as WSUDOR object")
+				logging.debug("loading as WSUDOR object")
 				self.obj = WSUDOR_Object(pid)
 				if not self.obj:
 					abort(404, message='%s not found' % pid)
 		else:
-			logging.info('skipping item check and load')
+			logging.debug('skipping item check and load')
 
 
 	def get_item_metadata(self):
@@ -129,7 +129,7 @@ class Item(Resource):
 		try:
 			ct = self.obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
 		except:
-			logging.info("could not determine content type, setting None")
+			logging.debug("could not determine content type, setting None")
 			ct = None
 
 		# run content-type api additions
@@ -491,8 +491,8 @@ class Search(Resource):
 		args = parser.parse_args()
 
 		# log incoming API args
-		logging.info("Incoming args from search request:")
-		logging.info(args)
+		logging.debug("Incoming args from search request:")
+		logging.debug(args)
 
 		# set and pop custom fields
 		for custom_field in ['skip_defaults','isDiscoverable','field_skip_escape']:
@@ -511,13 +511,13 @@ class Search(Resource):
 		'''
 		for k,v in self.args.iteritems():
 			if k.endswith('[]'):
-				logging.info("stripping '[]' suffix from pair: %s / %s" % (k,v))
+				logging.debug("stripping '[]' suffix from pair: %s / %s" % (k,v))
 				self.args[k.rstrip('[]')] = v
 				del self.args[k]
 
 		# log post processing
-		logging.info("Post-Processing args from search request:")
-		logging.info(self.args)
+		logging.debug("Post-Processing args from search request:")
+		logging.debug(self.args)
 
 		# if q = '', remove, falls back on default "*:*"
 		if 'q' in self.args.keys() and self.args['q'] == '':
@@ -525,8 +525,8 @@ class Search(Resource):
 
 
 	def execute_search(self, include_item_metadata=True):
-		logging.info("Merged parameters for search request:")
-		logging.info(self.params)
+		logging.debug("Merged parameters for search request:")
+		logging.debug(self.params)
 		self.search_results = solr_search_handle.search(**self.params)		
 		logging.debug(self.search_results.raw_content)
 		# success

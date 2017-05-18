@@ -19,8 +19,9 @@ from celery import Task
 # WSUDOR
 import WSUDOR_ContentTypes
 import WSUDOR_Manager
-from WSUDOR_Manager import celery, db, fedora_handle, logging
+from WSUDOR_Manager import celery, db, fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Indexer import logging
 
 # localConfig
 import localConfig

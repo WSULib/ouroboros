@@ -6,7 +6,9 @@ from flask import request, redirect, Response, jsonify, stream_with_context, Blu
 
 # WSUDOR_API_app
 from WSUDOR_API import WSUDOR_API_app
-from WSUDOR_Manager import fedora_handle, redisHandles, logging
+from WSUDOR_Manager import fedora_handle, redisHandles
+from WSUDOR_API import logging
+logging = logging.getChild('lorisProxy')
 
 from eulfedora.models import DatastreamObject, XmlDatastreamObject
 

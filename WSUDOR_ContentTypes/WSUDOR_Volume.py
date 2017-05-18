@@ -17,10 +17,12 @@ import WSUDOR_Manager
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, logging
+from WSUDOR_Manager import redisHandles
 
 # import WSUDORntentTypes
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import logging
+logging = logging.getChild("WSUDOR_Object")
 
 
 class WSUDOR_Volume(WSUDOR_ContentTypes.WSUDOR_GenObject):

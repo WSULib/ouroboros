@@ -1,3 +1,7 @@
+# setup logging for WSUDOR_Indexer
+from WSUDOR_Manager import logging
+
+# Import ContentTypes
 from WSUDOR_Object import WSUDOR_Object, WSUDOR_GenObject
 from WSUDOR_Image import WSUDOR_Image
 from WSUDOR_Collection import WSUDOR_Collection
@@ -11,7 +15,7 @@ from WSUDOR_Document import WSUDOR_Document
 from WSUDOR_Container import WSUDOR_Container
 from WSUDOR_LearningObject import WSUDOR_LearningObject
 
-# Readux Virtual Objects
+# Import Readux Virtual Objects
 from WSUDOR_Readux import WSUDOR_Readux_VirtualBook
 from WSUDOR_Readux import WSUDOR_Readux_VirtualVolume
 from WSUDOR_Readux import WSUDOR_Readux_VirtualPage

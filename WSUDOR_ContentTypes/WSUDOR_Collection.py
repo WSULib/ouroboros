@@ -24,10 +24,12 @@ import localConfig
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, logging
+from WSUDOR_Manager import redisHandles
 
 # import WSUDOR_ContentTypes
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import logging
+logging = logging.getChild("WSUDOR_Object")
 
 # import API functions
 import WSUDOR_API

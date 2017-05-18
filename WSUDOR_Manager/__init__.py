@@ -20,6 +20,7 @@ else:
 	run_context = 'celery'
 
 logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
+logging = logging.getLogger('WSUDOR_Manager')
 
 
 ##########################################################################################
@@ -91,7 +92,7 @@ if run_context == 'ouroboros':
 else:
 	logging.debug("generating user authenticated fedora_handle")
 	app.config['USERNAME'] = sys.argv[5]
-	logging.debug("app.config username is", app.config['USERNAME'])
+	logging.debug("app.config username is %s" % app.config['USERNAME'])
 	fedora_handle = False
 	fire_cw = False
 
@@ -118,13 +119,13 @@ class CeleryWorker(object):
 		logging.debug("adding celery conf file")
 		# fire the suprevisor celery worker process
 		celery_process = '''[program:celery-%(username)s]
-command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=Info --concurrency=%(celery_concurrency)s -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
+command=/usr/local/lib/venvs/ouroboros/bin/celery worker -A WSUDOR_Manager.celery -Q %(username)s --loglevel=%(CELERY_LOGGING_LEVEL)s --concurrency=%(celery_concurrency)s -n %(username)s.local --without-gossip --without-heartbeat --without-mingle
 directory=/opt/ouroboros
 user = ouroboros
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/celery-%(username)s.err.log
-stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.username, 'celery_concurrency':self.celery_concurrency}
+stdout_logfile=/var/log/celery-%(username)s.out.log''' % {'username':self.username, 'CELERY_LOGGING_LEVEL':localConfig.CELERY_LOGGING_LEVEL, 'celery_concurrency':self.celery_concurrency}
 
 		filename = '/etc/supervisor/conf.d/celery-%s.conf' % self.username
 		if not os.path.exists(filename):
@@ -211,7 +212,7 @@ app.config.update(
 
 def make_celery(app):
 	celery = Celery(backend='redis://localhost:6379/1')
-	celery.config_from_object('cl.celeryConfig')
+	celery.config_from_object('cl.celeryConfig') # celery config
 	TaskBase = celery.Task
 	class ContextTask(TaskBase):
 		abstract = True

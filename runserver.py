@@ -65,7 +65,7 @@ def pidfileRemove():
 
 # Ouroboros shutdown ##############################################################
 def shutdown():
-    logging.debug("received kill command, attempting to shutdown gracefully...")
+    logging.info("received kill command, attempting to shutdown gracefully...")
     test = 1
     logging.debug("test%s" % test)
 
@@ -84,7 +84,7 @@ def shutdown():
             sup_server.supervisor.removeProcessGroup(process_group)
             os.system('rm /etc/supervisor/conf.d/%s' % conf)
 
-    logging.debug("<-- Ouroboros says thanks for playing -->")
+    logging.info("Ouroboros says thanks for playing")
 
 
 # twisted liseners
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         indexer = LoopingCall(IndexRouter.poll)
         indexer.start(INDEXER_POLL_DELAY, now=False)
 
-    logging.debug('''
+    logging.info('''
                 ::+:/`
          :----:+ssoo+:.`
       `-:+sssossysoooooo+/-`

@@ -5,8 +5,10 @@ import localConfig
 from flask import request, redirect, Response, jsonify, stream_with_context, Blueprint
 
 # WSUDOR_API_app
-from WSUDOR_Manager import fedora_handle, redisHandles, logging
+from WSUDOR_Manager import fedora_handle, redisHandles
 from WSUDOR_Manager.utilities import mimetypes
+from WSUDOR_API import logging
+logging = logging.getChild('bitStream')
 
 from eulfedora.models import DatastreamObject, XmlDatastreamObject
 

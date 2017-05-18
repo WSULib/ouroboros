@@ -7,6 +7,7 @@ from localConfig import logging, LOGGING_STREAM, LOGGING_LEVEL
 
 # setup logging for WSUDOR_API
 logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
+logging = logging.getLogger('WSUDOR_API')
 
 # modules / packages import
 from flask import Flask, render_template, g, redirect, jsonify, request

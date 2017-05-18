@@ -26,17 +26,12 @@ from datetime import timedelta
 
 # WSUDOR_Manager
 from WSUDOR_Indexer.models import IndexRouter, IndexWorker, indexer_queue, indexer_working, indexer_exception
-from WSUDOR_Manager import app
-from WSUDOR_Manager import models
-from WSUDOR_Manager import db
-from WSUDOR_Manager import roles
+from WSUDOR_Manager import app, models, db, roles, redisHandles, login_manager, utilities
 from WSUDOR_Manager.actions import actions
-from WSUDOR_Manager import redisHandles
-from WSUDOR_Manager import login_manager
-from WSUDOR_Manager import WSUDOR_ContentTypes
-from WSUDOR_ContentTypes import *
 from WSUDOR_API.v2.inc.bitStream import BitStream
 import utilities
+from WSUDOR_Manager import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import *
 
 # flask-security
 # from flask_security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin
@@ -56,7 +51,6 @@ from wtforms import TextField
 from WSUDOR_Manager import celery
 import jobs
 import forms
-from redisHandles import *
 
 # localConfig
 import localConfig
@@ -746,7 +740,7 @@ def userJobs():
             # udpate job status in SQL db here
             job.status = "complete"
             # update redis end time (etime)
-            r_job_handle.set("job_%s_etime" % (job_num),int(time.time()))
+            redisHandles.r_job_handle.set("job_%s_etime" % (job_num),int(time.time()))
             logging.debug("Job Complete!  Updated in SQL.")
 
         # else, must be running
@@ -1180,7 +1174,7 @@ def selObjsOverview():
 def PIDmanageAction(action):
     # get username from session
     username = session['username']
-    logging.debug("Current action is: "+action)
+    logging.debug("Current action is: %s" % action)
 
     # if post AND group toggle
     if request.method == 'POST' and action == 'group_toggle':

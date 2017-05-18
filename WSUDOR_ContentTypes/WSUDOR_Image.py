@@ -23,9 +23,11 @@ import eulfedora
 
 # WSUDOR
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import logging
+logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, utilities, helpers, logging
+from WSUDOR_Manager import redisHandles, utilities, helpers
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 

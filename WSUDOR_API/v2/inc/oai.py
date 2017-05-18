@@ -17,6 +17,8 @@ from WSUDOR_API import logging
 # WSUDOR_Manager
 from WSUDOR_Manager import fedora_handle, redisHandles
 from WSUDOR_Manager.solrHandles import solr_search_handle
+from WSUDOR_API import logging
+logging = logging.getChild('oai')
 
 
 # attempt to load metadataPrefix map from localConfig, otherwise provide default

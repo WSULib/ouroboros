@@ -26,10 +26,12 @@ import eulfedora
 
 # WSUDOR
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import logging
+logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import redisHandles, helpers, utilities, logging
+from WSUDOR_Manager import redisHandles, helpers, utilities
 
 # localconfig
 import localConfig

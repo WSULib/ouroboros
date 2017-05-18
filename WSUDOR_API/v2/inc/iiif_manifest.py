@@ -10,7 +10,9 @@ from flask import render_template, request, session, redirect, make_response, Re
 # WSUDOR_API_app
 from WSUDOR_API import cache
 import WSUDOR_ContentTypes
-from WSUDOR_Manager import fedora_handle, logging
+from WSUDOR_Manager import fedora_handle
+from WSUDOR_API import logging
+logging = logging.getChild('iiif_manifest')
 
 iiif_manifest_blueprint = Blueprint('iiif_manifest_v1', __name__)
 

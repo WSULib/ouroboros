@@ -23,7 +23,6 @@ from urllib import unquote, quote_plus, urlopen
 from collections import deque
 import struct
 from PIL import Image
-from localConfig import logging
 import ssl
 import operator
 from dateutil import parser
@@ -47,6 +46,8 @@ import localConfig
 
 # WSUDOR
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import logging
+logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import fedoraHandles
@@ -1946,7 +1947,7 @@ class WSUDOR_GenObject(object):
         # purge all
         logging.debug("PURGING ALL RELATIONSHIPS")
         for triple in triples:
-            logging.debug("%s" % triple)
+            logging.debug("%s" % str(triple))
             if type(triple[2]) == rdflib.term.Literal:
                 isLit = True
             else:
@@ -1956,7 +1957,7 @@ class WSUDOR_GenObject(object):
         # re-add
         logging.debug("RE-ADDING ALL RELATIONSHIPS")
         for triple in triples:
-            logging.debug("%s" % triple)
+            logging.debug("%s" % str(triple))
             if type(triple[2]) == rdflib.term.Literal:
                 isLit = True
             else:

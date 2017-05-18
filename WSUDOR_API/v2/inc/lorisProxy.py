@@ -115,7 +115,6 @@ def loris_info(image_id):
 		return False
 
 
-
 # Loris Image API
 '''
 IIIF Image API
@@ -160,15 +159,9 @@ def loris_image(image_id,region,size,rotation,quality,format):
 		image_url = str(ic)
 		r = requests.get(str(ic), stream=True)
 
-
-	# run improvements
-	for func in improvements:
-		ic = func(pid,ds,ic)
-	
-	# debug url
-	image_url = str(ic)
-	logging.debug("%s" % image_url)
-	r = requests.get(str(ic), stream=True)
+		# stream_with_context
+		# http://flask.pocoo.org/snippets/118/
+		return Response(r.iter_content(chunk_size=localConfig.LORIS_STREAM_CHUNK_SIZE), content_type=r.headers['Content-Type'])
 
 	# an error was had, return 500
 	else:

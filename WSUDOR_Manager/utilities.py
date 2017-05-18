@@ -10,10 +10,7 @@ import mimetypes
 import xmlrpclib
 from lxml import etree
 import re
-<<<<<<< HEAD
-=======
 import hashlib
->>>>>>> v2
 import urllib
 import os
 import sys

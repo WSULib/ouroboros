@@ -11,6 +11,8 @@ from flask import render_template, request, session, redirect, make_response, Re
 from WSUDOR_API import cache
 import WSUDOR_ContentTypes
 from WSUDOR_Manager import fedora_handle
+from WSUDOR_API import logging
+logging = logging.getChild('iiif_manifest')
 
 iiif_manifest_blueprint = Blueprint('iiif_manifest_v1', __name__)
 
@@ -31,7 +33,7 @@ def iiif_manifest(identifier):
 	While using fedora 3.x, we'll be sending the PID as the identifier
 	'''
 
-	getParams = {each:request.values.getlist(each) for each in request.values}
+	getParams = {each: request.values.getlist(each) for each in request.values}
 
 	try:
 		# fire retrieveManifest
@@ -46,7 +48,7 @@ def iiif_manifest(identifier):
 		return response
 
 	except Exception,e:
-		print "iiif_manifest call unsuccessful.  Error:",str(e)
+		logging.debug("iiif_manifest call unsuccessful.  Error: %s" % str(e))
 		return jsonify({
 				"status":"iiif_manifest call unsuccessful.",
 				"message":str(e)
@@ -72,7 +74,7 @@ def iiif_annotation_list(identifier):
 		return response
 
 	except Exception,e:
-		print "iiif_annotation_list call unsuccessful.  Error:",str(e)
+		logging.debug("iiif_annotation_list call unsuccessful.  Error: %s" % str(e))
 		return jsonify({
 				"status":"iiif_manifest call unsuccessful.",
 				"message":str(e)
@@ -92,10 +94,10 @@ def retrieveManifest(identifier):
 	# check for IIIF manifest datastream	
 	ohandle = fedora_handle.get_object(identifier)
 	if 'IIIF_MANIFEST' in ohandle.ds_list:
-		print "manifest located and retrieved from Redis"
+		logging.debug("manifest located and retrieved from Redis")
 		return ohandle.getDatastreamObject('IIIF_MANIFEST').content
 	else:
-		print "generating manifest, storing as datastream, returning"
+		logging.debug("generating manifest, storing as datastream, returning")
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(identifier)
 		# fire content-type defined manifest generation
 		return obj.genIIIFManifest()
@@ -107,8 +109,8 @@ def retrieveAnnotationList(identifier):
 	# check for IIIF manifest datastream
 	ohandle = fedora_handle.get_object(identifier)
 	if 'IIIF_ANNOLIST' in ohandle.ds_list:
-		print "annotation list located and retrieved"
+		logging.debug("annotation list located and retrieved")
 		return ohandle.getDatastreamObject('IIIF_ANNOLIST').content
 	else:
-		print "could not find annotation list for %s" % identifier
+		logging.debug("could not find annotation list for %s" % identifier)
 		return jsonify({'status':'could not find annotation list for %s' % identifier})

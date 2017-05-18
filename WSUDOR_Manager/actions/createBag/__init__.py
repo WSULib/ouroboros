@@ -1,7 +1,7 @@
 # utility for Bag Ingest
 
 # celery
-from WSUDOR_Manager import celery, roles
+from WSUDOR_Manager import celery, roles, logging
 
 # handles
 from WSUDOR_Manager.solrHandles import solr_handle
@@ -57,13 +57,13 @@ def createBag_create():
 
 	# get username
 	username = session['username']			
-	print request.form
+	logging.debug(request.form)
 	form_results = request.form
 
 	
 	# make output dir
 	try:
-		print "Making directory..."
+		logging.debug("Making directory...")
 		# os.mkdir(form_results['outputLocation'])
 	except:
 		return abort("Directory already exists or could permissions restrict")
@@ -79,13 +79,13 @@ def createBag_create():
 	content_rels = form_results['hasContentModel']
 	# this is the price of WSUDOR_ContentTypes and Fedora CM:* content types...
 	wct = "WSUDOR_"+json.loads(content_rels)['object'].split(":")[-1]
-	print "WSUDOR Content Type:",wct
+	logging.debug("WSUDOR Content Type: %s" % wct)
 	handle.content_type = wct
 
 	
 
 	# debug
-	print handle.toJSON()
+	logging.debug(handle.toJSON())
 	return handle.displayJSONWeb()
 
 

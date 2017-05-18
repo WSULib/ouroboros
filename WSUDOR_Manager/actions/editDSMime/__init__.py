@@ -11,7 +11,7 @@ from lxml import etree
 from flask import Blueprint, render_template, redirect, abort
 
 from WSUDOR_Manager.fedoraHandles import fedora_handle
-from WSUDOR_Manager import jobs, models, db, utilities, redisHandles, roles
+from WSUDOR_Manager import jobs, models, db, utilities, redisHandles, roles, logging
 
 import localConfig
 
@@ -41,7 +41,7 @@ def index(PIDnum):
 @roles.auth(['admin'], is_celery=True)
 def editDSMime_worker(job_package):
 	form_data = job_package['form_data']
-	print form_data		
+	logging.debug(form_data)
 		
 	try:
 		# get PID handle, set state, save()

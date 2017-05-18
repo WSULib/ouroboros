@@ -24,6 +24,8 @@ import localConfig
 
 # WSUDOR
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import logging
+logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import redisHandles, helpers
@@ -92,7 +94,7 @@ class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write POLICY datastream
 			# NOTE: 'E' management type required, not 'R'
-			print "Using policy:",self.objMeta['policy']
+			logging.debug("Using policy: %s" % self.objMeta['policy'])
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -108,7 +110,7 @@ class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships
 			for relationship in self.objMeta['object_relationships']:
-				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				logging.debug("Writing relationship: %s %s" (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 			
 			# writes derived RELS-EXT
@@ -117,7 +119,7 @@ class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
-			print "Writing ContentType relationship:","info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string
+			logging.debug("Writing ContentType relationship: info:fedora/fedora-system:def/relations-external#hasContentModel %s" % content_type_string)
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel",content_type_string)
 
@@ -158,7 +160,7 @@ class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 						'id':self.objMeta['id'],
 						'identifier':self.objMeta['identifier'],
 					}
-				print raw_MODS
+				logging.debug("%s" % raw_MODS)
 				MODS_handle.content = raw_MODS		
 				MODS_handle.save()
 
@@ -176,8 +178,8 @@ class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# exception handling
 		except Exception,e:
-			print traceback.format_exc()
-			print "Image Ingest Error:",e
+			logging.debug("%s" % traceback.format_exc())
+			logging.debug("Image Ingest Error: %s" % e)
 			return False
 
 

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# setup logging for WSUDOR_Indexer
+from localConfig import logging, LOGGING_STREAM, LOGGING_LEVEL
+logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
+logging = logging.getLogger('derivatives')
+
 import tempfile
 from eulfedora.models import XmlDatastreamObject
 

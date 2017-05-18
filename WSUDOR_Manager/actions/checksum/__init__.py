@@ -10,7 +10,7 @@ import datetime
 from lxml import etree
 from flask import Blueprint, render_template, redirect, abort
 
-from WSUDOR_Manager import roles
+from WSUDOR_Manager import roles, logging
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 
 
@@ -26,7 +26,7 @@ def index():
 @roles.auth(['admin','metadata','view'])
 def checksum_worker(job_package):
 	form_data = job_package['form_data']
-	print form_data
+	logging.debug(form_data)
 
 	# in confirmation present, change state
 	if form_data['confirm_string'] == "CONFIRM":
@@ -35,14 +35,14 @@ def checksum_worker(job_package):
 		target_state = form_data['target_state']
 
 		# set state	
-		print "Setting state to: %s" % (target_state)
+		logging.debug("Setting state to: %s" % (target_state))
 		
 		# get PID handle, set state, save()
 		PID = job_package['PID']		
 		obj_ohandle = fedora_handle.get_object(PID)		
 		obj_ohandle = obj_ohandle.ds_list
 		for (name, loc) in obj_ohandle.items():
-			print name
+			logging.debug(name)
 
 		# getDatastreamObject('ACCESS').checksum_type
 		# getDatastreamObject('ACCESS').checksum

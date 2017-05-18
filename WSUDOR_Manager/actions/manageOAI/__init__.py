@@ -11,7 +11,7 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.jobs import getSelPIDs
 from WSUDOR_Manager import models
 from WSUDOR_Manager import db
-from WSUDOR_Manager import utilities, roles
+from WSUDOR_Manager import utilities, roles, logging
 from localConfig import *
 from WSUDOR_Manager import redisHandles
 from flask import Blueprint, render_template, abort, request, redirect
@@ -95,11 +95,11 @@ def index():
 	q_results = con.store_result()
 	overview['queue_count'] = q_results.num_rows()
 	if overview['queue_count'] > 0:
-		print "PROAI has queue, still syncing..."
+		logging.debug("PROAI has queue, still syncing...")
 		
 
 	# DEBUG
-	# print overview
+	# logging.debug(overview)
 	
 	return render_template("manageOAI_index.html", overview=overview, APP_HOST=localConfig.APP_HOST)
 
@@ -179,7 +179,7 @@ def objectRelated():
 	# 		except:
 	# 			curr_set = set(chunk_list)
 
-	# 	print curr_set
+	# 	logging.debug(curr_set)
 	# 	shared_relationships = curr_set		
 
 	# else:		
@@ -187,7 +187,7 @@ def objectRelated():
 	# 	risearch = risearchQuery(PIDs)
 	# 	shared_relationships = [ (each['object'].split("/")[1],each['setSpec'], each['setName']) for each in risearch['results'] ]
 
-	# print shared_relationships
+	# logging.debug(shared_relationships)
 
 	# # finally, find all currently available / defined sets	
 	# form = forms.OAI_sets()
@@ -210,7 +210,7 @@ def manageOAI_genItemID_worker(job_package):
 	# generate OAI identifier
 	OAI_identifier = "oai:digital.library.wayne.edu:%s" % (PID)	
 	
-	print obj_ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", OAI_identifier)
+	logging.debug(obj_ohandle.add_relationship("http://www.openarchives.org/OAI/2.0/itemID", OAI_identifier))
 	
 
 @manageOAI.route('/manageOAI/toggleSet/<PID>', methods=['POST', 'GET'])
@@ -230,23 +230,23 @@ def manageOAI_toggleSet(PID):
 
 	# toggle collection OAI relatedd RELS-EXT relationships	
 	if harvest_status == "False":
-		print "Object was not harvestable, enabling..."
-		print obj_ohandle.modify_relationship(isOAIHarvestable_predicate, "False", "True")	
+		logging.debug("Object was not harvestable, enabling...")
+		logging.debug(obj_ohandle.modify_relationship(isOAIHarvestable_predicate, "False", "True")	)
 		toggle_function = obj_ohandle.add_relationship
 	if harvest_status == "True":
-		print "Object was harvestable, deactivating..."
-		print obj_ohandle.modify_relationship(isOAIHarvestable_predicate, "True", "False")	
+		logging.debug("Object was harvestable, deactivating...")
+		logging.debug(obj_ohandle.modify_relationship(isOAIHarvestable_predicate, "True", "False")	)
 		toggle_function = obj_ohandle.purge_relationship
 		
 	# setSpec relationship	
 	predicate_string = "http://www.openarchives.org/OAI/2.0/setSpec"
 	object_string = "set:%s" % (PID)
-	print toggle_function(predicate_string, object_string)
+	logging.debug(toggle_function(predicate_string, object_string))
 
 	# setName relationship	
 	predicate_string = "http://www.openarchives.org/OAI/2.0/setName"
 	object_string = dc_title
-	print toggle_function(predicate_string, object_string)
+	logging.debug(toggle_function(predicate_string, object_string))
 
 
 	# toggle relationships for child objects (runs as celery task)	
@@ -297,10 +297,10 @@ def manageOAI_toggleSet_worker(self,harvest_status,object_uri,collectionPID):
 
 	# toggle collection OAI relatedd RELS-EXT relationships	
 	if harvest_status == "False":
-		print "%s was not part of set, enabling..." % (PID)		
+		logging.debug("%s was not part of set, enabling..." % (PID)		)
 		toggle_function = obj_handle.add_relationship
 	if harvest_status == "True":
-		print "%s was harvestable, deactivating..." % (PID)		
+		logging.debug("%s was harvestable, deactivating..." % (PID)		)
 		toggle_function = obj_handle.purge_relationship
 		
 	# isMemberOfOAISet relationship		
@@ -333,25 +333,25 @@ def purgePROAI():
 	tm = TomcatManager(url="http://localhost:8080/manager/text", userid=TOMCAT_USER, password=TOMCAT_PASSWORD)
 
 	# stop PROAI (gets path from localConfig.py)
-	print "Stopping PROAI"
+	logging.debug("Stopping PROAI")
 	tm.stop(TOMCAT_PROAI_PATH)
 
 	# purge disc cache
-	print "Delete cache"
+	logging.debug("Delete cache")
 	command = ['sudo','-S','rm','-r','%s/*' % PROAI_CACHE_LOCATION]
-	print command
+	logging.debug(command)
 	p = Popen(command, stdin=PIPE, stderr=PIPE, universal_newlines=True)
 	sudo_prompt = p.communicate(USER_SUDO_PASSWORD + '\n')[1]
 
 	# truncate MySQL tables
 	con = _mysql.connect('localhost','WSUDOR_Manager','WSUDOR_Manager','proai')
 	for table in PROAI_TABLES:
-		print "Deleting rows from",table
+		logging.debug("Deleting rows from %s" % table)
 		con.query('DELETE FROM %s' % (table))
 	con.close()
 
 	# restart PROAI
-	print "Starting PROAI"
+	logging.debug("Starting PROAI")
 	tm.start(TOMCAT_PROAI_PATH)
 
 	return redirect("/%s/tasks/manageOAI" % APP_PREFIX)
@@ -361,7 +361,7 @@ def purgePROAI():
 @roles.auth(['admin','metadata'], is_celery=True)
 def exposeToDPLA_worker(job_package):
 
-	print "adding to DPLAOAI set"
+	logging.debug("adding to DPLAOAI set")
 
 	# get PID
 	PID = job_package['PID']		
@@ -375,7 +375,7 @@ def exposeToDPLA_worker(job_package):
 @roles.auth(['admin','metadata'], is_celery=True)
 def removeFromDPLA_worker(job_package):
 
-	print "purging from DPLAOAI set"
+	logging.debug("purging from DPLAOAI set")
 
 	# get PID
 	PID = job_package['PID']		

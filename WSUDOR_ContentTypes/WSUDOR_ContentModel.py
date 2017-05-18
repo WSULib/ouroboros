@@ -24,6 +24,8 @@ from WSUDOR_Manager import redisHandles
 
 # import WSUDORntentTypes
 import WSUDOR_ContentTypes
+from WSUDOR_ContentTypes import logging
+logging = logging.getChild("WSUDOR_Object")
 
 
 class WSUDOR_ContentModel(WSUDOR_ContentTypes.WSUDOR_GenObject):
@@ -74,7 +76,7 @@ class WSUDOR_ContentModel(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			self.ohandle.label = self.objMeta['label']
 
 			# write POLICY datastream (NOTE: 'E' management type required, not 'R')
-			print "Using policy:",self.objMeta['policy']
+			logging.debug("Using policy: %s" % self.objMeta['policy'])
 			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
@@ -89,7 +91,7 @@ class WSUDOR_ContentModel(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
-				print "Writing relationship:",str(relationship['predicate']),str(relationship['object'])
+				logging.debug("Writing relationship: %s %s" % (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 					
 			# writes derived RELS-EXT
@@ -113,8 +115,8 @@ class WSUDOR_ContentModel(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# exception handling
 		except Exception,e:
-			print traceback.format_exc()
-			print "ContentModel Ingest Error:",e
+			logging.debug("%s" % traceback.format_exc())
+			logging.debug("ContentModel Ingest Error: %s" % e)
 			return False
 
 		

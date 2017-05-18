@@ -23,6 +23,7 @@ import json
 import os
 import bagit
 import mimetypes
+from WSUDOR_Manager import logging
 
 
 # define required `BagClass` class
@@ -59,7 +60,7 @@ class BagClass(object):
             ns = MODS_root.nsmap
             self.MODS_handle = MODS_root.xpath('//mods:mods', namespaces=ns)[0]
         except:
-            print "could not parse MODS from DB string"         
+            logging.debug("could not parse MODS from DB string")
 
         # future
         self.objMeta_handle = None
@@ -114,7 +115,7 @@ class BagClass(object):
 
         # set identifier
         self.full_identifier = self.DMDID
-        print self.full_identifier
+        logging.debug("%s" % self.full_identifier)
 
         # generate PID
         self.pid = "wayne:%s" % (self.full_identifier)

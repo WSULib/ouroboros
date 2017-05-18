@@ -15,7 +15,7 @@ import localConfig
 from WSUDOR_API import logging
 
 # modules
-from flask import redirect
+from flask import redirect, Response
 import flask_restful
 from flask_restful import abort, fields, reqparse, Resource
 
@@ -31,6 +31,7 @@ import utilities
 from inc.bitStream import BitStream
 from inc.lorisProxy import loris_image, loris_info
 from inc.iiif_manifest import iiif_manifest, iiif_annotation_list
+from inc.oai import OAIProvider
 
 
 # ResponseObject
@@ -118,12 +119,12 @@ class Item(Resource):
 				if not self.obj:
 					abort(404, message='%s not found in Fedora' % pid)
 			else:
-				logging.info("loading as WSUDOR object")
+				logging.debug("loading as WSUDOR object")
 				self.obj = WSUDOR_Object(pid)
 				if not self.obj:
 					abort(404, message='%s not found' % pid)
 		else:
-			logging.info('skipping item check and load')
+			logging.debug('skipping item check and load')
 
 
 	def get_item_metadata(self):
@@ -132,7 +133,7 @@ class Item(Resource):
 		try:
 			ct = self.obj.SolrDoc.asDictionary()['rels_preferredContentModel'][0].split('/')[-1].split(':')[-1]
 		except:
-			logging.info("could not determine content type, setting None")
+			logging.debug("could not determine content type, setting None")
 			ct = None
 
 		# run content-type api additions
@@ -494,8 +495,8 @@ class Search(Resource):
 		args = parser.parse_args()
 
 		# log incoming API args
-		logging.info("Incoming args from search request:")
-		logging.info(args)
+		logging.debug("Incoming args from search request:")
+		logging.debug(args)
 
 		# set and pop custom fields
 		for custom_field in ['skip_defaults','isDiscoverable','field_skip_escape']:
@@ -514,13 +515,13 @@ class Search(Resource):
 		'''
 		for k,v in self.args.iteritems():
 			if k.endswith('[]'):
-				logging.info("stripping '[]' suffix from pair: %s / %s" % (k,v))
+				logging.debug("stripping '[]' suffix from pair: %s / %s" % (k,v))
 				self.args[k.rstrip('[]')] = v
 				del self.args[k]
 
 		# log post processing
-		logging.info("Post-Processing args from search request:")
-		logging.info(self.args)
+		logging.debug("Post-Processing args from search request:")
+		logging.debug(self.args)
 
 		# if q = '', remove, falls back on default "*:*"
 		if 'q' in self.args.keys() and self.args['q'] == '':
@@ -528,8 +529,8 @@ class Search(Resource):
 
 
 	def execute_search(self, include_item_metadata=True):
-		logging.info("Merged parameters for search request:")
-		logging.info(self.params)
+		logging.debug("Merged parameters for search request:")
+		logging.debug(self.params)
 		self.search_results = solr_search_handle.search(**self.params)		
 		logging.debug(self.search_results.raw_content)
 		# success
@@ -763,6 +764,35 @@ class UserWhoami(Resource):
 
 		# return response		
 		return response.generate_response()
+
+
+# OAI-PMH
+#################################################################################
+class OAIServer(Resource):
+
+	def get(self):
+
+		# parse OAI-PMH arguments
+		parser = reqparse.RequestParser(bundle_errors=True)
+		# oai_verbs = ('GetRecord','Identify','ListIdentifiers','ListMetadataFormats','ListRecords','ListSets')
+		# parser.add_argument('verb', type=str, choices=oai_verbs, help='OAI-PMH verb required: %s' % str(oai_verbs))
+		parser.add_argument('verb', type=str, help='OAI-PMH verb')
+		parser.add_argument('set', type=str, help='OAI-PMH set')
+		parser.add_argument('metadataPrefix', type=str, help='OAI-PMH metadataPrefix')
+		parser.add_argument('identifier', type=str, help='OAI-PMH identifier')
+		parser.add_argument('from', type=str, help='OAI-PMH from')
+		parser.add_argument('until', type=str, help='OAI-PMH until')
+		parser.add_argument('resumptionToken', type=str, help='OAI-PMH resumptionToken')
+		args = parser.parse_args(strict=True)
+
+		# debug
+		logging.debug("OAI-PMH request args: %s" % args)
+		
+		# init OAIProvider
+		op = OAIProvider(args)
+
+		# build and return response
+		return Response(op.generate_response(), mimetype="text/xml")
 
 		
 # Testing

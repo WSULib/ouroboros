@@ -8,11 +8,11 @@ LOGGING_LEVEL = logging.DEBUG
 LOGGING_STREAM = sys.stdout
 
 # Public Facing Host
-PUBLIC_HOST = "192.168.42.5"
+PUBLIC_HOST = "digidev.library.wayne.edu"
 
 # Ouroboros version name
 APP_NAME = "fedora-stack-ouroboros"
-APP_HOST = "192.168.42.5"
+APP_HOST = "digidev.library.wayne.edu"
 
 # APP URL 
 '''
@@ -144,13 +144,6 @@ OAI_RECORDS_PAGINATION = 250
 ################################
 # sensitive information
 ################################
-
-# Fedora Repository settings
-FEDORA_ROOT = 'http://localhost:8080/fedora/'
-FEDORA_USER = 'fedoraAdmin'
-FEDORA_PASSWORD = 'fedorapassword'
-FEDORA_PIDSPACE = 'wayne'
-
 # Tomcat 7
 TOMCAT_USER = 'tomcat'
 TOMCAT_PASSWORD = 'tomcat'
@@ -184,7 +177,6 @@ DEFAULT_ADMIN_USERS = [
 # Remote Repositories
 
 '''
-
 'REMOTE_REPOSITORIES' is a mapping of Fedora instances reachable by this
 instance of Ouroboros.
 
@@ -198,13 +190,11 @@ instance of Ouroboros.
 'REPOSITORY_NAME' is the repository name of this server.
 
 	This variable acts as a key for the 'REMOTE_REPOSITORIES' dictionary described 
-	below, but it is unlikely you'll need it in this context.  'fedoraHandles.py' 
-	opens a local handle to Fedora under 'fedora_handle' that is mapped to the values 
-	above: FEDORA_ROOT, FEDORA_USER, FEDORA_PASSWORD, FEDORA_PIDSPACE.
-
+	below.  'fedoraHandles.py' opens a local handle to Fedora under 'fedora_handle'
+	that is mapped to the values below: FEDORA_ROOT, FEDORA_USER, FEDORA_PASSWORD, FEDORA_PIDSPACE.
 '''
 
-REPOSITORY_NAME = 'fedora-stack-prod'
+REPOSITORY_NAME = 'local'
 REMOTE_REPOSITORIES = {
 	'local' : {
 		'OUROBOROS_BASE_URL':'http://localhost/ouroboros',
@@ -212,9 +202,14 @@ REMOTE_REPOSITORIES = {
 		'FEDORA_USERNAME':'fedoraAdmin',
 		'FEDORA_PASSWORD':'fedorapassword',
 		'SOLR_ROOT':'http://localhost/solr4',
-		'IIIF_MANIFEST_TARGET_HOST':'192.168.42.5'
-	}	
+		'IIIF_MANIFEST_TARGET_HOST':PUBLIC_HOST
+	}
 }
+# Fedora Repository settings
+FEDORA_ROOT = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_ROOT']
+FEDORA_USER = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_USERNAME']
+FEDORA_PASSWORD = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_PASSWORD']
+FEDORA_PIDSPACE = 'wayne'
 
 
 

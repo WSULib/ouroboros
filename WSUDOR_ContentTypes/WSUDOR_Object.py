@@ -482,7 +482,7 @@ class WSUDOR_GenObject(object):
 
         # write/update all rels
         for rel_tuple in rels_to_write:
-            logging.debug("%s" % rel_tuple)
+            logging.debug("%s" % str(rel_tuple))
             # check if relationship exists
             vals = fedora_handle.risearch.get_objects(rel_tuple[1],rel_tuple[2])
             for val in vals:

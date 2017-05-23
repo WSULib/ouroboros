@@ -121,7 +121,7 @@ def tableWipe():
 
 # logs
 def tailUserCelery(user):
-	os.system("tail -f /var/log/celery-%s.err.log" % user)
+	os.system("tail -f /var/log/celery-%s.out.log" % user)
 
 
 # function to grab single object from remote repository

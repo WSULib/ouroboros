@@ -356,8 +356,9 @@ class WSUDOR_GenObject(object):
         XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
         xslt_tree = etree.parse(XSLhand)
         transform = etree.XSLT(xslt_tree)
-        # raw, unmodified RDF via Eulfedora
-        raw_xml = self.ohandle.rels_ext.content.serialize()
+        # raw, unmodified RDF
+        raw_xml_URL = "%s/objects/%s/datastreams/RELS-EXT/content" % (localConfig.FEDORA_ROOT.rstrip('/'), self.pid)
+        raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
         XMLroot = etree.fromstring(raw_xml)
         SolrXML = transform(XMLroot)
         return xmltodict.parse(str(SolrXML))
@@ -369,8 +370,9 @@ class WSUDOR_GenObject(object):
         XSLhand = open('inc/xsl/RELS-EXT_extract.xsl','r')
         xslt_tree = etree.parse(XSLhand)
         transform = etree.XSLT(xslt_tree)
-        # raw, unmodified RDF via Eulfedora
-        raw_xml = self.ohandle.getDatastreamObject('RELS-INT').content.serialize()
+        # raw, unmodified RDF
+        raw_xml_URL = "%s/objects/%s/datastreams/RELS-INT/content" % (localConfig.FEDORA_ROOT.rstrip('/'), self.pid)
+        raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
         XMLroot = etree.fromstring(raw_xml)
         SolrXML = transform(XMLroot)
         return xmltodict.parse(str(SolrXML))

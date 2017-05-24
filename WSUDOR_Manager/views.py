@@ -167,8 +167,19 @@ def systemStatus():
     except:
         sup_info['celery']['generic_worker'] = False
 
+    # ping repository
+    repository=localConfig.REMOTE_REPOSITORIES[localConfig.REPOSITORY_NAME]
+    repository['type'] = localConfig.REPOSITORY_NAME
+    repository['FEDCONSUMER_FIRE'] = localConfig.FEDCONSUMER_FIRE
+    r = requests.get("%s/describe" % fedora_handle.fedora_root)
+    if r.status_code == 200:
+        repository['connection_status'] = True
+    else:
+        logging.debug(r.status_code)
+        repository['connection_status'] = False
+
     # render template
-    return render_template("systemStatus.html", imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)
+    return render_template("systemStatus.html", repository=repository, imp_ports_results=imp_ports_results, ouroboros_info=ouroboros_info, sup_info=sup_info)
 
 
 @app.route('/systemStatus/cw/<target>/<action>')

@@ -98,9 +98,6 @@ WSUDOR_Manager_site = Site(WSUDOR_Manager_resource)
 WSUDOR_API_resource = WSGIResource(reactor, reactor.getThreadPool(), WSUDOR_API_app)
 WSUDOR_API_site = Site(WSUDOR_API_resource)
 
-def testing(result):
-    logging.debug(result)
-
 if __name__ == '__main__':
 
     # write PID to /var/run
@@ -122,8 +119,10 @@ if __name__ == '__main__':
         logging.debug("Starting Fedora JSM consumer...")
         fedora_jms_consumer = FedoraJMSConsumer()
         fedora_jms_consumer.run()
-        indexer = LoopingCall(IndexRouter.poll)
-        indexer.start(INDEXER_POLL_DELAY, now=False)
+
+    # fire IndexWorker loop
+    indexer = LoopingCall(IndexRouter.poll)
+    indexer.start(INDEXER_POLL_DELAY, now=False)
 
     logging.info('''
                 ::+:/`

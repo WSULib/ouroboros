@@ -14,6 +14,54 @@ PUBLIC_HOST = "digidev.library.wayne.edu"
 APP_NAME = "fedora-stack-ouroboros"
 APP_HOST = "digidev.library.wayne.edu"
 
+# Fedora Repositories
+
+'''
+'REMOTE_REPOSITORIES' is a mapping of Fedora instances reachable by this
+instance of Ouroboros.
+
+	Below is a sample configuration for a swarm of Vagrant Virtual Machines,
+	but it is likely these will have to be configured in production to point
+	at actual machines.
+
+	This dictionary will populate drop-downs across  Ouroboros related to
+	ingest, sending objects, etc.
+
+'REPOSITORY_NAME' is the repository name of this server.
+
+	This variable acts as a key for the 'REMOTE_REPOSITORIES' dictionary described 
+	below.  'fedoraHandles.py' opens a local handle to Fedora under 'fedora_handle'
+	that is mapped to the values below: FEDORA_ROOT, FEDORA_USER, FEDORA_PASSWORD, FEDORA_PIDSPACE.
+'''
+
+REPOSITORY_NAME = 'local'
+REMOTE_REPOSITORIES = {
+	'local' : {
+		'OUROBOROS_BASE_URL':'http://localhost/ouroboros',
+		'FEDORA_HOST':'localhost',
+		'FEDORA_ROOT':'http://localhost/fedora',
+		'FEDORA_USERNAME':'fedoraAdmin',
+		'FEDORA_PASSWORD':'fedorapassword',
+		'SOLR_ROOT':'http://localhost/solr4',
+		'IIIF_MANIFEST_TARGET_HOST':PUBLIC_HOST
+	},
+	'remote' : {
+		'OUROBOROS_BASE_URL':'http://x.x.x.x/ouroboros',
+		'FEDORA_HOST':'x.x.x.x',
+		'FEDORA_ROOT':'http://x.x.x.x/fedora',
+		'FEDORA_USERNAME':'fedoraAdmin',
+		'FEDORA_PASSWORD':'fedorapassword',
+		'SOLR_ROOT':'http://x.x.x.x/solr4',
+		'IIIF_MANIFEST_TARGET_HOST':PUBLIC_HOST
+	}
+}
+# Fedora Repository settings
+FEDORA_HOST = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_HOST']
+FEDORA_ROOT = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_ROOT']
+FEDORA_USER = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_USERNAME']
+FEDORA_PASSWORD = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_PASSWORD']
+FEDORA_PIDSPACE = 'wayne'
+
 # APP URL 
 '''
 If you would like to use now prefix for the app, set the following:
@@ -39,14 +87,15 @@ API_SKIP_CACHE = True
 API_CACHE_TIMEOUT = 600
 API_DEFAULT_VERSION = 1
 
-# STOMP client for Fedora JMS 
-FEDCONSUMER_FIRE = False
-FEDCONSUMER_PORT = 61616
-
 # Solr 
 SOLR_MANAGE_CORE = 'fedobjs'
 SOLR_SEARCH_CORE = 'fedobjs'
 SOLR_BOOKREADER_CORE = 'bookreader'
+
+# STOMP client for Fedora JMS 
+FEDCONSUMER_FIRE = True
+FEDCONSUMER_HOST = FEDORA_HOST # or manuall configure e.g. 'localhost'
+FEDCONSUMER_PORT = 61616
 
 # WSUDOR_Indexer
 INDEXER_AUTOINDEX = True
@@ -174,42 +223,7 @@ DEFAULT_ADMIN_USERS = [
 	}	
 ]
 
-# Remote Repositories
 
-'''
-'REMOTE_REPOSITORIES' is a mapping of Fedora instances reachable by this
-instance of Ouroboros.
-
-	Below is a sample configuration for a swarm of Vagrant Virtual Machines,
-	but it is likely these will have to be configured in production to point
-	at actual machines.
-
-	This dictionary will populate drop-downs across  Ouroboros related to
-	ingest, sending objects, etc.
-
-'REPOSITORY_NAME' is the repository name of this server.
-
-	This variable acts as a key for the 'REMOTE_REPOSITORIES' dictionary described 
-	below.  'fedoraHandles.py' opens a local handle to Fedora under 'fedora_handle'
-	that is mapped to the values below: FEDORA_ROOT, FEDORA_USER, FEDORA_PASSWORD, FEDORA_PIDSPACE.
-'''
-
-REPOSITORY_NAME = 'local'
-REMOTE_REPOSITORIES = {
-	'local' : {
-		'OUROBOROS_BASE_URL':'http://localhost/ouroboros',
-		'FEDORA_ROOT':'http://localhost/fedora',
-		'FEDORA_USERNAME':'fedoraAdmin',
-		'FEDORA_PASSWORD':'fedorapassword',
-		'SOLR_ROOT':'http://localhost/solr4',
-		'IIIF_MANIFEST_TARGET_HOST':PUBLIC_HOST
-	}
-}
-# Fedora Repository settings
-FEDORA_ROOT = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_ROOT']
-FEDORA_USER = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_USERNAME']
-FEDORA_PASSWORD = REMOTE_REPOSITORIES[REPOSITORY_NAME]['FEDORA_PASSWORD']
-FEDORA_PIDSPACE = 'wayne'
 
 
 

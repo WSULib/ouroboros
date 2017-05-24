@@ -45,8 +45,8 @@ class FedoraJMSConsumer(object):
 
 	def __init__(self, config=None):
 		if config is None:
-			config = StompConfig(uri='tcp://localhost:%s' % (localConfig.FEDCONSUMER_PORT))
-			config = StompConfig(uri='failover:(tcp://localhost:%s)?randomize=false,startupMaxReconnectAttempts=3,initialReconnectDelay=5000,maxReconnectDelay=5000,maxReconnectAttempts=20' % (localConfig.FEDCONSUMER_PORT))
+			config = StompConfig(uri='tcp://%s:%s' % (localConfig.FEDCONSUMER_HOST, localConfig.FEDCONSUMER_PORT))
+			config = StompConfig(uri='failover:(tcp://%s:%s)?randomize=false,startupMaxReconnectAttempts=3,initialReconnectDelay=5000,maxReconnectDelay=5000,maxReconnectAttempts=20' % (localConfig.FEDCONSUMER_HOST, localConfig.FEDCONSUMER_PORT))
 		self.config = config
 		self.subscription_token = None
 

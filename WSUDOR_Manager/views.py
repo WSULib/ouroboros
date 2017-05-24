@@ -247,10 +247,10 @@ def version():
     commit = subprocess.Popen("git rev-parse --short HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
     origin = subprocess.Popen("git fetch && git rev-parse --short origin/"+branch, shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
     url = subprocess.Popen("git config --get remote.origin.url", shell=True, stdout=subprocess.PIPE).stdout.read().rstrip(".git\n")
-    color_level = "style=background-color:rgb(211,255,211);"
+    color_level = "style=background-color:rgb(211,255,211);padding:5px;"
 
     if commit != origin:
-        color_level = "style=background-color:rgb(255,211,211);"
+        color_level = "style=background-color:rgb(255,211,211);padding:5px;"
 
     return "<span "+color_level+">Build #<a href="+url+"/commit/"+commit+">"+commit+"</a> on branch "+branch+"</span>"
 

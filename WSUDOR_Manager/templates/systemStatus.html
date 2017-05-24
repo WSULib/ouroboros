@@ -15,62 +15,95 @@
 
 <div class="row">
 
-	<div class="col-md-12">
+	<div class="col-md-6">
 
-		<div class="col-md-6">
-				<h3>Ouroboros Supervisor Process</h3>
-				<p id="ouro_state"></p>
-				<pre><code class="highlight" id="ouroboros"></code></pre>
-				<script type="text/javascript">
-					var ouroboros = '{{ouroboros_info|safe}}';					
-					if (ouroboros == "False") {
-						$("#ouroboros").html("Ouroboros not found as Supervisor process.");	
-					}
-					else {
-						var ouroboros_JSON = JSON.parse(ouroboros);
-						if (ouroboros_JSON.statename == "STOPPED") {
-							console.log("Note: Detected Ouroboros not running as Supervisor process");
-							$("#ouro_state").html("<span style='color:red;'>Note: Detected Ouroboros not running as Supervisor process</span>");
-						}
-						var str = JSON.stringify(ouroboros_JSON, null, 2);
-						$("#ouroboros").html(str);
-					}
-				</script>		
-				<!-- <a href="/{{APP_PREFIX}}/systemStatus/restartOuroboros"><button class="btn btn-danger">Restart Ouroboros (will have to manually restart)</button></a> -->
-			</div>
+		<h3>Services</h3>		
 
-		<div class="col-md-6">
+		<table class="table">
+			<tr>
+				<td><strong>Name</strong></td>
+				<td><strong>Port</strong></td>
+				<td><strong>Status</strong></td>
+			</tr>
+			{% for port,desc,msg in imp_ports_results %}
+			<tr>
+				{% if msg == 'active' %}	
+					<td style="color:green;">{{desc}}</td>
+					<td style="color:green;">{{port}}</td>
+					<td style="color:green;"><strong>{{msg}}</strong></td>
+				{% else %}
+					<td style="color:red;">{{desc}}</td>
+					<td style="color:red;">{{port}}</td>
+					<td style="color:red;"><strong>{{msg}}</strong></td>
+				{% endif %}
+			</tr>
+			{% endfor %}
+		</table>
 
-			<h3>Ports</h3>		
+	</div>
 
-			<table class="table">
-				<tr>
-					<td><strong>Service</strong></td>
-					<td><strong>Port</strong></td>
-					<td><strong>Status</strong></td>
-				</tr>
-				{% for port,desc,msg in imp_ports_results %}
-				<tr>
-					{% if msg == 'active' %}	
-						<td style="color:green;">{{desc}}</td>
-						<td style="color:green;">{{port}}</td>
-						<td style="color:green;"><strong>{{msg}}</strong></td>
-					{% else %}
-						<td style="color:red;">{{desc}}</td>
-						<td style="color:red;">{{port}}</td>
-						<td style="color:red;"><strong>{{msg}}</strong></td>
-					{% endif %}
-				</tr>
-				{% endfor %}
-			</table>
+	<div class="col-md-6">
 
-		</div>
+		<h3>Associated Fedora Repository</h3>		
+
+		<table class="table">			
+			<tr>
+				<td><strong>Type</strong></td>
+				<td>{{repository.type}}</td>
+			</tr>
+			<tr>
+				<td><strong>Host</strong></td>
+				<td>{{repository.FEDORA_ROOT}}</td>
+			</tr>
+			<tr>
+				<td><strong>Username</strong></td>
+				<td>{{repository.FEDORA_USERNAME}}</td>
+			</tr>
+			<tr>
+				<td><strong>Monitoring Fedora JMS?</strong></td>
+				{% if repository.FEDCONSUMER_FIRE %}
+					<td><span style="color:green;"><strong>True</strong></span></td>
+				{% else %}
+					<td><span style="color:red;"><strong>False</strong></span></td>
+				{% endif %}
+			</tr>
+			<tr>
+				<td><strong>Connection Status</strong></td>
+				{% if repository.connection_status %}
+					<td><span style="color:green;"><strong>Connected</strong></span></td>
+				{% else %}
+					<td><span style="color:red;"><strong>Disconnected</strong></span></td>
+				{% endif %}
+			</tr>
+		</table>
 
 	</div>
 
 </div>
 
-<hr>
+<div class="row">
+	<div class="col-md-6">
+		<h3>Ouroboros Supervisor Process</h3>
+		<p id="ouro_state"></p>
+		<pre><code class="highlight" id="ouroboros"></code></pre>
+		<script type="text/javascript">
+			var ouroboros = '{{ouroboros_info|safe}}';					
+			if (ouroboros == "False") {
+				$("#ouroboros").html("Ouroboros not found as Supervisor process.");	
+			}
+			else {
+				var ouroboros_JSON = JSON.parse(ouroboros);
+				if (ouroboros_JSON.statename == "STOPPED") {
+					console.log("Note: Detected Ouroboros not running as Supervisor process");
+					$("#ouro_state").html("<span style='color:red;'>Note: Detected Ouroboros not running as Supervisor process</span>");
+				}
+				var str = JSON.stringify(ouroboros_JSON, null, 2);
+				$("#ouroboros").html(str);
+			}
+		</script>		
+		<!-- <a href="/{{APP_PREFIX}}/systemStatus/restartOuroboros"><button class="btn btn-danger">Restart Ouroboros (will have to manually restart)</button></a> -->
+	</div>	
+</div>
 
 <div class="row">
 

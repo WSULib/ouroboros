@@ -397,7 +397,7 @@ class WSUDOR_GenObject(object):
 
         # retrieve from LMDB database
         with lmdb_env.begin(write=False) as txn:
-            return txn.get('%s_iiif_manifest' % (self.pid))
+            return txn.get('%s_iiif_manifest' % (self.pid.encode('utf-8')))
 
 
     # PREMIS client

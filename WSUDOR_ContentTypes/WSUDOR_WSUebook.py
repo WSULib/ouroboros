@@ -31,6 +31,7 @@ logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager import solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager.lmdbHandles import lmdb_env
 from WSUDOR_Manager import redisHandles, helpers, utilities
 
 # localconfig
@@ -498,22 +499,15 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			anno = annol.annotation()
 			anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
 
-			# push annotationList to page object
-			'''
-			Automatically updates / overwrites
-			'''
-			logging.debug("Inserting annotation list for %s as object datastream..." % page_handle.pid)
-			ds_handle = eulfedora.models.DatastreamObject(page_handle.ohandle, "IIIF_ANNOLIST", "IIIF_ANNOLIST", mimetype="application/json", control_group="M")
-			ds_handle.label = "IIIF_ANNOLIST"
-			ds_handle.content = annol.toString()
-			ds_handle.save()
+			# save annotationList to LMDB database
+			logging.debug("Saving annotation list for %s in LMDB database" % page_handle.pid)
+			with lmdb_env.begin(write=True) as txn:
+				txn.put('%s_iiif_annotation_list' % (page_handle.pid.encode('utf-8')), annol.toString().encode('utf-8'))
 
-		# create datastream with IIIF manifest and return JSON string
-		logging.debug("Inserting manifest for %s as object datastream..." % self.pid)
-		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "IIIF_MANIFEST", "IIIF_MANIFEST", mimetype="application/json", control_group="M")
-		ds_handle.label = "IIIF_MANIFEST"
-		ds_handle.content = manifest.toString()
-		ds_handle.save()
+		# save manifest to LMDB database
+		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
+		with lmdb_env.begin(write=True) as txn:
+			txn.put('%s_iiif_manifest' % (self.pid.encode('utf-8')), manifest.toString().encode('utf-8'))
 
 		return manifest.toString()
 

@@ -117,7 +117,7 @@ def retrieveAnnotationList(identifier):
 
 	# check for IIIF manifest in LMDB	
 	with lmdb_env.begin(write=False) as txn:
-		im = txn.get('%s_iiif_annotation_list' % (identifier))
+		im = txn.get('%s_iiif_annotation_list' % (identifier.encode('utf-8')))
 
 	# annotation list found, returning
 	if im:

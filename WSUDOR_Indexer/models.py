@@ -386,6 +386,9 @@ class IndexRouter(object):
 		# Get Objects/Datastreams modified on or after this date
 		# Returns streaming socket iterator with PIDs
 		'''
+
+		# index control objects
+		# self.queue_control()
 		
 		risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/fedora-system:FedoraObject-3.0> and $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '%s'^^<xml-schema:dateTime> in <#xsd>" % (self.last_index_date())
 
@@ -415,6 +418,9 @@ class IndexRouter(object):
 
 	@classmethod
 	def queue_all(self, username=None, priority=1, action='index'):
+
+		# index control objects
+		# self.queue_control()
 		
 		all_pids = fedora_handle.find_objects("*")
 
@@ -428,7 +434,28 @@ class IndexRouter(object):
 		self.update_last_index_date()
 
 
+	@classmethod
+	def queue_control(self, username=None, priority=2, action='index'):
 
+		'''
+		prioritize the indexing of "control" objects in Fedora that are 
+		integral for indexing normal objects
+		'''
+
+		# create ordered list of pids
+		ordered_pids = []
+
+		# content models
+		ordered_pids.extend(list(fedora_handle.find_objects("CM:*")))
+
+		# index collection objects
+		ordered_pids.extend(list(fedora_handle.find_objects("wayne:collection*")))
+
+		# for each in list, add to queue
+		for pid in ordered_pids:
+			# skip control objectcs for queue_all()
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
+				self.queue_object(pid, username, priority, action)
 
 
 

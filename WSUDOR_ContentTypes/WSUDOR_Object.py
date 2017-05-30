@@ -1063,6 +1063,7 @@ class WSUDOR_GenObject(object):
                 pid = pid.split("/")[1]
                 if pid in human_hash['content_types']:
                     human_content_types.append(human_hash['content_types'][pid])
+            # set list
             setattr(self.SolrDoc.doc, "human_hasContentModel", human_content_types)
 
 

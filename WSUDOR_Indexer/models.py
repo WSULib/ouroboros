@@ -441,25 +441,43 @@ class IndexRouter(object):
 		prioritize the indexing of "control" objects in Fedora that are 
 		integral for indexing normal objects.
 		'''
-
 		# create ordered list of pids
-		ordered_pids = []
+		ordered_objs = []
 
 		# content models
-		ordered_pids.extend(list(fedora_handle.find_objects("CM:*")))
+		ordered_objs.extend(list(fedora_handle.find_objects("CM:*")))
 
 		# index collection objects
-		ordered_pids.extend(list(fedora_handle.find_objects("wayne:collection*")))
+		ordered_objs.extend(list(fedora_handle.find_objects("wayne:collection*")))
+
+		# ping solr to create set of versions for control objects
+		s = solr_handle.search(**{'q':" OR ".join( ['id:%s' % obj.pid.replace(":","\:") for obj in ordered_objs] ),'fl':'_version_'})
+		control_versions_set = {doc['_version_'] for doc in s.documents}
 
 		# for each in list, add to queue
-		for pid in ordered_pids:
+		for obj in ordered_objs:
 			# skip control objectcs for queue_all()
-			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
-				self.queue_object(pid, username, priority, action)
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, obj.pid):
+				self.queue_object(obj.pid, username, priority, action)
 
-		# pause, allow to index
-		logging.debug("pausing 15s for control objects to index")
-		time.sleep(15)
+		# compare versions of control objects in Solr, when all different, assumed committed
+		count = 0
+		while True:
+			count += 1
+			if count > 120:
+				logging.debug('assuming control objects are indexing, breaking loop')
+				break
+			s = solr_handle.search(**{'q':" OR ".join( ['id:%s' % obj.pid.replace(":","\:") for obj in ordered_objs] ),'fl':'_version_'})
+			check_set = {doc['_version_'] for doc in s.documents}
+			commit_intersection = check_set.intersection(control_versions_set)
+			logging.debug(check_set)
+			logging.debug(control_versions_set)
+			if len(commit_intersection) > 0 or len(check_set) == 0:
+				logging.debug('control objects have not yet committed, checked %s times, still waiting' % (count))
+				time.sleep(.5)
+			else:
+				logging.debug('control objects committed.')
+				break
 
 
 

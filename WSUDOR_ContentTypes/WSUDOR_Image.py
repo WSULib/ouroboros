@@ -27,6 +27,7 @@ from WSUDOR_ContentTypes import logging
 logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
+from WSUDOR_Manager.lmdbHandles import lmdb_env
 from WSUDOR_Manager import redisHandles, utilities, helpers
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
@@ -362,12 +363,10 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			cvs.width = img.width
 
 		# create datastream with IIIF manifest and return JSON string
-		logging.debug("Inserting manifest for %s as object datastream..." % self.pid)
-		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "IIIF_MANIFEST", "IIIF_MANIFEST", mimetype="application/json", control_group="M")
-		ds_handle.label = "IIIF_MANIFEST"
-		ds_handle.content = manifest.toString()
-		ds_handle.save()
-
+		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
+		with lmdb_env.begin(write=True) as txn:
+			txn.put('%s_iiif_manifest' % (self.pid), manifest.toString().encode('utf-8'))
+		
 		return manifest.toString()
 
 

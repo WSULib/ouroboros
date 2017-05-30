@@ -48,6 +48,8 @@ logging.debug("importing eulfedora")
 
 import eulfedora
 
+from WSUDOR_Manager.lmdbHandles import lmdb_env
+
 logging.debug("creating MySQL shortcut - `m()` with root password")
 def my():
 	return os.system('mysql -u root -p WSUDOR_Manager')

@@ -190,6 +190,9 @@ OAI_METADATAPREFIX_HASH = {
 }
 OAI_RECORDS_PAGINATION = 250
 
+# LMDB
+LMDB_DB_LOCATION = '/var/cache/lmdb'
+
 ################################
 # sensitive information
 ################################

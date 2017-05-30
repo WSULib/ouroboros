@@ -22,6 +22,7 @@ futures==3.1.1
 fuzzywuzzy==0.2
 iiif-prezi==0.2.5
 ipython
+lmdb==0.92
 lockfile==0.10.2
 mysolr==0.8.2
 ply==3.9

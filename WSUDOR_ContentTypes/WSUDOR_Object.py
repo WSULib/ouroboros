@@ -51,6 +51,7 @@ logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import fedoraHandles
+from WSUDOR_Manager.lmdbHandles import lmdb_env
 from WSUDOR_Manager import models, helpers, redisHandles, actions, utilities, db
 from WSUDOR_Indexer.models import IndexRouter
 
@@ -393,7 +394,10 @@ class WSUDOR_GenObject(object):
     # return IIIF maniest
     @helpers.LazyProperty
     def iiif_manifest(self, format='string'):       
-        return self.ohandle.getDatastreamObject('IIIF_MANIFEST').content
+
+        # retrieve from LMDB database
+        with lmdb_env.begin(write=False) as txn:
+            return txn.get('%s_iiif_manifest' % (self.pid))
 
 
     # PREMIS client

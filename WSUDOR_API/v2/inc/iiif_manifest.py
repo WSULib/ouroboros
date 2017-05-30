@@ -11,11 +11,14 @@ from flask import render_template, request, session, redirect, make_response, Re
 from WSUDOR_API import cache
 import WSUDOR_ContentTypes
 from WSUDOR_Manager import fedora_handle
+from WSUDOR_Manager.lmdbHandles import lmdb_env
 from WSUDOR_API import logging
 logging = logging.getChild('iiif_manifest')
 
-iiif_manifest_blueprint = Blueprint('iiif_manifest_v1', __name__)
 
+
+# set blueprint
+iiif_manifest_blueprint = Blueprint('iiif_manifest_v1', __name__)
 
 # small function to skip caching, reads from localConfig.py
 def skipCache():
@@ -86,18 +89,24 @@ def retrieveManifest(identifier):
 
 	'''
 	genIIIFManifest() is a function built-in to each content-type.
-	In an effort to reduce how many times these manifests are generated, this function now tries
-	to retreive from stored datastream first.  If not there, runs object method to generate,
+
+	In an effort to reduce how many times these manifests are generated, this function first tries
+	to retreive from a stored instance of the manifest.  If not there, runs object method to generate,
 	then tries again.
 	'''
 
-	# check for IIIF manifest datastream	
-	ohandle = fedora_handle.get_object(identifier)
-	if 'IIIF_MANIFEST' in ohandle.ds_list:
-		logging.debug("manifest located and retrieved from Redis")
-		return ohandle.getDatastreamObject('IIIF_MANIFEST').content
+	# check for IIIF manifest in LMDB	
+	with lmdb_env.begin(write=False) as txn:
+		im = txn.get('%s_iiif_manifest' % (identifier.encode('utf-8')))
+
+	# manifest found, returning
+	if im:
+		logging.debug("manifest located and retrieved")
+		return im
+
+	# manifest not found, generating, storing, and returning
 	else:
-		logging.debug("generating manifest, storing as datastream, returning")
+		logging.debug("generating manifest, storing, and returning")
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(identifier)
 		# fire content-type defined manifest generation
 		return obj.genIIIFManifest()
@@ -106,11 +115,31 @@ def retrieveManifest(identifier):
 @cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def retrieveAnnotationList(identifier):
 
-	# check for IIIF manifest datastream
-	ohandle = fedora_handle.get_object(identifier)
-	if 'IIIF_ANNOLIST' in ohandle.ds_list:
+	# check for IIIF manifest in LMDB	
+	with lmdb_env.begin(write=False) as txn:
+		im = txn.get('%s_iiif_annotation_list' % (identifier))
+
+	# annotation list found, returning
+	if im:
 		logging.debug("annotation list located and retrieved")
-		return ohandle.getDatastreamObject('IIIF_ANNOLIST').content
+		return im
+
+	# annotation list not found, reporting
 	else:
 		logging.debug("could not find annotation list for %s" % identifier)
 		return jsonify({'status':'could not find annotation list for %s' % identifier})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

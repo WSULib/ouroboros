@@ -388,8 +388,8 @@ class IndexRouter(object):
 		'''
 
 		# index control objects
-		# self.queue_control()
-		
+		self.queue_control()
+
 		risearch_query = "select $object from <#ri> where $object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/fedora-system:FedoraObject-3.0> and $object <fedora-view:lastModifiedDate> $modified and $modified <mulgara:after> '%s'^^<xml-schema:dateTime> in <#xsd>" % (self.last_index_date())
 
 		risearch_params = urllib.urlencode({
@@ -420,8 +420,8 @@ class IndexRouter(object):
 	def queue_all(self, username=None, priority=1, action='index'):
 
 		# index control objects
-		# self.queue_control()
-		
+		self.queue_control()
+
 		all_pids = fedora_handle.find_objects("*")
 
 		# for each in list, add to queue
@@ -439,7 +439,7 @@ class IndexRouter(object):
 
 		'''
 		prioritize the indexing of "control" objects in Fedora that are 
-		integral for indexing normal objects
+		integral for indexing normal objects.
 		'''
 
 		# create ordered list of pids
@@ -456,6 +456,10 @@ class IndexRouter(object):
 			# skip control objectcs for queue_all()
 			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
 				self.queue_object(pid, username, priority, action)
+
+		# pause, allow to index
+		logging.debug("pausing 15s for control objects to index")
+		time.sleep(15)
 
 
 

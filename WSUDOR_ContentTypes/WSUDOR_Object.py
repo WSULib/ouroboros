@@ -1045,20 +1045,25 @@ class WSUDOR_GenObject(object):
         if collections:
             logging.debug("deriving human collection names")
             logging.debug("%s" % collections)
+            human_collections = []
             for pid in collections:
                 pid = pid.split("/")[1]
                 if pid in human_hash['collections']:
-                    setattr(self.SolrDoc.doc, "human_isMemberOfCollection", human_hash['collections'][pid] )
+                    human_collections.append(human_hash['collections'][pid])
+            # set list
+            setattr(self.SolrDoc.doc, "human_isMemberOfCollection", human_collections)
 
 
         content_types = getattr(self.SolrDoc.doc, 'rels_hasContentModel', False)
         if content_types:
             logging.debug("deriving human content types")
             logging.debug("%s" % content_types)
+            human_content_types = []
             for pid in content_types:
                 pid = pid.split("/")[1]
                 if pid in human_hash['content_types']:
-                    setattr(self.SolrDoc.doc, "human_hasContentModel", human_hash['content_types'][pid] )
+                    human_content_types.append(human_hash['content_types'][pid])
+            setattr(self.SolrDoc.doc, "human_hasContentModel", human_content_types)
 
 
         #######################################################################################

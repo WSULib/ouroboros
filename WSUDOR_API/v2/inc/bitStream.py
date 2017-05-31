@@ -113,7 +113,7 @@ class BitStream(object):
 				yield self.obj_ds_handle.content.serialize()[chunk:chunk+self.chunk_step]
 
 		# debug
-		logging.info("streamGen elapsed: %ss" % (time.time()-stime))
+		logging.debug("streamGen elapsed: %ss" % (time.time()-stime))
 
 
 	# primary method for streaming
@@ -144,7 +144,7 @@ class BitStream(object):
 		XFS = 'X-Forwarded-Server'; XFF = 'X-Forwarded-For'; XFH = 'X-Forwarded-Host'
 		if set([XFS,XFF,XFH]).issubset(self.headers.keys()):
 			
-			logging.info("X-Forwarded-* headers detected")
+			logging.debug("X-Forwarded-* headers detected")
 
 			# parse
 			parsed_xf_headers = {
@@ -152,11 +152,11 @@ class BitStream(object):
 				'XFF': [header.strip() for header in self.headers[XFF].split(",")],
 				'XFH': [header.strip() for header in self.headers[XFH].split(",")]
 			}
-			logging.info(parsed_xf_headers)
+			logging.debug(parsed_xf_headers)
 
 			# XFH localhost, XFF form of localhost
 			if parsed_xf_headers['XFH'][-1] == 'localhost':
-				logging.info('request was from local proxy, authorizing')
+				logging.debug('request was from local proxy, authorizing')
 				return True
 			
 		# decision tree for blocked datastream

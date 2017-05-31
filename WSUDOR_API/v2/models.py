@@ -11,7 +11,7 @@ import localConfig
 from WSUDOR_API import logging
 
 # modules
-from flask import redirect, Response
+from flask import request, redirect, Response
 import flask_restful
 from flask_restful import abort, fields, reqparse, Resource
 
@@ -205,7 +205,7 @@ class ItemFile(Item):
 		args = parser.parse_args()
 
 		# init BitStream
-		bs = BitStream(pid, datastream, key=args['key'], token=args['token'], download=args['download'])
+		bs = BitStream(pid, datastream, key=args['key'], token=args['token'], download=args['download'], headers=request.headers)
 		return bs.stream()
 
 

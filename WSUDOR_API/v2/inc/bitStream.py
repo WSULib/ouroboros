@@ -17,6 +17,7 @@ import json
 import uuid
 import hashlib
 from contextlib import closing
+import time
 
 bitStream_blueprint = Blueprint('bitStream_v2', __name__)
 
@@ -31,7 +32,7 @@ Accepts keys and tokens for access (see doc/bitStream.md)
 # BitStream model to handle bitStream requests
 class BitStream(object):
 
-	def __init__(self, PID, DS, key=None, token=None, download=False):
+	def __init__(self, PID, DS, key=None, token=None, download=False, headers=False):
 
 		# object and datastream
 		self.PID = PID
@@ -42,6 +43,9 @@ class BitStream(object):
 		self.key = key
 		self.token = token
 		self.return_token = None
+
+		# headers
+		self.headers = headers
 
 		# response params
 		self.msg = None
@@ -54,6 +58,8 @@ class BitStream(object):
 		# instantiate object
 		self.obj_handle = fedora_handle.get_object(self.PID)
 		self.obj_ds_handle = self.obj_handle.getDatastreamObject(self.DS)
+
+		logging.debug("init bitStream request: %s" % str(self.__dict__))
 
 		# determine auth
 		try:
@@ -94,6 +100,8 @@ class BitStream(object):
 	# chunked, stream generator
 	def streamGen(self):
 
+		stime = time.time()
+
 		# File Type
 		if type(self.obj_ds_handle) == DatastreamObject:
 			for chunk in range(0, len(self.obj_ds_handle.content), self.chunk_step):
@@ -103,6 +111,9 @@ class BitStream(object):
 		if type(self.obj_ds_handle) == XmlDatastreamObject:
 			for chunk in range(0, len(self.obj_ds_handle.content.serialize()), self.chunk_step):
 				yield self.obj_ds_handle.content.serialize()[chunk:chunk+self.chunk_step]
+
+		# debug
+		logging.info("streamGen elapsed: %ss" % (time.time()-stime))
 
 
 	# primary method for streaming
@@ -128,6 +139,25 @@ class BitStream(object):
 			self.msg = "datastream does not exist"
 			self.status_code = 404
 			return False
+
+		# if request is server-side and satisfies request header fingerprints, authorize
+		XFS = 'X-Forwarded-Server'; XFF = 'X-Forwarded-For'; XFH = 'X-Forwarded-Host'
+		if set([XFS,XFF,XFH]).issubset(self.headers.keys()):
+			
+			logging.info("X-Forwarded-* headers detected")
+
+			# parse
+			parsed_xf_headers = {
+				'XFS': [header.strip() for header in self.headers[XFS].split(",")],
+				'XFF': [header.strip() for header in self.headers[XFF].split(",")],
+				'XFH': [header.strip() for header in self.headers[XFH].split(",")]
+			}
+			logging.info(parsed_xf_headers)
+
+			# XFH localhost, XFF form of localhost
+			if parsed_xf_headers['XFH'][-1] == 'localhost':
+				logging.info('request was from local proxy, authorizing')
+				return True
 			
 		# decision tree for blocked datastream
 		if self.DS not in localConfig.UNBLOCKED_DATASTREAMS:
@@ -191,10 +221,6 @@ class BitStream(object):
 					self.msg = "problem with token"
 					self.status_code = 500
 					return False
-			
-			# if it's an MP3
-			elif "_MP3" in self.DS:
-				return True
 			
 			# all else, no keys or tokens, indicated datastream is blocked
 			else:

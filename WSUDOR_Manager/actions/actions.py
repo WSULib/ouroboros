@@ -95,7 +95,7 @@ from ingestWorkspace import ingestWorkspace, createJob_factory, createJob_worker
 app.register_blueprint(ingestWorkspace, url_prefix=tasks_URL_prefix)
 
 #manageOAI
-from manageOAI import manageOAI, manageOAI_genItemID_worker, manageOAI_toggleSet_worker, exposeToDPLA_worker, removeFromDPLA_worker
+from manageOAI import manageOAI, exposeToDPLA_worker, removeFromDPLA_worker
 app.register_blueprint(manageOAI, url_prefix=tasks_URL_prefix)
 
 #MODSexport

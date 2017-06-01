@@ -2,93 +2,59 @@
 
 	<div class="row">
 		<div class="col-md-12">
-			<h1>Manage OAI Server</h1>
-			<p>This module helps manage the OAI server for the Wayne State Digital Object Repository.  We currently use PROAI that comes bundled with Fedora 3.6.x, which is a Tomcat Application.  Objects are detected and indexed by PROAI, which are then made available to REPOX for DPLA purposes.</p>
-
-			<p>OAI-PMH documentation on Digital Collections wiki: <a href="http://{{APP_HOST}}/mediawiki/index.php/OAI">http://{{APP_HOST}}/wiki/index.php/OAI</a><p>
-
-			<p>REPOX installation: <a href="http://metadata.library.wayne.edu/repox">http://metadata.library.wayne.edu/repox</a><p>
+			<h1>Manage OAI-PMH</h1>
+			<p>This section helps manage what objects are exposed via OAI-PMH.</p>
 		</div>
 	</div>
 
 	<div class="row">
-		<div class="col-md-5">
-			<h3>Server Overview</h3>
-			<a target="_new" href="https://docs.google.com/drawings/d/1SNd5Rj2COoTxwAp_tRj7Pg6dWHH7Vaoj9STRmj10IW4/pub?w=1195&amp;h=715"><img class="img-responsive" src="https://docs.google.com/drawings/d/1SNd5Rj2COoTxwAp_tRj7Pg6dWHH7Vaoj9STRmj10IW4/pub?w=1195&amp;h=715"/></a>
+		<div class="col-md-6">
+			<h3>Example OAI-PMH queries</h3>
+			<table class="table table-striped">
+				<tr>
+					<th>OAI-PMH verb</th>
+					<th>link</th>
+				</tr>
+				{% for k in example_url_patterns %}
+					<tr>
+						<td>{{k}}</td>
+						<td><a target="_blank" href="{{example_url_patterns[k]}}">{{example_url_patterns[k]}}</a>
+					</tr>
+				{% endfor %}
+			</table>
 		</div>
-	</div>
-		
-	<div class="row">
-		<div class="col-md-5">
-			<table class="table">
+		<div class="col-md-6">
+			<h3>Browse by Collection</h3>
+			<table class="table table-striped">
 				<tr>
-					<td>PROAI Server Status</td>
-					<td>
-						{% if overview.webapp_status == 'running' %}
-							<span style="color:green;">operational</span>
-						{% else %}
-							<span style="color:red;">{{overview.webapp_status}}</span>
-						{% endif %}
-					</td>
+					<th>Collection Name</th>
+					<th>OAI setSpec</th>							
+					<th>ListRecords</th>
 				</tr>
-				<tr>
-					<td>Fedora --> PROAI Sync Status</td>
-					<td>
-						{% if overview.queue_count > 0 %}
-							<span style="color:red;">syncing ({{overview.queue_count}} tasks to complete)</span>							
-						{% else %}
-							<span style="color:green;">synced</span>
-						{% endif %}
-					
+				{% for dc_title, PID in collection_tups %}
+				<tr>				
+					<td>{{dc_title}}</td>
+					<td>{{PID}}</td>
+					<td><a target="_blank" href="http://{{APP_HOST}}/api/oai?verb=ListRecords&metadataPrefix=mods&set={{PID}}">ListRecords</a></td>
 				</tr>
-				<tr>
-					<td>Total Items in PROAI</td>
-					<td><span style="color:green;">{{overview.total_count}}</span></td>
-				</tr>
-				<tr>
-					<td>Total MODS records under DPLAOAI set</td>
-					<td><span style="color:green;">{{overview.repox_count}}</span> (<a target="_blank" href="http://{{APP_HOST}}/oaiprovider/?verb=ListRecords&metadataPrefix=mods&set=set:wayne:collectionDPLAOAI">link</a>)</td>
-				</tr>
+				{% endfor %}
 			</table>
 		</div>
 	</div>
 
 	<div class="row">
 		<div class="col-md-12">
-			<h3>Utilities</h3>
-			<ul>
-				<li>
-					<a href="/{{APP_PREFIX}}/tasks/manageOAI/serverWide">OAI Server & Repository-wide Management</a>
-					<p>Check server status, example OAI queries; Create and edit sets</p>
-				</li>
-				<li>
-					<a href="/{{APP_PREFIX}}/tasks/manageOAI/objectRelated">Expose / Hide objects from DPLA</a>
-					<p>Here you can expose and remove objects from the <strong>DPLAOAI</strong> set in PROAI, that is harvested by REPOX, and eventually made available to DPLA.</p>
-				</li>
-				<li>
-					<a href="/{{APP_PREFIX}}/tasks/manageOAI/purgePROAI">Sync PROAI with Fedora</a>
-					<p>This can be useful for syncing objects and collections from WSUDOR with PROAI.  When the status of objects changes, PROAI will sometimes drop or "lose" records.  Purging PROAI, then letting PROAI harvest records as per normal (every two minutes), should recalibrate everything.</p>
-				</li>
-
-			</ul>
+			<p><img src="{{ url_for('static',filename='img/dpla_logo.png')}}"/></p>
+			<p>The following two buttons can be used to expose, or hide, your currently selected objects from the DPLA OAI set that is harvested by <a href="http://metadata.library.wayne.edu/repox/">Repox</a>.</p>
+			<form action="/ouroboros/fireTask/obj_loop/exposeToDPLA_worker" method="POST">
+				<button type="submit" class="btn btn-success">Expose to DPLA</button>
+			</form>
+			<form action="/ouroboros/fireTask/obj_loop/removeFromDPLA_worker" method="POST">
+				<button type="submit" class="btn btn-warning">Remove from DPLA</button>
+			</form>
 		</div>
 	</div>
-
-<!-- Sets -->
-<!-- <div class="col-md-6" style="clear:both;">
-	<p onclick="$('#sets').fadeToggle();" style="cursor:pointer;"><strong>Sets</strong> (click to expand)</p>
-	<table id="sets" style="display:none;" class="table">				
-		{% for setSpec in overview.sets %}
-		<tr>
-			<td><a href="http://{{APP_HOST}}:8080/oaiprovider/?verb=ListRecords&metadataPrefix=oai_dc&set={{setSpec}}">{{setSpec}}</a></td>
-		</tr>
-		{% endfor %}
-	</table>
-</div> -->
-
-
-
-
-
+		</div>
+	</div>
 
 {% include 'footer.html' %}

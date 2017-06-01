@@ -799,7 +799,7 @@ class OAIServer(Resource):
 						'ListIdentifiers':'http://%s/api/oai?verb=ListIdentifiers&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
 						'GetRecord':'http://%s/api/oai?verb=GetRecord&identifier=oai:digital.library.wayne.edu:wayne:vmc14515&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
 						'ListRecords':'http://%s/api/oai?verb=ListRecords&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
-						'ListSets':'http://%s/api/oai?verb=ListSets&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
+						'ListSets':'http://%s/api/oai?verb=ListSets' % (localConfig.PUBLIC_HOST),
 					}
 				}
 			# return response		

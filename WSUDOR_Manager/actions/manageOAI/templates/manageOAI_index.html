@@ -17,25 +17,25 @@
 				</tr>
 				{% for k in example_url_patterns %}
 					<tr>
-						<td>{{k}}</td>
+						<td><code>{{k}}</code></td>
 						<td><a target="_blank" href="{{example_url_patterns[k]}}">{{example_url_patterns[k]}}</a>
 					</tr>
 				{% endfor %}
 			</table>
 		</div>
 		<div class="col-md-6">
-			<h3>Browse by Collection</h3>
+			<h3>Browse by OAI Set</h3>
 			<table class="table table-striped">
 				<tr>
-					<th>Collection Name</th>
-					<th>OAI setSpec</th>							
+					<th>Set Name</th>
+					<th>Set Identifier</th>							
 					<th>ListRecords</th>
-				</tr>
-				{% for dc_title, PID in collection_tups %}
+				</tr>				
+				{% for setSpec, setName in set_tups %}
 				<tr>				
-					<td>{{dc_title}}</td>
-					<td>{{PID}}</td>
-					<td><a target="_blank" href="http://{{APP_HOST}}/api/oai?verb=ListRecords&metadataPrefix=mods&set={{PID}}">ListRecords</a></td>
+					<td>{{setName}}</td>
+					<td>{{setSpec}}</td>
+					<td><a target="_blank" href="http://{{APP_HOST}}/api/oai?verb=ListRecords&metadataPrefix=mods&set={{setSpec}}">ListRecords</a></td>
 				</tr>
 				{% endfor %}
 			</table>
@@ -45,7 +45,7 @@
 	<div class="row">
 		<div class="col-md-12">
 			<p><img src="{{ url_for('static',filename='img/dpla_logo.png')}}"/></p>
-			<p>The following two buttons can be used to expose, or hide, your currently selected objects from the DPLA OAI set that is harvested by <a href="http://metadata.library.wayne.edu/repox/">Repox</a>.</p>
+			<p>The following two buttons can be used to expose, or hide, your <a href="/ouroboros/objPreview/0">currently selected objects</a> from the <a target="_blank" href="http://{{APP_HOST}}/api/oai?verb=ListIdentifiers&metadataPrefix=mods&set=wayne:collectiondplaoai">DPLA set</a> that is harvested by <a href="http://metadata.library.wayne.edu/repox/">Repox</a>.</p>
 			<form action="/ouroboros/fireTask/obj_loop/exposeToDPLA_worker" method="POST">
 				<button type="submit" class="btn btn-success">Expose to DPLA</button>
 			</form>

@@ -353,12 +353,6 @@ class OAIProvider(object):
 				'facet.field':'rels_isMemberOfOAISet'
 			})
 
-		# # get descriptive information
-		# set_results = solr_search_handle.search(**{
-		# 		'q':" OR ".join(['rels_itemID:*%s' % pid.replace(":","\:") for pid in search_results.facets['facet_fields']['rels_isMemberOfOAISet'].keys() if pid.startswith('wayne')]),
-		# 		'fl':['id','dc_title'] 
-		# 	})
-
 		# generate response
 		for oai_set in [k for k in search_results.facets['facet_fields']['rels_isMemberOfOAISet'].keys() if k.startswith('wayne')]:
 			set_node = etree.Element('set')

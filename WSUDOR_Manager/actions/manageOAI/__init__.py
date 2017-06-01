@@ -47,16 +47,27 @@ def index():
 		'ListSets':'http://%s/api/oai?verb=ListSets' % (localConfig.PUBLIC_HOST),
 	}
 
+
 	# get all collections, to provide previews by collection
 	all_collections = fedora_handle.risearch.sparql_query("select $dc_title $subject from <#ri> where { \
 		$subject <http://purl.org/dc/elements/1.1/title> $dc_title . \
 		$subject <fedora-rels-ext:hasContentModel> <info:fedora/CM:Collection> . \
 		}")
-	collection_tups = [ (rel["dc_title"],rel["subject"].split("/")[1]) for rel in all_collections]	
+	collection_tups = [ (rel["dc_title"],rel["subject"].split("/")[1]) for rel in all_collections]
 
+	# get all OAI sets, via rels_isMemberOfOAISet relationship
+	search_results = solr_handle.search(**{
+			'q':'*:*',
+			'fq':['rels_itemID:*','rels_isMemberOfOAISet:*'],
+			'rows':0,
+			'facet':True,
+			'facet.field':'rels_isMemberOfOAISet'
+		})
 
+	# generate response
+	set_tups = [(k,k) for k in search_results.facets['facet_fields']['rels_isMemberOfOAISet'].keys() if k.startswith('wayne')]
 
-	return render_template("manageOAI_index.html", collection_tups=collection_tups, example_url_patterns=example_url_patterns, APP_HOST=localConfig.APP_HOST)
+	return render_template("manageOAI_index.html", collection_tups=collection_tups, set_tups=set_tups, example_url_patterns=example_url_patterns, APP_HOST=localConfig.APP_HOST)
 
 
 # expose objects to DPLA OAI-PMH set

@@ -339,20 +339,33 @@ class OAIProvider(object):
 	# ListSets
 	def _ListSets(self):
 
-		# get collections
+		# get sets by faceted search
+		'''
+		query for objects with OAI-PMH identifier, and belong to sets with rels_isMemberOfOAISet relationship,
+		then focus on rels_isMemberOfOAISet facet for list of sets
+		'''
+		# determine sets
 		search_results = solr_search_handle.search(**{
 				'q':'*:*',
-				'fq':['rels_itemID:*','rels_hasContentModel:*Collection'],
-				'fl':['id','rels_itemID','dc_title']
+				'fq':['rels_itemID:*','rels_isMemberOfOAISet:*'],
+				'rows':0,
+				'facet':True,
+				'facet.field':'rels_isMemberOfOAISet'
 			})
 
+		# # get descriptive information
+		# set_results = solr_search_handle.search(**{
+		# 		'q':" OR ".join(['rels_itemID:*%s' % pid.replace(":","\:") for pid in search_results.facets['facet_fields']['rels_isMemberOfOAISet'].keys() if pid.startswith('wayne')]),
+		# 		'fl':['id','dc_title'] 
+		# 	})
+
 		# generate response
-		for oai_set in search_results.documents:
+		for oai_set in [k for k in search_results.facets['facet_fields']['rels_isMemberOfOAISet'].keys() if k.startswith('wayne')]:
 			set_node = etree.Element('set')
 			setSpec = etree.SubElement(set_node,'setSpec')
-			setSpec.text = oai_set['id']
+			setSpec.text = oai_set
 			setName = etree.SubElement(set_node,'setName')
-			setName.text = oai_set['dc_title'][0]
+			setName.text = oai_set
 			self.verb_node.append(set_node)
 
 

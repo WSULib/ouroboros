@@ -783,6 +783,27 @@ class OAIServer(Resource):
 
 		# debug
 		logging.debug("OAI-PMH request args: %s" % args)
+
+		# if no verb is present, return JSON response
+		if not args['verb']:
+			logging.debug("no OAI verb present, returning informative JSON response")
+			# init ResponseObject
+			response = ResponseObject()
+			# build response
+			response.status_code = 200
+			response.body = {
+					'help':'Integrated Ouroboros OAI-PMH server.  This server requires, and responds to the standard six OAI-PMH verbs: GetRecord, Identify, ListIdentifiers, ListMetadataFormats, ListRecords, ListSets.  Examples URL patterns are provided in this JSON response.',
+					'example_url_patterns':{
+						'Identify':'http://%s/api/oai?verb=Identify' % (localConfig.PUBLIC_HOST),
+						'ListMetadataFormats':'http://%s/api/oai?verb=ListMetadataFormats' % (localConfig.PUBLIC_HOST),
+						'ListIdentifiers':'http://%s/api/oai?verb=ListIdentifiers&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
+						'GetRecord':'http://%s/api/oai?verb=GetRecord&identifier=oai:digital.library.wayne.edu:wayne:vmc14515&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
+						'ListRecords':'http://%s/api/oai?verb=ListRecords&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
+						'ListSets':'http://%s/api/oai?verb=ListSets&metadataPrefix=mods' % (localConfig.PUBLIC_HOST),
+					}
+				}
+			# return response		
+			return response.generate_response()
 		
 		# init OAIProvider
 		op = OAIProvider(args)

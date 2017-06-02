@@ -153,6 +153,7 @@ text-align: center;
 		<ul class="nav navbar-nav">			
 			<li><a href="/{{APP_PREFIX}}/userPage">User Home</a></li>
 			<li><a href="/{{APP_PREFIX}}/systemStatus">System Status</a></li>
+			<li><a href="/{{APP_PREFIX}}/indexing">Indexing</a></li>
 			<li><a href="/{{APP_PREFIX}}/userJobs">User Jobs</a></li>
 				{% if g.user.is_authenticated%}
 			<li><a href="{{ url_for('logout') }}">Logout, <strong>{{g.user.displayName}}</strong></a></li>

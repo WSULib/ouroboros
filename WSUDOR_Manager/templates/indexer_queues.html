@@ -47,6 +47,7 @@
 </div>
 
 <div class="row">
+	
 	<div class="col-md-6">
 
 		<h3>Exceptions</h3>
@@ -69,12 +70,34 @@
 
 	</div>
 
+	<div class="col-md-6">
+
+		<h3>Stats</h3>
+
+		<!-- insert table here -->
+		<table id="stats" class="table" cellspacing="0" width="100%" style="font-size:100%;">
+            <tbody>
+	            <tr>            
+	                <td>records queued for indexing</td>
+	                <td><span id="tput_qps">analyzing...</span></td>
+	            </tr>
+	            <tr>            
+	                <td>change in working table</td>
+	                <td><span id="tput_ips">analyzing...</span></td>
+	            </tr>
+            </tbody>
+        </table>
+
+	</div>
+
 </div>
 
 <!-- JS -->
 <script type="text/javascript" charset="utf-8">
 	
 	$(document).ready(function(){
+
+	  var refresh_rate = 5000;
 	  
 	  // queued
 	  var qtable = $('#queued').DataTable({
@@ -112,6 +135,19 @@
 		   console.log( 'An error has been reported by DataTables: ', message);
 		})
 
+
+	  // ping for throughput
+	  function throughputPing() {
+	  	  $.ajax({
+			  url: "/{{APP_PREFIX}}/indexing/status/throughput.json",
+			}).done(function(data) {
+			  console.log(data);
+			  // ping ouroboros to current rates
+			  $("#tput_qps").html(data.qps+" records / sec");
+			  $("#tput_ips").html(data.ips+" records / sec");
+			});
+	  }
+
 	  // refresh timer
 	  var refreshIntervalId = null;
 	  function setAutoRefresh(){
@@ -119,7 +155,8 @@
 	    qtable.ajax.reload();
 	    wtable.ajax.reload();
 	    etable.ajax.reload();
-		  }, 5000 );
+	    // throughputPing();
+		  }, refresh_rate );
 	  }
 	  setAutoRefresh();
 
@@ -143,12 +180,14 @@
 
 	  $(function() {
 	    $('#manual-refresh').click(function() {
-	    	console.log("refresh!");
 	    	qtable.ajax.reload();
 		    wtable.ajax.reload();
 		    etable.ajax.reload();
+		    // throughputPing();
       	})
 	  });
+
+	  
 
 	});
 

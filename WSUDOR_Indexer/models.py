@@ -417,6 +417,22 @@ class IndexRouter(object):
 
 
 	@classmethod
+	def queue_fedora_query(self, username=None, priority=1, action='index', fedora_query_string=False):
+
+		'''
+		# Expects query string, queues objects that result from that query to Fedora
+		'''
+
+		query_pids = fedora_handle.find_objects(fedora_query_string)
+
+		# for each in list, add to queue
+		for pid in query_pids:
+			# skip control objectcs for queue_all()
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
+				self.queue_object(pid, username, priority, action)
+
+
+	@classmethod
 	def queue_all(self, username=None, priority=1, action='index'):
 
 		# index control objects

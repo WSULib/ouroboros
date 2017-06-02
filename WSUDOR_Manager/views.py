@@ -1699,6 +1699,14 @@ def indexing_index(action, group):
             logging.debug("adding selected objects to index queue to index")
             IndexRouter.queue_modified(username=username, priority=1, action='index')
 
+        if group == 'fedora_query':
+            logging.debug("using custom fedora query, indexing the results")
+            
+            # grab query
+            fedora_query_string = request.form['fedora_query_string']
+            logging.debug("provided query string: %s" % fedora_query_string)
+            IndexRouter.queue_fedora_query(username=username, priority=1, action='index', fedora_query_string=fedora_query_string)
+
         if group == 'all':
             logging.debug("adding selected objects to index queue to index")
             IndexRouter.queue_all(username=username, priority=1, action='index')
@@ -1806,6 +1814,30 @@ def indexing_status_exception_json():
 
     # returns what is needed by DataTable
     return jsonify(rowTable.output_result())
+
+
+@app.route("/indexing/status/throughput.json", methods=['POST', 'GET'])
+def indexing_status_throughput_json():
+
+    # query sql for queued records in last five seconds
+    r = db.session.execute('select count(*) from indexer_queue where timestamp > date_sub(now(), interval 5 second);')
+    queued = r.first()[0]
+    qps = float(queued) / 5.0
+    logging.debug("records queued per second: %s" % qps)
+    db.session.commit()
+
+    # determine change in working, by grabbing difference in 
+    r = db.session.execute('SELECT (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 10 second) AND date_sub(now(), interval 5 second)) - (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 5 second) AND date_sub(now(), interval 0 second)) AS diff;')
+    indexed = r.first()[0]
+    ips = float(indexed) / 5.0
+    logging.debug("change in working table per second: %s" % ips)
+    db.session.commit()
+
+    # return response
+    return jsonify({
+        'qps':qps,
+        'ips':ips
+        })
 
 
 

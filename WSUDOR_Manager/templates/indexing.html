@@ -1,7 +1,7 @@
 {% include 'header.html' %}
 
 <div class="row">
-	<div class="col-md-7">
+	<div class="col-md-12">
 
 		<h2>Object Indexing</h2>
 
@@ -15,37 +15,47 @@
 			</tr>
 
 			<tr>
-				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/selected">Index Selected Objects</a></td>
+				<td><a class="btn btn-success btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/index/selected'}); return false;">Index Selected Objects</a></td>
 				<td><strong>Indexes currently selected</strong> objects.</td>
 			</tr>
 
 			<tr>
-				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/modified">Index Modified Objects</a></td>
+				<td><a class="btn btn-success btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/index/modified'}); return false;">Index Modified Objects</a></td>
 				<td><strong>Indexs all objects modified in Fedora</strong> since last partial or full index.</td>
 			</tr>
 
+			<!-- <tr>
+				<td><form class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query"><input class="form-control" type="text" name="fedora_query_string"></input><br><input class="btn btn-success btn-xs form-control-inline" type="submit"></input></form></td>
+				<td>Provide a simple <strong>Fedora object query</strong>, index the results of that query (e.g. <code>wayne:LincolnLetters*</code>).</td>
+			</tr> -->
+
 			<tr>
-				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/index/all">Index All Objects</a></td>
+				<td><form id="fedora_query_form" class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query"><input class="form-control" type="text" name="fedora_query_string"></input><br><a class="btn btn-success btn-xs form-control-inline" onclick="$.post('/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query', $('#fedora_query_form').serialize()); return false;">Submit</a></form></td>
+				<td>Provide a simple <strong>Fedora object query</strong>, index the results of that query (e.g. <code>wayne:LincolnLetters*</code>).</td>
+			</tr>
+
+			<tr>
+				<td><a class="btn btn-success btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/index/all'}); return false;">Index All Objects</a></td>
 				<td><strong>Indexes all objects in Fedora</strong>, but does not purge old ones.</td>
 			</tr>
 
 			<tr>
-				<td><a class="btn btn-warning btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/prune/selected">Prune Selected Objects</a></td>
+				<td><a class="btn btn-warning btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/prune/selected'}); return false;">Prune Selected Objects</a></td>
 				<td><strong>Removes currently selcted objects</strong> from index.</td>
 			</tr>
 
 			<tr>
-				<td><a class="btn btn-danger btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/prune/reindex">Purge and Reindex</a></td>
+				<td><a class="btn btn-danger btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/prune/reindex'}); return false;">Purge and Reindex</a></td>
 				<td><strong>Purges and reindexes</strong> all objects in Solr.  <span style="color:red;">Will remove all live Solr records, run only if necessary or system is down.</span></td>
 			</tr>
 
 			<tr>
-				<td><a class="btn btn-success btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/exceptions/all">Re-Run Exceptions</a></td>
+				<td><a class="btn btn-success btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/exceptions/all'}); return false;">Re-Run Exceptions</a></td>
 				<td><strong>Re-run</strong> all exceptions.</td>
 			</tr>
 
 			<tr>
-				<td><a class="btn btn-danger btn-xs" href="/{{localConfig.APP_PREFIX}}/indexing/queues/clear">Clear Queues</a></td>
+				<td><a class="btn btn-danger btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/queues/clear'}); return false;">Clear Queues</a></td>
 				<td><strong>Clears</strong> all indexing queues: <code>Queued</code>, <code>Working</code>, and <code>Exceptions</code> </td>
 			</tr>
 

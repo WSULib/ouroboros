@@ -73,6 +73,7 @@
                                     <th>dc_description</th>
                                     <th>human_isMemberOfCollection</th>
                                     <th>human_hasContentModel</th>
+                                    <th>thumbnail</th>
                                     <th>actions</th>
                             <tbody></tbody>          
                         </table>
@@ -116,6 +117,13 @@
                                     "name": "human_hasContentModel",
                                     "title": "Content-Type",
                                     "orderable": false
+                                },
+                                { 
+                                    "name": "thumbnail",
+                                    "title": "Thumbnail",
+                                    "render": function (data, type, row, meta) {
+                                        return '<img height=75 src="/item/'+row[0]+'/thumbnail"/>';
+                                    }
                                 },  
                                 { 
                                     "name": "actions",

@@ -83,10 +83,21 @@
 	            </tr>
 	            <tr>            
 	                <td>change in working table</td>
+	                <td><span id="tput_wpps">analyzing...</span></td>
+	            </tr>
+	            <tr>            
+	                <td>indexed per second</td>
 	                <td><span id="tput_ips">analyzing...</span></td>
+	            </tr>
+	            <tr>            
+	                <td>estimated time remaining</td>
+	                <td><span id="tput_est_time_remaining">analyzing...</span></td>
 	            </tr>
             </tbody>
         </table>
+
+        <script type="text/javascript" src="{{ url_for('static',filename='smoothie.js')}}"></script>
+        <canvas id="mycanvas" width="800" height="300"></canvas>
 
 	</div>
 
@@ -138,13 +149,23 @@
 
 	  // ping for throughput
 	  function throughputPing() {
+		  // ping ouroboros to current rates
 	  	  $.ajax({
 			  url: "/{{APP_PREFIX}}/indexing/status/throughput.json",
 			}).done(function(data) {
 			  console.log(data);
-			  // ping ouroboros to current rates
+
+			  // add to table
 			  $("#tput_qps").html(data.qps+" records / sec");
+			  $("#tput_wpps").html(data.wpps+" records / sec");
 			  $("#tput_ips").html(data.ips+" records / sec");
+			  $("#tput_est_time_remaining").html(data.est_time_remaining);
+
+			  // update graph
+			  tput_qps_line.append(new Date().getTime(), data.qps);
+			  tput_wpps_line.append(new Date().getTime(), data.wpps);
+			  tput_ips_line.append(new Date().getTime(), data.ips);
+
 			});
 	  }
 
@@ -155,7 +176,7 @@
 	    qtable.ajax.reload();
 	    wtable.ajax.reload();
 	    etable.ajax.reload();
-	    // throughputPing();
+	    throughputPing();
 		  }, refresh_rate );
 	  }
 	  setAutoRefresh();
@@ -183,12 +204,42 @@
 	    	qtable.ajax.reload();
 		    wtable.ajax.reload();
 		    etable.ajax.reload();
-		    // throughputPing();
+		    throughputPing();
       	})
 	  });
 
-	  
+	// fire up streaming graph
+	var smoothie = new SmoothieChart({
+		'millisPerPixel':50
+	});
+	smoothie.streamTo(document.getElementById("mycanvas"));
+
+	// Data
+	var tput_qps_line = new TimeSeries();
+	var tput_wpps_line = new TimeSeries();
+	var tput_ips_line = new TimeSeries();
+
+	// Add to SmoothieChart
+	smoothie.addTimeSeries(tput_qps_line,{ strokeStyle:'rgb(0, 255, 0)', fillStyle:'rgba(0, 255, 0, 0.4)', lineWidth:2 });
+	smoothie.addTimeSeries(tput_wpps_line,{ strokeStyle:'rgb(255, 0, 255)', fillStyle:'rgba(255, 0, 255, 0.3)', lineWidth:2 });
+	smoothie.addTimeSeries(tput_ips_line,{ strokeStyle:'rgb(0, 255, 255)', fillStyle:'rgba(0, 255, 255, 0.3)', lineWidth:2 });
+
+	// add delay
+	smoothie.streamTo(document.getElementById("mycanvas"), refresh_rate /*delay*/); 
 
 	});
 
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -24,11 +24,6 @@
 				<td><strong>Indexs all objects modified in Fedora</strong> since last partial or full index.</td>
 			</tr>
 
-			<!-- <tr>
-				<td><form class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query"><input class="form-control" type="text" name="fedora_query_string"></input><br><input class="btn btn-success btn-xs form-control-inline" type="submit"></input></form></td>
-				<td>Provide a simple <strong>Fedora object query</strong>, index the results of that query (e.g. <code>wayne:LincolnLetters*</code>).</td>
-			</tr> -->
-
 			<tr>
 				<td><form id="fedora_query_form" class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query"><input class="form-control" type="text" name="fedora_query_string"></input><br><a class="btn btn-success btn-xs form-control-inline" onclick="$.post('/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query', $('#fedora_query_form').serialize()); return false;">Submit</a></form></td>
 				<td>Provide a simple <strong>Fedora object query</strong>, index the results of that query (e.g. <code>wayne:LincolnLetters*</code>).</td>

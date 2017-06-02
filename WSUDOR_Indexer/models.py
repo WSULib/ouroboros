@@ -21,6 +21,7 @@ import WSUDOR_ContentTypes
 import WSUDOR_Manager
 from WSUDOR_Manager import celery, db, fedora_handle
 from WSUDOR_Manager.solrHandles import solr_handle
+from WSUDOR_Manager.redisHandles import r_catchall
 from WSUDOR_Indexer import logging
 
 # localConfig
@@ -322,6 +323,9 @@ class IndexRouter(object):
 			logging.warning("IndexRouter: Could not remove from queue, rolling back")
 			db.session.rollback()
 
+		# regardless bump, throughput count in redis		
+		r_catchall.incr(int(time.time()), amount=1)
+
 		
 	@classmethod
 	def add_exception(self, queue_row, dequeue=True, msg="Unknown"):
@@ -504,8 +508,10 @@ class postIndexWorker(Task):
 
 	def after_return(self, *args, **kwargs):
 
-		# debug
-		logging.info(args)
+		# debug		
+		logging.debug("#########################################################")
+		logging.debug(args)
+		logging.debug("#########################################################")
 
 		queue_row = args[3][0]
 

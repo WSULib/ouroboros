@@ -144,6 +144,14 @@ def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split(_nsre, s)]
 
+
+# determine time elapsed / remaining
+def formatTime(seconds):
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return "%d:%02d:%02d" % (h, m, s)
+
+
 # DECORATORS
 #########################################################################################################
 # decorated function will redirect if no objects currently selected 

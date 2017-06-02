@@ -758,12 +758,6 @@ def userJobs():
         else:
             status_package['job_status'] = "running"
 
-        # determine time elapsed / remaining
-        def formatTime(seconds):
-            m, s = divmod(seconds, 60)
-            h, m = divmod(m, 60)
-            return "%d:%02d:%02d" % (h, m, s)
-
         def returnTimeRemaining(total_seconds=False):
             if total_seconds == False:
                 rtime = int( (float(elapsed_seconds) / float(job_complete_count)) * float(job_est_count) ) - float(elapsed_seconds)
@@ -772,11 +766,10 @@ def userJobs():
                 else:
                     return rtime
 
-
         # elapsed
         try:
             elapsed_seconds = int( time.time() - int(redisHandles.r_job_handle.get("job_%s_stime" % (job_num))) )
-            time_elapsed = formatTime(elapsed_seconds)
+            time_elapsed = utilities.formatTime(elapsed_seconds)
         except:
             time_elapsed = "Unknown"
 
@@ -789,10 +782,10 @@ def userJobs():
             session['job_%s_complete_count' % (job_num)] = int(job_complete_count)
             seconds_remaining = returnTimeRemaining()
             session['job_%s_time_remaining' % (job_num)] = seconds_remaining
-            time_remaining = formatTime(seconds_remaining)
+            time_remaining = utilities.formatTime(seconds_remaining)
             # logging.debug("updating comp count and time remaining : %s %s" % (job_complete_count, seconds_remaining))
         else:
-            time_remaining = formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
+            time_remaining = utilities.formatTime( int(session['job_%s_time_remaining' % (job_num)]) )
 
 
         # data return
@@ -1819,24 +1812,49 @@ def indexing_status_exception_json():
 @app.route("/indexing/status/throughput.json", methods=['POST', 'GET'])
 def indexing_status_throughput_json():
 
-    # query sql for queued records in last five seconds
+    stime = time.time()
+
+    # query sql for queued records in last five seconds (queued per sec = qps)
     r = db.session.execute('select count(*) from indexer_queue where timestamp > date_sub(now(), interval 5 second);')
     queued = r.first()[0]
     qps = float(queued) / 5.0
-    logging.debug("records queued per second: %s" % qps)
-    db.session.commit()
+    # logging.debug("records queued per second: %s" % qps)
 
-    # determine change in working, by grabbing difference in 
+    # determine change in working, by grabbing difference in working table (working pressure per sec = wps)
     r = db.session.execute('SELECT (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 10 second) AND date_sub(now(), interval 5 second)) - (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 5 second) AND date_sub(now(), interval 0 second)) AS diff;')
     indexed = r.first()[0]
+    wpps = float(indexed) / 5.0
+    # logging.debug("change in working table per second: %s" % wpps)
+
+    # calculate indexed per second from redis (indexed per second = ips)
+    now = int(time.time())
+    calc_range = range(now-5, now)
+    pipe = redisHandles.r_catchall.pipeline()
+    for sec in range(now-5,now):
+        pipe.get(sec)
+    indexed = sum([int(count) for count in pipe.execute() if count is not None])
     ips = float(indexed) / 5.0
-    logging.debug("change in working table per second: %s" % ips)
+    # logging.debug("indexed per second: %s" % ips)
+
+    # finally, estimate total estimated time
+    r = db.session.execute('SELECT (SELECT COUNT(*) FROM indexer_queue) + (SELECT COUNT(*) FROM indexer_working) as all_count;')
+    total = r.first()[0]
+    if ips > 0:
+        est_time_remaining = utilities.formatTime(int(float(total) / ips))
+    else:
+        est_time_remaining = utilities.formatTime(int(0))
+    # logging.debug("estimated seconds remaining: %s" % est_time_remaining)
+
+    # refresh
     db.session.commit()
 
     # return response
     return jsonify({
         'qps':qps,
-        'ips':ips
+        'wpps':wpps,
+        'ips':ips,
+        'est_time_remaining':est_time_remaining,
+        'calc_time':time.time()-stime
         })
 
 

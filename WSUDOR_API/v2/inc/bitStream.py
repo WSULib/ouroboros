@@ -59,7 +59,8 @@ class BitStream(object):
 		self.obj_handle = fedora_handle.get_object(self.PID)
 		self.obj_ds_handle = self.obj_handle.getDatastreamObject(self.DS)
 
-		logging.debug("init bitStream request: %s" % str(self.__dict__))
+		logging.debug('init bitStream request: %s' % str(self.__dict__))
+		logging.debug('fedora credentials: %s/%s' % (fedora_handle.username, fedora_handle.password))
 
 		# determine auth
 		try:

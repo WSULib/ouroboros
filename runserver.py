@@ -66,8 +66,6 @@ def pidfileRemove():
 # Ouroboros shutdown ##############################################################
 def shutdown():
     logging.info("received kill command, attempting to shutdown gracefully...")
-    test = 1
-    logging.debug("test%s" % test)
 
     # remove PID
     pidfileRemove()

@@ -68,7 +68,7 @@ class FedoraJMSConsumer(object):
 		try:			
 			client = yield client.disconnected
 		except StompConnectionError:
-			logging.info("FedoraJMSConsumer: reconnecting")
+			logging.debug("FedoraJMSConsumer: reconnecting")
 			yield client.connect()
 
 	def consume(self, client, frame):
@@ -76,8 +76,8 @@ class FedoraJMSConsumer(object):
 		fedora_jms_worker.act()
 
 	def error(self, connection, failure, frame, errorDestination):
-		logging.info("FedoraJMSConsumer: ERROR")
-		logging.info(failure)
+		logging.debug("FedoraJMSConsumer: ERROR")
+		logging.debug(failure)
 
 
 # handles events in Fedora Commons as reported by JMS
@@ -114,7 +114,7 @@ class FedoraJMSWorker(object):
 
 	def act(self):
 
-		logging.info("Fedora message: %s, consumed for: %s" % (self.methodName, self.pid))
+		logging.debug("Fedora message: %s, consumed for: %s" % (self.methodName, self.pid))
 
 		# debug
 		logging.debug(self.headers)
@@ -169,7 +169,7 @@ class FedoraJMSWorker(object):
 
 
 	def queue_object(self):
-		logging.info("logging PREMIS event")
+		logging.debug("logging PREMIS event")
 		IndexRouter.queue_object(self.pid, self.author, 1, self.queue_action)
 
 
@@ -190,27 +190,38 @@ class IndexRouter(object):
 
 	@classmethod
 	def poll(self):
-		stime = time.time()
+		# # refresh connection every poll
+		# db.session.close()
+		# queue_row = indexer_queue.query \
+		# 	.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))) \
+		# 	.filter(indexer_queue.action.in_(self.routable_actions)) \
+		# 	.order_by(indexer_queue.priority.desc()) \
+		# 	.order_by(indexer_queue.timestamp.asc()) \
+		# 	.first()
+		# # if result, push to router
+		# if queue_row != None:			
+		# 	self.route(queue_row)
+
 		# refresh connection every poll
 		db.session.close()
-		queue_row = indexer_queue.query \
+		query_results = indexer_queue.query \
 			.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))) \
 			.filter(indexer_queue.action.in_(self.routable_actions)) \
 			.order_by(indexer_queue.priority.desc()) \
-			.order_by(indexer_queue.timestamp.asc()) \
-			.first()
+			.order_by(indexer_queue.timestamp.asc())
+		
 		# if result, push to router
-		if queue_row != None:			
-			self.route(queue_row)
-		# logging.info("Indexer: polling elapsed: %s" % (time.time() - stime))
-
+		queue_rows = query_results.paginate(page=1, per_page=localConfig.INDEXER_POLL_CHUNK_SIZE).items
+		for queue_row in queue_rows:
+			if queue_row != None:
+				self.route(queue_row)
 
 	@classmethod
 	def route(self, queue_row):
 		'''
 		Begins celery process, removes from queue
 		'''
-		logging.info("IndexRouter: routing %s" % queue_row)
+		logging.debug("IndexRouter: routing %s" % queue_row)
 		
 		# index object in solr
 		if queue_row.action == 'index':
@@ -237,7 +248,7 @@ class IndexRouter(object):
 			'''
 			Is this necessary?  Or do we just want to skip unknown action by default and let them linger?
 			'''
-			logging.info("IndexRouter: routing action `%s` not known, sending to exceptions" % queue_row.action)	
+			logging.debug("IndexRouter: routing action `%s` not known, sending to exceptions" % queue_row.action)	
 			self.add_exception(queue_row, dequeue=True)
 
 
@@ -254,7 +265,7 @@ class IndexRouter(object):
 		# check if in working table
 		if indexer_working.query.filter_by(pid = pid, action = action).count() == 0:
 
-			logging.info("IndexRouter: queuing %s, action %s" % (pid,action))
+			logging.debug("IndexRouter: queuing %s, action %s" % (pid,action))
 			queue_tuple = (pid, username, priority, action)
 			iqp = indexer_queue(*queue_tuple)
 			db.session.add(iqp)
@@ -268,7 +279,7 @@ class IndexRouter(object):
 				db.session.rollback()
 
 		else:
-			logging.info("IndexRouter: %s is currently in working, skipping queue" % pid)
+			logging.debug("IndexRouter: %s is currently in working, skipping queue" % pid)
 
 
 	@classmethod
@@ -288,7 +299,7 @@ class IndexRouter(object):
 		'''
 		try:
 			if queue_row:
-				logging.info("IndexRouter: moving to working %s" % queue_row)
+				logging.debug("IndexRouter: moving to working %s" % queue_row)
 				indexer_queue.query.filter_by(id=queue_row.id).delete()
 				working_tuple = (queue_row.pid, queue_row.username, queue_row.priority, queue_row.action)
 				iwp = indexer_working(*working_tuple)
@@ -298,7 +309,7 @@ class IndexRouter(object):
 				if is_exception:
 					self.add_exception(queue_row, dequeue=False)
 			elif pid:
-				logging.info("IndexRouter: dequeing %s" % pid)
+				logging.debug("IndexRouter: dequeing %s" % pid)
 				indexer_queue.query.filter_by(pid=pid).delete()
 				db.session.commit()
 		except:
@@ -313,7 +324,7 @@ class IndexRouter(object):
 		'''
 		try:
 			if queue_row:
-				logging.info("IndexRouter: marking as complete %s" % queue_row)
+				logging.debug("IndexRouter: marking as complete %s" % queue_row)
 				indexer_working.query.filter_by(pid=queue_row.pid).delete()
 				db.session.commit()
 				# if is_exception, add to exception table
@@ -329,7 +340,7 @@ class IndexRouter(object):
 		
 	@classmethod
 	def add_exception(self, queue_row, dequeue=True, msg="Unknown"):
-		logging.info("IndexRouter: noting exception %s" % queue_row.pid)
+		logging.debug("IndexRouter: noting exception %s" % queue_row.pid)
 		exception_tuple = (queue_row.pid, queue_row.username, queue_row.priority, queue_row.action, msg)
 		exception = indexer_exception(*exception_tuple)
 		db.session.add(exception)
@@ -349,7 +360,7 @@ class IndexRouter(object):
 	def remove_exception(self, pid, queue_row=None):
 		if queue_row:
 			pid = queue_row.pid
-		logging.info("IndexRouter: removing exception %s" % pid)
+		logging.debug("IndexRouter: removing exception %s" % pid)
 		indexer_exception.query.filter_by(pid=pid).delete()	
 		db.session.commit()
 
@@ -509,16 +520,14 @@ class postIndexWorker(Task):
 	def after_return(self, *args, **kwargs):
 
 		# debug		
-		logging.debug("#########################################################")
 		logging.debug(args)
-		logging.debug("#########################################################")
 
 		queue_row = args[3][0]
 
 		# if celery task completed, remove from working table
 		if args[0] == 'SUCCESS':
 			if args[1] == True:
-				logging.info("postIndexWorker: index success, removing from working %s" % queue_row)
+				logging.debug("postIndexWorker: index success, removing from working %s" % queue_row)
 				IndexRouter.object_complete(queue_row = queue_row)
 			else:
 				IndexRouter.object_complete(queue_row = queue_row, is_exception=True, msg=args[1])
@@ -540,7 +549,7 @@ class IndexWorker(object):
 	@classmethod
 	@celery.task(base=postIndexWorker, bind=True, max_retries=3, name="IndexWorker_index",trail=True)
 	def index(self, queue_row):
-		logging.info("IndexWorker: indexing %s" % queue_row)
+		logging.debug("IndexWorker: indexing %s" % queue_row)
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
 			# remove from cache
@@ -557,7 +566,7 @@ class IndexWorker(object):
 	@classmethod
 	@celery.task(base=postIndexWorker, bind=True, max_retries=3, name="IndexWorker_prune",trail=True)
 	def prune(self, queue_row):
-		logging.info("IndexWorker: pruning %s" % queue_row)
+		logging.debug("IndexWorker: pruning %s" % queue_row)
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
 			# remove from cache
@@ -573,7 +582,7 @@ class IndexWorker(object):
 	@classmethod
 	# run this blocking, usually precedes queue_all() for reindex 
 	def purge_all(self):
-		logging.info("IndexWorker: purging all documents in solr core")
+		logging.debug("IndexWorker: purging all documents in solr core")
 		solr_handle.delete_by_query('*:*')
 		return True
 
@@ -590,7 +599,7 @@ class PREMISWorker(object):
 	def log_jms_event(jms_worker):
 
 		# debugging
-		logging.info("PREMISWorker: logging event")
+		logging.debug("PREMISWorker: logging event")
 
 		# init PREMIS client
 		premis_client = WSUDOR_Manager.models.PREMISClient(pid=jms_worker.pid.encode('utf-8'))

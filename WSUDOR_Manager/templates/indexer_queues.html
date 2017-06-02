@@ -26,7 +26,7 @@
 
 	<div class="col-md-6">
 
-		<h3>Working</h3>
+		<h3>Working (Celery pool)</h3>
 
 		<!-- insert table here -->
 		<table id="working" class="display" cellspacing="0" width="100%" style="font-size:100%;">
@@ -78,16 +78,16 @@
 		<table id="stats" class="table" cellspacing="0" width="100%" style="font-size:100%;">
             <tbody>
 	            <tr>            
-	                <td>records queued for indexing</td>
+	                <td>queued</td>
 	                <td><span id="tput_qps">analyzing...</span></td>
 	            </tr>
 	            <tr>            
-	                <td>change in working table</td>
-	                <td><span id="tput_wpps">analyzing...</span></td>
+	                <td>completed</td>
+	                <td><span id="tput_ips">analyzing...</span></td>
 	            </tr>
 	            <tr>            
-	                <td>indexed per second</td>
-	                <td><span id="tput_ips">analyzing...</span></td>
+	                <td>ratio of celery task completion to assignment (positive is completing faster than assigned)</td>
+	                <td><span id="tput_wpps">analyzing...</span></td>
 	            </tr>
 	            <tr>            
 	                <td>estimated time remaining</td>
@@ -153,7 +153,6 @@
 	  	  $.ajax({
 			  url: "/{{APP_PREFIX}}/indexing/status/throughput.json",
 			}).done(function(data) {
-			  console.log(data);
 
 			  // add to table
 			  $("#tput_qps").html(data.qps+" records / sec");
@@ -184,7 +183,6 @@
 	  $(function() {
 	    $('#toggle-event').change(function() {
 	      var status = $(this).prop('checked')
-	      console.log( status );
 	      
 	      // clear interval
 	      if (status == false) {
@@ -209,10 +207,9 @@
 	  });
 
 	// fire up streaming graph
-	var smoothie = new SmoothieChart({
-		'millisPerPixel':50
+	smoothie = new SmoothieChart({
+		'millisPerPixel':100
 	});
-	smoothie.streamTo(document.getElementById("mycanvas"));
 
 	// Data
 	var tput_qps_line = new TimeSeries();

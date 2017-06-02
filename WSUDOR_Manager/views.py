@@ -1814,6 +1814,9 @@ def indexing_status_throughput_json():
 
     stime = time.time()
 
+    # refresh
+    db.session.close()
+
     # query sql for queued records in last five seconds (queued per sec = qps)
     r = db.session.execute('select count(*) from indexer_queue where timestamp > date_sub(now(), interval 5 second);')
     queued = r.first()[0]
@@ -1844,9 +1847,6 @@ def indexing_status_throughput_json():
     else:
         est_time_remaining = utilities.formatTime(int(0))
     # logging.debug("estimated seconds remaining: %s" % est_time_remaining)
-
-    # refresh
-    db.session.commit()
 
     # return response
     return jsonify({

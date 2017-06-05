@@ -1668,7 +1668,11 @@ def genericMethod():
 @app.route("/indexing", methods=['POST', 'GET'])
 @roles.auth(['admin','metadata'])
 def indexing():
-    return render_template("indexing.html",localConfig=localConfig)
+
+    # get list of collections for indexing
+    collections = fedora_handle.risearch.sparql_query('select $pid $title from <#ri> where { $pid <info:fedora/fedora-system:def/relations-external#hasContentModel> <info:fedora/CM:Collection> . $pid <http://purl.org/dc/elements/1.1/title> $title .} ORDER BY ASC($title)')
+
+    return render_template("indexing.html", collections=collections, localConfig=localConfig)
 
 
 @app.route("/indexing/<action>/<group>", methods=['POST', 'GET'])
@@ -1692,13 +1696,13 @@ def indexing_index(action, group):
             logging.debug("adding selected objects to index queue to index")
             IndexRouter.queue_modified(username=username, priority=1, action='index')
 
-        if group == 'fedora_query':
-            logging.debug("using custom fedora query, indexing the results")
+        if group == 'index_collection':
+            logging.debug("indexing collection")
             
             # grab query
-            fedora_query_string = request.form['fedora_query_string']
-            logging.debug("provided query string: %s" % fedora_query_string)
-            IndexRouter.queue_fedora_query(username=username, priority=1, action='index', fedora_query_string=fedora_query_string)
+            collection_pid = request.form['collection']
+            logging.debug("provided collection pid: %s" % collection_pid)
+            IndexRouter.queue_collection(username=username, priority=1, action='index', collection_pid=collection_pid)
 
         if group == 'all':
             logging.debug("adding selected objects to index queue to index")

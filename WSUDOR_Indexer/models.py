@@ -432,18 +432,17 @@ class IndexRouter(object):
 
 
 	@classmethod
-	def queue_fedora_query(self, username=None, priority=1, action='index', fedora_query_string=False):
+	def queue_collection(self, username=None, priority=1, action='index', collection_pid=False):
 
-		'''
-		# Expects query string, queues objects that result from that query to Fedora
-		'''
-
-		query_pids = fedora_handle.find_objects(fedora_query_string)
+		sparql_query = 'select $pid from <#ri> where { $pid <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <%s> . }' % collection_pid
+		logging.debug(sparql_query)
+		collection_pids = fedora_handle.risearch.sparql_query(sparql_query)
 
 		# for each in list, add to queue
-		for pid in query_pids:
+		for pid in collection_pids:
 			# skip control objectcs for queue_all()
-			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
+			pid = pid['pid']
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid):
 				self.queue_object(pid, username, priority, action)
 
 
@@ -453,12 +452,23 @@ class IndexRouter(object):
 		# index control objects
 		self.queue_control()
 
-		all_pids = fedora_handle.find_objects("*")
+		# # OLD - using fedora search
+		# all_pids = fedora_handle.find_objects("*")
+
+		# # for each in list, add to queue
+		# for pid in all_pids:
+		# 	# skip control objectcs for queue_all()
+		# 	if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
+		# 		self.queue_object(pid, username, priority, action)
+
+		# NEW - using sparql
+		all_pids = fedora_handle.risearch.sparql_query('select $pid from <#ri> where { $pid <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject> "True" . }')
 
 		# for each in list, add to queue
 		for pid in all_pids:
 			# skip control objectcs for queue_all()
-			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
+			pid = pid['pid']
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid):
 				self.queue_object(pid, username, priority, action)
 
 		# set new last_index_date

@@ -1,7 +1,7 @@
 <div class="row">
 	<div class="col-md-12">
 		<h2>Indexer Status</h2>
-		<p>5 second table auto-refresh: <input type="checkbox" id="toggle-event" checked data-toggle="toggle" data-size="mini" data-onstyle="success"> <a id="manual-refresh" class="btn btn-warning btn-xs" href="#" onclick="return false;">manually refresh</a></p>
+		<p>5 second table auto-refresh: <input type="checkbox" id="toggle-event" data-toggle="toggle" data-size="mini" data-onstyle="success"> <a id="manual-refresh" class="btn btn-warning btn-xs" href="#" onclick="return false;">manually refresh</a></p>
 	</div>
 	<div class="col-md-6">
 
@@ -151,7 +151,7 @@
 	  function throughputPing() {
 		  // ping ouroboros to current rates
 	  	  $.ajax({
-			  url: "/{{APP_PREFIX}}/indexing/status/throughput.json",
+			  url: "/{{APP_PREFIX}}/indexing/status/throughput.json?refresh_rate="+refresh_rate,
 			}).done(function(data) {
 
 			  // add to table
@@ -178,7 +178,7 @@
 	    throughputPing();
 		  }, refresh_rate );
 	  }
-	  setAutoRefresh();
+	  // setAutoRefresh();
 
 	  $(function() {
 	    $('#toggle-event').change(function() {

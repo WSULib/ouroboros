@@ -25,8 +25,8 @@
 			</tr>
 
 			<tr>
-				<td><form id="fedora_query_form" class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query"><input class="form-control" type="text" name="fedora_query_string"></input><br><a class="btn btn-success btn-xs form-control-inline" onclick="$.post('/{{localConfig.APP_PREFIX}}/indexing/index/fedora_query', $('#fedora_query_form').serialize()); return false;">Submit</a></form></td>
-				<td>Provide a simple <strong>Fedora object query</strong>, index the results of that query (e.g. <code>wayne:LincolnLetters*</code>).</td>
+				<td><form id="index_collection_form" class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/index_collection"><select class="form-control input-sm" name="collection">{% for collection in collections %}<option value="{{collection.pid}}">{{collection.title}}</option>{% endfor %}</select><br><a class="btn btn-success btn-xs form-control-inline" onclick="$.post('/{{localConfig.APP_PREFIX}}/indexing/index/index_collection', $('#index_collection_form').serialize()); return false;">Submit</a></form></td>
+				<td>Select a particular <strong>collection</strong> to index.</td>
 			</tr>
 
 			<tr>

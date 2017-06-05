@@ -190,20 +190,15 @@ class IndexRouter(object):
 
 	@classmethod
 	def poll(self):
-		# # refresh connection every poll
-		# db.session.close()
-		# queue_row = indexer_queue.query \
-		# 	.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))) \
-		# 	.filter(indexer_queue.action.in_(self.routable_actions)) \
-		# 	.order_by(indexer_queue.priority.desc()) \
-		# 	.order_by(indexer_queue.timestamp.asc()) \
-		# 	.first()
-		# # if result, push to router
-		# if queue_row != None:			
-		# 	self.route(queue_row)
+
+		db.session.close()
+
+		# check working table load
+		# working_count = indexer_working.query.count()
+		# if working_count < 100:
+
 
 		# refresh connection every poll
-		db.session.close()
 		query_results = indexer_queue.query \
 			.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))) \
 			.filter(indexer_queue.action.in_(self.routable_actions)) \
@@ -216,11 +211,14 @@ class IndexRouter(object):
 			if queue_row != None:
 				self.route(queue_row)
 
+
 	@classmethod
 	def route(self, queue_row):
+		
 		'''
 		Begins celery process, removes from queue
 		'''
+		
 		logging.debug("IndexRouter: routing %s" % queue_row)
 		
 		# index object in solr
@@ -441,7 +439,7 @@ class IndexRouter(object):
 		# for each in list, add to queue
 		for pid in collection_pids:
 			# skip control objectcs for queue_all()
-			pid = pid['pid']
+			pid = pid['pid'].split("/")[-1]
 			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid):
 				self.queue_object(pid, username, priority, action)
 
@@ -459,7 +457,7 @@ class IndexRouter(object):
 		# for each in list, add to queue
 		for pid in all_pids:
 			# skip control objectcs for queue_all()
-			pid = pid['pid']
+			pid = pid['pid'].split("/")[-1]
 			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid):
 				self.queue_object(pid, username, priority, action)
 
@@ -555,7 +553,7 @@ class IndexWorker(object):
 		obj = WSUDOR_ContentTypes.WSUDOR_Object(queue_row.pid)
 		if obj:
 			# remove from cache
-			obj.removeObjFromCache()
+			# obj.removeObjFromCache()
 			# then, index
 			index_result = obj.index()
 			return index_result

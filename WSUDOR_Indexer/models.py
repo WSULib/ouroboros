@@ -452,17 +452,9 @@ class IndexRouter(object):
 		# index control objects
 		self.queue_control()
 
-		# # OLD - using fedora search
-		# all_pids = fedora_handle.find_objects("*")
-
-		# # for each in list, add to queue
-		# for pid in all_pids:
-		# 	# skip control objectcs for queue_all()
-		# 	if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
-		# 		self.queue_object(pid, username, priority, action)
-
-		# NEW - using sparql
-		all_pids = fedora_handle.risearch.sparql_query('select $pid from <#ri> where { $pid <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject> "True" . }')
+		# using sparql
+		sparql_query = 'select $pid from <#ri> where { $pid <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject> "True" . }'		
+		all_pids = fedora_handle.risearch.sparql_query(sparql_query)
 
 		# for each in list, add to queue
 		for pid in all_pids:

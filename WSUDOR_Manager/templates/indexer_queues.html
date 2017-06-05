@@ -108,7 +108,7 @@
 	
 	$(document).ready(function(){
 
-	  var refresh_rate = 5000;
+	  var refresh_rate = 10000;
 	  
 	  // queued
 	  var qtable = $('#queued').DataTable({
@@ -208,7 +208,7 @@
 
 	// fire up streaming graph
 	smoothie = new SmoothieChart({
-		'millisPerPixel':100
+		'millisPerPixel':200
 	});
 
 	// Data

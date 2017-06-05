@@ -1822,25 +1822,25 @@ def indexing_status_throughput_json():
     db.session.close()
 
     # query sql for queued records in last five seconds (queued per sec = qps)
-    r = db.session.execute('select count(*) from indexer_queue where timestamp > date_sub(now(), interval 5 second);')
+    r = db.session.execute('select count(*) from indexer_queue where timestamp > date_sub(now(), interval 10 second);')
     queued = r.first()[0]
-    qps = float(queued) / 5.0
+    qps = float(queued) / 10.0
     # logging.debug("records queued per second: %s" % qps)
 
     # determine change in working, by grabbing difference in working table (working pressure per sec = wps)
-    r = db.session.execute('SELECT (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 10 second) AND date_sub(now(), interval 5 second)) - (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 5 second) AND date_sub(now(), interval 0 second)) AS diff;')
+    r = db.session.execute('SELECT (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 20 second) AND date_sub(now(), interval 10 second)) - (SELECT COUNT(*) FROM indexer_working WHERE timestamp BETWEEN date_sub(now(), interval 10 second) AND date_sub(now(), interval 0 second)) AS diff;')
     indexed = r.first()[0]
-    wpps = float(indexed) / 5.0
+    wpps = float(indexed) / 10.0
     # logging.debug("change in working table per second: %s" % wpps)
 
     # calculate indexed per second from redis (indexed per second = ips)
     now = int(time.time())
-    calc_range = range(now-5, now)
+    calc_range = range(now-10, now)
     pipe = redisHandles.r_catchall.pipeline()
-    for sec in range(now-5,now):
+    for sec in range(now-10,now):
         pipe.get(sec)
     indexed = sum([int(count) for count in pipe.execute() if count is not None])
-    ips = float(indexed) / 5.0
+    ips = float(indexed) / 10.0
     # logging.debug("indexed per second: %s" % ips)
 
     # finally, estimate total estimated time

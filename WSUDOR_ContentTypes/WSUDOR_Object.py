@@ -1488,7 +1488,7 @@ class WSUDOR_GenObject(object):
         export_context='archive', 
         overwrite=False, 
         show_progress=False, 
-        refresh_remote=True, 
+        refresh_remote=False, 
         omit_checksums=True, 
         skip_constituents=False, 
         refresh_remote_constituents=False):

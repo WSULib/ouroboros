@@ -648,13 +648,11 @@ class PREMISClient(object):
 	def add_jms_event(self, msg):
 
 		# debug
-		logging.info("############ DEBUG ############")
-		logging.info("%s" % msg.body)
-		logging.info("############ DEBUG ############")
+		logging.debug("############ DEBUG ############")
+		logging.debug("%s" % msg.body)
+		logging.debug("############ DEBUG ############")
 
 		# if datastream worked on, determine if in PREMIS record?
-
-
 
 		# prepare detail message
 		eventDetail = "Fedora Commons Java Messaging Service (JMS); action %s, pid %s".encode('utf-8') % ( msg.methodName.encode('utf-8'), msg.pid.encode('utf-8') )

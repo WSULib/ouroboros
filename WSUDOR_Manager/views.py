@@ -1850,16 +1850,19 @@ def indexing_status_throughput_json():
         est_time_remaining = utilities.formatTime(int(float(total) / ips))
     else:
         est_time_remaining = utilities.formatTime(int(0))
-    # logging.debug("estimated seconds remaining: %s" % est_time_remaining)
 
-    # return response
-    return jsonify({
+    # return
+    return_dict = {
         'qps':qps,
         'wpps':wpps,
         'ips':ips,
         'est_time_remaining':est_time_remaining,
         'calc_time':time.time()-stime
-        })
+    }
+    logging.debug(return_dict)
+
+    # return response
+    return jsonify(return_dict)
 
 
 

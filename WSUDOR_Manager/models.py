@@ -922,14 +922,14 @@ class SolrDT(object):
 
 	def __init__(self, solr_handle, DTinput):
 
-		logging.info("initializing SolrDT connector")
+		logging.debug("initializing SolrDT connector")
 
 		# solr handle
 		self.solr_handle = solr_handle
 
 		# dictionary INPUT DataTables ajax
 		self.DTinput = DTinput
-		logging.info("%s" % self.DTinput)
+		logging.debug("%s" % self.DTinput)
 
 		# dictionary OUTPUT to DataTables
 		self.DToutput = DT().__dict__
@@ -970,7 +970,7 @@ class SolrDT(object):
 		for column in self.DTinput['columns']:
 			if column['search']['value'] != '':
 				fq_filter = "%s:%s" % ( column['name'], column['search']['value'].replace(" ","\\ ") )
-				logging.info('adding facet filter: %s' % fq_filter)
+				logging.debug('adding facet filter: %s' % fq_filter)
 				self.search_params['fq'].append(fq_filter.encode("utf-8"))
 
 
@@ -987,10 +987,10 @@ class SolrDT(object):
 			sort_field = self.DTinput['columns'][order['column']]['name']
 			sort_dir = order['dir']
 			sort_syntax = "%s %s" % (sort_field, sort_dir)
-			logging.info("adding sort: %s" % (sort_syntax))
+			logging.debug("adding sort: %s" % (sort_syntax))
 			sort_fields.append(sort_syntax)
 			concat_sort_string = ", ".join(sort_fields)
-			logging.info("%s" % concat_sort_string)
+			logging.debug("%s" % concat_sort_string)
 
 		# add to search_params
 		self.search_params['sort'] = concat_sort_string
@@ -1007,7 +1007,7 @@ class SolrDT(object):
 
 	def build_response(self):
 
-		logging.info('building query...')
+		logging.debug('building query...')
 
 		# total count
 		ts = self.solr_handle.search(**{'q':'*:*'})
@@ -1021,7 +1021,7 @@ class SolrDT(object):
 		self.paginate()
 
 		# debug
-		logging.info("%s" % self.search_params)
+		logging.debug("%s" % self.search_params)
 
 		# excecute search
 		s = self.solr_handle.search(**self.search_params)
@@ -1031,7 +1031,7 @@ class SolrDT(object):
 
 		# iterate through rows and add to 'data'
 		if self.DToutput['recordsFiltered'] > 0:
-			logging.info('iterate through result set, add to response...')
+			logging.debug('iterate through result set, add to response...')
 			for doc in s.documents:
 
 				ordered_fields = [
@@ -1080,7 +1080,7 @@ class SolrDT(object):
 			self.DToutput['search_params'] = self.search_params
 
 		else:
-			logging.info('none found for search parameters...')
+			logging.debug('none found for search parameters...')
 
 
 	def to_json(self):

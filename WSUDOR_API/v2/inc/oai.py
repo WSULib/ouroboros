@@ -113,7 +113,7 @@ class OAIProvider(object):
 		'''
 
 		stime = time.time()
-		logging.info("retrieving records for verb %s" % (self.args['verb']))
+		logging.debug("retrieving records for verb %s" % (self.args['verb']))
 
 		# limit search to metadataPrefix provided
 		if self.args['metadataPrefix'] in metadataPrefix_hash.keys():
@@ -149,7 +149,7 @@ class OAIProvider(object):
 
 		# report
 		etime = time.time()
-		logging.info("%s record(s) returned in %sms" % (len(self.record_nodes), (float(etime) - float(stime)) * 1000))
+		logging.debug("%s record(s) returned in %sms" % (len(self.record_nodes), (float(etime) - float(stime)) * 1000))
 
 
 	def record_thread_worker(self, doc, include_metadata):
@@ -209,7 +209,7 @@ class OAIProvider(object):
 			# retrieve token params and alter args and search_params
 			resumption_params_raw = redisHandles.r_oai.get(self.args['resumptionToken'])
 			if resumption_params_raw is not None:
-				resumption_params = json.loads()
+				resumption_params = json.loads(resumption_params_raw)
 				self.args = resumption_params['args']
 				self.search_params = resumption_params['search_params']
 			# raise error
@@ -280,7 +280,7 @@ class OAIProvider(object):
 				if search_results.total_results > 0:
 					fedora_object = fedora_handle.get_object(search_results.documents[0]['id'])
 					if fedora_object.exists:
-						logging.info("record found, returning allowed metadataPrefixs")
+						logging.debug("record found, returning allowed metadataPrefixs")
 						for ds in fedora_object.ds_list:
 							if ds in inv_metadataPrefix_hash.keys():
 

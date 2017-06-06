@@ -1904,7 +1904,9 @@ def solrReaduxDoc(pid, action):
     '''
 
     try:
-        r = requests.get('%s/indexdata/%s' % (localConfig.READUX_BASE_URL, pid)).json()
+        readux_url = '%s/indexdata/%s' % (localConfig.READUX_BASE_URL, pid)
+        logging.debug(readux_url)
+        r = requests.get(readux_url).json()
     except:
         logging.debug("could not retrieve index data from readux, aborting")
         return jsonify({"result":False})

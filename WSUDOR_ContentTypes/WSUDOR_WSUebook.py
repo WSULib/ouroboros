@@ -779,7 +779,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# commit solr purges
 		readux_solr_handle.commit()
 
-
 		return True
 
 

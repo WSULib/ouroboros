@@ -1801,6 +1801,7 @@ class WSUDOR_GenObject(object):
         '''
         return models.ObjHierarchy(self.pid, self.SolrDoc.asDictionary()['dc_title'][0]).load_hierarchy(overwrite=overwrite)
 
+
     # return timeline
     def timeline(self):
 
@@ -1884,15 +1885,33 @@ class WSUDOR_GenObject(object):
         # output activity dates for fedora, solr, and varnish along with a message about caching/indexing status
         return checked
 
+
     # Cache object
-    def cacheInVarnish(self):
-        try:
-            self._removeObjFromVarnishCache()
-            urlopen("https://" + localConfig.PUBLIC_HOST + "/item/" + self.pid, context=ssl._create_unverified_context())
-            urlopen("https://" + localConfig.PUBLIC_HOST + "/" + self.pid + "/thumbnail", context=ssl._create_unverified_context())
-            return True
-        except:
-            return False
+    def cacheInVarnish(self, remove_from_cache=True, targets=['thumbnail','item_page']):
+        
+        # return dict
+        stime = time.time()
+        return_dict = {}
+
+        # remove from varnish cache
+        if remove_from_cache:
+            logging.debug("removing object from varnish cache")
+            return_dict['remove'] = self._removeObjFromVarnishCache()
+        
+        # recache
+        if 'item_page' in targets:
+            logging.debug("caching item page in varnish")
+            r = requests.get("https://%s/item/%s" % (localConfig.PUBLIC_HOST, self.pid))
+            return_dict['item_page'] = r.headers
+        if 'thumbnail' in targets:
+            logging.debug("caching thumbnail in varnish")
+            r = requests.get("https://%s/item/%s/thumbnail" % (localConfig.PUBLIC_HOST, self.pid))
+            return_dict['thumbnail'] = r.headers
+        
+        # return
+        return_dict['elapsed'] = time.time()-stime
+        return return_dict
+
 
     ################################################################
     # Consider moving

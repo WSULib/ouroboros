@@ -3,7 +3,11 @@
 
 <div class="row">
 	<div class="col-md-12">
-		<h3>Perform task, {{task_name}}, on the following objects?</h3>
+		{% if task_name == "genericMethod_worker" %}
+			<h3>Perform method, <code>{{job_package.form_data.method_name}}</code>, on the following objects?</h3>
+		{% else %}
+			<h3>Perform task, <code>{{task_name}}</code>, on the following objects?</h3>
+		{% endif %}
 	</div>
 </div>
 

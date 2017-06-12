@@ -89,7 +89,7 @@ def jobRemove_worker(job_num):
 ############################################################################################################
 
 # PID selection
-def sendUserPIDs(username,PIDs,group_name):
+def sendUserPIDs(username, PIDs, group_name):
 	stime = time.time()	
 	''' expecting username and list of PIDs'''
 	# logging.debug("Storing selected PIDs for %s" % (username))
@@ -107,7 +107,7 @@ def sendUserPIDs(username,PIDs,group_name):
 
 
 # PID removal
-def removeUserPIDs(username,PIDs):
+def removeUserPIDs(username, PIDs):
 	stime = time.time()	
 	logging.debug("Removing selected PIDs for %s" % (username))
 	
@@ -121,9 +121,6 @@ def removeUserPIDs(username,PIDs):
 	logging.debug("Took this long to remove PIDs to SQL %s ms" % ttime)
 	logging.debug("PIDs removed")
 
-'''
-Improvement for getSelPIDs() and genPIDlet() - creator generator that suffices both?
-'''
 
 def getSelPIDs(username=False):
 	if not username:
@@ -131,6 +128,7 @@ def getSelPIDs(username=False):
 	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
 	PIDlist = [PID.PID for PID in userSelectedPIDs]
 	return PIDlist
+
 
 # function to create small object with current, previous, and next PIDs for views
 def genPIDlet(cursor):

@@ -1,0 +1,30 @@
+{% include 'header.html' %}
+
+<div class="row">
+	<div class="col-md-12">
+		<h2>Caching</h2>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-6">
+		<h3>Varnish</h3>
+		<p>The following are some common tasks for managing the Varnish cache.</p>
+		<table class="table">
+			
+			<tr>
+				<td>
+					<form class="form-horizontal bv-form" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/fireTask/obj_loop/genericMethod_worker" enctype="multipart/form-data"><input class="form-control input-sm" id="method_name" name="method_name" type="hidden" value="cacheInVarnish" data-bv-field="method_name"></input><input class="btn btn-success btn-xs form-control-inline" type="submit" value="Cache Objects in Varnish"></input></form>
+				</td>
+				<td>Cache thumbnails and item page for <strong>selected objects</strong>.</td>
+			</tr>
+
+		</table>
+	</div>
+	<div class="col-md-6">
+		<h3>Loris</h3>
+		<p>Coming soon: manage cache for Loris.</p>
+	</div>
+</div>
+
+{% include 'footer.html' %}

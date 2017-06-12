@@ -10,11 +10,6 @@
 		<table class="table">
 			
 			<tr>
-				<td><strong>Action</strong></td>
-				<td><strong>Description</strong></td>
-			</tr>
-
-			<tr>
 				<td><a class="btn btn-success btn-xs" href="#" onclick="$.ajax({url:'/{{localConfig.APP_PREFIX}}/indexing/index/selected'}); return false;">Index Selected Objects</a></td>
 				<td><strong>Indexes currently selected</strong> objects.</td>
 			</tr>
@@ -25,7 +20,7 @@
 			</tr>
 
 			<tr>
-				<td><form id="index_collection_form" class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/index_collection"><select class="form-control input-sm" name="collection">{% for collection in collections %}<option value="{{collection.pid}}">{{collection.title}}</option>{% endfor %}</select><br><a class="btn btn-success btn-xs form-control-inline" onclick="$.post('/{{localConfig.APP_PREFIX}}/indexing/index/index_collection', $('#index_collection_form').serialize()); return false;">Submit</a></form></td>
+				<td><form id="index_collection_form" class="form-group" method="POST" action="/{{localConfig.APP_PREFIX}}/indexing/index/index_collection"><select class="form-control input-sm" name="collection">{% for collection in collections %}<option value="{{collection.pid}}">{{collection.title}}</option>{% endfor %}</select><br><a class="btn btn-success btn-xs form-control-inline" onclick="$.post('/{{localConfig.APP_PREFIX}}/indexing/index/index_collection', $('#index_collection_form').serialize()); return false;">Index Collection</a></form></td>
 				<td>Select a particular <strong>collection</strong> to index.</td>
 			</tr>
 

@@ -573,7 +573,7 @@ def fireTask(job_type,task_name):
         logging.debug("Firing job for obj_loop type")
         # get PIDs to confirm
         PIDs = jobs.getSelPIDs()
-        return render_template("objConfirm.html",task_name=task_name,task_inputs_key=task_inputs_key,PIDs=PIDs,username=username,localConfig=localConfig)
+        return render_template("objConfirm.html",job_package=job_package,task_name=task_name,task_inputs_key=task_inputs_key,PIDs=PIDs,username=username,localConfig=localConfig)
 
     if job_type == "custom_loop":
         logging.debug("Firing job for custom_loop type")
@@ -1864,6 +1864,15 @@ def indexing_status_throughput_json():
     # return response
     return jsonify(return_dict)
 
+
+# Caching
+####################################################################################
+# caching home
+@app.route("/caching", methods=['POST', 'GET'])
+@roles.auth(['admin','metadata'])
+def caching():
+
+    return render_template("caching.html", localConfig=localConfig)
 
 
 # WSUDOR_ContentTypes (aka "wct")

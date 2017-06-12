@@ -63,13 +63,13 @@ class BitStream(object):
 		logging.debug('fedora credentials: %s/%s' % (fedora_handle.username, fedora_handle.password))
 
 		# determine auth
-		try:
-			self.auth = self._determine_auth()
-		except Exception, e:
-			logging.debug(e)
-			self.msg = "authorization failed"
-			self.status_code = 500
-			self.auth = False
+		# try:
+		self.auth = self._determine_auth()
+		# except Exception, e:
+		# 	logging.debug(e)
+		# 	self.msg = "authorization failed"
+		# 	self.status_code = 500
+		# 	self.auth = False
 
 	
 	# return custom message and HTTP status code
@@ -143,7 +143,7 @@ class BitStream(object):
 
 		# if request is server-side and satisfies request header fingerprints, authorize
 		XFS = 'X-Forwarded-Server'; XFF = 'X-Forwarded-For'; XFH = 'X-Forwarded-Host'
-		if set([XFS,XFF,XFH]).issubset(self.headers.keys()):
+		if self.headers and set([XFS,XFF,XFH]).issubset(self.headers.keys()):
 			
 			logging.debug("X-Forwarded-* headers detected")
 

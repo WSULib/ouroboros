@@ -389,14 +389,14 @@ class SolrDoc(object):
 
 
 	# delete doc in Solr
-	def delete(self):
-		delete_response = solr_handle.delete_by_key(self.id, commit=True)
+	def delete(self, commit=True):
+		delete_response = solr_handle.delete_by_key(self.id, commit=commit)
 		return delete_response
 
 
 	# update doc to Solr
-	def update(self):
-		update_response = solr_handle.update([self.doc.__dict__], commit=True)
+	def update(self, commit=True):
+		update_response = solr_handle.update([self.doc.__dict__], commit=commit)
 		return update_response
 
 

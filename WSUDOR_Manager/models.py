@@ -21,6 +21,7 @@ from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import CeleryWorker
 from WSUDOR_Manager import logging
+from WSUDOR_Manager.lmdbHandles import lmdb_env
 
 import localConfig
 
@@ -881,12 +882,10 @@ class ObjHierarchy(object):
 		# generate hierarchy
 		self.gen_hierarchy()
 
-		# save to datastream
-		self.ohandle = fedora_handle.get_object(self.pid)
-		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "HIERARCHY", "HIERARCHY", mimetype="application/json", control_group="M")
-		ds_handle.label = "HIERARCHY"
-		ds_handle.content = json.dumps(self.hierarchy)
-		ds_handle.save()
+		# save object hierarchy to LMDB database
+		logging.debug("Saving object hierarchy for %s in LMDB database" % self.pid)
+		with lmdb_env.begin(write=True) as txn:
+			txn.put('%s_object_hierarchy' % (self.pid.encode('utf-8')), json.dumps(self.hierarchy))
 		
 		# return
 		return self.hierarchy
@@ -894,15 +893,20 @@ class ObjHierarchy(object):
 
 	def load_hierarchy(self, overwrite=False):
 
-		# check for hierarchy
-		self.ohandle = fedora_handle.get_object(self.pid)
-		# if found, and not overwriting, retrieve and return
-		if 'HIERARCHY' in self.ohandle.ds_list and not overwrite:
-			ds_handle = self.ohandle.getDatastreamObject('HIERARCHY')
-			self.hierarchy = json.loads(ds_handle.content)
-		# if none found, but not overwriting, generate and return
-		elif 'HIERARCHY' not in self.ohandle.ds_list and not overwrite:
-			self.gen_hierarchy()
+		# if not overwriting, determine if in LMDB
+		if not overwrite:
+			# check for IIIF manifest in LMDB	
+			with lmdb_env.begin(write=False) as txn:
+				stored_object_hierarchy = txn.get('%s_object_hierarchy' % (self.pid.encode('utf-8')))
+
+			# if found, retrieve
+			if stored_object_hierarchy:
+				self.hierarchy = json.loads(stored_object_hierarchy)
+
+			# if not found, generate (but do not save)
+			else:
+				self.gen_hierarchy()
+		
 		# if none found, and overwrite is True, create and save
 		else:
 			self.hierarchy = self.save_hierarchy()

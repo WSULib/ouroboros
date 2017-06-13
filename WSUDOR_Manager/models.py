@@ -374,6 +374,7 @@ class SolrDoc(object):
 		response = solr_handle.search(**query_params)
 		if len(response.documents) > 0:
 			self.doc = SolrFields(**response.documents[0])
+			self.raw = SolrFields(**response.raw_content)
 			#store version, remove from doc
 			self.version = self.doc._version_ 
 			del self.doc._version_
@@ -403,6 +404,9 @@ class SolrDoc(object):
 
 	def asDictionary(self):
 		return self.doc.__dict__
+
+	def raw(self):
+		return self.raw
 
 
 class SolrSearchDoc(object):    

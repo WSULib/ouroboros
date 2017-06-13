@@ -148,7 +148,8 @@ class Item(Resource):
 			'solr_doc': self.obj.SolrDoc.asDictionary(),
 			'collections': self.obj.isMemberOfCollections,
 			'learning_objects': self.obj.hasLearningObjects,
-			'content_type_specific': self.content_type_specific
+			'content_type_specific': self.content_type_specific,
+			'matches': self.obj.SolrDoc.raw.matches[self.obj.pid]
 		}
 
 

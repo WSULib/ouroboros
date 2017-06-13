@@ -10,10 +10,10 @@ import rdflib
 import time
 
 print '''
-                ::+:/`
-         :----:+ssoo+:.`
-      `-:+sssossysoooooo+/-`
-    `:oysyo++ooooo+////+ooss+-`
+				::+:/`
+		 :----:+ssoo+:.`
+	  `-:+sssossysoooooo+/-`
+	`:oysyo++ooooo+////+ooss+-`
    :ssyy/-`   `..     ..:/+osso:
  `/ssyo:                 `-+:oss+`
  +sso+:                    `//sss+
@@ -25,15 +25,15 @@ osso+o.                  `+//ooysoo
 `+ssssoo:`   ``.-` .-    `-ooosss+`
  `ossso///-.--:.``::. `.:+ooossso`
   `+sossyo++o++::///:/+ooossoss+`
-    -ossssss+oo+sossoosossssso-
-      ./osssssysyysssssssso/.
-         `-:++sosyssyyo+:.
+	-ossssss+oo+sossoosossssso-
+	  ./osssssysyysssssssso/.
+		 `-:++sosyssyyo+:.
 
   <-- Ouroboros says hissss -->'''
 
 logging.debug("importing fedora handles")
 fedora_handle = fedoraHandles.fedora_handle
-from WSUDOR_Manager import fedoraHandles
+from WSUDOR_Manager import fedoraHandles, redisHandles
 
 logging.debug("importing solr handles")
 solr_handle = solrHandles.solr_handle
@@ -248,7 +248,13 @@ def getSeedObjects(target_repo):
 
 	logging.debug('finis.')
 
-	
+
+def clearIndexerCeleryQueue():
+	# clear broker
+	logging.debug("clearing celery-celery indexer queue...")
+	broker_size = redisHandles.r_broker.dbsize()
+	broker_clear = redisHandles.r_broker.flushdb()
+	logging.debug("%s tasks cleared from Celery broker." % (str(broker_size)))
 	
 	
 	

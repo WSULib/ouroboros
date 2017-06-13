@@ -225,7 +225,7 @@ def make_celery(app):
 celery = make_celery(app)
 
 # assuming Ouroboros Celery worker
-if fire_cw and localConfig.WSUDOR_MANAGER_FIRE:
+if fire_cw and localConfig.WSUDOR_MANAGER_FIRE and localConfig.WSUDOR_MANAGER_CELERY_WORKER_FIRE:
 	# fire celery worker
 	logging.debug("firing generic celery worker")
 	cw = CeleryWorker("celery")

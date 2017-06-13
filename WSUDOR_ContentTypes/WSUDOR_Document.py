@@ -324,12 +324,17 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				# get handle
 				pdf_ds_handle = self.ohandle.getDatastreamObject(pdf)
 
-				# use Solr's Tika Extract to strip down to text
-				logging.debug("extracting full-text from PDF: %s" % pdf)
-				baseurl = "http://localhost/solr4/fedobjs/update/extract?&extractOnly=true"
-				files = {'file': pdf_ds_handle.content}		
-				r = requests.post(baseurl, files=files)
-				ds_stripped_content = r.text	
+				# use alternate form for extracting text
+				temp_pdf = "/tmp/Ouroboros/%s.pdf" % str(uuid.uuid4())
+				temp_txt = "/tmp/Ouroboros/%s.txt" % str(uuid.uuid4())
+				with open(temp_pdf,'wb') as f:
+					f.write(pdf_ds_handle.content)
+				os.system('pdftotext %s %s' % (temp_pdf,temp_txt))
+				with open(temp_txt,'r') as f:
+					ds_stripped_content = f.read()
+				# cleanup
+				os.remove(temp_pdf)
+				os.remove(temp_txt)
 
 				# add to list
 				self.SolrDoc.doc.int_fullText.append(ds_stripped_content)

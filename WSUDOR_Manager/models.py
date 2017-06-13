@@ -22,6 +22,8 @@ from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager import CeleryWorker
 from WSUDOR_Manager import logging
 
+import localConfig
+
 # import derivatives
 from inc.derivatives import Derivative
 
@@ -387,13 +389,13 @@ class SolrDoc(object):
 
 	# delete doc in Solr
 	def delete(self):
-		delete_response = solr_handle.delete_by_key(self.id, commit=False)
+		delete_response = solr_handle.delete_by_key(self.id, commit=True)
 		return delete_response
 
 
 	# update doc to Solr
 	def update(self):
-		update_response = solr_handle.update([self.doc.__dict__], commit=False)
+		update_response = solr_handle.update([self.doc.__dict__], commit=True)
 		return update_response
 
 
@@ -703,6 +705,7 @@ class ObjHierarchy(object):
 
 
 	def __init__(self, pid=None, title=None, is_root=False):
+
 		self.pid = pid
 		self.title = title
 		self.ancestors = []
@@ -715,11 +718,12 @@ class ObjHierarchy(object):
 
 	@classmethod
 	def get_parent(self, pid):
+
 		'''
 		Gets parent, returns (pid, title)
 		'''
 		# parent
-		baseURL = "http://localhost/fedora/risearch"
+		baseURL = "http://%s/fedora/risearch" % localConfig.FEDORA_HOST
 		risearch_query = '''
 		select $pid $title from <#ri> where
 			<info:fedora/%s> 
@@ -754,11 +758,12 @@ class ObjHierarchy(object):
 
 	@classmethod
 	def get_siblings(self, pid):
+
 		'''
 		Gets all siblings
 		'''
 		# siblings
-		baseURL = "http://localhost/fedora/risearch"
+		baseURL = "http://%s/fedora/risearch" % localConfig.FEDORA_HOST
 		risearch_query = '''
 		select $pid $title from <#ri> where 
 			<info:fedora/%s> 
@@ -798,8 +803,9 @@ class ObjHierarchy(object):
 
 	@classmethod
 	def get_children(self, pid):
+
 		# children
-		baseURL = "http://localhost/fedora/risearch"
+		baseURL = "http://%s/fedora/risearch" % localConfig.FEDORA_HOST
 		risearch_query = '''
 		select $pid $title from <#ri> where 
 			$pid
@@ -830,9 +836,11 @@ class ObjHierarchy(object):
 
 	@classmethod
 	def get_ancestors(self, pid):
+
 		'''
 		Move upwards from immediate parents, divining vertical hierarchy.
 		'''
+
 		ancestors = []
 		def recurisve_ancestor(pid):
 			p = self.get_parent(pid)
@@ -847,11 +855,8 @@ class ObjHierarchy(object):
 		return ancestors
 
 
-	def save_hierarchy(self):
-		'''
-		This method queries ancestors and siblings, writes to JSON
-		datastream of object
-		'''
+	def gen_hierarchy(self):
+
 		self.hierarchy = {
 			'self':{
 				'pid':self.pid,
@@ -861,21 +866,48 @@ class ObjHierarchy(object):
 			'siblings':self.get_siblings(self.pid),
 			'children':self.get_children(self.pid)
 		}
+		
+		# return
+		return self.hierarchy
+
+
+	def save_hierarchy(self):
+
+		'''
+		This method queries ancestors and siblings, writes to JSON
+		datastream of object
+		'''
+
+		# generate hierarchy
+		self.gen_hierarchy()
+
+		# save to datastream
 		self.ohandle = fedora_handle.get_object(self.pid)
 		ds_handle = eulfedora.models.DatastreamObject(self.ohandle, "HIERARCHY", "HIERARCHY", mimetype="application/json", control_group="M")
 		ds_handle.label = "HIERARCHY"
 		ds_handle.content = json.dumps(self.hierarchy)
 		ds_handle.save()
+		
+		# return
 		return self.hierarchy
 
 
 	def load_hierarchy(self, overwrite=False):
+
+		# check for hierarchy
 		self.ohandle = fedora_handle.get_object(self.pid)
+		# if found, and not overwriting, retrieve and return
 		if 'HIERARCHY' in self.ohandle.ds_list and not overwrite:
 			ds_handle = self.ohandle.getDatastreamObject('HIERARCHY')
 			self.hierarchy = json.loads(ds_handle.content)
+		# if none found, but not overwriting, generate and return
+		elif 'HIERARCHY' not in self.ohandle.ds_list and not overwrite:
+			self.gen_hierarchy()
+		# if none found, and overwrite is True, create and save
 		else:
 			self.hierarchy = self.save_hierarchy()
+		
+		# return
 		return self.hierarchy
 
 

@@ -16,7 +16,7 @@ from WSUDOR_API import logging
 
 # WSUDOR_Manager
 from WSUDOR_Manager import fedora_handle, redisHandles
-from WSUDOR_Manager.solrHandles import solr_search_handle
+from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_API import logging
 logging = logging.getChild('oai')
 
@@ -125,7 +125,7 @@ class OAIProvider(object):
 
 		# fire search
 		logging.debug("OAI-PMH record search params: %s" % self.search_params)
-		self.search_results = solr_search_handle.search(**self.search_params)
+		self.search_results = solr_handle.search(**self.search_params)
 		logging.debug("OAI-PMH record search results: %s records found that meet verb and arg criteria" % self.search_results.total_results)
 
 		# if results none, and GetRecord
@@ -276,7 +276,7 @@ class OAIProvider(object):
 		if self.args['identifier']:
 			try:
 				logging.debug("identifier provided for ListMetadataFormats, confirming that identifier exists...")
-				search_results = solr_search_handle.search(**{'q':'rels_itemID:%s' % self.args['identifier'].replace(":","\:"),'fl':['id']})
+				search_results = solr_handle.search(**{'q':'rels_itemID:%s' % self.args['identifier'].replace(":","\:"),'fl':['id']})
 				if search_results.total_results > 0:
 					fedora_object = fedora_handle.get_object(search_results.documents[0]['id'])
 					if fedora_object.exists:
@@ -345,7 +345,7 @@ class OAIProvider(object):
 		then focus on rels_isMemberOfOAISet facet for list of sets
 		'''
 		# determine sets
-		search_results = solr_search_handle.search(**{
+		search_results = solr_handle.search(**{
 				'q':'*:*',
 				'fq':['rels_itemID:*','rels_isMemberOfOAISet:*'],
 				'rows':0,

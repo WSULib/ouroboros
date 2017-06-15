@@ -1658,6 +1658,7 @@ def genericMethod():
             methods.update(dir(getattr(WSUDOR_ContentTypes,ct)))
     methods_list = list(methods)
     methods_list.sort()
+    
     return render_template("genericMethod.html", methods_list=methods_list)
 
 
@@ -1693,7 +1694,7 @@ def indexing_index(action, group):
                 IndexRouter.queue_object(pid, username, 2, 'index')
 
         if group == 'modified':
-            logging.debug("adding selected objects to index queue to index")
+            logging.debug("adding modified objects to index queue to index")
             IndexRouter.queue_modified(username=username, priority=1, action='index')
 
         if group == 'index_collection':
@@ -1739,6 +1740,17 @@ def indexing_index(action, group):
     # redierct to status
     return redirect('indexing')
 
+
+# special route for nightly indexing of modified objects
+# no role or username required
+@app.route("/indexing/cron/modified", methods=['POST', 'GET'])
+def cron_indexing():
+    logging.debug("running nightly modified object indexing")
+    IndexRouter.queue_modified(username='cron', priority=1, action='index')
+    return jsonify({
+        'time_started':time.time()
+        })
+    
 
 @app.route("/indexing/status", methods=['POST', 'GET'])
 @roles.auth(['admin','metadata'])

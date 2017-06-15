@@ -1092,13 +1092,13 @@ class WSUDOR_GenObject(object):
             self.SolrDoc.doc.dc_title = [self.SolrDoc.doc.dc_title[0]]
 
         # update object, with commit decision based on size of document to insert
-        if len(str(self.SolrDoc.asDictionary())) > 50000:
+        if len(str(self.SolrDoc.asDictionary())) > 10000:
             logging.debug("large SolrDoc detected, autocommiting")
             commit_decision = True
         else:
             logging.debug("small SolrDoc detected, NOT autocommiting")
             commit_decision = False
-
+        
         result = self.SolrDoc.update(commit=commit_decision)
         logging.debug("%s" % result.status)
         if result.status == 200:

@@ -68,16 +68,23 @@
 						<li><a href="/{{APP_PREFIX}}/users/create">Create User Account</a></li>	
 						<li><a href="/{{APP_PREFIX}}/users/view">View Users</a></li>
 						<li><a href="/{{APP_PREFIX}}/tasks/diagnostics">Diagnostics</a></li>
-						<li><a target="_blank" href="http://{{APP_HOST}}:9999/?token={{JUPYTER_TOKEN}}">Ouroboros Terminal (beta)</a></li>
-					</ul>
-					
-					<h3>Jobs</h3>
-					<ul>
+						
 						<li><a href="/{{APP_PREFIX}}/userJobs">Currently Running Jobs</a></li>
 						<li><a href="/{{APP_PREFIX}}/userAllJobs">All Jobs</a></li>
 						<li><a href="/{{APP_PREFIX}}/flushPIDLock">Release all Objects from "PID Lock"</a></li>
 						<li><a href="/{{APP_PREFIX}}/flushCeleryTasks">Flush Jobs (clears Celery tasks in Redis DB)</a></li>
+						<li><a href="/{{APP_PREFIX}}/flushCeleryTasks">Reset All Jobs</a></li>
 					</ul>
+
+					{% if user.role == 'admin' or 'admin' in user.role %}
+						<div style="padding: 10px 20px 10px 20px; background-color: rgb(211,231,255); border-radius: 10px;">
+							<h3>Jupyter</h3>
+							<p>This provides terminal and file editing access</p>
+							<ul>
+								<li><a target="_blank" href="http://{{APP_HOST}}:9999/?token={{JUPYTER_TOKEN}}">Jupyter Notebook</a></li>
+							</ul>
+						</div>
+					{% endif %}
 
 					<h3>Generic WSUDOR_Object Method</h3>
 					<ul>

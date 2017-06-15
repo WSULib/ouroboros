@@ -8,8 +8,6 @@ import localConfig
 # Core used for search and retrieval (e.g. powers front-end API)
 # single, primary search core
 solr_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_MANAGE_CORE), version=4)
-# single, primary management core
-solr_search_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_SEARCH_CORE), version=4)
 # Core used for bookreader fulltext
 solr_bookreader_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_BOOKREADER_CORE), version=4)
 # Core used for WSUDOR user accounts

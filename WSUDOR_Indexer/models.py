@@ -388,7 +388,7 @@ class IndexRouter(object):
 	def update_last_index_date(self):		
 		doc_handle = WSUDOR_Manager.models.SolrDoc("LastFedoraIndex")
 		doc_handle.doc.solr_modifiedDate = "NOW"
-		result = doc_handle.update()
+		result = doc_handle.update(commit=True)
 		return result.raw_content
 
 
@@ -414,7 +414,7 @@ class IndexRouter(object):
 			'stream':'on',
 			'query': risearch_query
 			})
-		risearch_host = "http://%s:%s@localhost/fedora/risearch?" % (localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD)
+		risearch_host = "http://%s:%s@%s/fedora/risearch?" % (localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD, localConfig.FEDORA_HOST)
 
 		modified_objects = urllib.urlopen(risearch_host,risearch_params)
 		modified_objects.next() # bump past headers
@@ -422,7 +422,8 @@ class IndexRouter(object):
 		# for each in list, add to queue
 		for pid in modified_objects:
 			# skip control objectcs for queue_modified()
-			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid.pid):
+			pid = pid.split("/")[-1].strip()
+			if not re.match(r'%s' % localConfig.INDEXER_SKIP_PID_REGEX, pid):
 				self.queue_object(pid, username, priority, action)
 
 		# set new last_index_date
@@ -505,7 +506,7 @@ class IndexRouter(object):
 			logging.debug(control_versions_set)
 			if len(commit_intersection) > 0 or len(check_set) == 0:
 				logging.debug('control objects have not yet committed, checked %s times, still waiting' % (count))
-				time.sleep(.5)
+				time.sleep(1)
 			else:
 				logging.debug('control objects committed.')
 				break

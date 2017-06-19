@@ -149,7 +149,7 @@ class Item(Resource):
 			'collections': self.obj.isMemberOfCollections,
 			'learning_objects': self.obj.hasLearningObjects,
 			'content_type_specific': self.content_type_specific,
-			'matches': self.obj.SolrDoc.raw.matches[self.obj.pid]
+			'matches': getattr(self.obj.SolrDoc.raw, 'matches', None)
 		}
 
 

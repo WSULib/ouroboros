@@ -433,6 +433,9 @@ class IndexRouter(object):
 	@classmethod
 	def queue_collection(self, username=None, priority=1, action='index', collection_pid=False):
 
+		# index control objects
+		self.queue_control(single_pid=collection_pid.split("/")[-1])
+
 		sparql_query = 'select $pid from <#ri> where { $pid <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <%s> . }' % collection_pid
 		logging.debug(sparql_query)
 		collection_pids = fedora_handle.risearch.sparql_query(sparql_query)
@@ -467,20 +470,26 @@ class IndexRouter(object):
 
 
 	@classmethod
-	def queue_control(self, username=None, priority=2, action='index'):
+	def queue_control(self, username=None, priority=10, action='index', single_pid=False):
 
 		'''
 		prioritize the indexing of "control" objects in Fedora that are 
 		integral for indexing normal objects.
+		OR, a single pid (e.g. a collection object)
 		'''
 		# create ordered list of pids
 		ordered_objs = []
 
-		# content models
-		ordered_objs.extend(list(fedora_handle.find_objects("CM:*")))
+		# single control pid provided, use only
+		if single_pid:
+			ordered_objs.append(fedora_handle.get_object(single_pid))
 
-		# index collection objects
-		ordered_objs.extend(list(fedora_handle.find_objects("wayne:collection*")))
+		# assume all control and collections
+		else:
+			# content models
+			ordered_objs.extend(list(fedora_handle.find_objects("CM:*")))
+			# index collection objects
+			ordered_objs.extend(list(fedora_handle.find_objects("wayne:collection*")))
 
 		# ping solr to create set of versions for control objects
 		s = solr_handle.search(**{'q':" OR ".join( ['id:%s' % obj.pid.replace(":","\:") for obj in ordered_objs] ),'fl':'_version_'})
@@ -556,7 +565,15 @@ class IndexWorker(object):
 			# remove from cache
 			# obj.removeObjFromCache()
 			# then, index
-			index_result = obj.index()
+			
+			# if priority >= 10, commit_on_index, else not
+			if queue_row.priority >= 10:
+				logging.debug('priority %s, commiting on index' % queue_row.priority)
+				commit_on_index = True
+			else:
+				commit_on_index = False
+			
+			index_result = obj.index(commit_on_index=commit_on_index)
 			return index_result
 		else:
 			logging.warning("IndexWorker: could not open object, skipping")

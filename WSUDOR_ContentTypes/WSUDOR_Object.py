@@ -943,7 +943,7 @@ class WSUDOR_GenObject(object):
 
 
     # Solr Indexing
-    def index(self, printOnly=False):
+    def index(self, printOnly=False, commit_on_index=False):
 
         # generate human values
         logging.debug("preparing 'human_hash' values...")
@@ -1092,14 +1092,15 @@ class WSUDOR_GenObject(object):
             self.SolrDoc.doc.dc_title = [self.SolrDoc.doc.dc_title[0]]
 
         # update object, with commit decision based on size of document to insert
-        if len(str(self.SolrDoc.asDictionary())) > 10000:
-            logging.debug("large SolrDoc detected, autocommiting")
-            commit_decision = True
-        else:
-            logging.debug("small SolrDoc detected, NOT autocommiting")
-            commit_decision = False
+        if not commit_on_index:
+            if len(str(self.SolrDoc.asDictionary())) > 10000:
+                logging.debug("large SolrDoc detected, autocommiting")
+                commit_on_index = True
+            else:
+                logging.debug("small SolrDoc detected, NOT autocommiting")
+                commit_on_index = False
         
-        result = self.SolrDoc.update(commit=commit_decision)
+        result = self.SolrDoc.update(commit=commit_on_index)
         logging.debug("%s" % result.status)
         if result.status == 200:
             return True

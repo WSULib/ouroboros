@@ -677,6 +677,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.regenReaduxVirtualObjects()
 
 
+	def export_constituents(self, bag_root, data_root, files_root):
+
+		for obj in self.constituents:
+			logging.debug('exporting %s' % obj.pid)
+
+
 	#############################################################################
 	# associated Readux style virtual objects
 	#############################################################################

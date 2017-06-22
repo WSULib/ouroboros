@@ -787,7 +787,7 @@ class WSUDOR_GenObject(object):
         ds_handle = self.ohandle.getDatastreamObject(ds_id)
 
         # skip if empty (might have been removed / condensed, as case with PDFs)
-        if ds_handle.content != None:
+        if ds_handle.exists:
 
             # XML ds model
             if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
@@ -806,7 +806,7 @@ class WSUDOR_GenObject(object):
             logging.debug("Content was NONE for %s - skipping..." % ds_id)
 
 
-    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True):
+    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False):
 
         '''
         Target Example:
@@ -823,7 +823,7 @@ class WSUDOR_GenObject(object):
         └── tagmanifest-md5.txt
         '''
 
-        # create temp dir structure
+        # working dir in /tmp
         working_dir = "/tmp/Ouroboros/export_bags"
 
         # create if doesn't exist
@@ -831,7 +831,7 @@ class WSUDOR_GenObject(object):
             logging.debug("tmp export directory not found, creating...")
             os.mkdir("/tmp/Ouroboros/export_bags")
 
-        # NEW
+        # create directory stucture
         dir_structure = [working_dir, str(uuid.uuid4()), 'data', 'datastreams']
         bag_root = os.path.join(*dir_structure[:2])
         data_root = os.path.join(*dir_structure[:3])
@@ -840,12 +840,14 @@ class WSUDOR_GenObject(object):
         print(bag_root, data_root, files_root)
 
         # move bagit files to temp dir, and unpack
-        bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
-        bagitIO = StringIO.StringIO(bagit_files)
-        tar_handle = tarfile.open(fileobj=bagitIO)
-        tar_handle.extractall(path=bag_root)
+        bagit_ds_handle = self.ohandle.getDatastreamObject("BAGIT_META")
+        if bagit_ds_handle.exists:
+            bagit_files = bagit_ds_handle.content
+            bagitIO = StringIO.StringIO(bagit_files)
+            tar_handle = tarfile.open(fileobj=bagitIO)
+            tar_handle.extractall(path=bag_root)
 
-        # write original datastreams
+        # write original datastreams (relies on objMeta)
         for ds in self.objMeta['datastreams']:
             logging.debug("writing %s" % ds)
             self._writeDS(ds['ds_id'], os.path.join(*[files_root, ds['filename']]))
@@ -860,6 +862,18 @@ class WSUDOR_GenObject(object):
         # write MODS and objMeta files
         self._writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
         self._writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
+
+        # handle constituents
+        '''
+        If an object has constituents, it's possible that these objects were created during ingest
+        For export, content types with constituent objects will need to include an self.export_constituents() method
+        that will pull relevant files / information from constituent objects and include in this single bag.
+
+        EXPECTS: bag_root, data_root, files_root
+        '''
+        if hasattr(self, 'export_constituents'):
+            logging.debug('including constituent object resources in this bag')
+            self.export_constituents(bag_root, data_root, files_root)
         
         # tarball it up
         named_dir = self.pid.replace(":","-")

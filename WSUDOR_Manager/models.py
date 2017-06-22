@@ -951,12 +951,16 @@ class SolrDT(object):
 		- return json
 	'''
 
-	def __init__(self, solr_handle, DTinput):
+	def __init__(self, solr_handle, DTinput, get_params=False):
 
 		logging.debug("initializing SolrDT connector")
 
 		# solr handle
 		self.solr_handle = solr_handle
+
+		# get params
+		self.get_params = get_params
+		logging.debug("GET params: %s" % self.get_params)
 
 		# dictionary INPUT DataTables ajax
 		self.DTinput = DTinput
@@ -985,6 +989,9 @@ class SolrDT(object):
 			'stats':True,
 			'stats.field':'obj_size_fedora_i'
 		}
+
+		# integrate any provided GET parameters
+		self.search_params.update(self.get_params)
 
 		# query and build response
 		self.build_response()

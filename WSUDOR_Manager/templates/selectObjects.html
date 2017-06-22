@@ -33,6 +33,31 @@
         <div role="tabpanel" class="col-md-12 tab-pane fade in {% if task == 'find' %}active{% endif %}" id="find">
 
             <div style="margin-top:20px;" class="row">
+
+                <!-- advanced search -->
+                <div class="col-md-4">
+                    <h4>Advanced Filtering:<h4>
+                    <form class="form" id="advanced_search" role="form" method="GET" onsubmit="advancedSearch(); return false;">
+                        <div class="form-group row">
+                            <label for="q" class="col-sm-2 col-form-label">q (query)</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="q" name="q" placeholder="tugboat">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="fq" class="col-sm-2 col-form-label">fq (filter query)</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="fq" name="fq" placeholder="facet_mods_year=1920">
+                            </div>
+                        </div>
+                        <div class="form-group">                            
+                            <input type="submit" class="btn btn-sm btn-success" value="Update Search">
+                            <input class="btn btn-sm btn-warning" value="Clear Filters" onclick="clearAdvancedSearch();">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- tag and group and add -->
                 <div class="col-md-3">
                     <form class="form-horizontal" id="add_object_search" role="form" method="POST" action="/{{APP_PREFIX}}/selectObjects/add_object_search" enctype="multipart/form-data">
                         <div class="col-md-12">              
@@ -44,16 +69,17 @@
                                 <input id="tag_group" class="form-control" type="text" name="tag_group" placeholder="e.g. all_images, to_reindex, vmc">
                             </div>
 
-                             <!-- Send objects to workspace -->
+                            <!-- Send objects to workspace -->
                             <div class="form-group">
                                 <input id="search_params" type="hidden" name="search_params" value="">                                
-                                <input type="submit" class="btn btn-success" value="Send Search Results to Workspace">
+                                <input type="submit" class="btn btn-sm btn-success" value="Send Search Results to Workspace">
                             </div>
 
                         </div>
                     </form>
                 </div>
 
+                <!-- status -->
                 <div class="col-md-3">
                     <h4>Status:</h4>
                     <div id="status_msg"></div>
@@ -239,6 +265,30 @@
                      d=c(this)/c(a[0])|0,this/b.pow(a[0],d)).toFixed(2)
                      +' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'Bytes');
                     },writable:false,enumerable:false});
+
+                    // advanced search
+                     function advancedSearch(){
+                        var table_handle = $("#object_table").DataTable();
+
+                        // get params
+                        var queryString = $("#advanced_search :input")
+                        .filter(function(index, element) {
+                            return $(element).val() != "";
+                        })
+                        .serialize();
+                        console.log('sending advanced query:',queryString);
+
+                        // update table url and resend
+                        table_handle.ajax.url("/{{APP_PREFIX}}/selectObjects/solr.json?"+queryString);
+                        table_handle.ajax.reload();
+                    }
+                    function clearAdvancedSearch(){
+                        console.log('clearing advanced search...');
+                        $("#advanced_search").resetForm();
+                        var table_handle = $("#object_table").DataTable();
+                        table_handle.ajax.url("/{{APP_PREFIX}}/selectObjects/solr.json");
+                        table_handle.ajax.reload();
+                    }
 
                     </script>
 
@@ -448,6 +498,8 @@
                 // populate groups everywhere
                 // populateGroups();
             }
+
+
 
         </script>
 

@@ -1422,7 +1422,7 @@ def solr_json():
     return json for datatables, form solr
     '''
 
-    sdt = models.SolrDT(solr_handle, request.json)
+    sdt = models.SolrDT(solr_handle, request.json, request.args)
     
     # returns what is needed by DataTable
     return jsonify(sdt.DToutput)

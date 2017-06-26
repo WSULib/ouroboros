@@ -677,7 +677,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.regenReaduxVirtualObjects()
 
 
-	def export_constituents(self, bag_root, data_root, files_root):
+	def export_constituents(self, objMeta, bag_root, data_root, files_root):
 
 		for obj in self.constituents:
 			logging.debug('exporting %s' % obj.pid)

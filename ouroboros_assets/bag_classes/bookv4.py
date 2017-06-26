@@ -78,10 +78,6 @@ class BagClass(object):
 		with open("%s/MODS.xml" % (self.obj_dir), "w") as fhand:
 			fhand.write(self.MODS)
 
-
-		# construct
-		################################################################
-		
 		# get identifier
 		try:
 			identifier = self.MODS_handle['MODS_element'].xpath('//mods:identifier[@type="local"]', namespaces=self.MODS_handle['MODS_ns'])[0].text
@@ -118,62 +114,20 @@ class BagClass(object):
 		# tack on pid as directory
 		d += "/" + self.full_identifier
 
-		binary_files = [ binary for binary in os.listdir(d) ]
-		binary_files.sort() #sort
-		page_num_bump = 0
-		for ebook_binary in binary_files:
 
-			# skip some undesirables
-			if ebook_binary == ".DS_Store" \
-			or ebook_binary.endswith('bak') \
-			or ebook_binary == "Thumbs.db" \
-			or ebook_binary.endswith('png') \
-			or ebook_binary.startswith('._') \
-			or ebook_binary.endswith('txt'):
-				continue
 
-			# write symlink
-			source = "/".join([ d, ebook_binary ])
-			symlink = "/".join([ self.obj_dir, "datastreams", ebook_binary ])
-			os.symlink(source, symlink)		
+		########################################################################################################################
+		'''
+		Create seperate bags for each page
+		Expecting image, html, and altoxml for each page
+		'''
 
-			# get mimetype of file
-			filetype_hash = {
-				'tiff': ('image/tiff','IMAGE'),
-				'tif': ('image/tiff','IMAGE'),
-				'jpg': ('image/jpeg','IMAGE'),
-				'jpeg': ('image/jpeg','IMAGE'),
-				'png': ('image/png','IMAGE'),
-				'xml': ('text/xml','ALTOXML'),
-				'html': ('text/html','HTML'),
-				'htm': ('text/html','HTML'),
-				'pdf': ('application/pdf','PDF')
-			}
-			filetype_tuple = filetype_hash[ebook_binary.split(".")[-1]] 		
-			
-			# determine page num and DS ID
-			page_num = ebook_binary.split(".")[0].lstrip('0')
-			if page_num == '':
-				page_num_bump = 1
-				page_num = '0'
-			page_num = str(int(page_num) + int(page_num_bump))
 
-			ds_id = filetype_tuple[1]+"_"+page_num
 
-			# push to image num list
-			if filetype_tuple[1] == 'IMAGE':
-				page_num_list.append((int(page_num), ds_id))
 
-			# write to datastreams list		
-			ds_dict = {
-				"filename":ebook_binary,
-				"ds_id":ds_id,
-				"mimetype":filetype_tuple[0], # generate dynamically based on file extension
-				"label":ds_id,
-				"internal_relationships":{},
-				'order':page_num			
-			}
-			self.objMeta_handle.datastreams.append(ds_dict)
+		########################################################################################################################
+
+
 
 		# set isRepresentedBy relationsihp
 		'''

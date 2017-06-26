@@ -873,7 +873,7 @@ class WSUDOR_GenObject(object):
         '''
         if hasattr(self, 'export_constituents'):
             logging.debug('including constituent object resources in this bag')
-            self.export_constituents(bag_root, data_root, files_root)
+            self.export_constituents(self.objMeta, bag_root, data_root, files_root)
         
         # tarball it up
         named_dir = self.pid.replace(":","-")

@@ -35,21 +35,33 @@
             <div style="margin-top:20px;" class="row">
 
                 <!-- advanced search -->
+                <style>
+                    #advanced_search label {
+                        font-weight: normal;
+                        font-size: 80%;
+                    }
+                </style>
                 <div class="col-md-4">
                     <h4>Advanced Filtering:<h4>
                     <form class="form" id="advanced_search" role="form" method="GET" onsubmit="advancedSearch(); return false;">
                         <div class="form-group row">
-                            <label for="q" class="col-sm-2 col-form-label">q (query)</label>
-                            <div class="col-sm-10">
+                            <label for="q" class="col-sm-3 col-form-label">q (query)</label>
+                            <div class="col-sm-9">
                                 <input type="text" class="form-control" id="q" name="q" placeholder="tugboat">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="fq" class="col-sm-2 col-form-label">fq (filter query)</label>
-                            <div class="col-sm-10">
+                            <label for="fq" class="col-sm-3 col-form-label">fq (filter query)</label>
+                            <div class="col-sm-9">
                                 <input type="text" class="form-control" id="fq" name="fq" placeholder="facet_mods_year=1920">
                             </div>
                         </div>
+                        <!-- <div class="form-group row">
+                            <label for="fq" class="col-sm-3 col-form-label">raw GET parameters</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="raw_params" name="raw_params" placeholder="q=snow&rels_isMemberOfCollection:wayne\:collectionvmc">
+                            </div>
+                        </div> -->
                         <div class="form-group">                            
                             <input type="submit" class="btn btn-sm btn-success" value="Update Search">
                             <input class="btn btn-sm btn-warning" value="Clear Filters" onclick="clearAdvancedSearch();">
@@ -267,7 +279,7 @@
                     },writable:false,enumerable:false});
 
                     // advanced search
-                     function advancedSearch(){
+                    function advancedSearch(){
                         var table_handle = $("#object_table").DataTable();
 
                         // get params
@@ -289,6 +301,7 @@
                         table_handle.ajax.url("/{{APP_PREFIX}}/selectObjects/solr.json");
                         table_handle.ajax.reload();
                     }
+
 
                     </script>
 

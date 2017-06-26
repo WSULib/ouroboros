@@ -315,6 +315,7 @@ class ObjMeta:
 		self.isRepresentedBy = "Datastream ID that represents object"
 		self.object_relationships = []
 		self.datastreams = []
+		self.constituent_objects = []
 
 		# optional attributes
 		self.label = "Object label"

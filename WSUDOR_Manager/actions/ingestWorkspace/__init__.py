@@ -857,7 +857,7 @@ def createBag_worker(job_package):
 			purge_bags = purge_bags
 		)
 
-		bag_result = bag_class_worker.createBag()
+		bag_result = bag_class_worker.createBag(bag_root_dir=job_package['bag_dir'])
 
 	# finish up with updated values from bag_class_worker
 

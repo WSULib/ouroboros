@@ -153,6 +153,7 @@ class BagClass(object):
 			
 			# determine page num and DS ID
 			page_num = ebook_binary.split(".")[0].lstrip('0')
+			# page_num = ebook_binary.split('.')[0].split('_')[-1].lstrip('0') # shim for binaries with number on right, e.g. foobar01.tif
 			if page_num == '':
 				page_num_bump = 1
 				page_num = '0'

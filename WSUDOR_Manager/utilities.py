@@ -126,7 +126,7 @@ def delDuplicateElements(XML):
 
 def imMode(im):
     # check for 16-bit tiffs
-    logging.debug("Image mode:",im.mode)
+    logging.debug("Image mode: %s" % im.mode)
     if im.mode in ['I;16','I;16B']:
         logging.debug("I;16 tiff detected, converting...")
         im.mode = 'I'

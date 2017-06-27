@@ -916,42 +916,35 @@ class WSUDOR_GenObject(object):
             # return location or url
             return "%s/%s" % (export_dir, named_dir)
 
-        
 
-        
+    # reingest bag
+    def reingestBag(self, removeTempExport=True, preserveRelationships=True):
 
+      logging.debug("Roundrip Ingesting: %s" % self.pid)
 
-    # # reingest bag
-    # def reingestBag(self, removeExportTar=False, preserveRelationships=True):
+      # export bag, returning the file structure location of tar file
+      export_location = self.export(tarball=True)
+      logging.debug("Location of export: %s" % export_location)
 
-    #   # get PID
-    #   PID = self.pid
+      # open bag
+      bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_location, object_type='bag')
 
-    #   logging.debug("Roundrip Ingesting:",PID)
+      # purge self
+      if bag_handle != False:
+          self.purge(override_state=True)
+      else:
+          logging.debug("exported object doesn't look good, aborting purge")
 
-    #   # export bag, returning the file structure location of tar file
-    #   export_tar = self.exportBag(returnTargetDir=True, preserveRelationships=preserveRelationships)
-    #   logging.debug("Location of export tar file:",export_tar)
+      # reingest exported tar file
+      bag_handle.ingest()
 
-    #   # open bag
-    #   bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_tar, object_type='bag')
+      # delete exported tar
+      if removeTempExport == True:
+          logging.debug("Removing export tar...")
+          os.remove(export_location)
 
-    #   # purge self
-    #   if bag_handle != False:
-    #       fedora_handle.purge_object(PID)
-    #   else:
-    #       logging.debug("exported object doesn't look good, aborting purge")
-
-    #   # reingest exported tar file
-    #   bag_handle.ingest()
-
-    #   # delete exported tar
-    #   if removeExportTar == True:
-    #       logging.debug("Removing export tar...")
-    #       os.remove(export_tar)
-
-    #   # return
-    #   return PID,"Reingested."
+      # return
+      return self.pid, "Reingested."
 
 
     def previewSolrDict(self):

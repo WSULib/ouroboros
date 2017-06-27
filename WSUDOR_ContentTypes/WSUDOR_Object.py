@@ -557,6 +557,17 @@ class WSUDOR_GenObject(object):
         return constituent_objects
 
 
+    # constituent objects
+    @helpers.LazyProperty
+    def constituents_from_objMeta(self):
+
+        '''
+        Returns list of constitobjects bags in /constituent_objects from ObjMeta
+        '''
+
+        return self.objMeta['constituent_objects']
+
+
     # collection members
     @helpers.LazyProperty
     def collectionMembers(self):
@@ -775,7 +786,10 @@ class WSUDOR_GenObject(object):
             os.unlink(self.temp_payload)
 
         # finally, remove 'hold' action in indexer queue and return
-        self.alter_in_indexer_queue('index')
+        if indexObject:
+            self.alter_in_indexer_queue('index')
+        
+        # finally, return
         return True
 
 

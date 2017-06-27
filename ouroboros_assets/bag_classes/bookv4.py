@@ -5,7 +5,7 @@ import bagit
 from inc import WSUDOR_bagger
 from lxml import etree
 from sets import Set
-from WSUDOR_Manager import logging
+from WSUDOR_Manager import logging, db, models
 
 '''
 Assuming self.file_location is directory of loose files from Abbyy
@@ -54,10 +54,12 @@ class BagClass(object):
 			# make root dir
 			os.mkdir(self.obj_dir)
 			# make data dir
-			os.mkdir("/".join([self.obj_dir,"datastreams"]))		
+			os.mkdir("/".join([self.obj_dir,"datastreams"]))
+			# make constituent_objects dir
+			os.mkdir("/".join([self.obj_dir,"constituent_objects"]))
 
 
-	def createBag(self, bag_root_dir):
+	def createBag(self, job_package=False):
 
 		'''
 		Function to create bag given inputs.  Most extensive and complex part of this class.
@@ -115,7 +117,7 @@ class BagClass(object):
 		d += "/" + self.full_identifier
 
 		########################################################################################################################
-		# Iterate through binaries and create "pages" dictionary for later iteration
+		# Aggregate binaries as page dictionaries
 		########################################################################################################################
 		'''
 		Create seperate bags for each page
@@ -174,7 +176,8 @@ class BagClass(object):
 
 				# write to constituent_objects list		
 				page_dict = {
-					'page_pid':"%s_Page_%s" % (self.pid, page_num),					
+					'pid':"%s_Page_%s" % (self.pid, page_num),
+					'directory':"%s_Page_%s" % (self.full_identifier, page_num),					
 					'order':page_num,
 					'datastreams':[]
 				}
@@ -189,30 +192,30 @@ class BagClass(object):
 
 
 		########################################################################################################################
-		# Iterate through "pages" dictionary, and create actual page bags
+		# Create page bags in SELF/constituent_objects
 		########################################################################################################################
 
 		# create constituent object ObjMeta
 		for page_num in pages.keys():
-
-			# generate page_obj_dir
-			page_obj_dir = "/".join( [bag_root_dir, str(uuid.uuid4())] ) # UUID based hash directory for bag
-			if not os.path.exists(page_obj_dir):
-				# make root dir
-				os.mkdir(page_obj_dir)
-				# make data dir
-				os.mkdir("/".join([page_obj_dir,"datastreams"]))
 
 			# get page dict
 			page_dict = pages[page_num]
 			logging.debug("writing ObjMeta for page %s" % page_num)
 			logging.debug(page_dict)
 
+			# generate page_obj_dir
+			page_obj_dir = "/".join( [self.obj_dir, 'constituent_objects', page_dict['pid'].split(":")[-1]] )
+			if not os.path.exists(page_obj_dir):
+				# make root dir
+				os.mkdir(page_obj_dir)
+				# make data dir
+				os.mkdir("/".join([page_obj_dir,"datastreams"]))
+
 			# instantiate object with quick variables
 			book_title_short = (book_title[:100] + '..') if len(book_title) > 100 else book_title
 			objMeta_primer = {
-				"id":page_dict['page_pid'],
-				"identifier":page_dict['page_pid'].split(":")[-1],
+				"id":page_dict['pid'],
+				"identifier":page_dict['pid'].split(":")[-1],
 				"label":"%s - Page %s" % (book_title_short,page_num),
 				"content_type":'WSUDOR_WSUebook_Page'
 			}
@@ -231,7 +234,7 @@ class BagClass(object):
 				},
 				{
 					"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel",
-					"object": "info:fedora/CM:WSUDOR_WSUebook_Page"
+					"object": "info:fedora/CM:WSUebook_Page"
 				},
 				{
 					"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
@@ -270,44 +273,16 @@ class BagClass(object):
 
 			logging.debug("Page ObjMeta %s" % page_objMeta_handle.toJSON())
 
+			# add to object constituent_objects
+			self.objMeta_handle.constituent_objects.append(page_dict)
+
 			# write to objMeta.json file 
 			page_objMeta_handle.writeToFile("%s/objMeta.json" % (page_obj_dir))
 			
 			# use WSUDOR bagger (NO MD5 CHECKSUMS)
 			bag = WSUDOR_bagger.make_bag(page_obj_dir, {
-				'Object PID' : page_dict['page_pid']
+				'Object PID' : page_dict['pid']
 			})
-
-			# finish up with updated values from bag_class_worker
-
-			# # write some data back to DB
-			# if purge_bags == True:
-			# 	# remove previously recorded and stored bag
-			# 	os.system("rm -r %s" % o.bag_path)
-
-			# # sets, or updates, the bag path
-			# o.bag_path = bag_class_worker.obj_dir
-
-			# # validate bag
-			# obj = WSUDOR_ContentTypes.WSUDOR_Object(o.bag_path,object_type='bag')
-			# o.bag_validation_dict = json.dumps(obj.validIngestBag())
-
-			# # set objMeta
-			# o.objMeta = bag_class_worker.objMeta_handle.toJSON()
-
-			# # set PID
-			# o.pid = bag_class_worker.pid
-
-			# # commit
-			# bag_class_worker.object_row._commit()
-
-
-
-
-
-
-		########################################################################################################################
-
 
 
 		# set isRepresentedBy relationsihp

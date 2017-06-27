@@ -66,6 +66,94 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		sparql_response = fedora_handle.risearch.sparql_query('select $pageOrder WHERE {{ <info:fedora/%s> <http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder> $pageOrder . }}' % (self.pid))
 		return int(sparql_response.next()['pageOrder'])
 
+
+	# ingest
+	def ingestBag(self, indexObject=True):
+
+		self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
+		self.ohandle.save()
+
+		# set base properties of object
+		self.ohandle.label = self.objMeta['label']
+
+		# write POLICY datastream
+		# NOTE: 'E' management type required, not 'R'
+		logging.debug("Using policy: %s" % self.objMeta['policy'])
+		policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
+		policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
+		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
+		policy_handle.label = "POLICY"
+		policy_handle.save()
+
+		# write objMeta as datastream
+		objMeta_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+		objMeta_handle.label = "Ingest Bag Object Metadata"
+		file_path = self.Bag.path + "/data/objMeta.json"
+		objMeta_handle.content = open(file_path)
+		objMeta_handle.save()
+
+		# write explicit RELS-EXT relationships
+		for relationship in self.objMeta['object_relationships']:
+			logging.debug("Writing relationship: %s %s" % (str(relationship['predicate']),str(relationship['object'])))
+			self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
+
+		# writes derived RELS-EXT
+		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy", self.objMeta['isRepresentedBy'])
+
+		# hasContentModel
+		content_type_string = "info:fedora/CM:WSUebook_Page"
+		logging.debug("Writing ContentType relationship: info:fedora/fedora-system:def/relations-external#hasContentModel %s" % content_type_string)
+		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
+
+		# write MODS datastream if MODS.xml exists
+		if os.path.exists(self.Bag.path + "/data/MODS.xml"):
+			MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+			MODS_handle.label = "MODS descriptive metadata"
+			file_path = self.Bag.path + "/data/MODS.xml"
+			MODS_handle.content = open(file_path)
+			MODS_handle.save()
+
+		else:
+			# write generic MODS datastream
+			MODS_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "MODS", "MODS descriptive metadata", mimetype="text/xml", control_group='M')
+			MODS_handle.label = "MODS descriptive metadata"
+
+			raw_MODS = '''
+<mods:mods xmlns:mods="http://www.loc.gov/mods/v3" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="3.4" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+<mods:titleInfo>
+<mods:title>%s</mods:title>
+</mods:titleInfo>
+<mods:identifier type="local">%s</mods:identifier>
+<mods:extension>
+<PID>%s</PID>
+</mods:extension>
+</mods:mods>
+			''' % (self.objMeta['label'], self.objMeta['id'].split(":")[1], self.objMeta['id'])
+			logging.debug("%s" % raw_MODS)
+			MODS_handle.content = raw_MODS
+			MODS_handle.save()
+
+		# for each file type in pages dict, pass page obj and process
+		for ds in self.objMeta['datastreams']:
+
+			if ds['ds_id'] == 'IMAGE':
+				logging.debug("processing image...")
+				self.processImage(ds)
+			if ds['ds_id'] == 'HTML':
+				logging.debug("processing HTML...")
+				self.processHTML(ds)
+			if ds['ds_id'] == 'ALTOXML':
+				logging.debug("processing ALTO...")
+				self.processALTOXML(ds)
+
+		# save and commit object before finishIngest()
+		final_save = self.ohandle.save()
+
+		# finish generic ingest
+		# may pass methods here that will run in finishIngest()
+		return self.finishIngest(gen_manifest=False, indexObject=False, contentTypeMethods=[])
+
+
 	
 	def ingest(self, book_obj, page_num):
 
@@ -105,15 +193,18 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 		policy_handle.label = "POLICY"
 		policy_handle.save()
+
 		# for each file type in pages dict, pass page obj and process
 		for ds in page_dict:
 
 			if ds['ds_id'].startswith('IMAGE'):
 				logging.debug("processing image...")
 				self.processImage(ds)
+
 			if ds['ds_id'].startswith('HTML'):
 				logging.debug("processing HTML...")
 				self.processHTML(ds)
+
 			if ds['ds_id'].startswith('ALTOXML'):
 				logging.debug("processing ALTO...")
 				self.processALTOXML(ds)
@@ -193,7 +284,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		if exists:
 			logging.debug("Processing derivative")
-			file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
+			file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
 			logging.debug("Looking for: %s" % file_path)
 
 		if not exists:
@@ -278,7 +369,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		if jp2_result:
 			with open(jp2.output_handle.name) as fhand:
 				jp2_handle.content = fhand.read()
-			logging.debug("Result for %s" % ds,jp2_handle.save())
+			logging.debug("Result for %s, %s" % (ds,jp2_handle.save()))
 			jp2.output_handle.unlink(jp2.output_handle.name)
 		else:
 			raise Exception("Could not create JP2")
@@ -292,35 +383,35 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	def processHTML(self, ds):
 
 		logging.debug("Processing HTML")
-		file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
+		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
 		logging.debug("Looking for: %s" % file_path)
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "HTML", "HTML", mimetype=ds['mimetype'], control_group='M')
 		generic_handle.label = "HTML"
 		generic_handle.content = open(file_path)
 		generic_handle.save()
 
-		if ds['ds_id'] != "HTML_FULL":
-			# add HTML to self.html_concat
-			fhand = open(file_path)
-			html_parsed = BeautifulSoup(fhand)
-			logging.debug("HTML document parsed...")
-			#sets div with page_ID
-			self.book_obj.html_concat = self.book_obj.html_concat + '<div id="page_ID_%s" class="html_page">' % (ds['order'])
-			#Set in try / except block, as some HTML documents contain no elements within <body> tag
-			try:
-				for block in html_parsed.body:
-					self.book_obj.html_concat = self.book_obj.html_concat + unicode(block)
-			except:
-				logging.debug("<body> tag is empty, skipping. Adding page_ID anyway.")
+		# if ds['ds_id'] != "HTML_FULL":
+		# 	# add HTML to self.html_concat
+		# 	fhand = open(file_path)
+		# 	html_parsed = BeautifulSoup(fhand)
+		# 	logging.debug("HTML document parsed...")
+		# 	#sets div with page_ID
+		# 	self.book_obj.html_concat = self.book_obj.html_concat + '<div id="page_ID_%s" class="html_page">' % (ds['order'])
+		# 	#Set in try / except block, as some HTML documents contain no elements within <body> tag
+		# 	try:
+		# 		for block in html_parsed.body:
+		# 			self.book_obj.html_concat = self.book_obj.html_concat + unicode(block)
+		# 	except:
+		# 		logging.debug("<body> tag is empty, skipping. Adding page_ID anyway.")
 
-			#closes page_ID / div
-			self.book_obj.html_concat = self.book_obj.html_concat + "</div>"
-			fhand.close()
+		# 	#closes page_ID / div
+		# 	self.book_obj.html_concat = self.book_obj.html_concat + "</div>"
+		# 	fhand.close()
 
 
 	def processALTOXML(self, ds):
 		logging.debug("Processing ALTO XML")
-		file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
+		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
 		logging.debug("Looking for: %s" % file_path)
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'ALTOXML', 'ALTOXML', mimetype=ds['mimetype'], control_group='M')
 		generic_handle.label = 'ALTOXML'

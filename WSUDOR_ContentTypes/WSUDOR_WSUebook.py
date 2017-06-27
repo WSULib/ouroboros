@@ -304,13 +304,16 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# PAGES
 			########################################################################################################
 			# iterate through anticipated missing pages and create missing page objects
-			for page_num in self.normalized_missing_pages_from_objMeta:
-				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
-				page_obj.ingestMissingPage(self, page_num)
+			# for page_num in self.normalized_missing_pages_from_objMeta:
+			# 	page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+			# 	page_obj.ingestMissingPage(self, page_num)
+				
 			# iterate through pages and create page objects
-			for page_num in self.normalized_pages_from_objMeta:
-				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
-				page_obj.ingest(self, page_num)
+			for obj in self.constituents_from_objMeta:
+				target_bag = "/".join([self.temp_payload, 'data', 'constituent_objects', obj['directory']])
+				logging.debug('ingesting constituent object %s' % target_bag)
+				constituent_bag = WSUDOR_ContentTypes.WSUDOR_Object(target_bag, object_type='bag')
+				constituent_bag.ingestBag()
 			########################################################################################################
 
 
@@ -326,17 +329,19 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# HTML (based on concatenated HTML from self.html_concat)
 			if "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
-				html_full_handle.label = "Full HTML for item"
-				html_full_handle.content = self.html_concat.encode('utf-8')
-				html_full_handle.save()
+				
+				# try:
+				# Process HTML after ingest
+				self.processHTML()
+				# except:					
+				# 	raise utilities.IngestError("Could not generate full-text HTML")
 
 			# PDF - create PDF on disk and upload
 			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				try:
-					self.processPDF()
-				except:					
-					raise utilities.IngestError("Could not generate full-text pdf")
+				# try:
+				self.processPDF()
+				# except:					
+				# 	raise utilities.IngestError("Could not generate full-text pdf")
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
@@ -380,17 +385,53 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return True
 
 
+	def processHTML(self, process_type='ingest'):
+
+		logging.debug("Processing HTML for entire book...")
+		
+		# iterate over constituent_objects
+		for obj in self.constituents_from_objMeta:
+
+			# derive file_path of HTML
+			for ds in obj['datastreams']:
+				if ds[2] == 'HTML':
+					file_path = "/".join([self.temp_payload, 'data', 'constituent_objects', obj['directory'], 'data', 'datastreams', ds[0]])
+			
+			# add HTML to self.html_concat
+			fhand = open(file_path)
+			html_parsed = BeautifulSoup(fhand)
+			logging.debug("HTML document parsed...")
+			#sets div with page_ID
+			self.html_concat = self.html_concat + '<div id="page_ID_%s" class="html_page">' % (obj['order'])
+			#Set in try / except block, as some HTML documents contain no elements within <body> tag
+			try:
+				for block in html_parsed.body:
+					self.html_concat = self.html_concat + unicode(block)
+			except:
+				logging.debug("<body> tag is empty, skipping. Adding page_ID anyway.")
+
+			#closes page_ID / div
+			self.html_concat = self.html_concat + "</div>"
+			fhand.close()
+
+		# write to datastream
+		html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
+		html_full_handle.label = "Full HTML for item"
+		html_full_handle.content = self.html_concat.encode('utf-8')
+		html_full_handle.save()
+
+	
 	def processPDF(self, process_type='ingest', pdf_dir=None):
 
 		# expecting pdf_dir if process_type != 'ingest'
 		if process_type == 'ingest':
-			obj_dir = self.Bag.path+"/data/datastreams"
+			obj_dir = self.Bag.path
 		else:
 			obj_dir = pdf_dir
 
 		logging.debug("writing full-text PDF")
 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
-		os.system("pdftk %s/*.pdf cat output %s verbose" % (obj_dir, temp_filename))
+		os.system("pdftk `find -L %s -name '*.pdf' | awk -vFS=/ -vOFS=/ '{ print $NF,$0 }' | sort -n -t / | cut -f2- -d/ | xargs echo` cat output %s verbose" % (obj_dir, temp_filename))
 		pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
 		pdf_full_handle.label = "Fulltext PDF for item"
 		pdf_full_handle.content = open(temp_filename).read()

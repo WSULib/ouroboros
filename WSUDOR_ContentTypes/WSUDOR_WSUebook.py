@@ -209,11 +209,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"failed_tests":[]
 		}
 
-		# # check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
-		# ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
-		# if self.objMeta['isRepresentedBy'] not in ds_ids:
-		# 	report_failure(("isRepresentedBy_check","%s is not in %s" % (self.objMeta['isRepresentedBy'], ds_ids)))
-
 		# check that content_type is a valid ContentType
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
@@ -329,19 +324,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# HTML (based on concatenated HTML from self.html_concat)
 			if "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				
-				# try:
-				# Process HTML after ingest
 				self.processHTML()
-				# except:					
-				# 	raise utilities.IngestError("Could not generate full-text HTML")
 
 			# PDF - create PDF on disk and upload
 			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				# try:
 				self.processPDF()
-				# except:					
-				# 	raise utilities.IngestError("Could not generate full-text pdf")
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
@@ -718,7 +705,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.regenReaduxVirtualObjects()
 
 
-	def export_constituents(self, objMeta, bag_root, data_root, files_root):
+	def export_constituents(self, objMeta, bag_root, data_root, files_root, tarball):
 
 		# if not exist, create /constituent_objects directory
 		if not os.path.exists("/".join([bag_root, 'data', 'constituent_objects'])):
@@ -729,7 +716,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for obj in self.constituents:
 			logging.debug('exporting %s' % obj.pid)
 			constituent = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
-			constituent.export(export_dir="/".join([bag_root, 'data', 'constituent_objects']))
+			constituent.export(export_dir="/".join([bag_root, 'data', 'constituent_objects']), tarball=tarball)
 
 
 

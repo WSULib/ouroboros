@@ -177,7 +177,7 @@ class BagClass(object):
 				# write to constituent_objects list		
 				page_dict = {
 					'pid':"%s_Page_%s" % (self.pid, page_num),
-					'directory':"%s_Page_%s" % (self.full_identifier, page_num),					
+					'directory':"wayne-%s_Page_%s" % (self.full_identifier, page_num),					
 					'order':page_num,
 					'datastreams':[]
 				}
@@ -204,7 +204,7 @@ class BagClass(object):
 			logging.debug(page_dict)
 
 			# generate page_obj_dir
-			page_obj_dir = "/".join( [self.obj_dir, 'constituent_objects', page_dict['pid'].split(":")[-1]] )
+			page_obj_dir = "/".join( [self.obj_dir, 'constituent_objects', page_dict['pid'].replace(":","-")] )
 			if not os.path.exists(page_obj_dir):
 				# make root dir
 				os.mkdir(page_obj_dir)

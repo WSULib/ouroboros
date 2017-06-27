@@ -145,6 +145,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			if ds['ds_id'] == 'ALTOXML':
 				logging.debug("processing ALTO...")
 				self.processALTOXML(ds)
+			if ds['ds_id'] == 'PDF':
+				logging.debug("processing PDF...")
+				self.processPDF(ds)
 
 		# save and commit object before finishIngest()
 		final_save = self.ohandle.save()
@@ -390,24 +393,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		generic_handle.content = open(file_path)
 		generic_handle.save()
 
-		# if ds['ds_id'] != "HTML_FULL":
-		# 	# add HTML to self.html_concat
-		# 	fhand = open(file_path)
-		# 	html_parsed = BeautifulSoup(fhand)
-		# 	logging.debug("HTML document parsed...")
-		# 	#sets div with page_ID
-		# 	self.book_obj.html_concat = self.book_obj.html_concat + '<div id="page_ID_%s" class="html_page">' % (ds['order'])
-		# 	#Set in try / except block, as some HTML documents contain no elements within <body> tag
-		# 	try:
-		# 		for block in html_parsed.body:
-		# 			self.book_obj.html_concat = self.book_obj.html_concat + unicode(block)
-		# 	except:
-		# 		logging.debug("<body> tag is empty, skipping. Adding page_ID anyway.")
-
-		# 	#closes page_ID / div
-		# 	self.book_obj.html_concat = self.book_obj.html_concat + "</div>"
-		# 	fhand.close()
-
 
 	def processALTOXML(self, ds):
 		logging.debug("Processing ALTO XML")
@@ -415,6 +400,16 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		logging.debug("Looking for: %s" % file_path)
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'ALTOXML', 'ALTOXML', mimetype=ds['mimetype'], control_group='M')
 		generic_handle.label = 'ALTOXML'
+		generic_handle.content = open(file_path)
+		generic_handle.save()
+
+
+	def processPDF(self, ds):
+		logging.debug("Processing PDF")
+		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+		logging.debug("Looking for: %s" % file_path)
+		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'PDF', 'PDF', mimetype=ds['mimetype'], control_group='M')
+		generic_handle.label = 'PDF'
 		generic_handle.content = open(file_path)
 		generic_handle.save()
 		

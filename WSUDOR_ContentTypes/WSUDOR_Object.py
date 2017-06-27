@@ -820,7 +820,7 @@ class WSUDOR_GenObject(object):
             logging.debug("Content was NONE for %s - skipping..." % ds_id)
 
 
-    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False):
+    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True):
 
         '''
         Target Example:
@@ -880,28 +880,45 @@ class WSUDOR_GenObject(object):
         # handle constituents
         '''
         For export, content types with constituent objects will need to include an self.export_constituents() method
-        EXPECTS: bag_root, data_root, files_root
+        EXPECTS: bag_root, data_root, files_root, tarball
         '''
         if hasattr(self, 'export_constituents'):
             logging.debug('including constituent object resources in this bag')
-            self.export_constituents(self.objMeta, bag_root, data_root, files_root)
+            self.export_constituents(self.objMeta, bag_root, data_root, files_root, tarball)
         
-        # tarball it up
+        # rename dir
         named_dir = self.pid.replace(":","-")
         os.system("mv %s %s" % (bag_root, os.path.join(*[working_dir, named_dir])))
         orig_dir = os.getcwd()
         os.chdir(working_dir)
-        os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
-        os.system("rm -r %s" % os.path.join(*[working_dir, named_dir]))
+        
+        # if tarball
+        if tarball:
+            os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
+            os.system("rm -r %s" % os.path.join(*[working_dir, named_dir]))
 
-        # move to export directory
-        os.system("mv %s.tar %s" % (named_dir, export_dir))
+            # move to export directory
+            os.system("mv %s.tar %s" % (named_dir, export_dir))
 
-        # jump back to original working dir
-        os.chdir(orig_dir)
+            # jump back to original working dir
+            os.chdir(orig_dir)
 
-        # return location or url
-        return "%s/%s.tar" % (export_dir, named_dir)
+            # return location or url
+            return "%s/%s.tar" % (export_dir, named_dir)
+
+        else:
+            # move to export directory
+            os.system("mv %s %s" % (named_dir, export_dir))
+
+            # jump back to original working dir
+            os.chdir(orig_dir)
+
+            # return location or url
+            return "%s/%s" % (export_dir, named_dir)
+
+        
+
+        
 
 
     # # reingest bag

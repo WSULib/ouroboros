@@ -879,10 +879,7 @@ class WSUDOR_GenObject(object):
 
         # handle constituents
         '''
-        If an object has constituents, it's possible that these objects were created during ingest
         For export, content types with constituent objects will need to include an self.export_constituents() method
-        that will pull relevant files / information from constituent objects and include in this single bag.
-
         EXPECTS: bag_root, data_root, files_root
         '''
         if hasattr(self, 'export_constituents'):

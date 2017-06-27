@@ -720,8 +720,17 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 	def export_constituents(self, objMeta, bag_root, data_root, files_root):
 
+		# if not exist, create /constituent_objects directory
+		if not os.path.exists("/".join([bag_root, 'data', 'constituent_objects'])):
+			logging.debug("creating /constituent_objects dir")
+			os.mkdir("/".join([bag_root, 'data', 'constituent_objects']))
+
+		# itererate through constituents and export
 		for obj in self.constituents:
 			logging.debug('exporting %s' % obj.pid)
+			constituent = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
+			constituent.export(export_dir="/".join([bag_root, 'data', 'constituent_objects']))
+
 
 
 	#############################################################################

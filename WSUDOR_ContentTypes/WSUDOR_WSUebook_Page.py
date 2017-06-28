@@ -146,8 +146,11 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				logging.debug("processing ALTO...")
 				self.processALTOXML(ds)
 			if ds['ds_id'] == 'PDF':
-				logging.debug("processing PDF...")
-				self.processPDF(ds)
+				try:
+					logging.debug("processing PDF...")
+					self.processPDF(ds)
+				except:
+					logging.debug("could not add PDF (some v1 books do not have this datastream, but exist in objMeta)")
 
 		# save and commit object before finishIngest()
 		final_save = self.ohandle.save()

@@ -322,7 +322,10 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			rep_handle.label = "THUMBNAIL"
 			rep_handle.save()
 
-			# full book HTML 
+			# full book HTML
+			'''
+			Rare this exists from export / bag creation, but check anyway.
+			'''
 			if len(self.objMeta['datastreams']) == 0:
 				logging.debug('no datastreams found, processing HTML')
 				self.processHTML()
@@ -341,24 +344,28 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				html_full_handle.content = open(file_path).read()
 				html_full_handle.save()
 
-			# PDF - create PDF on disk and upload
-			if len(self.objMeta['datastreams']) == 0:
+			# full book PDF
+			'''
+			Due to various ingest methods, some books will contain PDF files for each page, and some may not.
+			As a result, we always export the PDF_FULL if possible and include in the bag, but do not update the objMeta.json
+			'''
+			potential_PDF_FULL_path = self.Bag.path + "/data/datastreams/PDF_FULL.pdf"
+			if os.path.exists(potential_PDF_FULL_path) or "PDF_FULL":
+				# add as datastream
+				logging.debug('PDF_FULL found, adding as datastream')
+				pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
+				pdf_full_handle.label = "Fulltext PDF for item"
+				file_path = self.Bag.path + "/data/datastreams/PDF_FULL.pdf"
+				logging.debug("looking for path: %s" % file_path)
+				logging.debug(os.path.exists(file_path))
+				pdf_full_handle.content = open(file_path).read()
+				pdf_full_handle.save()
+			elif len(self.objMeta['datastreams']) == 0:
 				logging.debug('no datastreams found, processing PDF')
 				self.processPDF()
 			elif "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
 				logging.debug('PDF_FULL not found, processing PDF')
 				self.processPDF()
-			else:
-				# add as datastream
-				logging.debug('PDF_FULL found, adding as datastream')
-				ds = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'PDF_FULL' ][0]
-				pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
-				pdf_full_handle.label = "Fulltext PDF for item"
-				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				logging.debug("looking for path: %s" % file_path)
-				logging.debug(os.path.exists(file_path))
-				pdf_full_handle.content = open(file_path).read()
-				pdf_full_handle.save()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
@@ -735,7 +742,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.regenReaduxVirtualObjects()
 
 
-	def export_constituents(self, objMeta, bag_root, data_root, files_root, tarball):
+	def export_constituents(self, objMeta, bag_root, data_root, datastreams_root, tarball):
 
 		# if not exist, create /constituent_objects directory
 		if not os.path.exists("/".join([bag_root, 'data', 'constituent_objects'])):
@@ -747,6 +754,22 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			logging.debug('exporting %s' % obj.pid)
 			constituent = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
 			constituent.export(export_dir="/".join([bag_root, 'data', 'constituent_objects']), tarball=tarball)
+
+
+	def export_content_type(self, objMeta, bag_root, data_root, datastreams_root, tarball):
+
+		# write PDF_FULL if present
+		logging.debug("writing PDF_FULL")
+		if not os.path.exists(os.path.join(*[datastreams_root, 'PDF_FULL.pdf'])):
+			self._writeDS('PDF_FULL', os.path.join(*[datastreams_root, 'PDF_FULL.pdf']))
+
+		# write PDF_FULL if present
+		logging.debug("writing HTML_FULL")
+		if not os.path.exists(os.path.join(*[datastreams_root, 'HTML_FULL'])):
+			self._writeDS('HTML_FULL', os.path.join(*[datastreams_root, 'HTML_FULL.htm']))
+
+		# export constituents
+		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball)
 
 
 

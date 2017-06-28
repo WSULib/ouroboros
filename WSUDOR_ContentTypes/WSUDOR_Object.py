@@ -849,9 +849,9 @@ class WSUDOR_GenObject(object):
         dir_structure = [working_dir, str(uuid.uuid4()), 'data', 'datastreams']
         bag_root = os.path.join(*dir_structure[:2])
         data_root = os.path.join(*dir_structure[:3])
-        files_root = os.path.join(*dir_structure[:4])
+        datastreams_root = os.path.join(*dir_structure[:4])
         os.makedirs(os.path.join(*dir_structure))
-        print(bag_root, data_root, files_root)
+        print(bag_root, data_root, datastreams_root)
 
         # move bagit files to temp dir, and unpack
         bagit_ds_handle = self.ohandle.getDatastreamObject("BAGIT_META")
@@ -864,7 +864,7 @@ class WSUDOR_GenObject(object):
         # write original datastreams (relies on objMeta)
         for ds in self.objMeta['datastreams']:
             logging.debug("writing %s" % ds)
-            self._writeDS(ds['ds_id'], os.path.join(*[files_root, ds['filename']]))
+            self._writeDS(ds['ds_id'], os.path.join(*[datastreams_root, ds['filename']]))
 
         # include RELS and RELS-INT
         if preserve_relationships == True:
@@ -873,22 +873,25 @@ class WSUDOR_GenObject(object):
                 logging.debug("writing %s" % rels_ds)
                 self._writeDS(rels_ds, os.path.join(*[data_root, "%s.xml" % rels_ds]))
 
+        ##########################################################################################
+        # content-type specific export
+        ##########################################################################################
+        '''
+        All content types optionally may contain an export_content_type() method
+        EXPECTS: bag_root, data_root, datastreams_root, tarball
+        '''
+        if hasattr(self, 'export_content_type'):
+            logging.debug('running content-type specific export')
+            try:
+                self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
+            except:
+                logging.debug("could not export constituents, continuing with parent object")
+        ##########################################################################################
+
         # write MODS and objMeta files
         self._writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
         self._writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
 
-        # handle constituents
-        '''
-        For export, content types with constituent objects will need to include an self.export_constituents() method
-        EXPECTS: bag_root, data_root, files_root, tarball
-        '''
-        if hasattr(self, 'export_constituents'):
-            logging.debug('including constituent object resources in this bag')
-            try:
-                self.export_constituents(self.objMeta, bag_root, data_root, files_root, tarball)
-            except:
-                logging.debug("could not export constituents, continuing with parent object")
-        
         # rename dir
         named_dir = self.pid.replace(":","-")
         os.system("mv %s %s" % (bag_root, os.path.join(*[working_dir, named_dir])))

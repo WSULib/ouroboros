@@ -45,8 +45,11 @@ def convert_v3tov4(v3book_pid, single_page_num=False, commit=False):
 		# instantiate new ObjMeta object
 		v3book_objMeta = models.ObjMeta(**v3book.objMeta)
 
+		# remove all datastreams but HTML_FULL and PDF_FULL
+		v3book_objMeta.datastreams = [ ds for ds in v3book_objMeta.datastreams if ds['ds_id'] in ['HTML_FULL','PDF_FULL'] ]
+
 		# add all pages to constituent_objects
-		v3book_objMeta.constituent_objects = page_objMeta
+		v3book_objMeta.constituent_objects = pages_objMeta
 
 		# update isRepresentedBy
 		is_rep_num = v3book_objMeta.isRepresentedBy.split("_")[-1]
@@ -57,6 +60,8 @@ def convert_v3tov4(v3book_pid, single_page_num=False, commit=False):
 		objMeta_handle.label = "Ingest Bag Object Metadata"
 		objMeta_handle.content = v3book_objMeta.toJSON()
 		objMeta_handle.save()
+
+		logging.debug("finished for %s" % v3book_pid)
 
 
 def page_v3tov4(v3book, pid, commit=False):

@@ -217,7 +217,9 @@ class BagClass(object):
 				"id":page_dict['pid'],
 				"identifier":page_dict['pid'].split(":")[-1],
 				"label":"%s - Page %s" % (book_title_short,page_num),
-				"content_type":'WSUDOR_WSUebook_Page'
+				"content_type":'WSUDOR_WSUebook_Page',
+				"directory":page_dict['pid'].replace(":","-"),
+				"order":page_num
 			}
 
 			# instantiate ObjMeta object
@@ -273,8 +275,8 @@ class BagClass(object):
 
 			logging.debug("Page ObjMeta %s" % page_objMeta_handle.toJSON())
 
-			# add to object constituent_objects
-			self.objMeta_handle.constituent_objects.append(page_dict)
+			# add to page objMeta to book's constituent_objects
+			self.objMeta_handle.constituent_objects.append(page_objMeta_handle.asDict())
 
 			# write to objMeta.json file 
 			page_objMeta_handle.writeToFile("%s/objMeta.json" % (page_obj_dir))

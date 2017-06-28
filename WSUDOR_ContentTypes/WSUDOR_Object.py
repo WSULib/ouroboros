@@ -884,7 +884,10 @@ class WSUDOR_GenObject(object):
         '''
         if hasattr(self, 'export_constituents'):
             logging.debug('including constituent object resources in this bag')
-            self.export_constituents(self.objMeta, bag_root, data_root, files_root, tarball)
+            try:
+                self.export_constituents(self.objMeta, bag_root, data_root, files_root, tarball)
+            except:
+                logging.debug("could not export constituents, continuing with parent object")
         
         # rename dir
         named_dir = self.pid.replace(":","-")

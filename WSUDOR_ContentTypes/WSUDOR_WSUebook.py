@@ -322,13 +322,31 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			rep_handle.label = "THUMBNAIL"
 			rep_handle.save()
 
-			# HTML (based on concatenated HTML from self.html_concat)
-			if "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+			# full book HTML 
+			if len(self.objMeta['datastreams']) == 0:
 				self.processHTML()
+			elif "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+				self.processHTML()
+			else:
+				# add as datastream
+				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
+				html_full_handle.label = "Full HTML for item"
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+				html_full_handle.content = open(file_path)
+				html_full_handle.save()
 
 			# PDF - create PDF on disk and upload
-			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+			if len(self.objMeta['datastreams']) == 0:
 				self.processPDF()
+			elif "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+				self.processPDF()
+			else:
+				# add as datastream
+				pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
+				pdf_full_handle.label = "Fulltext PDF for item"
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+				pdf_full_handle.content = open(file_path)
+				pdf_full_handle.save()
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
@@ -381,8 +399,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# derive file_path of HTML
 			for ds in obj['datastreams']:
-				if ds[2] == 'HTML':
-					file_path = "/".join([self.temp_payload, 'data', 'constituent_objects', obj['directory'], 'data', 'datastreams', ds[0]])
+				if ds['ds_id'] == 'HTML':
+					file_path = "/".join([self.temp_payload, 'data', 'constituent_objects', obj['directory'], 'data', 'datastreams', ds['filename']])
 			
 			# add HTML to self.html_concat
 			fhand = open(file_path)

@@ -354,6 +354,10 @@ class ObjMeta:
 	def toJSON(self):
 		return JSONEncoder().encode(self.__dict__)
 
+	# return as dictionary
+	def asDict(self):
+		return vars(self)
+
 
 ########################################################################
 # Solr

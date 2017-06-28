@@ -305,7 +305,21 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				
 			# iterate through pages and create page objects
 			for obj in self.constituents_from_objMeta:
+
+				# try untarred directory first
 				target_bag = "/".join([self.temp_payload, 'data', 'constituent_objects', obj['directory']])
+				if os.path.exists(target_bag):
+					logging.debug('constituent bag found, using')
+				# if directory not found, might be tar file, check for this
+				else:
+					target_bag = "/".join([self.temp_payload, 'data', 'constituent_objects', "%s.tar" % obj['directory']])
+					if os.path.exists(target_bag):
+						logging.debug('constituent tarred bag found, using')
+					# if neither, raise exception
+					else:
+						logging.debug('could not find constituent directory or tar file, skipping')
+						raise Exception('constituent bag not found')
+						
 				logging.debug('ingesting constituent object %s' % target_bag)
 				constituent_bag = WSUDOR_ContentTypes.WSUDOR_Object(target_bag, object_type='bag')
 				constituent_bag.ingestBag()

@@ -324,30 +324,20 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# full book HTML
 			'''
-			Rare this exists from export / bag creation, but check anyway.
+			Derive fullbook HTML
 			'''
 			if len(self.objMeta['datastreams']) == 0:
 				logging.debug('no datastreams found, processing HTML')
+			try:
 				self.processHTML()
-			elif "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				logging.debug('HTML_FULL not found, processing HTML')
-				self.processHTML()
-			else:
-				# add as datastream
-				logging.debug('HTML_FULL found, adding as datastream')
-				ds = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'HTML_FULL' ][0]
-				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
-				html_full_handle.label = "Full HTML for item"
-				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				logging.debug("looking for path: %s" % file_path)
-				logging.debug(os.path.exists(file_path))
-				html_full_handle.content = open(file_path).read()
-				html_full_handle.save()
+			except:
+				logging.debug("could not process HTML")
 
 			# full book PDF
 			'''
 			Due to various ingest methods, some books will contain PDF files for each page, and some may not.
-			As a result, we always export the PDF_FULL if possible and include in the bag, but do not update the objMeta.json
+			As a result, we always export the PDF_FULL if possible and include in the bag, but do not update the objMeta.json.
+			If the file is not present, we attempt to processPDF for the first time
 			'''
 			potential_PDF_FULL_path = self.Bag.path + "/data/datastreams/PDF_FULL.pdf"
 			if os.path.exists(potential_PDF_FULL_path) or "PDF_FULL":
@@ -360,12 +350,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				logging.debug(os.path.exists(file_path))
 				pdf_full_handle.content = open(file_path).read()
 				pdf_full_handle.save()
-			elif len(self.objMeta['datastreams']) == 0:
-				logging.debug('no datastreams found, processing PDF')
-				self.processPDF()
-			elif "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				logging.debug('PDF_FULL not found, processing PDF')
-				self.processPDF()
+			else:
+				try:
+					self.processPDF()
+				except:
+					logging.debug("could not create PDF")
+			
 
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()

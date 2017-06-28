@@ -324,28 +324,40 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# full book HTML 
 			if len(self.objMeta['datastreams']) == 0:
+				logging.debug('no datastreams found, processing HTML')
 				self.processHTML()
 			elif "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+				logging.debug('HTML_FULL not found, processing HTML')
 				self.processHTML()
 			else:
 				# add as datastream
+				logging.debug('HTML_FULL found, adding as datastream')
+				ds = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'HTML_FULL' ][0]
 				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
 				html_full_handle.label = "Full HTML for item"
 				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				html_full_handle.content = open(file_path)
+				logging.debug("looking for path: %s" % file_path)
+				logging.debug(os.path.exists(file_path))
+				html_full_handle.content = open(file_path).read()
 				html_full_handle.save()
 
 			# PDF - create PDF on disk and upload
 			if len(self.objMeta['datastreams']) == 0:
+				logging.debug('no datastreams found, processing PDF')
 				self.processPDF()
 			elif "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+				logging.debug('PDF_FULL not found, processing PDF')
 				self.processPDF()
 			else:
 				# add as datastream
+				logging.debug('PDF_FULL found, adding as datastream')
+				ds = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'PDF_FULL' ][0]
 				pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
 				pdf_full_handle.label = "Fulltext PDF for item"
 				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
-				pdf_full_handle.content = open(file_path)
+				logging.debug("looking for path: %s" % file_path)
+				logging.debug(os.path.exists(file_path))
+				pdf_full_handle.content = open(file_path).read()
 				pdf_full_handle.save()
 
 			# save and commit object before finishIngest()

@@ -45,7 +45,7 @@ def convert_v3tov4(v3book_pid, single_page_num=False, commit=True):
 		# instantiate new ObjMeta object
 		v3book_objMeta = models.ObjMeta(**v3book.objMeta)
 
-		# clear datastreams
+		# clear datastreams		
 		v3book_objMeta.datastreams = []
 
 		# add HTML_FULL and PDF_FULL to objMeta.datastreams

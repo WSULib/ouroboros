@@ -269,6 +269,7 @@ class WSUDOR_GenObject(object):
                 self.pid_suffix = payload.pid.split(":")[1]
                 self.content_type = content_type
                 self.ohandle = payload
+
                 # only fires for v2 objects
                 if "OBJMETA" in self.ohandle.ds_list:
                     self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
@@ -404,6 +405,17 @@ class WSUDOR_GenObject(object):
     @helpers.LazyProperty
     def premis(self):
         return models.PREMISClient(pid=self.pid)
+
+
+    # MODS metadata
+    def update_objMeta(self):
+        '''
+        Replaces OBJMETA datastream with current contents of self.objMeta (a dictionary)
+        '''
+        objMeta_handle = eulfedora.models.FileDatastreamObject(v3book.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+        objMeta_handle.label = "Ingest Bag Object Metadata"
+        objMeta_handle.content = json.dumps(self.objMeta)
+        objMeta_handle.save()
 
 
     def calc_object_size(self):
@@ -640,6 +652,20 @@ class WSUDOR_GenObject(object):
     # WSUDOR_Object Methods
     ############################################################################################################
 
+
+    # expects True or False, sets as discoverability, and optionally reindexes
+    def set_discoverability(self, discoverable, reindex=False):
+
+        current_discoverability = self.ohandle.risearch.get_objects(self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable').next()
+        logging.debug("Current discoverability is: %s, changing to %s" % (current_discoverability.split("/")[-1], discoverable))
+
+        # purge old relationship
+        fedora_handle.api.purgeRelationship(self.ohandle, self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable',current_discoverability)
+
+        # add new relationship
+        fedora_handle.api.addRelationship(self.ohandle, self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable',"info:fedora/%s" % str(discoverable))
+
+
     # base ingest method, that runs some pre-ingest work, and eventually fires WSUDOR Content Type specific .ingestBag()
     def ingest(self,indexObject=True):
         # add PID to indexer queue with 'hold' action to prevent indexing
@@ -820,6 +846,7 @@ class WSUDOR_GenObject(object):
             logging.debug("Content was NONE for %s - skipping..." % ds_id)
 
 
+    # export object
     def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True):
 
         '''
@@ -882,10 +909,10 @@ class WSUDOR_GenObject(object):
         '''
         if hasattr(self, 'export_content_type'):
             logging.debug('running content-type specific export')
-            try:
-                self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
-            except:
-                logging.debug("could not export constituents, continuing with parent object")
+            # try:
+            self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
+            # except:
+            #     logging.debug("could not export constituents, continuing with parent object")
         ##########################################################################################
 
         # write MODS and objMeta files

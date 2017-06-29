@@ -80,6 +80,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	def pages_from_objMeta(self):
 
 		'''
+		Returns dictionary with order as key, list of constituent objects
+		'''
+
+		pages = defaultdict(list)
+		for constituent in self.objMeta['constituent_objects']:
+			try:
+				pages[int(constituent['order'])].append(constituent)
+			except:
+				logging.debug("Presented with 'order' attribute that was not integer, skipping...")
+		return pages
+
+
+	# pages from objMeta class
+	@helpers.LazyProperty
+	def pages_from_objMeta_v1(self):
+
+		'''
 		Returns dictionary with order as key, list of assocated datastreams as val
 		'''
 
@@ -319,12 +336,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 					else:
 						logging.debug('could not find constituent directory or tar file, skipping')
 						raise Exception('constituent bag not found')
-						
+
 				logging.debug('ingesting constituent object %s' % target_bag)
 				constituent_bag = WSUDOR_ContentTypes.WSUDOR_Object(target_bag, object_type='bag')
 				constituent_bag.ingestBag()
 			########################################################################################################
-
 
 			# write generic thumbnail and preview
 			logging.debug("writing generic thumb and preview")
@@ -340,12 +356,22 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			'''
 			Derive fullbook HTML
 			'''
-			if len(self.objMeta['datastreams']) == 0:
-				logging.debug('no datastreams found, processing HTML')
-			try:
-				self.processHTML()
-			except:
-				logging.debug("could not process HTML")
+			HTML_search = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'HTML_FULL' ]
+			if len(HTML_search) > 0:
+				logging.debug('HTML_FULL found in objMeta, ingesting')
+				ds = HTML_search[0]
+				ds_handle = eulfedora.models.DatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group="M")
+				ds_handle.label = ds['label']
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+				logging.debug("looking for path: %s" % file_path)
+				logging.debug(os.path.exists(file_path))
+				ds_handle.content = open(file_path).read()
+				ds_handle.save()
+			else:	
+				try:
+					self.processHTML(update_objeMeta=True)
+				except:
+					logging.debug("could not process HTML")
 
 			# full book PDF
 			'''
@@ -353,24 +379,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			As a result, we always export the PDF_FULL if possible and include in the bag, but do not update the objMeta.json.
 			If the file is not present, we attempt to processPDF for the first time
 			'''
-			potential_PDF_FULL_path = self.Bag.path + "/data/datastreams/PDF_FULL.pdf"
-			if os.path.exists(potential_PDF_FULL_path) or "PDF_FULL":
-				# add as datastream
-				logging.debug('PDF_FULL found, adding as datastream')
-				pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
-				pdf_full_handle.label = "Fulltext PDF for item"
-				file_path = self.Bag.path + "/data/datastreams/PDF_FULL.pdf"
+			PDF_search = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'PDF_FULL' ]
+			if len(PDF_search) > 0:
+				logging.debug('PDF_FULL found in objMeta, ingesting')
+				ds = PDF_search[0]
+				ds_handle = eulfedora.models.DatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group="M")
+				ds_handle.label = ds['label']
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
 				logging.debug("looking for path: %s" % file_path)
 				logging.debug(os.path.exists(file_path))
-				pdf_full_handle.content = open(file_path).read()
-				pdf_full_handle.save()
-			else:
+				ds_handle.content = open(file_path).read()
+				ds_handle.save()
+			else:	
 				try:
-					self.processPDF()
+					self.processPDF(update_objeMeta=True)
 				except:
-					logging.debug("could not create PDF")
+					logging.debug("could not process PDF")
 			
-
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
 
@@ -413,7 +438,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return True
 
 
-	def processHTML(self, process_type='ingest'):
+	def processHTML(self, process_type='ingest', update_objeMeta=False):
 
 		logging.debug("Processing HTML for entire book...")
 		
@@ -448,8 +473,20 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		html_full_handle.content = self.html_concat.encode('utf-8')
 		html_full_handle.save()
 
+		# update objMeta
+		if update_objeMeta:
+			self.objMeta['datastreams'].append({
+				'mimetype': "text/html",
+				'label': "Full HTML for item",
+				'ds_id': "HTML_FULL",
+				'internal_relationships': { },
+				'filename': "HTML_FULL.htm"
+				}
+			)
+		self.update_objMeta()
+
 	
-	def processPDF(self, process_type='ingest', pdf_dir=None):
+	def processPDF(self, process_type='ingest', pdf_dir=None, update_objeMeta=False):
 
 		# expecting pdf_dir if process_type != 'ingest'
 		if process_type == 'ingest':
@@ -466,6 +503,18 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# remove pdf
 		os.remove(temp_filename)
+
+		# update objMeta
+		if update_objeMeta:
+			self.objMeta['datastreams'].append({
+				'mimetype': "application/pdf",
+				'internal_relationships': { },
+				'ds_id': "PDF_FULL",
+				'label': "PDF_PDF_FULL",
+				'filename': "PDF_FULL.pdf"
+				}
+			)
+		self.update_objMeta()
 
 		return pdf_full_handle.save()
 
@@ -761,16 +810,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	def export_content_type(self, objMeta, bag_root, data_root, datastreams_root, tarball):
-
-		# write PDF_FULL if present
-		logging.debug("writing PDF_FULL")
-		if not os.path.exists(os.path.join(*[datastreams_root, 'PDF_FULL.pdf'])):
-			self._writeDS('PDF_FULL', os.path.join(*[datastreams_root, 'PDF_FULL.pdf']))
-
-		# write PDF_FULL if present
-		logging.debug("writing HTML_FULL")
-		if not os.path.exists(os.path.join(*[datastreams_root, 'HTML_FULL'])):
-			self._writeDS('HTML_FULL', os.path.join(*[datastreams_root, 'HTML_FULL.htm']))
 
 		# export constituents
 		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball)

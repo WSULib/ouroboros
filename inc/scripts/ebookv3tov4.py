@@ -6,7 +6,7 @@ import eulfedora
 
 
 
-def convert_v3tov4(v3book_pid, single_page_num=False, commit=False):
+def convert_v3tov4(v3book_pid, single_page_num=False, commit=True):
 	
 	'''
 	This function will take a v3 book and rewrite the objMeta for v4 export/ingest
@@ -45,8 +45,26 @@ def convert_v3tov4(v3book_pid, single_page_num=False, commit=False):
 		# instantiate new ObjMeta object
 		v3book_objMeta = models.ObjMeta(**v3book.objMeta)
 
-		# remove all datastreams but HTML_FULL and PDF_FULL
-		v3book_objMeta.datastreams = [ ds for ds in v3book_objMeta.datastreams if ds['ds_id'] in ['HTML_FULL','PDF_FULL'] ]
+		# clear datastreams
+		v3book_objMeta.datastreams = []
+
+		# add HTML_FULL and PDF_FULL to objMeta.datastreams
+		v3book_objMeta.datastreams.append({
+			'mimetype': "text/html",
+			'label': "Full HTML for item",
+			'ds_id': "HTML_FULL",
+			'internal_relationships': { },
+			'filename': "HTML_FULL.htm"
+			}
+		)
+		v3book_objMeta.datastreams.append({
+			'mimetype': "application/pdf",
+			'internal_relationships': { },
+			'ds_id': "PDF_FULL",
+			'label': "PDF_PDF_FULL",
+			'filename': "PDF_FULL.pdf"
+			}
+		)
 
 		# add all pages to constituent_objects
 		v3book_objMeta.constituent_objects = pages_objMeta
@@ -74,7 +92,7 @@ def page_v3tov4(v3book, pid, commit=False):
 	logging.debug("page number is: %s" % page_num)
 
 	# get info from original v3 objMeta
-	v3_objMeta_entry = v3book.pages_from_objMeta[page_num]
+	v3_objMeta_entry = v3book.pages_from_objMeta_v1[page_num]
 	logging.debug("original v3_objMeta_entry: %s" % v3_objMeta_entry)
 
 	# start objMeta primer

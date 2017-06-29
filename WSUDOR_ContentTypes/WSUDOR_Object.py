@@ -269,6 +269,7 @@ class WSUDOR_GenObject(object):
                 self.pid_suffix = payload.pid.split(":")[1]
                 self.content_type = content_type
                 self.ohandle = payload
+
                 # only fires for v2 objects
                 if "OBJMETA" in self.ohandle.ds_list:
                     self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
@@ -404,6 +405,17 @@ class WSUDOR_GenObject(object):
     @helpers.LazyProperty
     def premis(self):
         return models.PREMISClient(pid=self.pid)
+
+
+    # MODS metadata
+    def update_objMeta(self):
+        '''
+        Replaces OBJMETA datastream with current contents of self.objMeta (a dictionary)
+        '''
+        objMeta_handle = eulfedora.models.FileDatastreamObject(v3book.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+        objMeta_handle.label = "Ingest Bag Object Metadata"
+        objMeta_handle.content = json.dumps(self.objMeta)
+        objMeta_handle.save()
 
 
     def calc_object_size(self):
@@ -557,6 +569,17 @@ class WSUDOR_GenObject(object):
         return constituent_objects
 
 
+    # constituent objects
+    @helpers.LazyProperty
+    def constituents_from_objMeta(self):
+
+        '''
+        Returns list of constitobjects bags in /constituent_objects from ObjMeta
+        '''
+
+        return self.objMeta['constituent_objects']
+
+
     # collection members
     @helpers.LazyProperty
     def collectionMembers(self):
@@ -628,6 +651,20 @@ class WSUDOR_GenObject(object):
 
     # WSUDOR_Object Methods
     ############################################################################################################
+
+
+    # expects True or False, sets as discoverability, and optionally reindexes
+    def set_discoverability(self, discoverable, reindex=False):
+
+        current_discoverability = self.ohandle.risearch.get_objects(self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable').next()
+        logging.debug("Current discoverability is: %s, changing to %s" % (current_discoverability.split("/")[-1], discoverable))
+
+        # purge old relationship
+        fedora_handle.api.purgeRelationship(self.ohandle, self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable',current_discoverability)
+
+        # add new relationship
+        fedora_handle.api.addRelationship(self.ohandle, self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable',"info:fedora/%s" % str(discoverable))
+
 
     # base ingest method, that runs some pre-ingest work, and eventually fires WSUDOR Content Type specific .ingestBag()
     def ingest(self,indexObject=True):
@@ -775,7 +812,10 @@ class WSUDOR_GenObject(object):
             os.unlink(self.temp_payload)
 
         # finally, remove 'hold' action in indexer queue and return
-        self.alter_in_indexer_queue('index')
+        if indexObject:
+            self.alter_in_indexer_queue('index')
+        
+        # finally, return
         return True
 
 
@@ -806,7 +846,8 @@ class WSUDOR_GenObject(object):
             logging.debug("Content was NONE for %s - skipping..." % ds_id)
 
 
-    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False):
+    # export object
+    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True):
 
         '''
         Target Example:
@@ -835,9 +876,9 @@ class WSUDOR_GenObject(object):
         dir_structure = [working_dir, str(uuid.uuid4()), 'data', 'datastreams']
         bag_root = os.path.join(*dir_structure[:2])
         data_root = os.path.join(*dir_structure[:3])
-        files_root = os.path.join(*dir_structure[:4])
+        datastreams_root = os.path.join(*dir_structure[:4])
         os.makedirs(os.path.join(*dir_structure))
-        print(bag_root, data_root, files_root)
+        print(bag_root, data_root, datastreams_root)
 
         # move bagit files to temp dir, and unpack
         bagit_ds_handle = self.ohandle.getDatastreamObject("BAGIT_META")
@@ -850,7 +891,7 @@ class WSUDOR_GenObject(object):
         # write original datastreams (relies on objMeta)
         for ds in self.objMeta['datastreams']:
             logging.debug("writing %s" % ds)
-            self._writeDS(ds['ds_id'], os.path.join(*[files_root, ds['filename']]))
+            self._writeDS(ds['ds_id'], os.path.join(*[datastreams_root, ds['filename']]))
 
         # include RELS and RELS-INT
         if preserve_relationships == True:
@@ -859,71 +900,84 @@ class WSUDOR_GenObject(object):
                 logging.debug("writing %s" % rels_ds)
                 self._writeDS(rels_ds, os.path.join(*[data_root, "%s.xml" % rels_ds]))
 
+        ##########################################################################################
+        # content-type specific export
+        ##########################################################################################
+        '''
+        All content types optionally may contain an export_content_type() method
+        EXPECTS: bag_root, data_root, datastreams_root, tarball
+        '''
+        if hasattr(self, 'export_content_type'):
+            logging.debug('running content-type specific export')
+            # try:
+            self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
+            # except:
+            #     logging.debug("could not export constituents, continuing with parent object")
+        ##########################################################################################
+
         # write MODS and objMeta files
         self._writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
         self._writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
 
-        # handle constituents
-        '''
-        If an object has constituents, it's possible that these objects were created during ingest
-        For export, content types with constituent objects will need to include an self.export_constituents() method
-        that will pull relevant files / information from constituent objects and include in this single bag.
-
-        EXPECTS: bag_root, data_root, files_root
-        '''
-        if hasattr(self, 'export_constituents'):
-            logging.debug('including constituent object resources in this bag')
-            self.export_constituents(self.objMeta, bag_root, data_root, files_root)
-        
-        # tarball it up
+        # rename dir
         named_dir = self.pid.replace(":","-")
         os.system("mv %s %s" % (bag_root, os.path.join(*[working_dir, named_dir])))
         orig_dir = os.getcwd()
         os.chdir(working_dir)
-        os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
-        os.system("rm -r %s" % os.path.join(*[working_dir, named_dir]))
+        
+        # if tarball
+        if tarball:
+            os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
+            os.system("rm -r %s" % os.path.join(*[working_dir, named_dir]))
 
-        # move to export directory
-        os.system("mv %s.tar %s" % (named_dir, export_dir))
+            # move to export directory
+            os.system("mv %s.tar %s" % (named_dir, export_dir))
 
-        # jump back to original working dir
-        os.chdir(orig_dir)
+            # jump back to original working dir
+            os.chdir(orig_dir)
 
-        # return location or url
-        return "%s/%s.tar" % (export_dir, named_dir)
+            # return location or url
+            return "%s/%s.tar" % (export_dir, named_dir)
+
+        else:
+            # move to export directory
+            os.system("mv %s %s" % (named_dir, export_dir))
+
+            # jump back to original working dir
+            os.chdir(orig_dir)
+
+            # return location or url
+            return "%s/%s" % (export_dir, named_dir)
 
 
-    # # reingest bag
-    # def reingestBag(self, removeExportTar=False, preserveRelationships=True):
+    # reingest bag
+    def reingestBag(self, removeTempExport=True, preserveRelationships=True):
 
-    #   # get PID
-    #   PID = self.pid
+      logging.debug("Roundrip Ingesting: %s" % self.pid)
 
-    #   logging.debug("Roundrip Ingesting:",PID)
+      # export bag, returning the file structure location of tar file
+      export_location = self.export(tarball=True)
+      logging.debug("Location of export: %s" % export_location)
 
-    #   # export bag, returning the file structure location of tar file
-    #   export_tar = self.exportBag(returnTargetDir=True, preserveRelationships=preserveRelationships)
-    #   logging.debug("Location of export tar file:",export_tar)
+      # open bag
+      bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_location, object_type='bag')
 
-    #   # open bag
-    #   bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_tar, object_type='bag')
+      # purge self
+      if bag_handle != False:
+          self.purge(override_state=True)
+      else:
+          logging.debug("exported object doesn't look good, aborting purge")
 
-    #   # purge self
-    #   if bag_handle != False:
-    #       fedora_handle.purge_object(PID)
-    #   else:
-    #       logging.debug("exported object doesn't look good, aborting purge")
+      # reingest exported tar file
+      bag_handle.ingest()
 
-    #   # reingest exported tar file
-    #   bag_handle.ingest()
+      # delete exported tar
+      if removeTempExport == True:
+          logging.debug("Removing export tar...")
+          os.remove(export_location)
 
-    #   # delete exported tar
-    #   if removeExportTar == True:
-    #       logging.debug("Removing export tar...")
-    #       os.remove(export_tar)
-
-    #   # return
-    #   return PID,"Reingested."
+      # return
+      return self.pid, "Reingested."
 
 
     def previewSolrDict(self):

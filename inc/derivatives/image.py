@@ -138,6 +138,9 @@ class ImageDerivative(Derivative):
 
 		# Bit per Sample
 		self.BPS = None
+
+		# sometimes intermediate input_handles are generated, flag for whether they should be removed
+		self.disposable_input = False
 		
 
 
@@ -221,7 +224,14 @@ class ImageDerivative(Derivative):
 		if os.path.exists(self.output_handle.name) and os.path.getsize(self.output_handle.name) != 0:			
 			logging.debug("Created: %s" % self.output_handle.name)
 			os.chmod(self.output_handle.name, 0644)
+
+			# check if intermediate temporary input_handle created, remove if so
+			if self.disposable_input:
+				logging.debug("input was temporary and disposable, removing")
+				self.output_handle.unlink(self.input_handle)
+
 			return True
+
 		else:
 			if os.path.exists(self.output_handle.name): os.remove(self.output_handle.name)
 			logging.debug("Failed to create: %s" % self.output_handle.name)
@@ -235,14 +245,16 @@ class ImageDerivative(Derivative):
 				return False
 		
 
-
 	def uncompressOriginal(self):
 		logging.debug("Converting temp tiff to uncompressed")
 		new_input_handle = self.create_temp_file(file_type='named', suffix='.tif')
 		cmd = "convert -verbose %s +compress %s" % (self.input_handle, new_input_handle.name)
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()
-		
+
+		# set input_handle as temporary
+		self.disposable_input = True
+
 		# re-run makeJP2 with new input_data
 		self.input_handle = new_input_handle.name
 		self.next_iteration = self.createTiffFromOriginal
@@ -255,6 +267,9 @@ class ImageDerivative(Derivative):
 		cmd = "convert -verbose %s +compress %s" % (self.input_handle, new_input_handle.name)
 		proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 		return_code = proc.wait()
+
+		# set input_handle as temporary
+		self.disposable_input = True
 		
 		# re-run makeJP2 with new input_data
 		self.input_handle = new_input_handle.name

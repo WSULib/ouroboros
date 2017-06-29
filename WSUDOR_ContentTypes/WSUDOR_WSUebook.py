@@ -80,6 +80,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	def pages_from_objMeta(self):
 
 		'''
+		Returns dictionary with order as key, list of constituent objects
+		'''
+
+		pages = defaultdict(list)
+		for constituent in self.objMeta['constituent_objects']:
+			try:
+				pages[int(constituent['order'])].append(constituent)
+			except:
+				logging.debug("Presented with 'order' attribute that was not integer, skipping...")
+		return pages
+
+
+	# pages from objMeta class
+	@helpers.LazyProperty
+	def pages_from_objMeta_v1(self):
+
+		'''
 		Returns dictionary with order as key, list of assocated datastreams as val
 		'''
 
@@ -209,11 +226,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			"failed_tests":[]
 		}
 
-		# # check that 'isRepresentedBy' datastream exists in self.objMeta.datastreams[]
-		# ds_ids = [each['ds_id'] for each in self.objMeta['datastreams']]
-		# if self.objMeta['isRepresentedBy'] not in ds_ids:
-		# 	report_failure(("isRepresentedBy_check","%s is not in %s" % (self.objMeta['isRepresentedBy'], ds_ids)))
-
 		# check that content_type is a valid ContentType
 		if self.__class__ not in WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__():
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
@@ -304,15 +316,31 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# PAGES
 			########################################################################################################
 			# iterate through anticipated missing pages and create missing page objects
-			for page_num in self.normalized_missing_pages_from_objMeta:
-				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
-				page_obj.ingestMissingPage(self, page_num)
+			# for page_num in self.normalized_missing_pages_from_objMeta:
+			# 	page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
+			# 	page_obj.ingestMissingPage(self, page_num)
+				
 			# iterate through pages and create page objects
-			for page_num in self.normalized_pages_from_objMeta:
-				page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
-				page_obj.ingest(self, page_num)
-			########################################################################################################
+			for obj in self.constituents_from_objMeta:
 
+				# try untarred directory first
+				target_bag = "/".join([self.temp_payload, 'data', 'constituent_objects', obj['directory']])
+				if os.path.exists(target_bag):
+					logging.debug('constituent bag found, using')
+				# if directory not found, might be tar file, check for this
+				else:
+					target_bag = "/".join([self.temp_payload, 'data', 'constituent_objects', "%s.tar" % obj['directory']])
+					if os.path.exists(target_bag):
+						logging.debug('constituent tarred bag found, using')
+					# if neither, raise exception
+					else:
+						logging.debug('could not find constituent directory or tar file, skipping')
+						raise Exception('constituent bag not found')
+
+				logging.debug('ingesting constituent object %s' % target_bag)
+				constituent_bag = WSUDOR_ContentTypes.WSUDOR_Object(target_bag, object_type='bag')
+				constituent_bag.ingestBag()
+			########################################################################################################
 
 			# write generic thumbnail and preview
 			logging.debug("writing generic thumb and preview")
@@ -324,20 +352,50 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			rep_handle.label = "THUMBNAIL"
 			rep_handle.save()
 
-			# HTML (based on concatenated HTML from self.html_concat)
-			if "HTML_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
-				html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
-				html_full_handle.label = "Full HTML for item"
-				html_full_handle.content = self.html_concat.encode('utf-8')
-				html_full_handle.save()
-
-			# PDF - create PDF on disk and upload
-			if "PDF_FULL" not in [ds['ds_id'] for ds in self.objMeta['datastreams']]:
+			# full book HTML
+			'''
+			Derive fullbook HTML
+			'''
+			HTML_search = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'HTML_FULL' ]
+			if len(HTML_search) > 0:
+				logging.debug('HTML_FULL found in objMeta, ingesting')
+				ds = HTML_search[0]
+				ds_handle = eulfedora.models.DatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group="M")
+				ds_handle.label = ds['label']
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+				logging.debug("looking for path: %s" % file_path)
+				logging.debug(os.path.exists(file_path))
+				ds_handle.content = open(file_path).read()
+				ds_handle.save()
+			else:	
 				try:
-					self.processPDF()
-				except:					
-					raise utilities.IngestError("Could not generate full-text pdf")
+					self.processHTML(update_objeMeta=True)
+				except:
+					logging.debug("could not process HTML")
 
+			# full book PDF
+			'''
+			Due to various ingest methods, some books will contain PDF files for each page, and some may not.
+			As a result, we always export the PDF_FULL if possible and include in the bag, but do not update the objMeta.json.
+			If the file is not present, we attempt to processPDF for the first time
+			'''
+			PDF_search = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'PDF_FULL' ]
+			if len(PDF_search) > 0:
+				logging.debug('PDF_FULL found in objMeta, ingesting')
+				ds = PDF_search[0]
+				ds_handle = eulfedora.models.DatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group="M")
+				ds_handle.label = ds['label']
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+				logging.debug("looking for path: %s" % file_path)
+				logging.debug(os.path.exists(file_path))
+				ds_handle.content = open(file_path).read()
+				ds_handle.save()
+			else:	
+				try:
+					self.processPDF(update_objeMeta=True)
+				except:
+					logging.debug("could not process PDF")
+			
 			# save and commit object before finishIngest()
 			final_save = self.ohandle.save()
 
@@ -380,23 +438,83 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return True
 
 
-	def processPDF(self, process_type='ingest', pdf_dir=None):
+	def processHTML(self, process_type='ingest', update_objeMeta=False):
+
+		logging.debug("Processing HTML for entire book...")
+		
+		# iterate over constituent_objects
+		for obj in self.constituents_from_objMeta:
+
+			# derive file_path of HTML
+			for ds in obj['datastreams']:
+				if ds['ds_id'] == 'HTML':
+					file_path = "/".join([self.temp_payload, 'data', 'constituent_objects', obj['directory'], 'data', 'datastreams', ds['filename']])
+			
+			# add HTML to self.html_concat
+			fhand = open(file_path)
+			html_parsed = BeautifulSoup(fhand)
+			logging.debug("HTML document parsed...")
+			#sets div with page_ID
+			self.html_concat = self.html_concat + '<div id="page_ID_%s" class="html_page">' % (obj['order'])
+			#Set in try / except block, as some HTML documents contain no elements within <body> tag
+			try:
+				for block in html_parsed.body:
+					self.html_concat = self.html_concat + unicode(block)
+			except:
+				logging.debug("<body> tag is empty, skipping. Adding page_ID anyway.")
+
+			#closes page_ID / div
+			self.html_concat = self.html_concat + "</div>"
+			fhand.close()
+
+		# write to datastream
+		html_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "HTML_FULL", "Full HTML for item", mimetype="text/html", control_group="M")
+		html_full_handle.label = "Full HTML for item"
+		html_full_handle.content = self.html_concat.encode('utf-8')
+		html_full_handle.save()
+
+		# update objMeta
+		if update_objeMeta:
+			self.objMeta['datastreams'].append({
+				'mimetype': "text/html",
+				'label': "Full HTML for item",
+				'ds_id': "HTML_FULL",
+				'internal_relationships': { },
+				'filename': "HTML_FULL.htm"
+				}
+			)
+		self.update_objMeta()
+
+	
+	def processPDF(self, process_type='ingest', pdf_dir=None, update_objeMeta=False):
 
 		# expecting pdf_dir if process_type != 'ingest'
 		if process_type == 'ingest':
-			obj_dir = self.Bag.path+"/data/datastreams"
+			obj_dir = self.Bag.path
 		else:
 			obj_dir = pdf_dir
 
 		logging.debug("writing full-text PDF")
 		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
-		os.system("pdftk %s/*.pdf cat output %s verbose" % (obj_dir, temp_filename))
+		os.system("pdftk `find -L %s -name '*.pdf' | awk -vFS=/ -vOFS=/ '{ print $NF,$0 }' | sort -n -t / | cut -f2- -d/ | xargs echo` cat output %s verbose" % (obj_dir, temp_filename))
 		pdf_full_handle = eulfedora.models.DatastreamObject(self.ohandle, "PDF_FULL", "Fulltext PDF for item", mimetype="application/pdf", control_group='M')
 		pdf_full_handle.label = "Fulltext PDF for item"
 		pdf_full_handle.content = open(temp_filename).read()
 
 		# remove pdf
 		os.remove(temp_filename)
+
+		# update objMeta
+		if update_objeMeta:
+			self.objMeta['datastreams'].append({
+				'mimetype': "application/pdf",
+				'internal_relationships': { },
+				'ds_id': "PDF_FULL",
+				'label': "PDF_PDF_FULL",
+				'filename': "PDF_FULL.pdf"
+				}
+			)
+		self.update_objMeta()
 
 		return pdf_full_handle.save()
 
@@ -677,10 +795,25 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.regenReaduxVirtualObjects()
 
 
-	def export_constituents(self, objMeta, bag_root, data_root, files_root):
+	def export_constituents(self, objMeta, bag_root, data_root, datastreams_root, tarball):
 
+		# if not exist, create /constituent_objects directory
+		if not os.path.exists("/".join([bag_root, 'data', 'constituent_objects'])):
+			logging.debug("creating /constituent_objects dir")
+			os.mkdir("/".join([bag_root, 'data', 'constituent_objects']))
+
+		# itererate through constituents and export
 		for obj in self.constituents:
 			logging.debug('exporting %s' % obj.pid)
+			constituent = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
+			constituent.export(export_dir="/".join([bag_root, 'data', 'constituent_objects']), tarball=tarball)
+
+
+	def export_content_type(self, objMeta, bag_root, data_root, datastreams_root, tarball):
+
+		# export constituents
+		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball)
+
 
 
 	#############################################################################

@@ -315,6 +315,7 @@ class ObjMeta:
 		self.isRepresentedBy = "Datastream ID that represents object"
 		self.object_relationships = []
 		self.datastreams = []
+		self.constituent_objects = []
 
 		# optional attributes
 		self.label = "Object label"
@@ -352,6 +353,10 @@ class ObjMeta:
 	#uses JSONEncoder class, exports only attributes
 	def toJSON(self):
 		return JSONEncoder().encode(self.__dict__)
+
+	# return as dictionary
+	def asDict(self):
+		return vars(self)
 
 
 ########################################################################

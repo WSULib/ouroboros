@@ -41,7 +41,6 @@ def index():
 
 
 @celery.task(name="bagIngest_factory")
-@roles.auth(['admin'], is_celery=True)
 def bagIngest_factory(job_package):
 
 	# get form data
@@ -151,7 +150,6 @@ def bagIngest_factory(job_package):
 		logging.debug("Finished firing ingest workers")
 
 
-@roles.auth(['admin'], is_celery=True)
 def bagIngest_worker(job_package):
 	
 	bag_dir = job_package['bag_dir']

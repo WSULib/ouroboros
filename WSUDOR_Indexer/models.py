@@ -150,7 +150,8 @@ class FedoraJMSWorker(object):
 		# finally, queue object and log
 		if self.queue_action:
 			self.queue_object()
-			self.log_premis_event()
+			if localConfig.LOG_PREMIS_EVENT:
+				self.log_premis_event()
 
 
 	def log_premis_event(self):

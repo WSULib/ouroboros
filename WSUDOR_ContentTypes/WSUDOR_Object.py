@@ -2001,7 +2001,25 @@ class WSUDOR_GenObject(object):
             self.ohandle.api.addRelationship(self.ohandle, *triple, isLiteral=isLit)
 
 
+    # In truth, this method is about identifying what datastreams are versioned and worthy of preservation and what's not (aka derivatives, etc).
+    # It's also a handy list method you can use without diving into eulfedora's ohandle.ds_list method, and is also a bit more curated data set than ohandle.ds_list
+    def wsudor_ds_list(self):
 
+        # get all the original datastreams from ObjMeta
+        dsList = []
+        for ds in self.objMeta['datastreams']:
+            dsList.append({'id':ds['ds_id'], 'role':'preserved'})
+
+        # There are usually datastreams that are needed from each specific object according to content type
+        # and then some loose ones that ObjMeta nevers picks up, like the MODS datastream
+        if hasattr(self, 'uniqueVersionableDatastreams'):
+            dsList.extend(self.uniqueVersionableDatastreams())
+
+        # now let's add all the other datastreams that are derivatives, etc, and are going to be versioned
+        allDS = self.ohandle.ds_list
+        for key in allDS.iterkeys():
+            if not any(d['id'] == key for d in dsList):
+                dsList.append({'id':key, 'role':'derivative'})
 
 
 

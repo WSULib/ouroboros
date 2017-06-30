@@ -269,6 +269,7 @@ class WSUDOR_GenObject(object):
                 self.pid_suffix = payload.pid.split(":")[1]
                 self.content_type = content_type
                 self.ohandle = payload
+
                 # only fires for v2 objects
                 if "OBJMETA" in self.ohandle.ds_list:
                     self.objMeta = json.loads(self.ohandle.getDatastreamObject('OBJMETA').content)
@@ -404,6 +405,17 @@ class WSUDOR_GenObject(object):
     @helpers.LazyProperty
     def premis(self):
         return models.PREMISClient(pid=self.pid)
+
+
+    # MODS metadata
+    def update_objMeta(self):
+        '''
+        Replaces OBJMETA datastream with current contents of self.objMeta (a dictionary)
+        '''
+        objMeta_handle = eulfedora.models.FileDatastreamObject(v3book.ohandle, "OBJMETA", "Ingest Bag Object Metadata", mimetype="application/json", control_group='M')
+        objMeta_handle.label = "Ingest Bag Object Metadata"
+        objMeta_handle.content = json.dumps(self.objMeta)
+        objMeta_handle.save()
 
 
     def calc_object_size(self):
@@ -557,6 +569,17 @@ class WSUDOR_GenObject(object):
         return constituent_objects
 
 
+    # constituent objects
+    @helpers.LazyProperty
+    def constituents_from_objMeta(self):
+
+        '''
+        Returns list of constitobjects bags in /constituent_objects from ObjMeta
+        '''
+
+        return self.objMeta['constituent_objects']
+
+
     # collection members
     @helpers.LazyProperty
     def collectionMembers(self):
@@ -628,6 +651,20 @@ class WSUDOR_GenObject(object):
 
     # WSUDOR_Object Methods
     ############################################################################################################
+
+
+    # expects True or False, sets as discoverability, and optionally reindexes
+    def set_discoverability(self, discoverable, reindex=False):
+
+        current_discoverability = self.ohandle.risearch.get_objects(self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable').next()
+        logging.debug("Current discoverability is: %s, changing to %s" % (current_discoverability.split("/")[-1], discoverable))
+
+        # purge old relationship
+        fedora_handle.api.purgeRelationship(self.ohandle, self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable',current_discoverability)
+
+        # add new relationship
+        fedora_handle.api.addRelationship(self.ohandle, self.ohandle.uri, 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable',"info:fedora/%s" % str(discoverable))
+
 
     # base ingest method, that runs some pre-ingest work, and eventually fires WSUDOR Content Type specific .ingestBag()
     def ingest(self,indexObject=True):
@@ -775,160 +812,174 @@ class WSUDOR_GenObject(object):
             os.unlink(self.temp_payload)
 
         # finally, remove 'hold' action in indexer queue and return
-        self.alter_in_indexer_queue('index')
+        if indexObject:
+            self.alter_in_indexer_queue('index')
+        else:
+            self.alter_in_indexer_queue('forget')
+            
+        # finally, return
         return True
 
 
-    # def exportBag(self, job_package=False, returnTargetDir=False, preserveRelationships=True):
+    # export datastreams based on DS ids and objMeta / requires (ds_id, full path filename) tuples to write them
+    def _writeDS(self, ds_id, ds_filepath):
 
-    #   '''
-    #   Target Example:
-    #   .
-    #   ├── bag-info.txt
-    #   ├── bagit.txt
-    #   ├── data
-    #   │   ├── datastreams
-    #   │   │   ├── roots.jpg
-    #   │   │   └── trunk.jpg
-    #   │   ├── MODS.xml
-    #   │   └── objMeta.json
-    #   ├── manifest-md5.txt
-    #   └── tagmanifest-md5.txt
-    #   '''
+        logging.debug("WORKING ON %s" % ds_id)
 
-    #   # get PID
-    #   PID = self.pid
+        ds_handle = self.ohandle.getDatastreamObject(ds_id)
 
-    #   # create temp dir structure
-    #   working_dir = "/tmp/Ouroboros/export_bags"
-    #   # create if doesn't exist
-    #   if not os.path.exists("/tmp/Ouroboros/export_bags"):
-    #       os.mkdir("/tmp/Ouroboros/export_bags")
+        # skip if empty (might have been removed / condensed, as case with PDFs)
+        if ds_handle.exists:
 
-    #   temp_dir = working_dir + "/" + str(uuid.uuid4())
-    #   time.sleep(.25)
-    #   os.system("mkdir %s" % (temp_dir))
-    #   time.sleep(.25)
-    #   os.system("mkdir %s/data" % (temp_dir))
-    #   time.sleep(.25)
-    #   os.system("mkdir %s/data/datastreams" % (temp_dir))
+            # XML ds model
+            if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
+                logging.debug("FIRING XML WRITER")
+                with open(ds_filepath,'w') as fhand:
+                    fhand.write(ds_handle.content.serialize())
 
-    #   # move bagit files to temp dir, and unpack
-    #   bagit_files = self.ohandle.getDatastreamObject("BAGIT_META").content
-    #   bagitIO = StringIO.StringIO(bagit_files)
-    #   tar_handle = tarfile.open(fileobj=bagitIO)
-    #   tar_handle.extractall(path=temp_dir)
+            # generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
+            else:
+                logging.debug("FIRING GENERIC WRITER")
+                with open(ds_filepath,'wb') as fhand:
+                    for chunk in ds_handle.get_chunked_content():
+                        fhand.write(chunk)
 
-    #   # export datastreams based on DS ids and objMeta / requires (ds_id,full path filename) tuples to write them
-    #   def writeDS(write_tuple):
-    #       ds_id=write_tuple[0]
-    #       logging.debug("WORKING ON",ds_id)
-
-    #       ds_handle = self.ohandle.getDatastreamObject(write_tuple[0])
-
-    #       # skip if empty (might have been removed / condensed, as case with PDFs)
-    #       if ds_handle.content != None:
-
-    #           # XML ds model
-    #           if isinstance(ds_handle, eulfedora.models.XmlDatastreamObject) or isinstance(ds_handle, eulfedora.models.RdfDatastreamObject):
-    #               logging.debug("FIRING XML WRITER")
-    #               with open(write_tuple[1],'w') as fhand:
-    #                   fhand.write(ds_handle.content.serialize())
-
-    #           # generic ds model (isinstance(ds_handle,eulfedora.models.DatastreamObject))
-    #           '''
-    #           Why is this not writing tiffs?
-    #           '''
-    #           else:
-    #               logging.debug("FIRING GENERIC WRITER")
-    #               with open(write_tuple[1],'wb') as fhand:
-    #                   for chunk in ds_handle.get_chunked_content():
-    #                       fhand.write(chunk)
-
-    #       else:
-    #           logging.debug("Content was NONE for",ds_id,"- skipping...")
+        else:
+            logging.debug("Content was NONE for %s - skipping..." % ds_id)
 
 
-    #   # write original datastreams
-    #   for ds in self.objMeta['datastreams']:
-    #       logging.debug("writing %s" % ds)
-    #       writeDS((ds['ds_id'],"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
+    # export object
+    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True):
+
+        '''
+        Target Example:
+        .
+        ├── bag-info.txt
+        ├── bagit.txt
+        ├── data
+        │   ├── datastreams
+        │   │   ├── roots.jpg
+        │   │   └── trunk.jpg
+        │   ├── MODS.xml
+        │   └── objMeta.json
+        ├── manifest-md5.txt
+        └── tagmanifest-md5.txt
+        '''
+
+        # working dir in /tmp
+        working_dir = "/tmp/Ouroboros/export_bags"
+
+        # create if doesn't exist
+        if not os.path.exists("/tmp/Ouroboros/export_bags"):
+            logging.debug("tmp export directory not found, creating...")
+            os.mkdir("/tmp/Ouroboros/export_bags")
+
+        # create directory stucture
+        dir_structure = [working_dir, str(uuid.uuid4()), 'data', 'datastreams']
+        bag_root = os.path.join(*dir_structure[:2])
+        data_root = os.path.join(*dir_structure[:3])
+        datastreams_root = os.path.join(*dir_structure[:4])
+        os.makedirs(os.path.join(*dir_structure))
+        print(bag_root, data_root, datastreams_root)
+
+        # move bagit files to temp dir, and unpack
+        bagit_ds_handle = self.ohandle.getDatastreamObject("BAGIT_META")
+        if bagit_ds_handle.exists:
+            bagit_files = bagit_ds_handle.content
+            bagitIO = StringIO.StringIO(bagit_files)
+            tar_handle = tarfile.open(fileobj=bagitIO)
+            tar_handle.extractall(path=bag_root)
+
+        # write original datastreams (relies on objMeta)
+        for ds in self.objMeta['datastreams']:
+            logging.debug("writing %s" % ds)
+            self._writeDS(ds['ds_id'], os.path.join(*[datastreams_root, ds['filename']]))
+
+        # include RELS and RELS-INT
+        if preserve_relationships == True:
+            logging.debug("preserving current relationships and writing to RELS-EXT and RELS-INT")
+            for rels_ds in ['RELS-EXT','RELS-INT']:
+                logging.debug("writing %s" % rels_ds)
+                self._writeDS(rels_ds, os.path.join(*[data_root, "%s.xml" % rels_ds]))
+
+        ##########################################################################################
+        # content-type specific export
+        ##########################################################################################
+        '''
+        All content types optionally may contain an export_content_type() method
+        EXPECTS: bag_root, data_root, datastreams_root, tarball
+        '''
+        if hasattr(self, 'export_content_type'):
+            logging.debug('running content-type specific export')
+            # try:
+            self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
+            # except:
+            #     logging.debug("could not export constituents, continuing with parent object")
+        ##########################################################################################
+
+        # write MODS and objMeta files
+        self._writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
+        self._writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
+
+        # rename dir
+        named_dir = self.pid.replace(":","-")
+        os.system("mv %s %s" % (bag_root, os.path.join(*[working_dir, named_dir])))
+        orig_dir = os.getcwd()
+        os.chdir(working_dir)
+        
+        # if tarball
+        if tarball:
+            os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
+            os.system("rm -r %s" % os.path.join(*[working_dir, named_dir]))
+
+            # move to export directory
+            os.system("mv %s.tar %s" % (named_dir, export_dir))
+
+            # jump back to original working dir
+            os.chdir(orig_dir)
+
+            # return location or url
+            return "%s/%s.tar" % (export_dir, named_dir)
+
+        else:
+            # move to export directory
+            os.system("mv %s %s" % (named_dir, export_dir))
+
+            # jump back to original working dir
+            os.chdir(orig_dir)
+
+            # return location or url
+            return "%s/%s" % (export_dir, named_dir)
 
 
-    #   # include RELS
-    #   if preserveRelationships == True:
-    #       logging.debug("preserving current relationships and writing to RELS-EXT and RELS-INT")
-    #       for rels_ds in ['RELS-EXT','RELS-INT']:
-    #           logging.debug("writing %s" % rels_ds)
-    #           writeDS((rels_ds,"%s/data/datastreams/%s" % (temp_dir, ds['filename'])))
+    # reingest bag
+    def reingestBag(self, removeTempExport=True, preserveRelationships=True):
 
+      logging.debug("Roundrip Ingesting: %s" % self.pid)
 
-    #   # write MODS and objMeta files
-    #   simple = [
-    #       ("MODS","%s/data/MODS.xml" % (temp_dir)),
-    #       ("OBJMETA","%s/data/objMeta.json" % (temp_dir))
-    #   ]
-    #   for ds in simple:
-    #       writeDS(ds)
+      # export bag, returning the file structure location of tar file
+      export_location = self.export(tarball=True)
+      logging.debug("Location of export: %s" % export_location)
 
-    #   # tarball it up
-    #   named_dir = self.pid.replace(":","-")
-    #   os.system("mv %s %s/%s" % (temp_dir, working_dir, named_dir))
-    #   orig_dir = os.getcwd()
-    #   os.chdir(working_dir)
-    #   os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
-    #   os.system("rm -r %s/%s" % (working_dir, named_dir))
+      # open bag
+      bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_location, object_type='bag')
 
-    #   # move to web accessible location, with username as folder
-    #   if job_package != False:
-    #       username = job_package['username']
-    #   else:
-    #       username = "consoleUser"
-    #   target_dir = "/var/www/wsuls/Ouroboros/export/%s" % (username)
-    #   if os.path.exists(target_dir) == False:
-    #       os.system("mkdir %s" % (target_dir))
-    #   os.system("mv %s.tar %s" % (named_dir,target_dir))
+      # purge self
+      if bag_handle != False:
+          self.purge(override_state=True)
+      else:
+          logging.debug("exported object doesn't look good, aborting purge")
 
-    #   # jump back to original working dir
-    #   os.chdir(orig_dir)
+      # reingest exported tar file
+      bag_handle.ingest()
 
-    #   if returnTargetDir == True:
-    #       return "%s/%s.tar" % (target_dir,named_dir)
-    #   else:
-    #       return "http://%s/Ouroboros/export/%s/%s.tar" % (localConfig.APP_HOST, username, named_dir)
+      # delete exported tar
+      if removeTempExport == True:
+          logging.debug("Removing export tar...")
+          os.remove(export_location)
 
-
-    # # reingest bag
-    # def reingestBag(self, removeExportTar=False, preserveRelationships=True):
-
-    #   # get PID
-    #   PID = self.pid
-
-    #   logging.debug("Roundrip Ingesting:",PID)
-
-    #   # export bag, returning the file structure location of tar file
-    #   export_tar = self.exportBag(returnTargetDir=True, preserveRelationships=preserveRelationships)
-    #   logging.debug("Location of export tar file:",export_tar)
-
-    #   # open bag
-    #   bag_handle = WSUDOR_ContentTypes.WSUDOR_Object(export_tar, object_type='bag')
-
-    #   # purge self
-    #   if bag_handle != False:
-    #       fedora_handle.purge_object(PID)
-    #   else:
-    #       logging.debug("exported object doesn't look good, aborting purge")
-
-    #   # reingest exported tar file
-    #   bag_handle.ingest()
-
-    #   # delete exported tar
-    #   if removeExportTar == True:
-    #       logging.debug("Removing export tar...")
-    #       os.remove(export_tar)
-
-    #   # return
-    #   return PID,"Reingested."
+      # return
+      return self.pid, "Reingested."
 
 
     def previewSolrDict(self):
@@ -943,7 +994,7 @@ class WSUDOR_GenObject(object):
 
 
     # Solr Indexing
-    def index(self, printOnly=False):
+    def index(self, printOnly=False, commit_on_index=False):
 
         # generate human values
         logging.debug("preparing 'human_hash' values...")
@@ -1092,14 +1143,15 @@ class WSUDOR_GenObject(object):
             self.SolrDoc.doc.dc_title = [self.SolrDoc.doc.dc_title[0]]
 
         # update object, with commit decision based on size of document to insert
-        if len(str(self.SolrDoc.asDictionary())) > 10000:
-            logging.debug("large SolrDoc detected, autocommiting")
-            commit_decision = True
-        else:
-            logging.debug("small SolrDoc detected, NOT autocommiting")
-            commit_decision = False
+        if not commit_on_index:
+            if len(str(self.SolrDoc.asDictionary())) > 10000:
+                logging.debug("large SolrDoc detected, autocommiting")
+                commit_on_index = True
+            else:
+                logging.debug("small SolrDoc detected, NOT autocommiting")
+                commit_on_index = False
         
-        result = self.SolrDoc.update(commit=commit_decision)
+        result = self.SolrDoc.update(commit=commit_on_index)
         logging.debug("%s" % result.status)
         if result.status == 200:
             return True

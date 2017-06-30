@@ -313,6 +313,16 @@ def solrTranslationHash(args):
 #######################################################################################################################
 
 # get object state
+def complexMODS(getParams):	
+
+	o = fedora_handle.get_object(getParams['PID'][0])
+
+	MODS_dict = xmltodict.parse(o.getDatastreamObject('MODS').content.serialize())
+
+	output = json.dumps(MODS_dict)
+	return output
+
+# get object state
 def getObjectXML(getParams):	
 	o = fedora_handle.get_object(getParams['PID'][0])
 

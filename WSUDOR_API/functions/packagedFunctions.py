@@ -121,10 +121,16 @@ class SingleObjectMethods(object):
 		# saves to 'hierarchicalTree'
 		return ("hierarchicalTree",json.loads(hierarchicalTree(getParams)))
 
+
 	def getCollectionMeta_comp(self,getParams):
 		# print getCollectionMeta(getParams)
 		# returns Solr documents for parent collection(s)
 		return ("getCollectionMeta",json.loads(getCollectionMeta(getParams)))
+
+
+	def complexMODS_comp(self,getParams):
+		# returns MODS record as parsed by xmltodict
+		return("complexMODS",json.loads(complexMODS(getParams)))
 
 
 	####################################################################################

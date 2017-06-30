@@ -1,16 +1,19 @@
 {% include 'header.html' %}
-<h1>WSUDOR Object Ingest</h1>
 
+<div class="row">
+	<div class="col-md-5">
+		<h1>WSUDOR Object Ingest</h1>
 
-<p>Below is a form used to ingest single, or multiple, BagIt archives as new objects in WSUDOR.  The BagIt standard was chosen for a variety of reasons, not the least of them it being a) a widely used and recognized wrapper for complex digital objects, and b) the ability to validate checksums for BagIt archives, providing an additional level of preservation checking for objects in and out of WSUDOR.</p>
+		<p>Below is a form used to ingest single, or multiple, BagIt archives as new objects in WSUDOR.</p>
 
-<p>There are two main approaches for ingesting objects: <strong>BagIt directories</strong> or <strong>BagIt archives</strong>.</p>
+		<p>There are two main approaches for ingesting objects: <strong>BagIt directories</strong> or <strong>BagIt archives</strong>.</p>
 
-<p><strong>Archives</strong> are handy for moving BagIt objects around easily, or uploading a small-to-medium batch of objects.  When ingesting an archive, WSUDOR_Manager has to extract the bags and then ingest them, resulting in a momentary doubling of the archive size.  By contrast, ingesting objects by pointing WSUDOR_Manager at a <strong>directory</strong>, containing one or multiple objects, there is no doubling in size, the ingest process will simply work through all the objects.  BUT directories are more difficult to move around on the server.</p>
+		<p><strong>Archives</strong> are handy for moving BagIt objects around easily, or uploading a small-to-medium batch of objects.  When ingesting an archive, WSUDOR_Manager has to extract the bags and then ingest them, resulting in a momentary doubling of the archive size.  By contrast, ingesting objects by pointing WSUDOR_Manager at a <strong>directory</strong>, containing one or multiple objects, there is no doubling in size, the ingest process will simply work through all the objects.  BUT directories are more difficult to move around on the server.</p>
 
-<p>Depending on the type of objects being ingested, both options are available from this form.</p>
-
-<p>Need an object manifest? Click <a href="/{{APP_PREFIX}}/tasks/createManifest">here</a> to generate one.</p>
+		<p>Depending on the type of objects being ingested, both options are available from this form.</p>
+		
+	</div>
+</div>
 
 <div class="row">
 	<div class="col-md-5">

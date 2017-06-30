@@ -161,74 +161,74 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	
-	def ingest(self, book_obj, page_num):
+	# def ingest(self, book_obj, page_num):
 
-		'''
-		overrides .ingest() method from WSUDOR_Object
-		'''
+	# 	'''
+	# 	overrides .ingest() method from WSUDOR_Object
+	# 	'''
 
-		# set book_obj to self
-		self.book_obj = book_obj
+	# 	# set book_obj to self
+	# 	self.book_obj = book_obj
 
-		# using parent book, get datastreams from objMeta
-		page_dict = self.book_obj.normalized_pages_from_objMeta[page_num]
+	# 	# using parent book, get datastreams from objMeta
+	# 	page_dict = self.book_obj.normalized_pages_from_objMeta[page_num]
 
-		# new pid
-		npid = "wayne:%s_Page_%s" % (self.book_obj.pid.split(":")[1], page_num)
-		logging.debug("Page pid: %s" % npid)
-		self.pid = npid
+	# 	# new pid
+	# 	npid = "wayne:%s_Page_%s" % (self.book_obj.pid.split(":")[1], page_num)
+	# 	logging.debug("Page pid: %s" % npid)
+	# 	self.pid = npid
 
-		# set status as hold
-		self.add_to_indexer_queue(action='hold')
+	# 	# set status as hold
+	# 	self.add_to_indexer_queue(action='hold')
 
-		# creating new self	
-		self.ohandle = fedora_handle.get_object(npid)
-		if self.ohandle.exists:
-			fedora_handle.purge_object(self.ohandle)
-		self.ohandle = fedora_handle.get_object(npid, create=True)
-		self.ohandle.save()
+	# 	# creating new self	
+	# 	self.ohandle = fedora_handle.get_object(npid)
+	# 	if self.ohandle.exists:
+	# 		fedora_handle.purge_object(self.ohandle)
+	# 	self.ohandle = fedora_handle.get_object(npid, create=True)
+	# 	self.ohandle.save()
 
-		# label
-		self.ohandle.label = "%s - Page %s" % (self.book_obj.ohandle.label, page_num)
+	# 	# label
+	# 	self.ohandle.label = "%s - Page %s" % (self.book_obj.ohandle.label, page_num)
 
-		# write POLICY datastream
-		# NOTE: 'E' management type required, not 'R'
-		logging.debug("Using policy: %s" % self.book_obj.objMeta['policy'])
-		policy_suffix = self.book_obj.objMeta['policy'].split("info:fedora/")[1]
-		policy_handle = eulfedora.models.DatastreamObject(self.ohandle, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
-		policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
-		policy_handle.label = "POLICY"
-		policy_handle.save()
+	# 	# write POLICY datastream
+	# 	# NOTE: 'E' management type required, not 'R'
+	# 	logging.debug("Using policy: %s" % self.book_obj.objMeta['policy'])
+	# 	policy_suffix = self.book_obj.objMeta['policy'].split("info:fedora/")[1]
+	# 	policy_handle = eulfedora.models.DatastreamObject(self.ohandle, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
+	# 	policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
+	# 	policy_handle.label = "POLICY"
+	# 	policy_handle.save()
 
-		# for each file type in pages dict, pass page obj and process
-		for ds in page_dict:
+	# 	# for each file type in pages dict, pass page obj and process
+	# 	for ds in page_dict:
 
-			if ds['ds_id'].startswith('IMAGE'):
-				logging.debug("processing image...")
-				self.processImage(ds)
+	# 		if ds['ds_id'].startswith('IMAGE'):
+	# 			logging.debug("processing image...")
+	# 			self.processImage(ds)
 
-			if ds['ds_id'].startswith('HTML'):
-				logging.debug("processing HTML...")
-				self.processHTML(ds)
+	# 		if ds['ds_id'].startswith('HTML'):
+	# 			logging.debug("processing HTML...")
+	# 			self.processHTML(ds)
 
-			if ds['ds_id'].startswith('ALTOXML'):
-				logging.debug("processing ALTO...")
-				self.processALTOXML(ds)
+	# 		if ds['ds_id'].startswith('ALTOXML'):
+	# 			logging.debug("processing ALTO...")
+	# 			self.processALTOXML(ds)
 
-		# write RDF relationships
-		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")
-		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel", "info:fedora/CM:WSUebook_Page")
-		self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isConstituentOf", "info:fedora/%s" % self.book_obj.ohandle.pid)
-		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder", page_num)
+	# 	# write RDF relationships
+	# 	self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")
+	# 	self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel", "info:fedora/CM:WSUebook_Page")
+	# 	self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isConstituentOf", "info:fedora/%s" % self.book_obj.ohandle.pid)
+	# 	self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder", page_num)
 
-		# save page object
-		self.ohandle.save()
+	# 	# save page object
+	# 	self.ohandle.save()
 
-		# set status as hold
-		self.alter_in_indexer_queue('forget')
+	# 	# set status as hold
+	# 	self.alter_in_indexer_queue('forget')
 
-		# return
-		return True
+	# 	# return
+	# 	return True
 
 
 	def ingestMissingPage(self, book_obj, page_num, from_bag=True):

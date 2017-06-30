@@ -231,9 +231,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			report_failure(("Valid ContentType","WSUDOR_Object instance's ContentType: %s, not found in acceptable ContentTypes: %s " % (self.content_type, WSUDOR_ContentTypes.WSUDOR_GenObject.__subclasses__())))
 
 		# check for tif, html, xml, and pdf files
-		for page in self.pages_from_objMeta:
-			if len(self.pages_from_objMeta[page]) < 4:
-				report_failure(("Missing derivative filetypes","Page %d" % (page)))
+		# for page in self.pages_from_objMeta:
+		# 	if len(self.pages_from_objMeta[page]) < 4:
+		# 		report_failure(("Missing derivative filetypes","Page %d" % (page)))
 
 		# finally, return verdict		
 		return results_dict
@@ -654,7 +654,8 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				files = {'file': ds_handle.content}
 				r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
 			except:
-				raise Exception("Could not index page %d" % page)
+				logging.debug("Could not index page %d" % page)
+				# raise Exception("Could not index page %d" % page)
 
 		# commit
 		logging.debug("%s" % solr_bookreader_handle.commit())

@@ -814,7 +814,9 @@ class WSUDOR_GenObject(object):
         # finally, remove 'hold' action in indexer queue and return
         if indexObject:
             self.alter_in_indexer_queue('index')
-        
+        else:
+            self.alter_in_indexer_queue('forget')
+            
         # finally, return
         return True
 

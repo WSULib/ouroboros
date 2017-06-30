@@ -6,7 +6,7 @@ import eulfedora
 
 
 
-def convert_v3tov4(v3book_pid, single_page_num=False, commit=True):
+def convert_v3tov4(v3book_pid, single_page_num=False, commit=True, no_parent_datastreams=False):
 	
 	'''
 	This function will take a v3 book and rewrite the objMeta for v4 export/ingest
@@ -36,7 +36,7 @@ def convert_v3tov4(v3book_pid, single_page_num=False, commit=True):
 		# itererate through pages, save objMeta from each
 		pages_objMeta = []
 		for obj in v3book.constituents:
-			page_objMeta = page_v3tov4(v3book, obj.pid, commit=commit)
+			page_objMeta = page_v3tov4(v3book, obj.pid, commit=commit, no_parent_datastreams=no_parent_datastreams)
 			pages_objMeta.append(page_objMeta)
 
 		# update objMeta for book
@@ -46,7 +46,11 @@ def convert_v3tov4(v3book_pid, single_page_num=False, commit=True):
 		v3book_objMeta = models.ObjMeta(**v3book.objMeta)
 
 		# clear datastreams		
-		v3book_objMeta.datastreams = []
+		'''
+		For the time being, maintain the datastreams list in the parent book object
+			- we can remove later, but good for historical purposes now
+		'''
+		# v3book_objMeta.datastreams = []
 
 		# add HTML_FULL and PDF_FULL to objMeta.datastreams
 		v3book_objMeta.datastreams.append({
@@ -82,7 +86,7 @@ def convert_v3tov4(v3book_pid, single_page_num=False, commit=True):
 		logging.debug("finished for %s" % v3book_pid)
 
 
-def page_v3tov4(v3book, pid, commit=False):
+def page_v3tov4(v3book, pid, commit=False, no_parent_datastreams=False):
 
 	# load as WSUDOR
 	v3page = WSUDOR_ContentTypes.WSUDOR_Object(pid)
@@ -136,17 +140,65 @@ def page_v3tov4(v3book, pid, commit=False):
 		}
 	]
 
-	# write raw book datastreams to objMeta
-	for ds in v3_objMeta_entry:
-		ds_dict = {
-			"filename":ds['filename'],
-			"ds_id":ds['ds_id'].split("_")[0], # remove page number
-			"mimetype":ds['mimetype'], # generate dynamically based on file extension
-			"label":ds['ds_id'].split("_")[0],
-			"internal_relationships":{},
-			'order':ds['order']
-		}
-		v3page_objMeta.datastreams.append(ds_dict)
+	# if, by chance, the parent datastreams are empty, need to guess here
+	if no_parent_datastreams or len(v3_objMeta_entry) == 0:
+		logging.debug("It would appear that the parent objMeta file has no datastreams for pages, guessing for pages")
+		for ds in [
+			{
+				'mimetype': "text/xml",
+				'internal_relationships': { },
+				'ds_id': "ALTOXML",
+				'label': "ALTOXML",
+				'filename': ".xml",
+			},
+			{
+				'mimetype': "image/tiff",
+				'internal_relationships': { },
+				'ds_id': "IMAGE",
+				'label': "IMAGE",
+				'filename': ".tif",
+			},
+			{
+				'mimetype': "text/html",
+				'internal_relationships': { },
+				'ds_id': "HTML",
+				'label': "HTML",
+				'filename': ".html",
+			},
+			{
+				'mimetype': "application/pdf",
+				'internal_relationships': { },
+				'ds_id': "PDF",
+				'label': "PDF",
+				'filename': ".pdf",
+			}
+		]:
+			if ds['ds_id'] in v3page.ohandle.ds_list:
+				logging.debug("we have confirmed presence of %s, creating entry" % ds['ds_id'])
+				ds_dict = {
+					"filename":"%s%s" % (page_num, ds['filename']),
+					"ds_id":ds['ds_id'],
+					"mimetype":ds['mimetype'],
+					"label":ds['ds_id'],
+					"internal_relationships":{},
+					'order':page_num
+				}
+
+				v3page_objMeta.datastreams.append(ds_dict)
+
+	# normal route
+	else:
+		# write raw book datastreams to objMeta
+		for ds in v3_objMeta_entry:
+			ds_dict = {
+				"filename":ds['filename'],
+				"ds_id":ds['ds_id'].split("_")[0], # remove page number
+				"mimetype":ds['mimetype'], # generate dynamically based on file extension
+				"label":ds['ds_id'].split("_")[0],
+				"internal_relationships":{},
+				'order':ds['order']
+			}
+			v3page_objMeta.datastreams.append(ds_dict)
 
 	# DEBUG
 	logging.debug("Page ObjMeta %s" % vars(v3page_objMeta))

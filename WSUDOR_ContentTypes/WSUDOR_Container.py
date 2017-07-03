@@ -53,6 +53,15 @@ class WSUDOR_Container(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# content-type methods run and returned to API
 		self.public_api_additions = [self.object_hierarchy]
 
+		# isWSUDORObject
+		'''
+		If True, considered "primary" object, not structural, collection, or constituent.		
+		'''
+		self.isWSUDORObject = False
+
+		# OAIexposed (on ingest, register OAI identifier)
+		self.OAIexposed = False
+		
 
 	# perform ingestTest
 	def validIngestBag(self,indexObject=True):

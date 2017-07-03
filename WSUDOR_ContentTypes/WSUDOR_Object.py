@@ -783,7 +783,8 @@ class WSUDOR_GenObject(object):
                 logging.debug("failed on generating IIIF manifest")
 
         # register with OAI
-        self.registerOAI()
+        if hasattr(page, 'OAIexposed') and self.OAIexposed:
+            self.registerOAI()
 
         # the following methods are not needed when objects are "passing through"
         if indexObject:
@@ -847,7 +848,14 @@ class WSUDOR_GenObject(object):
 
 
     # export object
-    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True, overwrite_export=True):
+    def export(self, 
+        job_package=False, 
+        export_dir=localConfig.BAG_EXPORT_LOCATION, 
+        preserve_relationships=True, 
+        export_constituents=True, 
+        is_constituent=False, 
+        tarball=True, 
+        overwrite_export=True):
 
         '''
         Target Example:
@@ -859,6 +867,8 @@ class WSUDOR_GenObject(object):
         │   │   ├── roots.jpg
         │   │   └── trunk.jpg
         │   ├── MODS.xml
+        │   ├── RELS-EXT.rdf (if preserving relationships)
+        │   ├── RELS-INT.rdf (if preserving relationships)
         │   └── objMeta.json
         ├── manifest-md5.txt
         └── tagmanifest-md5.txt
@@ -909,7 +919,7 @@ class WSUDOR_GenObject(object):
         '''
         if hasattr(self, 'export_content_type'):
             logging.debug('running content-type specific export')
-            self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
+            self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export)
         ##########################################################################################
 
         # write MODS 
@@ -1837,6 +1847,21 @@ class WSUDOR_GenObject(object):
                 logging.debug("registered with collection %s" % collection)
         except:
             logging.debug("could not affiliate with collection")
+
+
+    # add OAI identifers and set memberships
+    def deregisterOAI(self):
+        logging.debug("deregistering from OAI exposure")
+        logging.debug("%s" % self.ohandle.purge_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid)))
+
+        # affiliate with collection set(s)
+        try:
+            collections = self.isMemberOfCollections
+            for collection in collections:
+                logging.debug("%s %s" % (self.ohandle.purge_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)))
+                logging.debug("deregistered with collection %s" % collection)
+        except:
+            logging.debug("could not de-affiliate with collection")
 
 
     # send Object to Problem Object staging space (i.e. in user_pids table)

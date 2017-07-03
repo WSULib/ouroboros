@@ -62,6 +62,9 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# content-type methods run and returned to API
 		self.public_api_additions = []
 
+		# OAIexposed (on ingest, register OAI identifier)
+		self.OAIexposed = True
+
 
 	# perform ingestTest
 	def validIngestBag(self,indexObject=True):

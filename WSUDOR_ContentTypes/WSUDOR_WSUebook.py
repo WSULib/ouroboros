@@ -74,6 +74,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# content-type methods run and returned to API
 		self.public_api_additions = []
 
+		# OAIexposed (on ingest, register OAI identifier)
+		self.OAIexposed = True
+
 
 	# pages from objMeta class
 	@helpers.LazyProperty
@@ -796,7 +799,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.regenReaduxVirtualObjects()
 
 
-	def export_constituents(self, objMeta, bag_root, data_root, datastreams_root, tarball):
+	def export_constituents(self, objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export):
 
 		# if not exist, create /constituent_objects directory
 		if not os.path.exists("/".join([bag_root, 'data', 'constituent_objects'])):
@@ -807,13 +810,17 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for obj in self.constituents:
 			logging.debug('exporting %s' % obj.pid)
 			constituent = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
-			constituent.export(export_dir="/".join([bag_root, 'data', 'constituent_objects']), tarball=tarball)
+			constituent.export(
+				export_dir="/".join([bag_root, 'data', 'constituent_objects']),
+				tarball=tarball,
+				preserve_relationships=preserve_relationships,
+				overwrite_export=overwrite_export)
 
 
-	def export_content_type(self, objMeta, bag_root, data_root, datastreams_root, tarball):
+	def export_content_type(self, objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export):
 
 		# export constituents
-		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball)
+		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export)
 
 
 

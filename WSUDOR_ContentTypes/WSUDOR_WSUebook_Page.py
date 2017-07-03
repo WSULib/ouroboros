@@ -290,7 +290,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return self.ohandle.save()
 
 
-
 	def processImage(self, ds, exists=True, page_num=None, from_bag=True):
 
 		if exists:

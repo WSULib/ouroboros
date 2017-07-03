@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import os
 import json
 import traceback
@@ -771,9 +772,6 @@ class WSUDOR_GenObject(object):
         bag_meta_handle.save()
         os.system('rm %s' % (temp_filename))
 
-        # derive Dublin Core from MODS, update DC datastream
-        self.DCfromMODS()
-
         # Write isWSUDORObject RELS-EXT relationship
         self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
 
@@ -822,9 +820,9 @@ class WSUDOR_GenObject(object):
 
 
     # export datastreams based on DS ids and objMeta / requires (ds_id, full path filename) tuples to write them
-    def _writeDS(self, ds_id, ds_filepath):
+    def writeDS(self, ds_id, ds_filepath):
 
-        logging.debug("WORKING ON %s" % ds_id)
+        logging.debug("writing datastream: %s" % ds_id)
 
         ds_handle = self.ohandle.getDatastreamObject(ds_id)
 
@@ -849,7 +847,7 @@ class WSUDOR_GenObject(object):
 
 
     # export object
-    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True):
+    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True, overwrite_export=True):
 
         '''
         Target Example:
@@ -893,14 +891,14 @@ class WSUDOR_GenObject(object):
         # write original datastreams (relies on objMeta)
         for ds in self.objMeta['datastreams']:
             logging.debug("writing %s" % ds)
-            self._writeDS(ds['ds_id'], os.path.join(*[datastreams_root, ds['filename']]))
+            self.writeDS(ds['ds_id'], os.path.join(*[datastreams_root, ds['filename']]))
 
         # include RELS and RELS-INT
         if preserve_relationships == True:
             logging.debug("preserving current relationships and writing to RELS-EXT and RELS-INT")
             for rels_ds in ['RELS-EXT','RELS-INT']:
                 logging.debug("writing %s" % rels_ds)
-                self._writeDS(rels_ds, os.path.join(*[data_root, "%s.xml" % rels_ds]))
+                self.writeDS(rels_ds, os.path.join(*[data_root, "%s.rdf" % rels_ds]))
 
         ##########################################################################################
         # content-type specific export
@@ -911,15 +909,56 @@ class WSUDOR_GenObject(object):
         '''
         if hasattr(self, 'export_content_type'):
             logging.debug('running content-type specific export')
-            # try:
             self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
-            # except:
-            #     logging.debug("could not export constituents, continuing with parent object")
         ##########################################################################################
 
-        # write MODS and objMeta files
-        self._writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
-        self._writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
+        # write MODS 
+        self.writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
+
+        # # write objMeta
+        # self.writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
+
+        # write and update objMeta.json
+        '''
+        If preserving relationships, then update objMeta
+        Some aspects of objMeta are rewritten on the way out:
+            - empty object_relationships[] in stored objMeta, and fill with current relationships
+        '''
+        # copy objMeta
+        objMeta_copy = copy.deepcopy(self.objMeta)
+
+        # iterate through current RELS and write
+        if preserve_relationships:
+            objMeta_copy['object_relationships'] = []
+            for triple in self.ohandle.rels_ext.content:
+                objMeta_copy['object_relationships'].append({
+                    'predicate':str(triple[1]),
+                    'object':str(triple[2])
+                })
+
+        # if RELS-INT datastream, add to datastreams[]
+        # if preserve_relationships == True:
+        #     for rels_ds in ['RELS-EXT','RELS-INT']:
+        #         logging.debug("attempting to add %s to objMeta.datastreams[]" % rels_ds)
+        #         if rels_ds in self.ohandle.ds_list:
+        #             objMeta_copy['datastreams'].append({
+        #                 self.objMeta['datastreams'].append({
+        #                     'mimetype': "application/rdf+xml",
+        #                     'label': "%s" % rels_ds,
+        #                     'ds_id': "%s" % rels_ds,
+        #                     'filename': "%s.rdf" % rels_ds
+        #                     }
+        #                 )    
+        #             })
+        #         else:
+        #             logging.debug("%s not found, skipping" % rels_ds)
+        # else:
+        #     logging.debug("not preserving relationships, not writing RELS-* to objMeta or datastreams")
+
+        # write to disk
+        logging.debug("writing new objMeta to disk: %s" % objMeta_copy)
+        with open(os.path.join(*[data_root, "objMeta.json"]),'w') as fhand:
+            fhand.write(json.dumps(objMeta_copy))
 
         # rename dir
         named_dir = self.pid.replace(":","-")
@@ -932,6 +971,11 @@ class WSUDOR_GenObject(object):
             os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
             os.system("rm -r %s" % os.path.join(*[working_dir, named_dir]))
 
+            # check if target exists, and remove if overwrite_export=True
+            if overwrite_export and os.path.exists(os.path.join(*[export_dir, "%s.tar" % named_dir])):
+                logging.debug("overwrite_export True, and target found, removing...")
+                os.remove(os.path.join(*[export_dir, "%s.tar" % named_dir]))
+
             # move to export directory
             os.system("mv %s.tar %s" % (named_dir, export_dir))
 
@@ -942,6 +986,11 @@ class WSUDOR_GenObject(object):
             return "%s/%s.tar" % (export_dir, named_dir)
 
         else:
+            # check if target exists, and remove if overwrite_export=True
+            if overwrite_export and os.path.exists(os.path.join(*[export_dir, named_dir])):
+                logging.debug("overwrite_export True, and target found, removing...")
+                shutil.rmtree(os.path.join(*[export_dir, named_dir]))
+
             # move to export directory
             os.system("mv %s %s" % (named_dir, export_dir))
 

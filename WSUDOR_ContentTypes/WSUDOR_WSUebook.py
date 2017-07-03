@@ -342,7 +342,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				logging.debug('ingesting constituent object %s' % target_bag)
 				constituent_bag = WSUDOR_ContentTypes.WSUDOR_Object(target_bag, object_type='bag')
-				constituent_bag.ingestBag()
+				constituent_bag.ingest(indexObject=True)
 			########################################################################################################
 
 			# write generic thumbnail and preview
@@ -404,7 +404,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# finish generic ingest
 			# may pass methods here that will run in finishIngest()
-			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[self.indexPageText])
+			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[])
 
 		# exception handling
 		except Exception,e:
@@ -633,7 +633,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return manifest.toString()
 
 
-	def indexPageText(self):
+	def indexPagesText(self):
 
 		'''
 		When copying objects between repositories, indexing of pages is skipped.
@@ -658,7 +658,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
 			except:
 				logging.debug("Could not index page %d" % page)
-				# raise Exception("Could not index page %d" % page)
 
 		# commit
 		logging.debug("%s" % solr_bookreader_handle.commit())
@@ -784,9 +783,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# add to solr doc
 		self.SolrDoc.doc.int_fullText = ds_stripped_content
 
-		# finally, index each page to /bookreader core
+		# index each page's full text for bookreader core
 		logging.debug("running page indexer")
-		self.indexPageText()
+		self.indexPagesText()
 
 
 	# content_type refresh

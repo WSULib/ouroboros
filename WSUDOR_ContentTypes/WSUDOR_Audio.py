@@ -63,12 +63,6 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# content-type methods run and returned to API
 		self.public_api_additions = []
 
-		# isWSUDORObject
-		'''
-		If True, considered "primary" object, not supporting object like book page
-		'''
-		self.isWSUDORObject = True
-
 		# OAIexposed (on ingest, register OAI identifier)
 		self.OAIexposed = True
 

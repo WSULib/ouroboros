@@ -71,7 +71,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest
-	def ingestBag(self, indexObject=True):
+	def ingestBag(self, indexObject=False):
 
 		self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
 		self.ohandle.save()
@@ -158,9 +158,11 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# save and commit object before finishIngest()
 		final_save = self.ohandle.save()
 
-		# finish generic ingest
-		# may pass methods here that will run in finishIngest()
-		return self.finishIngest(gen_manifest=False, indexObject=False, contentTypeMethods=[])
+		# finish ingest
+		'''
+		usually defaults to not index page objects
+		'''
+		return self.finishIngest(gen_manifest=False, indexObject=indexObject, contentTypeMethods=[])
 
 
 	

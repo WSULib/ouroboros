@@ -586,11 +586,11 @@ class WSUDOR_GenObject(object):
     def collectionMembers(self):
 
         '''
-        Returns PIDs that are members
+        Returns generator of PIDs that are members
         '''
 
         # get all members
-        return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri))
+        return fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri)
 
 
     # rels-int, partOf
@@ -649,10 +649,8 @@ class WSUDOR_GenObject(object):
         return list(self.ohandle.rels_ext.content)
 
 
-
     # WSUDOR_Object Methods
     ############################################################################################################
-
 
     # expects True or False, sets as discoverability, and optionally reindexes
     def set_discoverability(self, discoverable, reindex=False):
@@ -668,7 +666,8 @@ class WSUDOR_GenObject(object):
 
 
     # base ingest method, that runs some pre-ingest work, and eventually fires WSUDOR Content Type specific .ingestBag()
-    def ingest(self,indexObject=True):
+    def ingest(self, indexObject=True):
+
         # add PID to indexer queue with 'hold' action to prevent indexing
         self.add_to_indexer_queue(action='hold')
         # run content-type specific ingest
@@ -677,6 +676,7 @@ class WSUDOR_GenObject(object):
 
     # generic, simple ingest
     def ingestBag(self, indexObject=True):
+        
         if self.object_type != "bag":
             raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
 
@@ -772,7 +772,7 @@ class WSUDOR_GenObject(object):
         bag_meta_handle.save()
         os.system('rm %s' % (temp_filename))
 
-        # Write isWSUDORObject RELS-EXT relationship
+        # Write all objects as isWSUDORObject 
         self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
 
         # if gen_manifest set, generate IIIF Manifest
@@ -782,8 +782,8 @@ class WSUDOR_GenObject(object):
             except:
                 logging.debug("failed on generating IIIF manifest")
 
-        # register with OAI
-        if hasattr(page, 'OAIexposed') and self.OAIexposed:
+        # register with OAI if content model permits
+        if hasattr(self, 'OAIexposed') and self.OAIexposed:
             self.registerOAI()
 
         # the following methods are not needed when objects are "passing through"

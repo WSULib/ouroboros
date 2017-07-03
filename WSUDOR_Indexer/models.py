@@ -285,10 +285,13 @@ class IndexRouter(object):
 	def alter_queue_action(self, pid, action):
 		# get row
 		iqp = indexer_queue.query.filter_by(pid=pid).first()
-		# alter status
-		iqp.action = action
-		# saved
-		db.session.commit()
+		if iqp:
+			# alter status
+			iqp.action = action
+			# saved
+			db.session.commit()
+		else:
+			logging.debug("row not found to alter, ignoring")
 
 
 	@classmethod

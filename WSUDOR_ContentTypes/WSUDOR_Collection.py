@@ -120,7 +120,19 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 					
 			# writes derived RELS-EXT
-			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+			# writes derived RELS-EXT
+			# isRepresentedBy
+			'''
+			if present, isRepresentedBy relationship from objMeta trumps pre-existing relationships
+			'''
+			if 'isRepresentedBy' in self.objMeta.keys():
+				# purge old ones
+				for s,p,o in self.ohandle.rels_ext.content:
+					if str(p) == 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy':
+						logging.debug('found pre-existing isRepresentedBy relationship, %s, removing as we have one from objMeta' % str(o))
+						self.ohandle.purge_relationship('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy',o)
+				logging.debug("writing isRepresentedBy from objMeta: %s" % self.objMeta['isRepresentedBy'])
+				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 			content_type_string = "info:fedora/CM:"+self.objMeta['content_type'].split("_")[1]
 			self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel",content_type_string)
 

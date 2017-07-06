@@ -67,20 +67,20 @@ def pidfileRemove():
 def shutdown():
     logging.info("received kill command, attempting to shutdown gracefully...")
 
-    # remove PID
-    pidfileRemove()
+    # # remove PID
+    # pidfileRemove()
 
-    # remove generic celery task ONLY
-    logging.debug("removing generic celery tasks from supervisor")
-    celery_conf_files = os.listdir('/etc/supervisor/conf.d')
-    for conf in celery_conf_files:
-        if conf == "celery-celery.conf":
-            process_group = conf.split(".conf")[0]
-            logging.debug("stopping celery worker: %s" % process_group)
-            sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
-            sup_server.supervisor.stopProcessGroup(process_group)
-            sup_server.supervisor.removeProcessGroup(process_group)
-            os.system('rm /etc/supervisor/conf.d/%s' % conf)
+    # # remove generic celery task ONLY
+    # logging.debug("removing generic celery tasks from supervisor")
+    # celery_conf_files = os.listdir('/etc/supervisor/conf.d')
+    # for conf in celery_conf_files:
+    #     if conf == "celery-celery.conf":
+    #         process_group = conf.split(".conf")[0]
+    #         logging.debug("stopping celery worker: %s" % process_group)
+    #         sup_server = xmlrpclib.Server('http://127.0.0.1:9001')
+    #         sup_server.supervisor.stopProcessGroup(process_group)
+    #         sup_server.supervisor.removeProcessGroup(process_group)
+    #         os.system('rm /etc/supervisor/conf.d/%s' % conf)
 
     logging.info("Ouroboros says thanks for playing")
 
@@ -99,7 +99,7 @@ WSUDOR_API_site = Site(WSUDOR_API_resource)
 if __name__ == '__main__':
 
     # write PID to /var/run
-    ouroboros_pidlock = pidfileCreate()
+    # ouroboros_pidlock = pidfileCreate()
     atexit.register(shutdown)
 
     # WSUDOR Manager
@@ -119,8 +119,9 @@ if __name__ == '__main__':
         fedora_jms_consumer.run()
 
     # fire IndexWorker loop
-    indexer = LoopingCall(IndexRouter.poll)
-    indexer.start(INDEXER_POLL_DELAY, now=False)
+    if INDEXER_AUTOINDEX:
+        indexer = LoopingCall(IndexRouter.poll)
+        indexer.start(INDEXER_POLL_DELAY, now=False)
 
     logging.info('''
                 ::+:/`

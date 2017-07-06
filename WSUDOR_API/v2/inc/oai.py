@@ -98,7 +98,7 @@ class OAIProvider(object):
 			self.request_node.attrib['set'] = self.args['set']
 		if self.args['metadataPrefix']:
 			self.request_node.attrib['metadataPrefix'] = self.args['metadataPrefix']
-		self.request_node.text = 'http://digidev.library.wayne.edu/api/oai'
+		self.request_node.text = 'http://digital.library.wayne.edu/api/oai'
 		self.root_node.append(self.request_node)
 
 		# set verb node		
@@ -117,7 +117,8 @@ class OAIProvider(object):
 
 		# limit search to metadataPrefix provided
 		if self.args['metadataPrefix'] in metadataPrefix_hash.keys():
-			self.search_params['fq'].append('admin_datastreams:*%s*' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
+			logging.debug("for v1, skipping admin_datastreams check")
+			# self.search_params['fq'].append('admin_datastreams:*%s*' % metadataPrefix_hash[self.args['metadataPrefix']]['ds_id'] )
 		elif not self.args['metadataPrefix']:
 			return self.raise_error('cannotDisseminateFormat','metadataPrefix is required for verb: %s' % (self.args['verb']))
 		else:

@@ -95,7 +95,7 @@ If celery worker -- with multiple args -- fire fedora_handle based on username
 if run_context == 'ouroboros':
 	logging.debug("generating generic fedora_handle and generic celery worker")
 	fedora_handle = Repository(FEDORA_ROOT, localConfig.FEDORA_USER, localConfig.FEDORA_PASSWORD, 'wayne')
-	fire_cw = True
+	fire_cw = False
 
 else:
 	logging.debug("generating user authenticated fedora_handle")

@@ -625,20 +625,6 @@ class PREMISWorker(object):
 		# write event
 		premis_client.add_jms_event(jms_worker)
 
-		# update checksums
-		PREMISWorker.update_checksums(jms_worker)
-
-
-	# method for logging PREMIS events when reported by Fedora JMS
-	@staticmethod
-	def update_checksums(jms_worker):
-
-		datastream_id = jms_worker._determine_ds()
-		if datastream_id:
-			pid = jms_worker.pid.encode('utf-8')
-			obj = WSUDOR_ContentTypes.WSUDOR_Object(pid)
-			obj.log_checksums(datastream_id=datastream_id)
-
 
 
 ##################################################################################

@@ -685,18 +685,7 @@ class PREMISClient(object):
 			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', msg.pid.encode('utf-8'), 'intellectual entity')
 		}
 
-		# set as event
-		'''
-		self,
-        eventIdentifier,
-        eventType,
-        eventDateTime,
-        eventDetailInformation=None,
-        eventOutcomeInformation=None,
-        linkingAgentIdentifier=None,
-        linkingObjectIdentifier=None
-		event = pypremis.nodes.Event()
-		'''
+		# instantiate pypremis Event
 		event = pypremis.nodes.Event(
 				event_dict['id'],
 				event_dict['type'],
@@ -758,23 +747,19 @@ class PREMISClient(object):
 			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', self.pid.encode('utf-8'), 'intellectual entity')
 		}
 
-		# set as event
-		'''
-		self,
-        eventIdentifier,
-        eventType,
-        eventDateTime,
-        eventDetailInformation=None,
-        eventOutcomeInformation=None,
-        linkingAgentIdentifier=None,
-        linkingObjectIdentifier=None
-		event = pypremis.nodes.Event()
-		'''
+		# check for optional outcome and outcomeDetail from payload
+		if 'outcome' in payload.keys():
+			event_dict['eventOutcomeInformation'] = pypremis.nodes.EventOutcomeInformation(payload['outcome']['result'], pypremis.nodes.EventOutcomeDetail(json.dumps(payload['outcome']['detail'])))
+		else:
+			event_dict['eventOutcomeInformation'] = None
+
+		# instantiate pypremis Event
 		event = pypremis.nodes.Event(
 				event_dict['id'],
 				event_dict['type'],
 				event_dict['date'],
 				eventDetailInformation=event_dict['detail'],
+				eventOutcomeInformation=event_dict['eventOutcomeInformation'],
 				linkingObjectIdentifier=event_dict['loi']
 			)
 

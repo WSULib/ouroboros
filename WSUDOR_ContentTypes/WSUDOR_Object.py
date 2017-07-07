@@ -403,6 +403,7 @@ class WSUDOR_GenObject(object):
 
 
     # PREMIS client
+    @helpers.LazyProperty
     def premis(self):
         return models.PREMISClient(pid=self.pid)
 
@@ -651,141 +652,185 @@ class WSUDOR_GenObject(object):
     # WSUDOR_Object Methods
     ############################################################################################################
 
-    def get_checksums(self, datastream_id=False):
+    # def get_checksums(self, datastream_id=False):
 
-        '''
-        simple method to return current datastream checksums for object
-        '''
-        # get checksums
-        checksum_dict = {}
+    #     '''
+    #     simple method to return current datastream checksums for object
+    #     '''
+    #     # get checksums
+    #     checksum_dict = {}
 
-        # if datastream provided, return only that one
-        if datastream_id:
-            checksum_dict[datastream_id] = self.ohandle.getDatastreamObject(datastream_id).checksum
+    #     # if datastream provided, return only that one
+    #     if datastream_id:
+    #         checksum_dict[datastream_id] = self.ohandle.getDatastreamObject(datastream_id).checksum
 
-        # if not datastream_id provided, return all
-        else:
-            for ds in self.ohandle.ds_list:
-                checksum_dict[ds] = self.ohandle.getDatastreamObject(ds).checksum
+    #     # if not datastream_id provided, return all
+    #     else:
+    #         for ds in self.ohandle.ds_list:
+    #             checksum_dict[ds] = self.ohandle.getDatastreamObject(ds).checksum
             
-            # remove PREMIS and DC datastreams
-            for ds in ['PREMIS','DC']:
-                checksum_dict.pop(ds, None)
+    #         # remove PREMIS and DC datastreams
+    #         for ds in ['PREMIS','DC']:
+    #             checksum_dict.pop(ds, None)
 
-        # logging.debug(checksum_dict)
+    #     # logging.debug(checksum_dict)
 
-        return checksum_dict
+    #     return checksum_dict
 
 
-    def log_checksums(self, datastream_id=False):
-        '''
-        log checksums for all datastreams as PREMIS event
-        PREMIS event type: 'log_checksums'
-        '''
+    # def log_checksums(self, datastream_id=False):
+    #     '''
+    #     log checksums for all datastreams as PREMIS event
+    #     PREMIS event type: 'log_checksums'
+    #     '''
 
-        # if update_all, get all and write as new
-        if not datastream_id:
-            logging.debug("updating checksums for all datastreams in PREMIS")
-            checksums_to_log = self.get_checksums()
+    #     # if update_all, get all and write as new
+    #     if not datastream_id:
+    #         logging.debug("updating checksums for all datastreams in PREMIS")
+    #         checksums_to_log = self.get_checksums()
         
-        # update only one datastream, but re-record old checksums as well
-        else:
-            '''
-            Iterate bottom-up in events, looking for last event type 'log_checksums'
-            '''
-            logging.debug("updating checksum for %s datastream in PREMIS" % datastream_id)
-            events = self.premis().get_event_list(reverse=True)
-            logged_checksums = False
-            for event in events:
-                if event.eventType == 'log_checksums':
-                    logging.debug("found most recent 'log_checksums' event, id %s, date %s" % (event.eventIdentifier.get_eventIdentifierValue(), event.get_eventDateTime()))
+    #     # update only one datastream, but re-record old checksums as well
+    #     else:
+    #         '''
+    #         Iterate bottom-up in events, looking for last event type 'log_checksums'
+    #         '''
+    #         logging.debug("updating checksum for %s datastream in PREMIS" % datastream_id)
+    #         events = self.premis().get_event_list(reverse=True)
+    #         logged_checksums = False
+    #         for event in events:
+    #             if event.eventType == 'log_checksums':
+    #                 logging.debug("found most recent 'log_checksums' event, id %s, date %s" % (event.eventIdentifier.get_eventIdentifierValue(), event.get_eventDateTime()))
 
-                    # get event detail
-                    event_detail = event.get_eventDetailInformation()[0].eventDetail # assume only detail (they can repeat)
-                    logged_checksums = json.loads(event_detail)
-                    break
+    #                 # get event detail
+    #                 event_detail = event.get_eventDetailInformation()[0].eventDetail # assume only detail (they can repeat)
+    #                 logged_checksums = json.loads(event_detail)
+    #                 break
 
-            # if found, update with datastream in question
-            if logged_checksums:
-                # get current checksum for datastream
-                current_checksums = self.get_checksums(datastream_id)
-                # update logged checksums
-                logged_checksums[datastream_id] = current_checksums[datastream_id]
-                # prepare to be written
-                checksums_to_log = logged_checksums
+    #         # if found, update with datastream in question
+    #         if logged_checksums:
+    #             # get current checksum for datastream
+    #             current_checksums = self.get_checksums(datastream_id)
+    #             # update logged checksums
+    #             logged_checksums[datastream_id] = current_checksums[datastream_id]
+    #             # prepare to be written
+    #             checksums_to_log = logged_checksums
             
-            # else, not yet recorded, add all now
-            else:
-                # get current checksums for all datastreams
-                current_checksums = self.get_checksums()
-                # prepare to be written
-                checksums_to_log = current_checksums
+    #         # else, not yet recorded, add all now
+    #         else:
+    #             # get current checksums for all datastreams
+    #             current_checksums = self.get_checksums()
+    #             # prepare to be written
+    #             checksums_to_log = current_checksums
 
-        # log as premis event
-        event = self.premis().add_custom_event({'type':'log_checksums','detail':checksums_to_log})
+    #     # log as premis event
+    #     event = self.premis().add_custom_event({'type':'log_checksums','detail':checksums_to_log})
 
-        # return event
-        return event
+    #     # return event
+    #     return event
 
 
-    def verify_checksums(self, return_last_logged_only=False, log_premis_event=True):
+    # def verify_checksums(self, return_last_logged_only=False, log_premis_event=True):
         
-        '''
-        check current checksum as reported by Fedora (eulfedora), and check against last PREMIS event type 'log_checksums'
-        PREMIS event type: 'verify_checksums'
-        '''
+    #     '''
+    #     check current checksum as reported by Fedora (eulfedora), and check against last PREMIS event type 'log_checksums'
+    #     PREMIS event type: 'verify_checksums'
+    #     '''
         
-        # read PREMIS from bottom up, find most recent event type 'log_checksums'
-        events = self.premis().get_event_list(reverse=True)
-        logged_checksums = False
-        for event in events:
-            if event.eventType == 'log_checksums':
-                logging.debug("found most recent 'log_checksums' event, id %s, date %s" % (event.eventIdentifier.get_eventIdentifierValue(), event.get_eventDateTime()))
+    #     # read PREMIS from bottom up, find most recent event type 'log_checksums'
+    #     events = self.premis().get_event_list(reverse=True)
+    #     logged_checksums = False
+    #     for event in events:
+    #         if event.eventType == 'log_checksums':
+    #             logging.debug("found most recent 'log_checksums' event, id %s, date %s" % (event.eventIdentifier.get_eventIdentifierValue(), event.get_eventDateTime()))
 
-                # get event detail
-                event_detail = event.get_eventDetailInformation()[0].eventDetail # assume only detail (they can repeat)
-                logged_checksums = json.loads(event_detail)
+    #             # get event detail
+    #             event_detail = event.get_eventDetailInformation()[0].eventDetail # assume only detail (they can repeat)
+    #             logged_checksums = json.loads(event_detail)
 
-                logging.debug("logged checksums: %s" % logged_checksums)
+    #             logging.debug("logged checksums: %s" % logged_checksums)
 
-                if return_last_logged_only:
-                    return logged_checksums
-                else:
-                    break
+    #             if return_last_logged_only:
+    #                 return logged_checksums
+    #             else:
+    #                 break
 
-        # previously logged checksums found
-        if logged_checksums:
+    #     # previously logged checksums found
+    #     if logged_checksums:
 
-            # compare against current checksums
-            current_checksums = self.get_checksums()
-            shared_checksums = set(current_checksums.items()) & set(logged_checksums.items())
+    #         # compare against current checksums
+    #         current_checksums = self.get_checksums()
+    #         shared_checksums = set(current_checksums.items()) & set(logged_checksums.items())
             
-            if len(shared_checksums) in (len(current_checksums),len(logged_checksums)):
-                logging.debug("all checksums match")
+    #         if len(shared_checksums) in (len(current_checksums),len(logged_checksums)):
+    #             logging.debug("all checksums match")
 
-                if log_premis_event:
-                    event = self.premis().add_custom_event({'type':'verify_checksums','detail':{'result':True}})
+    #             if log_premis_event:
+    #                 event = self.premis().add_custom_event({'type':'verify_checksums','detail':{'result':True}})
 
-                # return
-                return True
+    #             # return
+    #             return True
 
-            else:
-                # if false, return offending datastreams and checksums
-                logging.debug("some checksums failed checksum verification")
-                failed = set(dict(set(current_checksums.items()) ^ set(logged_checksums.items())).keys())
-                fail_dict = { ds:{'logged_checksum':logged_checksums[ds], 'current_checksum':current_checksums[ds]} for ds in failed }
-                logging.debug(fail_dict)
+    #         else:
+    #             # if false, return offending datastreams and checksums
+    #             logging.debug("some checksums failed checksum verification")
+    #             failed = set(dict(set(current_checksums.items()) ^ set(logged_checksums.items())).keys())
+    #             fail_dict = { ds:{'logged_checksum':logged_checksums[ds], 'current_checksum':current_checksums[ds]} for ds in failed }
+    #             logging.debug(fail_dict)
 
-                if log_premis_event:
-                    event = self.premis().add_custom_event({'type':'verify_checksums','detail':{'result':False,'offending_datastreams':fail_dict}})
+    #             if log_premis_event:
+    #                 event = self.premis().add_custom_event({'type':'verify_checksums','detail':{'result':False,'offending_datastreams':fail_dict}})
 
-                return fail_dict
+    #             return fail_dict
 
-        # no checksums found
+    #     # no checksums found
+    #     else:
+    #         logging.debug("could not find previously logged checksums, recording now, but returning False")
+    #         self.log_checksums()
+    #         return False
+
+
+    def verify_checksums(self, log_to_premis=True):
+
+        '''
+        using Fedora's built-in checksum test, confirm all datastream's checksums
+        '''
+
+        verify_dict = {
+            'verdict':None,
+            'datastreams':{}
+        }
+
+        # iterate through datastreams
+        for ds in self.ohandle.ds_list:
+            ds_handle = self.ohandle.getDatastreamObject(ds)
+            verify_dict['datastreams'][ds] = {
+                'checksum':ds_handle.checksum,
+                'valid_checksum':ds_handle.validate_checksum()
+            }
+        logging.debug(verify_dict)
+                
+        # get final verdict
+        fail_dict = { ds:verify_dict['datastreams'][ds] for ds in verify_dict['datastreams'].keys() if not verify_dict['datastreams'][ds]['valid_checksum']}
+        logging.debug(fail_dict)
+        if len(fail_dict.keys()) == 0:
+            verify_dict['verdict'] = True
         else:
-            logging.debug("could not find previously logged checksums, recording now, but returning False")
-            self.log_checksums()
-            return False
+            verify_dict['verdict'] = False
+            verify_dict['offenders'] = fail_dict
+
+        # log verification as premis event
+        if log_to_premis:
+            event = self.premis.add_custom_event({
+                'type':'verify_checksums',
+                'detail':'checksum verification via Fedora validation',
+                'outcome':{
+                    'result':str(verify_dict['verdict']),
+                    'detail':verify_dict
+                }
+            })
+
+        # return
+        return verify_dict
 
 
 

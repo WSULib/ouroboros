@@ -118,7 +118,7 @@ class FedoraJMSWorker(object):
 
 		# debug
 		logging.debug(self.headers)
-		logging.debug(self.body)
+		# logging.debug(self.body) # noisy
 
 		# capture modifications to datastream
 		if self.methodName in ['addDatastream','modifyDatastreamByValue','modifyDatastreamByReference','purgeDatastream']:
@@ -138,15 +138,6 @@ class FedoraJMSWorker(object):
 		if self.methodName in ['addRelationship','purgeRelationship']:
 			self.queue_action = 'index'
 
-		# capture purge
-		'''
-		Perhaps unsurprisingly, this fails.
-		When objects are purged, they cannot be opened to run their own .prune() method.
-		Perhaps .prune() should be included here as well, so it can run seperate from object method?
-		'''
-		if self.methodName in ['purgeObject']:
-			self.queue_action = 'prune'
-
 		# finally, queue object and log
 		if self.queue_action:
 			self.queue_object()
@@ -164,9 +155,14 @@ class FedoraJMSWorker(object):
 		'''
 		Small function to determine which datastream was acted on
 		'''
-		self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
-		logging.debug("datastream %s was acted on" % self.ds)
-		return self.ds
+		try:
+			self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
+			logging.debug("datastream %s was acted on" % self.ds)
+			return self.ds
+		except:
+			logging.debug("could not determine if a datastream was acted on")
+			return False
+		
 
 
 	def queue_object(self):
@@ -629,8 +625,19 @@ class PREMISWorker(object):
 		# write event
 		premis_client.add_jms_event(jms_worker)
 
-		# save
-		return premis_client.update()
+		# update checksums
+		PREMISWorker.update_checksums(jms_worker)
+
+
+	# method for logging PREMIS events when reported by Fedora JMS
+	@staticmethod
+	def update_checksums(jms_worker):
+
+		datastream_id = jms_worker._determine_ds()
+		if datastream_id:
+			pid = jms_worker.pid.encode('utf-8')
+			obj = WSUDOR_ContentTypes.WSUDOR_Object(pid)
+			obj.log_checksums(datastream_id=datastream_id)
 
 
 

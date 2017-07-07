@@ -670,6 +670,8 @@ class PREMISClient(object):
 
 	def add_jms_event(self, msg):
 
+		logging.debug("logging Fedora JSM PREMIS event")
+
 		# prepare detail message
 		eventDetail = "Fedora Commons Java Messaging Service (JMS); action %s, pid %s".encode('utf-8') % ( msg.methodName.encode('utf-8'), msg.pid.encode('utf-8') )
 		eventDetail = json.dumps(msg.parsed_body)
@@ -729,6 +731,8 @@ class PREMISClient(object):
 		}
 
 		'''
+
+		logging.debug("logging custom PREMIS event")
 
 		# prepare detail message
 		eventDetail = json.dumps(payload['detail'])

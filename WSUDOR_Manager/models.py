@@ -12,6 +12,7 @@ import re
 import eulfedora
 import json
 import requests
+import hashlib
 
 # eulxml, used for PREMISClient
 from eulxml.xmlmap import premis
@@ -630,6 +631,7 @@ class PREMISClient(object):
 
 
 	def get_object_identifiers(self):
+
 		for o in self.premis.get_object_list():
 			o_id = o.get_objectIdentifier()[0]
 			self.object_identifiers.append( (o.get_objectCategory(), o_id.get_objectIdentifierType(), o_id.get_objectIdentifierValue()) )
@@ -655,6 +657,15 @@ class PREMISClient(object):
 		
 		# return using pypremis .to_xml() method
 		return self.premis.to_xml()
+
+
+	def get_event_list(self, reverse=False):
+
+		# use pypremis method
+		if not reverse:
+			return self.premis.get_event_list()
+		else:
+			return self.premis.get_event_list()[::-1]
 
 
 	def add_jms_event(self, msg):
@@ -698,6 +709,79 @@ class PREMISClient(object):
 		# update
 		self.update()
 
+		# return
+		return event
+
+
+	def add_custom_event(self, payload):
+		
+		'''
+		expecting dictionary as payload with the following key/value pairs:
+		event_dict = {
+			'id': 
+				unique identifier for PREMIS event (consider hash of time and pid) / <premis:eventIdentifier><premis:eventIdentifierValue>
+			'type':
+				event type / <premis:eventType>
+			'date':
+				data of event (defaults to NOW) / <premis:eventDateTime>			
+			'detail':
+				main body of message, python dictionary, which is serialized to JSON / <premis:eventDetail>
+		}
+
+		'''
+
+		# prepare detail message
+		eventDetail = json.dumps(payload['detail'])
+
+		# if date is not provided in payload, use NOW
+		if 'date' not in payload.keys():
+			date = datetime.isoformat(datetime.now())
+		else:
+			date = payload['date']
+
+		# if identifier is not provided in payload, use has of pid + date
+		if 'identifier' not in payload.keys():
+			identifier = hashlib.md5(date+self.pid).hexdigest()
+		else:
+			identifier = payload['identifier']
+
+		# parse jms event, expecting instance of FedoraJMSWorker from WSUDOR_Indexer
+		event_dict = {
+			'id':pypremis.nodes.EventIdentifier('urn', identifier.encode('utf=8')),
+			'type':payload['type'].encode('utf=8'),
+			'date':date.encode('utf=8'),			
+			'detail':pypremis.nodes.EventDetailInformation(eventDetail=eventDetail),
+			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', self.pid.encode('utf-8'), 'intellectual entity')
+		}
+
+		# set as event
+		'''
+		self,
+        eventIdentifier,
+        eventType,
+        eventDateTime,
+        eventDetailInformation=None,
+        eventOutcomeInformation=None,
+        linkingAgentIdentifier=None,
+        linkingObjectIdentifier=None
+		event = pypremis.nodes.Event()
+		'''
+		event = pypremis.nodes.Event(
+				event_dict['id'],
+				event_dict['type'],
+				event_dict['date'],
+				eventDetailInformation=event_dict['detail'],
+				linkingObjectIdentifier=event_dict['loi']
+			)
+
+		# add event to premis record
+		self.premis.add_event(event)
+
+		# update
+		self.update()
+
+		# return
+		return event
 
 
 ########################################################################

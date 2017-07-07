@@ -652,6 +652,81 @@ class WSUDOR_GenObject(object):
     # WSUDOR_Object Methods
     ############################################################################################################
 
+    def datastream_checksums(self, exclude_premis_datastream=True):
+
+        '''
+        simple method to return current datastream checksums for object
+        '''
+        # get checksums
+        checksum_dict = {}
+        for ds in self.ohandle.ds_list:
+            checksum_dict[ds] = self.ohandle.getDatastreamObject(ds).checksum
+        
+        # remove premis datastream
+        if exclude_premis_datastream:
+            checksum_dict.pop('PREMIS', None)
+
+        logging.debug(checksum_dict)
+
+
+        return checksum_dict
+
+
+    def log_checksums(self):
+        '''
+        log checksums for all datastreams as PREMIS event
+        PREMIS event type: 'log_checksums'
+        '''
+
+        current_checksums = self.datastream_checksums()
+
+        # log as premis event
+        event = self.premis.add_custom_event({'type':'log_checksums','detail':current_checksums})
+
+        # return event
+        return event
+
+
+    def verify_checksums(self, return_last_logged_only=False, exclude_premis_datastream=True):
+        
+        '''
+        check current checksum as reported by Fedora (eulfedora), and check against last PREMIS event type 'log_checksums'
+        PREMIS event type: 'verify_checksums'
+        '''
+        
+        # read PREMIS from bottom up, find most recent event type 'log_checksums'
+        events = self.premis.get_event_list(reverse=True)
+        for event in events:
+            if event.eventType == 'log_checksums':
+                logging.debug("found most recent 'log_checksums' event, id %s, date %s" % (event.eventIdentifier.get_eventIdentifierValue(), event.get_eventDateTime()))
+
+                # get event detail
+                event_detail = event.get_eventDetailInformation()[0].eventDetail # assume only detail (they can repeat)
+                logged_checksums = json.loads(event_detail)
+
+                # remove premis datastream
+                if exclude_premis_datastream:
+                    logged_checksums.pop('PREMIS', None)
+
+                logging.debug("logged checksums: %s" % logged_checksums)
+                if return_last_logged_only:
+                    return logged_checksums
+
+        # compare against current checksums
+        current_checksums = self.datastream_checksums()
+        shared_checksums = set(current_checksums.items()) & set(logged_checksums.items())
+        if len(shared_checksums) in (len(current_checksums),len(logged_checksums)):
+            logging.debug("all checksums match")
+            return True
+        else:
+            # if false, return offending datastreams and checksums
+            logging.debug("some checksums failed checksum verification")
+            failed = set(dict(set(current_checksums.items()) ^ set(logged_checksums.items())).keys())
+            fail_dict = { ds:{'logged_checksum':logged_checksums[ds], 'current_checksum':current_checksums[ds]} for ds in failed }
+            logging.debug(fail_dict)
+            return fail_dict
+
+
     # expects True or False, sets as discoverability, and optionally reindexes
     def set_discoverability(self, discoverable, reindex=False):
 
@@ -946,25 +1021,6 @@ class WSUDOR_GenObject(object):
                     'object':str(triple[2])
                 })
 
-        # if RELS-INT datastream, add to datastreams[]
-        # if preserve_relationships == True:
-        #     for rels_ds in ['RELS-EXT','RELS-INT']:
-        #         logging.debug("attempting to add %s to objMeta.datastreams[]" % rels_ds)
-        #         if rels_ds in self.ohandle.ds_list:
-        #             objMeta_copy['datastreams'].append({
-        #                 self.objMeta['datastreams'].append({
-        #                     'mimetype': "application/rdf+xml",
-        #                     'label': "%s" % rels_ds,
-        #                     'ds_id': "%s" % rels_ds,
-        #                     'filename': "%s.rdf" % rels_ds
-        #                     }
-        #                 )    
-        #             })
-        #         else:
-        #             logging.debug("%s not found, skipping" % rels_ds)
-        # else:
-        #     logging.debug("not preserving relationships, not writing RELS-* to objMeta or datastreams")
-
         # write to disk
         logging.debug("writing new objMeta to disk: %s" % objMeta_copy)
         with open(os.path.join(*[data_root, "objMeta.json"]),'w') as fhand:
@@ -1053,7 +1109,7 @@ class WSUDOR_GenObject(object):
 
 
     # Solr Indexing
-    def index(self, printOnly=False, commit_on_index=False):
+    def index(self, printOnly=False, commit_on_index=False, run_content_type_specific=True):
 
         # generate human values
         logging.debug("preparing 'human_hash' values...")
@@ -1134,6 +1190,7 @@ class WSUDOR_GenObject(object):
 
         # Add object and datastream sizes
         try:
+            logging.debug("indexing object size")
             size_dict = self.object_size()
             setattr(self.SolrDoc.doc, "obj_size_fedora_i", size_dict['fedora_total_size'][0] )
             setattr(self.SolrDoc.doc, "obj_size_fedora_human", size_dict['fedora_total_size'][1] )
@@ -1184,8 +1241,9 @@ class WSUDOR_GenObject(object):
         Content-types have optional `index_augment()` method that expects already started
         self.SolrDoc.doc that it can augment and add to before update
         '''
-        if getattr(self,'index_augment',False):
-            self.index_augment()
+        if run_content_type_specific:
+            if getattr(self,'index_augment',False):
+                self.index_augment()
 
 
         #######################################################################################

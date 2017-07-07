@@ -98,7 +98,7 @@ class OAIProvider(object):
 			self.request_node.attrib['set'] = self.args['set']
 		if self.args['metadataPrefix']:
 			self.request_node.attrib['metadataPrefix'] = self.args['metadataPrefix']
-		self.request_node.text = 'http://digidev.library.wayne.edu/api/oai'
+		self.request_node.text = 'http://digital.library.wayne.edu/api/oai'
 		self.root_node.append(self.request_node)
 
 		# set verb node		

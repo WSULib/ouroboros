@@ -613,7 +613,7 @@ class PREMISClient(object):
 			else:
 				logging.debug("%s datastream not found, initializing PREMIS datastream" % ds_id)
 				# gen object identifier
-				object_identifier = pypremis.nodes.ObjectIdentifier('pid', pid)
+				object_identifier = pypremis.nodes.ObjectIdentifier('pid', pid.encode('utf-8'))
 				# set format type for object
 				format_designation = pypremis.nodes.FormatDesignation(formatName='wsudor object')
 				format = pypremis.nodes.Format(formatDesignation=format_designation)
@@ -678,9 +678,9 @@ class PREMISClient(object):
 
 		# parse jms event, expecting instance of FedoraJMSWorker from WSUDOR_Indexer
 		event_dict = {
-			'id':pypremis.nodes.EventIdentifier('urn', msg.parsed_body['entry']['id'].encode('utf=8')),
-			'type':msg.parsed_body['entry']['title']['#text'].encode('utf=8'),
-			'date':msg.parsed_body['entry']['updated'].encode('utf=8'),			
+			'id':pypremis.nodes.EventIdentifier('urn', msg.parsed_body['entry']['id'].encode('utf-8')),
+			'type':msg.parsed_body['entry']['title']['#text'].encode('utf-8'),
+			'date':msg.parsed_body['entry']['updated'].encode('utf-8'),			
 			'detail':pypremis.nodes.EventDetailInformation(eventDetail=eventDetail),
 			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', msg.pid.encode('utf-8'), 'intellectual entity')
 		}
@@ -740,9 +740,9 @@ class PREMISClient(object):
 
 		# parse jms event, expecting instance of FedoraJMSWorker from WSUDOR_Indexer
 		event_dict = {
-			'id':pypremis.nodes.EventIdentifier('urn', identifier.encode('utf=8')),
-			'type':payload['type'].encode('utf=8'),
-			'date':date.encode('utf=8'),			
+			'id':pypremis.nodes.EventIdentifier('urn', identifier.encode('utf-8')),
+			'type':payload['type'].encode('utf-8'),
+			'date':date.encode('utf-8'),			
 			'detail':pypremis.nodes.EventDetailInformation(eventDetail=eventDetail),
 			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', self.pid.encode('utf-8'), 'intellectual entity')
 		}

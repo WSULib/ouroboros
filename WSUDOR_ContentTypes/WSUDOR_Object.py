@@ -687,7 +687,7 @@ class WSUDOR_GenObject(object):
         return event
 
 
-    def verify_checksums(self, return_last_logged_only=False, exclude_premis_datastream=True):
+    def verify_checksums(self, return_last_logged_only=False, exclude_premis_datastream=True, log_premis_event=True):
         
         '''
         check current checksum as reported by Fedora (eulfedora), and check against last PREMIS event type 'log_checksums'
@@ -709,21 +709,35 @@ class WSUDOR_GenObject(object):
                     logged_checksums.pop('PREMIS', None)
 
                 logging.debug("logged checksums: %s" % logged_checksums)
+
                 if return_last_logged_only:
                     return logged_checksums
+                else:
+                    break
 
         # compare against current checksums
         current_checksums = self.datastream_checksums()
         shared_checksums = set(current_checksums.items()) & set(logged_checksums.items())
+        
         if len(shared_checksums) in (len(current_checksums),len(logged_checksums)):
             logging.debug("all checksums match")
+
+            if log_premis_event:
+                event = self.premis.add_custom_event({'type':'verify_checksums','detail':{'result':True}})
+
+            # return
             return True
+
         else:
             # if false, return offending datastreams and checksums
             logging.debug("some checksums failed checksum verification")
             failed = set(dict(set(current_checksums.items()) ^ set(logged_checksums.items())).keys())
             fail_dict = { ds:{'logged_checksum':logged_checksums[ds], 'current_checksum':current_checksums[ds]} for ds in failed }
             logging.debug(fail_dict)
+
+            if log_premis_event:
+                event = self.premis.add_custom_event({'type':'verify_checksums','detail':{'result':False,'offending_datastreams':fail_dict}})
+
             return fail_dict
 
 

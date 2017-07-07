@@ -110,9 +110,10 @@ def updateSolr(update_type):
 class SolrIndexerWorker(object):
 
 	# init worker with built-in timers
-	def __init__(self, printOnly):
+	def __init__(self, printOnly, update_object_size=True):
 		self.startTime = int(time.time())
 		self.printOnly = printOnly
+		self.update_object_size = update_object_size
 
 	@property
 	def endTime(self):
@@ -241,11 +242,12 @@ class SolrIndexerWorker(object):
 			print "Could not find or index datastream RELS-EXT"
 
 		# Add object and datastream sizes
-		try:
-			setattr(obj_handle.SolrDoc.doc, "obj_size_i", obj_handle.objSizeDict['total_size'][0] )
-			setattr(obj_handle.SolrDoc.doc, "obj_size_human", obj_handle.objSizeDict['total_size'][1] )
-		except:
-			print "Could not determine object size, skipping"
+		if self.update_object_size:
+			try:
+				setattr(obj_handle.SolrDoc.doc, "obj_size_i", obj_handle.objSizeDict['total_size'][0] )
+				setattr(obj_handle.SolrDoc.doc, "obj_size_human", obj_handle.objSizeDict['total_size'][1] )
+			except:
+				print "Could not determine object size, skipping"
 
 
 		#######################################################################################
@@ -287,7 +289,7 @@ class SolrIndexerWorker(object):
 
 
 @celery.task()
-def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
+def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT, augment_core=True, update_object_size=True):
 
 	print "solrIndexer running"
 
@@ -303,7 +305,7 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 	outputs['indexExcepts'] = './reports/'+now+'_indexExcepts.csv'
 
 	# init worker, always with printOnly parameter, defaulting to localConfig unless explicitly set 
-	worker = SolrIndexerWorker(printOnly=printOnly)
+	worker = SolrIndexerWorker(printOnly=printOnly,update_object_size=update_object_size)
 
 	# determine action based on fedEvent
 	# Index single item per fedEvent
@@ -319,7 +321,8 @@ def solrIndexer(fedEvent, PID, printOnly=SOLR_INDEXER_WRITE_DEFAULT):
 			# return True
 		
 		# augment documents - from augmentCore.py
-		augmentCore(PID)		
+		if augment_core:
+			augmentCore(PID)		
 
 		return True
 

@@ -59,7 +59,7 @@ def index():
 	overview['total_count'] = t_results.num_rows()
 
 	# total items harvested by REPOX under DPLAOAI set
-	con.query("SELECT rcItem.identifier AS pid FROM rcItem INNER JOIN rcRecord ON rcItem.itemKey = rcRecord.itemKey INNER JOIN rcMembership ON rcMembership.recordKey = rcRecord.recordKey INNER JOIN rcSet ON rcSet.setKey = rcMembership.setKey INNER JOIN rcFormat ON rcFormat.formatKey = rcRecord.formatKey WHERE rcFormat.mdPrefix = 'mods' AND rcSet.setSpec = 'set:wayne:collectionDPLAOAI'")
+	con.query("SELECT rcItem.identifier AS pid FROM rcItem INNER JOIN rcRecord ON rcItem.itemKey = rcRecord.itemKey INNER JOIN rcMembership ON rcMembership.recordKey = rcRecord.recordKey INNER JOIN rcSet ON rcSet.setKey = rcMembership.setKey INNER JOIN rcFormat ON rcFormat.formatKey = rcRecord.formatKey WHERE rcFormat.mdPrefix = 'wsu_mods' AND rcSet.setSpec = 'set:wayne:collectionDPLAOAI'")
 	repox_results = con.store_result()
 	overview['repox_count'] = repox_results.num_rows()
 

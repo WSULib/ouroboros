@@ -775,12 +775,12 @@ class WSUDOR_GenObject(object):
 
 
 	# Solr Indexing
-	def indexToSolr(self, printOnly=False):
+	def indexToSolr(self, printOnly=False, augment_core=True, update_object_size=True):
 
 		# derive Dublin Core
 		self.DCfromMODS()
 
-		return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly)
+		return actions.solrIndexer.solrIndexer('modifyObject', self.pid, printOnly, augment_core=augment_core, update_object_size=update_object_size)
 
 
 	def previewSolrDict(self):

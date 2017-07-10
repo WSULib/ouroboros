@@ -653,7 +653,7 @@ class WSUDOR_GenObject(object):
     ############################################################################################################
 
 
-    def verify_checksums(self, log_to_premis=True):
+    def verify_checksums(self, log_to_premis=True, verify_constituents=True):
 
         '''
         using Fedora's built-in checksum test, confirm all datastream's checksums
@@ -692,6 +692,25 @@ class WSUDOR_GenObject(object):
                     'detail':verify_dict
                 }
             })
+
+        # optionally, verify checksums for constituents
+        if verify_constituents:
+            # establish constituent section
+            constituent_checks = {}
+            # loop through consituents and verify their datastreams
+            if len(self.constituents) > 0:
+                for constituent in self.constituents:
+                    obj = WSUDOR_ContentTypes.WSUDOR_Object(constituent)
+                    constituent_verdict = obj.verify_checksums(log_to_premis=log_to_premis, verify_constituents=False)
+                    constituent_checks[obj.pid] = constituent_verdict
+            # analyze results
+            constituent_fail_dict = { constituent:constituent_checks[constituent] for constituent in constituent_checks.keys() if not constituent_checks[constituent]['verdict']}
+            verify_dict['constituents'] = {}
+            if len(constituent_fail_dict.keys()) == 0:
+                verify_dict['constituents']['verdict'] = True
+            else:
+                verify_dict['constituents']['verdict'] = False
+                verify_dict['constituents']['offenders'] = constituent_fail_dict
 
         # return
         return verify_dict

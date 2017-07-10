@@ -609,6 +609,8 @@ class PREMISClient(object):
 				self.tempfile = Derivative.write_temp_file(self.premis_ds)
 				# load with pypremis
 				self.premis = PremisRecord(frompath=self.tempfile.name)
+				# delete tempfile
+				self.tempfile.unlink(self.tempfile.name)
 
 			else:
 				logging.debug("%s datastream not found, initializing PREMIS datastream" % ds_id)

@@ -653,7 +653,7 @@ class WSUDOR_GenObject(object):
     ############################################################################################################
 
 
-    def verify_checksums(self, log_to_premis=True, verify_constituents=True):
+    def verify_checksums(self, log_to_premis=True, verify_constituents=False):
 
         '''
         using Fedora's built-in checksum test, confirm all datastream's checksums
@@ -694,6 +694,10 @@ class WSUDOR_GenObject(object):
             })
 
         # optionally, verify checksums for constituents
+        '''
+        Currently, this check is defaulted to False, as it duplicates checksumming for the vast majority of objects in repository (constituents).
+        However, is an optional flag and check.
+        '''
         if verify_constituents:
             # establish constituent section
             constituent_checks = {}

@@ -632,13 +632,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# save annotationList to LMDB database
 			logging.debug("Saving annotation list for %s in LMDB database" % page_handle.pid)
-			with lmdb_env.begin(write=True) as txn:
-				txn.put('%s_iiif_annotation_list' % (page_handle.pid.encode('utf-8')), annol.toString().encode('utf-8'), overwrite=True)
+			models.LMDBClient.put('%s_iiif_annotation_list' % page_handle.pid, annol.toString(), overwrite=True)
 
 		# save manifest to LMDB database
 		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
-		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_iiif_manifest' % (self.pid.encode('utf-8')), manifest.toString().encode('utf-8'), overwrite=True)
+		models.LMDBClient.put('%s_iiif_manifest' % self.pid, manifest.toString(), overwrite=True)
 
 		return manifest.toString()
 

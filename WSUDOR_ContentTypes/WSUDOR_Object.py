@@ -398,8 +398,7 @@ class WSUDOR_GenObject(object):
     def iiif_manifest(self, format='string'):       
 
         # retrieve from LMDB database
-        with lmdb_env.begin(write=False) as txn:
-            return txn.get('%s_iiif_manifest' % (self.pid.encode('utf-8')))
+        return models.LMDBClient.get('%s_iiif_manifest' % (self.pid))
 
 
     # PREMIS client
@@ -459,10 +458,10 @@ class WSUDOR_GenObject(object):
 
                 # check LMDB for stored constituent size
                 if not update_constituents:
-                    with lmdb_env.begin(write=False) as txn:
-                        lmdb_constituent_size = txn.get('%s_object_size' % obj.pid.encode('utf-8'))
-                        if lmdb_constituent_size:
-                            constituent_object_size = json.loads(lmdb_constituent_size)
+
+                    lmdb_constituent_size = models.LMDBClient.get('%s_object_size' % obj.pid)
+                    if lmdb_constituent_size:
+                        constituent_object_size = json.loads(lmdb_constituent_size)
                     
                 # if we are updating constituents, or the result of the LMDB grab above was None, recalculate (also storing in LMDB)
                 if update_constituents or not lmdb_constituent_size:
@@ -483,8 +482,7 @@ class WSUDOR_GenObject(object):
 
         # write to LMDB
         logging.debug("writing to LMDB")
-        with lmdb_env.begin(write=True) as txn:
-            txn.put('%s_object_size' % self.pid.encode('utf-8'), json.dumps(size_dict).encode('utf-8'))
+        models.LMDBClient.put('%s_object_size' % self.pid, json.dumps(size_dict))
 
         # return
         logging.debug("elapsed: %s" % (time.time() - stime))
@@ -499,8 +497,7 @@ class WSUDOR_GenObject(object):
         
         if not update_self:
             # check LMDB
-            with lmdb_env.begin(write=False) as txn:
-                object_size = txn.get("%s_object_size" % self.pid.encode('utf-8'))
+            object_size = models.LMDBClient.get("%s_object_size" % self.pid)
 
             # if found, return
             if object_size:

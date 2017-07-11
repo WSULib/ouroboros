@@ -28,7 +28,7 @@ logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.lmdbHandles import lmdb_env
-from WSUDOR_Manager import redisHandles, utilities, helpers
+from WSUDOR_Manager import models, redisHandles, utilities, helpers
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
@@ -377,8 +377,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# save manifest to LMDB database
 		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
-		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_iiif_manifest' % (self.pid.encode('utf-8')), manifest.toString().encode('utf-8'), overwrite=True)
+		models.LMDBClient.put('%s_iiif_manifest' % (self.pid), manifest.toString(), overwrite=True)
 		
 		return manifest.toString()
 

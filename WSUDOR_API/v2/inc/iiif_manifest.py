@@ -10,7 +10,7 @@ from flask import render_template, request, session, redirect, make_response, Re
 # WSUDOR_API_app
 from WSUDOR_API import cache
 import WSUDOR_ContentTypes
-from WSUDOR_Manager import fedora_handle
+from WSUDOR_Manager import fedora_handle, models
 from WSUDOR_Manager.lmdbHandles import lmdb_env
 from WSUDOR_API import logging
 logging = logging.getChild('iiif_manifest')
@@ -84,7 +84,6 @@ def iiif_annotation_list(identifier):
 			}) 
 
 
-@cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def retrieveManifest(identifier):
 
 	'''
@@ -96,8 +95,7 @@ def retrieveManifest(identifier):
 	'''
 
 	# check for IIIF manifest in LMDB	
-	with lmdb_env.begin(write=False) as txn:
-		im = txn.get('%s_iiif_manifest' % (identifier.encode('utf-8')))
+	im = models.LMDBClient.get('%s_iiif_manifest' % (identifier))
 
 	# manifest found, returning
 	if im:
@@ -112,12 +110,10 @@ def retrieveManifest(identifier):
 		return obj.genIIIFManifest()
 
 
-@cache.memoize(timeout=localConfig.API_CACHE_TIMEOUT, unless=skipCache)
 def retrieveAnnotationList(identifier):
 
 	# check for IIIF manifest in LMDB	
-	with lmdb_env.begin(write=False) as txn:
-		im = txn.get('%s_iiif_annotation_list' % (identifier.encode('utf-8')))
+	im = models.LMDBClient.get('%s_iiif_annotation_list' % (identifier))
 
 	# annotation list found, returning
 	if im:

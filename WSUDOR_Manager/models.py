@@ -968,8 +968,7 @@ class ObjHierarchy(object):
 
 		# save object hierarchy to LMDB database
 		logging.debug("Saving object hierarchy for %s in LMDB database" % self.pid)
-		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_object_hierarchy' % (self.pid.encode('utf-8')), json.dumps(self.hierarchy), overwrite=True)
+		LMDBClient.put('%s_object_hierarchy' % self.pid, json.dumps(self.hierarchy), overwrite=True)
 		
 		# return
 		return self.hierarchy
@@ -979,9 +978,8 @@ class ObjHierarchy(object):
 
 		# if not overwriting, determine if in LMDB
 		if not overwrite:
-			# check for IIIF manifest in LMDB	
-			with lmdb_env.begin(write=False) as txn:
-				stored_object_hierarchy = txn.get('%s_object_hierarchy' % (self.pid.encode('utf-8')))
+			# check for object hierarchy in LMDB	
+			stored_object_hierarchy = LMDBClient.get('%s_object_hierarchy' % self.pid)
 
 			# if found, retrieve
 			if stored_object_hierarchy:
@@ -1215,6 +1213,111 @@ class SolrDT(object):
 
 
 
+##################################################################   
+# LMDB Client
+##################################################################
+
+class LMDBClient(object):
+
+	'''
+	collection of convenient methods for interacting with LMDB database
+	'''
+
+	@staticmethod
+	def env():
+		return lmdb_env
+
+
+	@staticmethod
+	def get(key):
+
+		with lmdb_env.begin(write=False) as txn:
+			return txn.get(key.encode('utf-8'))
+
+
+	@staticmethod
+	def get_json(key):
+
+		'''
+		parses JSON when returning
+		'''
+
+		with lmdb_env.begin(write=False) as txn:
+			r = txn.get(key.encode('utf-8'))
+			if r:
+				return json.loads(r)
+			else:
+				return None
+
+
+	@staticmethod
+	def get_batch(payload):		
+
+		with lmdb_env.begin(write=False) as txn:
+			# list
+			'''
+			returns ordered list of values based on key
+			'''
+			if type(payload) == list:
+				return [ txn.get(key.encode('utf-8')) for key in payload ]
+			'''
+			returns dictionary with keys replaced with value
+			'''	
+			# dictionary
+			if type(payload) == dict:
+				return { key:txn.get(key.encode('utf-8')) for key in payload.keys() if txn.get(key.encode('utf-8')) }
+
+		return True
+
+
+	@staticmethod
+	def put(key, value, overwrite=False):
+
+		with lmdb_env.begin(write=True) as txn:
+			return txn.put(key.encode('utf-8'), value.encode('utf-8'), overwrite=overwrite)
+
+
+	@staticmethod
+	def put_json(key, value):
+
+		'''
+		converts value to JSON before put
+		'''
+
+		with lmdb_env.begin(write=True) as txn:
+			return txn.put(key.encode('utf-8'), json.dumps(value).encode('utf-8'))
+
+
+	@staticmethod
+	def put_batch(payload):		
+
+		'''
+		expecting list of tuples, or key/value dictionary
+		'''
+
+		with lmdb_env.begin(write=True) as txn:
+			# list
+			'''
+			expecting list of tuples
+			'''
+			if type(payload) == list:
+				for tup in payload:
+					txn.put(tup[0].encode('utf-8'), tup[1].encode('utf-8'))
+			
+			# dictionary
+			'''
+			expecting key/value
+			'''	
+			if type(payload) == dict:
+				for key,value in payload.iteritems():
+					txn.put(key.encode('utf-8'), value.encode('utf-8'))
+
+		return True
+
+
+
+
+		
 
 
 

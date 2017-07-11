@@ -649,7 +649,7 @@ class PREMISClient(object):
 
 		# init and save
 		else:
-			self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M')
+			self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M', versionable=False)
 			self.premis_ds.label = "PREMIS"
 			self.premis_ds.content = self.premis.to_xml()
 			return self.premis_ds.save()
@@ -969,7 +969,7 @@ class ObjHierarchy(object):
 		# save object hierarchy to LMDB database
 		logging.debug("Saving object hierarchy for %s in LMDB database" % self.pid)
 		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_object_hierarchy' % (self.pid.encode('utf-8')), json.dumps(self.hierarchy))
+			txn.put('%s_object_hierarchy' % (self.pid.encode('utf-8')), json.dumps(self.hierarchy), overwrite=True)
 		
 		# return
 		return self.hierarchy

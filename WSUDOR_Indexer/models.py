@@ -163,10 +163,9 @@ class FedoraJMSWorker(object):
 			logging.debug("could not determine if a datastream was acted on")
 			return False
 		
-
-
+		
 	def queue_object(self):
-		logging.debug("logging PREMIS event")
+		logging.debug("queuing object")
 		IndexRouter.queue_object(self.pid, self.author, 1, self.queue_action)
 
 

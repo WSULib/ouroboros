@@ -378,7 +378,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# save manifest to LMDB database
 		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
 		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_iiif_manifest' % (self.pid.encode('utf-8')), manifest.toString().encode('utf-8'))
+			txn.put('%s_iiif_manifest' % (self.pid.encode('utf-8')), manifest.toString().encode('utf-8'), overwrite=True)
 		
 		return manifest.toString()
 

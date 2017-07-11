@@ -421,6 +421,12 @@ class WSUDOR_GenObject(object):
 
     def calc_object_size(self):
 
+        '''
+        When calculating object size, also store in LMDB
+        If constituents, as opposed to re-calculating for them, check if they have entry in LMDB
+        '''
+
+
         stime = time.time()
 
         logging.debug("calculating object and constituent sizes")
@@ -448,6 +454,9 @@ class WSUDOR_GenObject(object):
             }
             constituent_objects_size = 0
             for obj in self.constituents:
+
+                ################### check LMDB here ###################
+                
                 t_obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
                 t_obj_handle_size = t_obj_handle.calc_object_size()
                 size_dict['constituent_objects']['objects'][t_obj_handle.pid] = t_obj_handle_size
@@ -462,10 +471,10 @@ class WSUDOR_GenObject(object):
         logging.debug("elapsed: %s" % (time.time() - stime))
         return size_dict
 
-    def update_object_size(self):
+    def update_object_size(self,update_constituents=False):
 
         '''
-        Primary method for returning information about an object's size.
+        Primary method for storing information about an object's size.
         This information is calculated and stored as RDF relationships:
             - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize - aggregate size of all datastreams and constituent objects
             - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize - aggregate size of all datastreams in Fedora object
@@ -487,15 +496,16 @@ class WSUDOR_GenObject(object):
         rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
         rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
 
-        # if constituents, add relationships as well
-        if 'constituent_objects' in size_dict.keys():
-            for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
-                constituent_obj = fedora_handle.get_object(constituent_pid)
-                for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
-                    rels_to_write.append((constituent_obj,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
-                # write total sizes
-                rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
-                rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
+        # if constituents, and update_constituents == True, add relationships as well
+        if update_constituents:
+            if 'constituent_objects' in size_dict.keys():
+                for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
+                    constituent_obj = fedora_handle.get_object(constituent_pid)
+                    for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
+                        rels_to_write.append((constituent_obj,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
+                    # write total sizes
+                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
+                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
 
         # write/update all rels
         for rel_tuple in rels_to_write:
@@ -512,6 +522,11 @@ class WSUDOR_GenObject(object):
 
 
     def object_size(self, details=False):
+
+        '''
+        when returning object size, check LMDB for dictionary first
+        then, fall back on querying risearch
+        '''
         
         # calculate and return full size dictionary, including constituents
         if details:
@@ -544,7 +559,7 @@ class WSUDOR_GenObject(object):
             except:
                 logging.debug("RDF for WSUDOR object size not found.")
                 wsudor_obj_size = 0
-            
+
             size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
             size_dict['wsudor_total_size'] =  (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
 

@@ -1093,7 +1093,6 @@ def objPreview(PIDnum):
 
         # Object size and datastreams
         size_dict = obj_handle.object_size()
-        logging.debug(size_dict)
         object_package['size_dict'] = size_dict
         object_package['size_dict_json'] = json.dumps({
             'datastreams':size_dict['datastreams'],

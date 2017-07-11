@@ -460,7 +460,7 @@ class WSUDOR_GenObject(object):
                 # check LMDB for stored constituent size
                 if not update_constituents:
                     with lmdb_env.begin(write=False) as txn:
-                        lmdb_constituent_size = txn.get('%s_object_size' % obj.pid)
+                        lmdb_constituent_size = txn.get('%s_object_size' % obj.pid.encode('utf-8'))
                         if lmdb_constituent_size:
                             constituent_object_size = json.loads(lmdb_constituent_size)
                     
@@ -484,7 +484,7 @@ class WSUDOR_GenObject(object):
         # write to LMDB
         logging.debug("writing to LMDB")
         with lmdb_env.begin(write=True) as txn:
-            txn.put('%s_object_size' % self.pid, json.dumps(size_dict))
+            txn.put('%s_object_size' % self.pid.encode('utf-8'), json.dumps(size_dict).encode('utf-8'))
 
         # return
         logging.debug("elapsed: %s" % (time.time() - stime))
@@ -500,7 +500,7 @@ class WSUDOR_GenObject(object):
         if not update_self:
             # check LMDB
             with lmdb_env.begin(write=False) as txn:
-                object_size = txn.get("%s_object_size" % self.pid)
+                object_size = txn.get("%s_object_size" % self.pid.encode('utf-8'))
 
             # if found, return
             if object_size:

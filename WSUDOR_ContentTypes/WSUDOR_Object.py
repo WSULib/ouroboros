@@ -419,13 +419,12 @@ class WSUDOR_GenObject(object):
         objMeta_handle.save()
 
 
-    def calc_object_size(self):
+    def calc_object_size(self, update_constituents=False):
 
         '''
-        When calculating object size, also store in LMDB
-        If constituents, as opposed to re-calculating for them, check if they have entry in LMDB
+        Method for calculating and storing object size
+        Optionally, updating size of constituents as well
         '''
-
 
         stime = time.time()
 
@@ -449,122 +448,71 @@ class WSUDOR_GenObject(object):
 
         # loop through constituents and add as well
         if len(self.constituents) > 0:
-            size_dict['constituent_objects'] = {
-                'objects':{}
-            }
+            logging.debug("constituents found, including in object_size")
+            size_dict['constituent_objects'] = { 'objects':{} }
+
+            # set total size at 0
             constituent_objects_size = 0
+
+            # loop through
             for obj in self.constituents:
 
-                ################### check LMDB here ###################
+                # check LMDB for stored constituent size
+                if not update_constituents:
+                    with lmdb_env.begin(write=False) as txn:
+                        lmdb_constituent_size = txn.get('%s_object_size' % obj.pid)
+                        if lmdb_constituent_size:
+                            constituent_object_size = json.loads(lmdb_constituent_size)
+                    
+                # if we are updating constituents, or the result of the LMDB grab above was None, recalculate (also storing in LMDB)
+                if update_constituents or not lmdb_constituent_size:
+                    constituent_object_size = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid).calc_object_size()
                 
-                t_obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
-                t_obj_handle_size = t_obj_handle.calc_object_size()
-                size_dict['constituent_objects']['objects'][t_obj_handle.pid] = t_obj_handle_size
-                constituent_objects_size += t_obj_handle_size['fedora_total_size'][0]
-            size_dict['constituent_objects']['fedora_total_size'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+                # add constituent to constituents directory
+                size_dict['constituent_objects']['objects'][obj.pid] = constituent_object_size
+                constituent_objects_size += constituent_object_size['fedora_total_size'][0]
+
+            # fold into constituents size_dict
+            size_dict['constituent_objects']['total_constituents_size'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+            # bump wsudor_obj_size
             wsudor_obj_size += constituent_objects_size
 
+        # fold into self size_dict
         size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
         size_dict['wsudor_total_size'] = (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
+
+        # write to LMDB
+        logging.debug("writing to LMDB")
+        with lmdb_env.begin(write=True) as txn:
+            txn.put('%s_object_size' % self.pid, json.dumps(size_dict))
 
         # return
         logging.debug("elapsed: %s" % (time.time() - stime))
         return size_dict
 
-    def update_object_size(self,update_constituents=False):
+
+    def object_size(self, update_self=False, update_constituents=False):
 
         '''
-        Primary method for storing information about an object's size.
-        This information is calculated and stored as RDF relationships:
-            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize - aggregate size of all datastreams and constituent objects
-            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize - aggregate size of all datastreams in Fedora object
-            - http://www.loc.gov/premis/rdf/v1#hasSize - size of each datastream
-        '''
-
-        stime = time.time()
-
-        logging.debug("updating object size")
-
-        size_dict = self.calc_object_size()
-
-        rels_to_write = []
-
-        # update RDF relationships for self
-        for ds_id, size_tuple in size_dict['datastreams'].iteritems():
-            rels_to_write.append((self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
-        # write total sizes
-        rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
-        rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
-
-        # if constituents, and update_constituents == True, add relationships as well
-        if update_constituents:
-            if 'constituent_objects' in size_dict.keys():
-                for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
-                    constituent_obj = fedora_handle.get_object(constituent_pid)
-                    for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
-                        rels_to_write.append((constituent_obj,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
-                    # write total sizes
-                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
-                    rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
-
-        # write/update all rels
-        for rel_tuple in rels_to_write:
-            logging.debug("%s" % str(rel_tuple))
-            # check if relationship exists
-            vals = fedora_handle.risearch.get_objects(rel_tuple[1],rel_tuple[2])
-            for val in vals:
-                fedora_handle.api.purgeRelationship(rel_tuple[0], rel_tuple[1], rel_tuple[2], val, isLiteral=True)
-            fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
-
-        # return size_dict
-        logging.debug("elapsed: %s" % (time.time() - stime))
-        return size_dict
-
-
-    def object_size(self, details=False):
-
-        '''
-        when returning object size, check LMDB for dictionary first
-        then, fall back on querying risearch
+        returns object size stored in LMDB, if not present, recalculates
         '''
         
-        # calculate and return full size dictionary, including constituents
-        if details:
-            return self.calc_object_size()
+        if not update_self:
+            # check LMDB
+            with lmdb_env.begin(write=False) as txn:
+                object_size = txn.get("%s_object_size" % self.pid)
 
-        # return object size results based on RDF queries
+            # if found, return
+            if object_size:
+                return json.loads(object_size)
+
+            # if not found, recalculate
+            else:
+                return self.calc_object_size()
+        
         else:
+            return self.calc_object_size(update_constituents=update_constituents)
 
-            size_dict = {
-                'fedora_total_size':False,
-                'wsudor_total_size':False,
-                'datastreams':False
-            }
-
-            # get datastream sizes
-            try:
-                sparql_response = fedora_handle.risearch.sparql_query('select $ds_id $filesize WHERE { <info:fedora/%s> <info:fedora/fedora-system:def/view#disseminates> $ds_id . $ds_id <http://www.loc.gov/premis/rdf/v1#hasSize> $filesize . }' % (self.pid))            
-                size_dict['datastreams'] = { ds['ds_id'].split("/")[-1]: (int(ds['filesize']), utilities.sizeof_fmt(int(ds['filesize'])) ) for ds in sparql_response }
-            except:
-                logging.debug("RDF for datastream sizes not found.")
-
-            # else, return RDF object size
-            try:
-                fedora_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize').next())
-            except:
-                logging.debug("RDF for Fedora object size not found.")
-                fedora_obj_size = 0
-            try:
-                wsudor_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize').next())
-            except:
-                logging.debug("RDF for WSUDOR object size not found.")
-                wsudor_obj_size = 0
-
-            size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
-            size_dict['wsudor_total_size'] =  (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
-
-            # return 
-            return size_dict
 
 
     #######################################################
@@ -873,8 +821,8 @@ class WSUDOR_GenObject(object):
         # the following methods are not needed when objects are "passing through"
         if indexObject:
 
-            # calculate object size
-            self.update_object_size()
+            # calculate object size, but skip constituents, as they were likely calculated on ingest
+            self.object_size(update_self=True, update_constituents=False)
             
             # run all ContentType specific methods that were passed here
             logging.debug("RUNNING ContentType methods...")
@@ -1634,7 +1582,6 @@ class WSUDOR_GenObject(object):
             return False
 
 
-
     # refresh object
     def refresh(self):
 
@@ -1652,7 +1599,7 @@ class WSUDOR_GenObject(object):
         logging.debug("-------------------- firing objectRefresh --------------------")
 
         # update object size in Solr
-        self.update_object_size()
+        self.object_size(update_self=True, update_constituents=True)
 
         # remove object from Loris cache
         self.removeObjFromCache()

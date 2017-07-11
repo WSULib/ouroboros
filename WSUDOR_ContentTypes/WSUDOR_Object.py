@@ -2063,15 +2063,21 @@ class WSUDOR_GenObject(object):
             dsList.append({'id':ds['ds_id'], 'role':'preserved'})
 
         # There are usually datastreams that are needed from each specific object according to content type
-        # and then some loose ones that ObjMeta nevers picks up, like the MODS datastream
         if hasattr(self, 'uniqueVersionableDatastreams'):
-            dsList.extend(self.uniqueVersionableDatastreams())
+            dsList.append(self.uniqueVersionableDatastreams())
+
+        # and then some loose ones that ObjMeta nevers picks up, like the MODS datastream
+        dsList.append({'id':'MODS', 'role':'preserved'})
+        dsList.append({'id':'RELS-EXT', 'role':'preserved'})
+        dsList.append({'id':'RELS-INT', 'role':'preserved'})
 
         # now let's add all the other datastreams that are derivatives, etc, and are going to be versioned
         allDS = self.ohandle.ds_list
         for key in allDS.iterkeys():
             if not any(d['id'] == key for d in dsList):
                 dsList.append({'id':key, 'role':'derivative'})
+
+        return dsList
 
 
 

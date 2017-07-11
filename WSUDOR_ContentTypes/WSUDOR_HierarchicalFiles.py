@@ -54,6 +54,9 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# content-type methods run and returned to API
 		self.public_api_additions = []
 
+		# OAIexposed (on ingest, register OAI identifier)
+		self.OAIexposed = True
+
 
 	# perform ingestTest
 	def validIngestBag(self,indexObject=True):
@@ -116,7 +119,17 @@ class WSUDOR_HierarchicalFiles(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			
 			# writes derived RELS-EXT
 			# isRepresentedBy
-			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+			'''
+			if present, isRepresentedBy relationship from objMeta trumps pre-existing relationships
+			'''
+			if 'isRepresentedBy' in self.objMeta.keys():
+				# purge old ones
+				for s,p,o in self.ohandle.rels_ext.content:
+					if str(p) == 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy':
+						logging.debug('found pre-existing isRepresentedBy relationship, %s, removing as we have one from objMeta' % str(o))
+						self.ohandle.purge_relationship('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy',o)
+				logging.debug("writing isRepresentedBy from objMeta: %s" % self.objMeta['isRepresentedBy'])
+				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 			
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])

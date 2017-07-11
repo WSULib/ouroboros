@@ -57,6 +57,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# content-type methods run and returned to API
 		self.public_api_additions = []
 
+		# OAIexposed (on ingest, register OAI identifier)
+		self.OAIexposed = False
+
 
 	# page order
 	@helpers.LazyProperty
@@ -68,7 +71,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest
-	def ingestBag(self, indexObject=True):
+	def ingestBag(self, indexObject=False):
 
 		self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
 		self.ohandle.save()
@@ -98,7 +101,18 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 
 		# writes derived RELS-EXT
-		self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy", self.objMeta['isRepresentedBy'])
+		# isRepresentedBy
+		'''
+		if present, isRepresentedBy relationship from objMeta trumps pre-existing relationships
+		'''
+		if 'isRepresentedBy' in self.objMeta.keys():
+			# purge old ones
+			for s,p,o in self.ohandle.rels_ext.content:
+				if str(p) == 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy':
+					logging.debug('found pre-existing isRepresentedBy relationship, %s, removing as we have one from objMeta' % str(o))
+					self.ohandle.purge_relationship('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy',o)
+			logging.debug("writing isRepresentedBy from objMeta: %s" % self.objMeta['isRepresentedBy'])
+			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 
 		# hasContentModel
 		content_type_string = "info:fedora/CM:WSUebook_Page"
@@ -155,9 +169,11 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# save and commit object before finishIngest()
 		final_save = self.ohandle.save()
 
-		# finish generic ingest
-		# may pass methods here that will run in finishIngest()
-		return self.finishIngest(gen_manifest=False, indexObject=False, contentTypeMethods=[])
+		# finish ingest
+		'''
+		usually defaults to not index page objects
+		'''
+		return self.finishIngest(gen_manifest=False, indexObject=indexObject, contentTypeMethods=[])
 
 
 	
@@ -283,7 +299,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# save page object
 		return self.ohandle.save()
-
 
 
 	def processImage(self, ds, exists=True, page_num=None, from_bag=True):

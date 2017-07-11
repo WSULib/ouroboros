@@ -28,7 +28,7 @@ logging = logging.getChild("WSUDOR_Object")
 from WSUDOR_Manager.solrHandles import solr_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.lmdbHandles import lmdb_env
-from WSUDOR_Manager import redisHandles, utilities, helpers
+from WSUDOR_Manager import models, redisHandles, utilities, helpers
 from inc.derivatives import Derivative
 from inc.derivatives.image import ImageDerivative
 
@@ -67,6 +67,9 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# content-type methods run and returned to API
 		self.public_api_additions = [self.imageParts]
+
+		# OAIexposed (on ingest, register OAI identifier)
+		self.OAIexposed = True
 
 
 	# perform ingestTest
@@ -139,7 +142,17 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# writes derived RELS-EXT
 			# isRepresentedBy
-			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+			'''
+			if present, isRepresentedBy relationship from objMeta trumps pre-existing relationships
+			'''
+			if 'isRepresentedBy' in self.objMeta.keys():
+				# purge old ones
+				for s,p,o in self.ohandle.rels_ext.content:
+					if str(p) == 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy':
+						logging.debug('found pre-existing isRepresentedBy relationship, %s, removing as we have one from objMeta' % str(o))
+						self.ohandle.purge_relationship('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy',o)
+				logging.debug("writing isRepresentedBy from objMeta: %s" % self.objMeta['isRepresentedBy'])
+				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
@@ -364,8 +377,7 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# save manifest to LMDB database
 		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
-		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_iiif_manifest' % (self.pid.encode('utf-8')), manifest.toString().encode('utf-8'))
+		models.LMDBClient.put('%s_iiif_manifest' % (self.pid), manifest.toString(), overwrite=True)
 		
 		return manifest.toString()
 

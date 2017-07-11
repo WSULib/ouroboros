@@ -12,6 +12,7 @@ import re
 import eulfedora
 import json
 import requests
+import hashlib
 
 # eulxml, used for PREMISClient
 from eulxml.xmlmap import premis
@@ -608,11 +609,13 @@ class PREMISClient(object):
 				self.tempfile = Derivative.write_temp_file(self.premis_ds)
 				# load with pypremis
 				self.premis = PremisRecord(frompath=self.tempfile.name)
+				# delete tempfile
+				self.tempfile.unlink(self.tempfile.name)
 
 			else:
 				logging.debug("%s datastream not found, initializing PREMIS datastream" % ds_id)
 				# gen object identifier
-				object_identifier = pypremis.nodes.ObjectIdentifier('pid', pid)
+				object_identifier = pypremis.nodes.ObjectIdentifier('pid', pid.encode('utf-8'))
 				# set format type for object
 				format_designation = pypremis.nodes.FormatDesignation(formatName='wsudor object')
 				format = pypremis.nodes.Format(formatDesignation=format_designation)
@@ -630,6 +633,7 @@ class PREMISClient(object):
 
 
 	def get_object_identifiers(self):
+
 		for o in self.premis.get_object_list():
 			o_id = o.get_objectIdentifier()[0]
 			self.object_identifiers.append( (o.get_objectCategory(), o_id.get_objectIdentifierType(), o_id.get_objectIdentifierValue()) )
@@ -645,7 +649,7 @@ class PREMISClient(object):
 
 		# init and save
 		else:
-			self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M')
+			self.premis_ds = eulfedora.models.FileDatastreamObject(self.ohandle, "PREMIS", "PREMIS", mimetype="text/xml", control_group='M', versionable=False)
 			self.premis_ds.label = "PREMIS"
 			self.premis_ds.content = self.premis.to_xml()
 			return self.premis_ds.save()
@@ -657,7 +661,18 @@ class PREMISClient(object):
 		return self.premis.to_xml()
 
 
+	def get_event_list(self, reverse=False):
+
+		# use pypremis method
+		if not reverse:
+			return self.premis.get_event_list()
+		else:
+			return self.premis.get_event_list()[::-1]
+
+
 	def add_jms_event(self, msg):
+
+		logging.debug("logging Fedora JSM PREMIS event")
 
 		# prepare detail message
 		eventDetail = "Fedora Commons Java Messaging Service (JMS); action %s, pid %s".encode('utf-8') % ( msg.methodName.encode('utf-8'), msg.pid.encode('utf-8') )
@@ -665,25 +680,14 @@ class PREMISClient(object):
 
 		# parse jms event, expecting instance of FedoraJMSWorker from WSUDOR_Indexer
 		event_dict = {
-			'id':pypremis.nodes.EventIdentifier('urn', msg.parsed_body['entry']['id'].encode('utf=8')),
-			'type':msg.parsed_body['entry']['title']['#text'].encode('utf=8'),
-			'date':msg.parsed_body['entry']['updated'].encode('utf=8'),			
+			'id':pypremis.nodes.EventIdentifier('urn', msg.parsed_body['entry']['id'].encode('utf-8')),
+			'type':msg.parsed_body['entry']['title']['#text'].encode('utf-8'),
+			'date':msg.parsed_body['entry']['updated'].encode('utf-8'),			
 			'detail':pypremis.nodes.EventDetailInformation(eventDetail=eventDetail),
 			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', msg.pid.encode('utf-8'), 'intellectual entity')
 		}
 
-		# set as event
-		'''
-		self,
-        eventIdentifier,
-        eventType,
-        eventDateTime,
-        eventDetailInformation=None,
-        eventOutcomeInformation=None,
-        linkingAgentIdentifier=None,
-        linkingObjectIdentifier=None
-		event = pypremis.nodes.Event()
-		'''
+		# instantiate pypremis Event
 		event = pypremis.nodes.Event(
 				event_dict['id'],
 				event_dict['type'],
@@ -698,6 +702,77 @@ class PREMISClient(object):
 		# update
 		self.update()
 
+		# return
+		return event
+
+
+	def add_custom_event(self, payload):
+		
+		'''
+		expecting dictionary as payload with the following key/value pairs:
+		event_dict = {
+			'id': 
+				unique identifier for PREMIS event (consider hash of time and pid) / <premis:eventIdentifier><premis:eventIdentifierValue>
+			'type':
+				event type / <premis:eventType>
+			'date':
+				data of event (defaults to NOW) / <premis:eventDateTime>			
+			'detail':
+				main body of message, python dictionary, which is serialized to JSON / <premis:eventDetail>
+		}
+
+		'''
+
+		logging.debug("logging custom PREMIS event")
+
+		# prepare detail message
+		eventDetail = json.dumps(payload['detail'])
+
+		# if date is not provided in payload, use NOW
+		if 'date' not in payload.keys():
+			date = datetime.isoformat(datetime.now())
+		else:
+			date = payload['date']
+
+		# if identifier is not provided in payload, use has of pid + date
+		if 'identifier' not in payload.keys():
+			identifier = hashlib.md5(date+self.pid).hexdigest()
+		else:
+			identifier = payload['identifier']
+
+		# parse jms event, expecting instance of FedoraJMSWorker from WSUDOR_Indexer
+		event_dict = {
+			'id':pypremis.nodes.EventIdentifier('urn', identifier.encode('utf-8')),
+			'type':payload['type'].encode('utf-8'),
+			'date':date.encode('utf-8'),			
+			'detail':pypremis.nodes.EventDetailInformation(eventDetail=eventDetail),
+			'loi':pypremis.nodes.LinkingObjectIdentifier('pid', self.pid.encode('utf-8'), 'intellectual entity')
+		}
+
+		# check for optional outcome and outcomeDetail from payload
+		if 'outcome' in payload.keys():
+			event_dict['eventOutcomeInformation'] = pypremis.nodes.EventOutcomeInformation(payload['outcome']['result'], pypremis.nodes.EventOutcomeDetail(json.dumps(payload['outcome']['detail'])))
+		else:
+			event_dict['eventOutcomeInformation'] = None
+
+		# instantiate pypremis Event
+		event = pypremis.nodes.Event(
+				event_dict['id'],
+				event_dict['type'],
+				event_dict['date'],
+				eventDetailInformation=event_dict['detail'],
+				eventOutcomeInformation=event_dict['eventOutcomeInformation'],
+				linkingObjectIdentifier=event_dict['loi']
+			)
+
+		# add event to premis record
+		self.premis.add_event(event)
+
+		# update
+		self.update()
+
+		# return
+		return event
 
 
 ########################################################################
@@ -893,8 +968,7 @@ class ObjHierarchy(object):
 
 		# save object hierarchy to LMDB database
 		logging.debug("Saving object hierarchy for %s in LMDB database" % self.pid)
-		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_object_hierarchy' % (self.pid.encode('utf-8')), json.dumps(self.hierarchy))
+		LMDBClient.put('%s_object_hierarchy' % self.pid, json.dumps(self.hierarchy), overwrite=True)
 		
 		# return
 		return self.hierarchy
@@ -904,9 +978,8 @@ class ObjHierarchy(object):
 
 		# if not overwriting, determine if in LMDB
 		if not overwrite:
-			# check for IIIF manifest in LMDB	
-			with lmdb_env.begin(write=False) as txn:
-				stored_object_hierarchy = txn.get('%s_object_hierarchy' % (self.pid.encode('utf-8')))
+			# check for object hierarchy in LMDB	
+			stored_object_hierarchy = LMDBClient.get('%s_object_hierarchy' % self.pid)
 
 			# if found, retrieve
 			if stored_object_hierarchy:
@@ -1140,6 +1213,111 @@ class SolrDT(object):
 
 
 
+##################################################################   
+# LMDB Client
+##################################################################
+
+class LMDBClient(object):
+
+	'''
+	collection of convenient methods for interacting with LMDB database
+	'''
+
+	@staticmethod
+	def env():
+		return lmdb_env
+
+
+	@staticmethod
+	def get(key):
+
+		with lmdb_env.begin(write=False) as txn:
+			return txn.get(key.encode('utf-8'))
+
+
+	@staticmethod
+	def get_json(key):
+
+		'''
+		parses JSON when returning
+		'''
+
+		with lmdb_env.begin(write=False) as txn:
+			r = txn.get(key.encode('utf-8'))
+			if r:
+				return json.loads(r)
+			else:
+				return None
+
+
+	@staticmethod
+	def get_batch(payload):		
+
+		with lmdb_env.begin(write=False) as txn:
+			# list
+			'''
+			returns ordered list of values based on key
+			'''
+			if type(payload) == list:
+				return [ txn.get(key.encode('utf-8')) for key in payload ]
+			'''
+			returns dictionary with keys replaced with value
+			'''	
+			# dictionary
+			if type(payload) == dict:
+				return { key:txn.get(key.encode('utf-8')) for key in payload.keys() if txn.get(key.encode('utf-8')) }
+
+		return True
+
+
+	@staticmethod
+	def put(key, value, overwrite=False):
+
+		with lmdb_env.begin(write=True) as txn:
+			return txn.put(key.encode('utf-8'), value.encode('utf-8'), overwrite=overwrite)
+
+
+	@staticmethod
+	def put_json(key, value):
+
+		'''
+		converts value to JSON before put
+		'''
+
+		with lmdb_env.begin(write=True) as txn:
+			return txn.put(key.encode('utf-8'), json.dumps(value).encode('utf-8'))
+
+
+	@staticmethod
+	def put_batch(payload):		
+
+		'''
+		expecting list of tuples, or key/value dictionary
+		'''
+
+		with lmdb_env.begin(write=True) as txn:
+			# list
+			'''
+			expecting list of tuples
+			'''
+			if type(payload) == list:
+				for tup in payload:
+					txn.put(tup[0].encode('utf-8'), tup[1].encode('utf-8'))
+			
+			# dictionary
+			'''
+			expecting key/value
+			'''	
+			if type(payload) == dict:
+				for key,value in payload.iteritems():
+					txn.put(key.encode('utf-8'), value.encode('utf-8'))
+
+		return True
+
+
+
+
+		
 
 
 

@@ -35,10 +35,6 @@ app.register_blueprint(bagIngest, url_prefix=tasks_URL_prefix)
 from checkJP2 import checkJP2, checkJP2_worker
 app.register_blueprint(checkJP2, url_prefix=tasks_URL_prefix)
 
-#checksum
-from checksum import checksum, checksum_worker
-app.register_blueprint(checksum, url_prefix=tasks_URL_prefix)
-
 #createManifest
 from createBag import createBag
 app.register_blueprint(createBag, url_prefix=tasks_URL_prefix)

@@ -28,7 +28,7 @@ import eulfedora
 import WSUDOR_ContentTypes
 from WSUDOR_ContentTypes import logging
 logging = logging.getChild("WSUDOR_Object")
-from WSUDOR_Manager import solrHandles
+from WSUDOR_Manager import models, solrHandles
 from WSUDOR_Manager.solrHandles import solr_handle, solr_bookreader_handle
 from WSUDOR_Manager.fedoraHandles import fedora_handle
 from WSUDOR_Manager.lmdbHandles import lmdb_env
@@ -73,6 +73,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# content-type methods run and returned to API
 		self.public_api_additions = []
+
+		# OAIexposed (on ingest, register OAI identifier)
+		self.OAIexposed = True
 
 
 	# pages from objMeta class
@@ -270,14 +273,24 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			objMeta_handle.content = open(file_path)
 			objMeta_handle.save()
 
-			# write explicit RELS-EXT relationships
+			# write explicit RELS-EXT relationships from object_relationships in objMeta
 			for relationship in self.objMeta['object_relationships']:
 				logging.debug("Writing relationship: %s %s" % (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 
 			# writes derived RELS-EXT
 			# isRepresentedBy
-			self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
+			'''
+			if present, isRepresentedBy relationship from objMeta trumps pre-existing relationships
+			'''
+			if 'isRepresentedBy' in self.objMeta.keys():
+				# purge old ones
+				for s,p,o in self.ohandle.rels_ext.content:
+					if str(p) == 'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy':
+						logging.debug('found pre-existing isRepresentedBy relationship, %s, removing as we have one from objMeta' % str(o))
+						self.ohandle.purge_relationship('http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy',o)
+				logging.debug("writing isRepresentedBy from objMeta: %s" % self.objMeta['isRepresentedBy'])
+				self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isRepresentedBy",self.objMeta['isRepresentedBy'])
 
 			# hasContentModel
 			content_type_string = str("info:fedora/CM:"+self.objMeta['content_type'].split("_")[1])
@@ -339,7 +352,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 				logging.debug('ingesting constituent object %s' % target_bag)
 				constituent_bag = WSUDOR_ContentTypes.WSUDOR_Object(target_bag, object_type='bag')
-				constituent_bag.ingestBag()
+				constituent_bag.ingest(indexObject=True)
 			########################################################################################################
 
 			# write generic thumbnail and preview
@@ -401,7 +414,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# finish generic ingest
 			# may pass methods here that will run in finishIngest()
-			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[self.indexPageText])
+			return self.finishIngest(gen_manifest=True, indexObject=indexObject, contentTypeMethods=[])
 
 		# exception handling
 		except Exception,e:
@@ -619,18 +632,16 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# save annotationList to LMDB database
 			logging.debug("Saving annotation list for %s in LMDB database" % page_handle.pid)
-			with lmdb_env.begin(write=True) as txn:
-				txn.put('%s_iiif_annotation_list' % (page_handle.pid.encode('utf-8')), annol.toString().encode('utf-8'))
+			models.LMDBClient.put('%s_iiif_annotation_list' % page_handle.pid, annol.toString(), overwrite=True)
 
 		# save manifest to LMDB database
 		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
-		with lmdb_env.begin(write=True) as txn:
-			txn.put('%s_iiif_manifest' % (self.pid.encode('utf-8')), manifest.toString().encode('utf-8'))
+		models.LMDBClient.put('%s_iiif_manifest' % self.pid, manifest.toString(), overwrite=True)
 
 		return manifest.toString()
 
 
-	def indexPageText(self):
+	def indexPagesText(self):
 
 		'''
 		When copying objects between repositories, indexing of pages is skipped.
@@ -655,7 +666,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				r = requests.post("http://localhost/solr4/bookreader/update/extract", data=data, files=files)
 			except:
 				logging.debug("Could not index page %d" % page)
-				# raise Exception("Could not index page %d" % page)
 
 		# commit
 		logging.debug("%s" % solr_bookreader_handle.commit())
@@ -781,9 +791,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# add to solr doc
 		self.SolrDoc.doc.int_fullText = ds_stripped_content
 
-		# finally, index each page to /bookreader core
+		# index each page's full text for bookreader core
 		logging.debug("running page indexer")
-		self.indexPageText()
+		self.indexPagesText()
 
 
 	# content_type refresh
@@ -796,7 +806,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.regenReaduxVirtualObjects()
 
 
-	def export_constituents(self, objMeta, bag_root, data_root, datastreams_root, tarball):
+	def export_constituents(self, objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export):
 
 		# if not exist, create /constituent_objects directory
 		if not os.path.exists("/".join([bag_root, 'data', 'constituent_objects'])):
@@ -807,13 +817,17 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for obj in self.constituents:
 			logging.debug('exporting %s' % obj.pid)
 			constituent = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
-			constituent.export(export_dir="/".join([bag_root, 'data', 'constituent_objects']), tarball=tarball)
+			constituent.export(
+				export_dir="/".join([bag_root, 'data', 'constituent_objects']),
+				tarball=tarball,
+				preserve_relationships=preserve_relationships,
+				overwrite_export=overwrite_export)
 
 
-	def export_content_type(self, objMeta, bag_root, data_root, datastreams_root, tarball):
+	def export_content_type(self, objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export):
 
 		# export constituents
-		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball)
+		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export)
 
 
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import os
 import json
 import traceback
@@ -397,8 +398,7 @@ class WSUDOR_GenObject(object):
     def iiif_manifest(self, format='string'):       
 
         # retrieve from LMDB database
-        with lmdb_env.begin(write=False) as txn:
-            return txn.get('%s_iiif_manifest' % (self.pid.encode('utf-8')))
+        return models.LMDBClient.get('%s_iiif_manifest' % (self.pid))
 
 
     # PREMIS client
@@ -418,7 +418,12 @@ class WSUDOR_GenObject(object):
         objMeta_handle.save()
 
 
-    def calc_object_size(self):
+    def calc_object_size(self, update_constituents=False):
+
+        '''
+        Method for calculating and storing object size
+        Optionally, updating size of constituents as well
+        '''
 
         stime = time.time()
 
@@ -442,113 +447,69 @@ class WSUDOR_GenObject(object):
 
         # loop through constituents and add as well
         if len(self.constituents) > 0:
-            size_dict['constituent_objects'] = {
-                'objects':{}
-            }
+            logging.debug("constituents found, including in object_size")
+            size_dict['constituent_objects'] = { 'objects':{} }
+
+            # set total size at 0
             constituent_objects_size = 0
+
+            # loop through
             for obj in self.constituents:
-                t_obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid)
-                t_obj_handle_size = t_obj_handle.calc_object_size()
-                size_dict['constituent_objects']['objects'][t_obj_handle.pid] = t_obj_handle_size
-                constituent_objects_size += t_obj_handle_size['fedora_total_size'][0]
-            size_dict['constituent_objects']['fedora_total_size'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+
+                # check LMDB for stored constituent size
+                if not update_constituents:
+
+                    lmdb_constituent_size = models.LMDBClient.get('%s_object_size' % obj.pid)
+                    if lmdb_constituent_size:
+                        constituent_object_size = json.loads(lmdb_constituent_size)
+                    
+                # if we are updating constituents, or the result of the LMDB grab above was None, recalculate (also storing in LMDB)
+                if update_constituents or not lmdb_constituent_size:
+                    constituent_object_size = WSUDOR_ContentTypes.WSUDOR_Object(obj.pid).calc_object_size()
+                
+                # add constituent to constituents directory
+                size_dict['constituent_objects']['objects'][obj.pid] = constituent_object_size
+                constituent_objects_size += constituent_object_size['fedora_total_size'][0]
+
+            # fold into constituents size_dict
+            size_dict['constituent_objects']['total_constituents_size'] = ( constituent_objects_size, utilities.sizeof_fmt(constituent_objects_size) )
+            # bump wsudor_obj_size
             wsudor_obj_size += constituent_objects_size
 
+        # fold into self size_dict
         size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
         size_dict['wsudor_total_size'] = (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
+
+        # write to LMDB
+        logging.debug("writing to LMDB")
+        models.LMDBClient.put('%s_object_size' % self.pid, json.dumps(size_dict))
 
         # return
         logging.debug("elapsed: %s" % (time.time() - stime))
         return size_dict
 
-    def update_object_size(self):
+
+    def object_size(self, update_self=False, update_constituents=False):
 
         '''
-        Primary method for returning information about an object's size.
-        This information is calculated and stored as RDF relationships:
-            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize - aggregate size of all datastreams and constituent objects
-            - http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize - aggregate size of all datastreams in Fedora object
-            - http://www.loc.gov/premis/rdf/v1#hasSize - size of each datastream
+        returns object size stored in LMDB, if not present, recalculates
         '''
-
-        stime = time.time()
-
-        logging.debug("updating object size")
-
-        size_dict = self.calc_object_size()
-
-        rels_to_write = []
-
-        # update RDF relationships for self
-        for ds_id, size_tuple in size_dict['datastreams'].iteritems():
-            rels_to_write.append((self.ohandle,'info:fedora/%s/%s' % (self.ohandle.pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
-        # write total sizes
-        rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
-        rels_to_write.append((self.ohandle,'info:fedora/%s' % (self.ohandle.pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
-
-        # if constituents, add relationships as well
-        if 'constituent_objects' in size_dict.keys():
-            for constituent_pid, constituent_size_dict in size_dict['constituent_objects']['objects'].iteritems():
-                constituent_obj = fedora_handle.get_object(constituent_pid)
-                for ds_id, size_tuple in constituent_size_dict['datastreams'].iteritems():
-                    rels_to_write.append((constituent_obj,'info:fedora/%s/%s' % (constituent_pid, ds_id),'http://www.loc.gov/premis/rdf/v1#hasSize',size_tuple[0]))
-                # write total sizes
-                rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize',size_dict['fedora_total_size'][0]))
-                rels_to_write.append((constituent_obj,'info:fedora/%s' % (constituent_pid),'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize',size_dict['wsudor_total_size'][0]))
-
-        # write/update all rels
-        for rel_tuple in rels_to_write:
-            logging.debug("%s" % str(rel_tuple))
-            # check if relationship exists
-            vals = fedora_handle.risearch.get_objects(rel_tuple[1],rel_tuple[2])
-            for val in vals:
-                fedora_handle.api.purgeRelationship(rel_tuple[0], rel_tuple[1], rel_tuple[2], val, isLiteral=True)
-            fedora_handle.api.addRelationship(*rel_tuple, isLiteral=True)
-
-        # return size_dict
-        logging.debug("elapsed: %s" % (time.time() - stime))
-        return size_dict
-
-
-    def object_size(self, details=False):
         
-        # calculate and return full size dictionary, including constituents
-        if details:
-            return self.calc_object_size()
+        if not update_self:
+            # check LMDB
+            object_size = models.LMDBClient.get("%s_object_size" % self.pid)
 
-        # return object size results based on RDF queries
+            # if found, return
+            if object_size:
+                return json.loads(object_size)
+
+            # if not found, recalculate
+            else:
+                return self.calc_object_size()
+        
         else:
+            return self.calc_object_size(update_constituents=update_constituents)
 
-            size_dict = {
-                'fedora_total_size':False,
-                'wsudor_total_size':False,
-                'datastreams':False
-            }
-
-            # get datastream sizes
-            try:
-                sparql_response = fedora_handle.risearch.sparql_query('select $ds_id $filesize WHERE { <info:fedora/%s> <info:fedora/fedora-system:def/view#disseminates> $ds_id . $ds_id <http://www.loc.gov/premis/rdf/v1#hasSize> $filesize . }' % (self.pid))            
-                size_dict['datastreams'] = { ds['ds_id'].split("/")[-1]: (int(ds['filesize']), utilities.sizeof_fmt(int(ds['filesize'])) ) for ds in sparql_response }
-            except:
-                logging.debug("RDF for datastream sizes not found.")
-
-            # else, return RDF object size
-            try:
-                fedora_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/FedoraObjSize').next())
-            except:
-                logging.debug("RDF for Fedora object size not found.")
-                fedora_obj_size = 0
-            try:
-                wsudor_obj_size = int(self.ohandle.risearch.get_objects(self.ohandle.uri,'http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/WSUDORObjSize').next())
-            except:
-                logging.debug("RDF for WSUDOR object size not found.")
-                wsudor_obj_size = 0
-            
-            size_dict['fedora_total_size'] = (fedora_obj_size, utilities.sizeof_fmt(fedora_obj_size) )
-            size_dict['wsudor_total_size'] =  (wsudor_obj_size, utilities.sizeof_fmt(wsudor_obj_size) )
-
-            # return 
-            return size_dict
 
 
     #######################################################
@@ -585,11 +546,11 @@ class WSUDOR_GenObject(object):
     def collectionMembers(self):
 
         '''
-        Returns PIDs that are members
+        Returns generator of PIDs that are members
         '''
 
         # get all members
-        return list(fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri))
+        return fedora_handle.risearch.get_subjects('fedora-rels-ext:isMemberOfCollection', self.ohandle.uri)
 
 
     # rels-int, partOf
@@ -648,9 +609,76 @@ class WSUDOR_GenObject(object):
         return list(self.ohandle.rels_ext.content)
 
 
-
     # WSUDOR_Object Methods
     ############################################################################################################
+
+
+    def verify_checksums(self, log_to_premis=True, verify_constituents=False):
+
+        '''
+        using Fedora's built-in checksum test, confirm all datastream's checksums
+        '''
+
+        verify_dict = {
+            'verdict':None,
+            'datastreams':{}
+        }
+
+        # iterate through datastreams
+        for ds in self.ohandle.ds_list:
+            ds_handle = self.ohandle.getDatastreamObject(ds)
+            verify_dict['datastreams'][ds] = {
+                'checksum':ds_handle.checksum,
+                'valid_checksum':ds_handle.validate_checksum()
+            }
+        logging.debug(verify_dict)
+                
+        # get final verdict
+        fail_dict = { ds:verify_dict['datastreams'][ds] for ds in verify_dict['datastreams'].keys() if not verify_dict['datastreams'][ds]['valid_checksum']}
+        logging.debug(fail_dict)
+        if len(fail_dict.keys()) == 0:
+            verify_dict['verdict'] = True
+        else:
+            verify_dict['verdict'] = False
+            verify_dict['offenders'] = fail_dict
+
+        # log verification as premis event
+        if log_to_premis:
+            event = self.premis.add_custom_event({
+                'type':'verify_checksums',
+                'detail':'checksum verification via Fedora validation',
+                'outcome':{
+                    'result':str(verify_dict['verdict']),
+                    'detail':verify_dict
+                }
+            })
+
+        # optionally, verify checksums for constituents
+        '''
+        Currently, this check is defaulted to False, as it duplicates checksumming for the vast majority of objects in repository (constituents).
+        However, is an optional flag and check.
+        '''
+        if verify_constituents:
+            # establish constituent section
+            constituent_checks = {}
+            # loop through consituents and verify their datastreams
+            if len(self.constituents) > 0:
+                for constituent in self.constituents:
+                    obj = WSUDOR_ContentTypes.WSUDOR_Object(constituent)
+                    constituent_verdict = obj.verify_checksums(log_to_premis=log_to_premis, verify_constituents=False)
+                    constituent_checks[obj.pid] = constituent_verdict
+            # analyze results
+            constituent_fail_dict = { constituent:constituent_checks[constituent] for constituent in constituent_checks.keys() if not constituent_checks[constituent]['verdict']}
+            verify_dict['constituents'] = {}
+            if len(constituent_fail_dict.keys()) == 0:
+                verify_dict['constituents']['verdict'] = True
+            else:
+                verify_dict['constituents']['verdict'] = False
+                verify_dict['constituents']['offenders'] = constituent_fail_dict
+
+        # return
+        return verify_dict
+
 
 
     # expects True or False, sets as discoverability, and optionally reindexes
@@ -667,7 +695,8 @@ class WSUDOR_GenObject(object):
 
 
     # base ingest method, that runs some pre-ingest work, and eventually fires WSUDOR Content Type specific .ingestBag()
-    def ingest(self,indexObject=True):
+    def ingest(self, indexObject=True):
+
         # add PID to indexer queue with 'hold' action to prevent indexing
         self.add_to_indexer_queue(action='hold')
         # run content-type specific ingest
@@ -676,6 +705,7 @@ class WSUDOR_GenObject(object):
 
     # generic, simple ingest
     def ingestBag(self, indexObject=True):
+        
         if self.object_type != "bag":
             raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
 
@@ -771,10 +801,7 @@ class WSUDOR_GenObject(object):
         bag_meta_handle.save()
         os.system('rm %s' % (temp_filename))
 
-        # derive Dublin Core from MODS, update DC datastream
-        self.DCfromMODS()
-
-        # Write isWSUDORObject RELS-EXT relationship
+        # Write all objects as isWSUDORObject 
         self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isWSUDORObject","True")
 
         # if gen_manifest set, generate IIIF Manifest
@@ -784,14 +811,15 @@ class WSUDOR_GenObject(object):
             except:
                 logging.debug("failed on generating IIIF manifest")
 
-        # register with OAI
-        self.registerOAI()
+        # register with OAI if content model permits
+        if hasattr(self, 'OAIexposed') and self.OAIexposed:
+            self.registerOAI()
 
         # the following methods are not needed when objects are "passing through"
         if indexObject:
 
-            # calculate object size
-            self.update_object_size()
+            # calculate object size, but skip constituents, as they were likely calculated on ingest
+            self.object_size(update_self=True, update_constituents=False)
             
             # run all ContentType specific methods that were passed here
             logging.debug("RUNNING ContentType methods...")
@@ -822,9 +850,9 @@ class WSUDOR_GenObject(object):
 
 
     # export datastreams based on DS ids and objMeta / requires (ds_id, full path filename) tuples to write them
-    def _writeDS(self, ds_id, ds_filepath):
+    def writeDS(self, ds_id, ds_filepath):
 
-        logging.debug("WORKING ON %s" % ds_id)
+        logging.debug("writing datastream: %s" % ds_id)
 
         ds_handle = self.ohandle.getDatastreamObject(ds_id)
 
@@ -849,7 +877,14 @@ class WSUDOR_GenObject(object):
 
 
     # export object
-    def export(self, job_package=False, export_dir=localConfig.BAG_EXPORT_LOCATION, preserve_relationships=True, export_constituents=True, is_constituent=False, tarball=True):
+    def export(self, 
+        job_package=False, 
+        export_dir=localConfig.BAG_EXPORT_LOCATION, 
+        preserve_relationships=True, 
+        export_constituents=True, 
+        is_constituent=False, 
+        tarball=True, 
+        overwrite_export=True):
 
         '''
         Target Example:
@@ -861,6 +896,8 @@ class WSUDOR_GenObject(object):
         │   │   ├── roots.jpg
         │   │   └── trunk.jpg
         │   ├── MODS.xml
+        │   ├── RELS-EXT.rdf (if preserving relationships)
+        │   ├── RELS-INT.rdf (if preserving relationships)
         │   └── objMeta.json
         ├── manifest-md5.txt
         └── tagmanifest-md5.txt
@@ -893,14 +930,14 @@ class WSUDOR_GenObject(object):
         # write original datastreams (relies on objMeta)
         for ds in self.objMeta['datastreams']:
             logging.debug("writing %s" % ds)
-            self._writeDS(ds['ds_id'], os.path.join(*[datastreams_root, ds['filename']]))
+            self.writeDS(ds['ds_id'], os.path.join(*[datastreams_root, ds['filename']]))
 
         # include RELS and RELS-INT
         if preserve_relationships == True:
             logging.debug("preserving current relationships and writing to RELS-EXT and RELS-INT")
             for rels_ds in ['RELS-EXT','RELS-INT']:
                 logging.debug("writing %s" % rels_ds)
-                self._writeDS(rels_ds, os.path.join(*[data_root, "%s.xml" % rels_ds]))
+                self.writeDS(rels_ds, os.path.join(*[data_root, "%s.rdf" % rels_ds]))
 
         ##########################################################################################
         # content-type specific export
@@ -911,15 +948,37 @@ class WSUDOR_GenObject(object):
         '''
         if hasattr(self, 'export_content_type'):
             logging.debug('running content-type specific export')
-            # try:
-            self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball)
-            # except:
-            #     logging.debug("could not export constituents, continuing with parent object")
+            self.export_content_type(self.objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export)
         ##########################################################################################
 
-        # write MODS and objMeta files
-        self._writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
-        self._writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
+        # write MODS 
+        self.writeDS("MODS", os.path.join(*[data_root, "MODS.xml"]))
+
+        # # write objMeta
+        # self.writeDS("OBJMETA", os.path.join(*[data_root, "objMeta.json"]))
+
+        # write and update objMeta.json
+        '''
+        If preserving relationships, then update objMeta
+        Some aspects of objMeta are rewritten on the way out:
+            - empty object_relationships[] in stored objMeta, and fill with current relationships
+        '''
+        # copy objMeta
+        objMeta_copy = copy.deepcopy(self.objMeta)
+
+        # iterate through current RELS and write
+        if preserve_relationships:
+            objMeta_copy['object_relationships'] = []
+            for triple in self.ohandle.rels_ext.content:
+                objMeta_copy['object_relationships'].append({
+                    'predicate':str(triple[1]),
+                    'object':str(triple[2])
+                })
+
+        # write to disk
+        logging.debug("writing new objMeta to disk: %s" % objMeta_copy)
+        with open(os.path.join(*[data_root, "objMeta.json"]),'w') as fhand:
+            fhand.write(json.dumps(objMeta_copy))
 
         # rename dir
         named_dir = self.pid.replace(":","-")
@@ -932,6 +991,11 @@ class WSUDOR_GenObject(object):
             os.system("tar -cvf %s.tar %s" % (named_dir, named_dir))
             os.system("rm -r %s" % os.path.join(*[working_dir, named_dir]))
 
+            # check if target exists, and remove if overwrite_export=True
+            if overwrite_export and os.path.exists(os.path.join(*[export_dir, "%s.tar" % named_dir])):
+                logging.debug("overwrite_export True, and target found, removing...")
+                os.remove(os.path.join(*[export_dir, "%s.tar" % named_dir]))
+
             # move to export directory
             os.system("mv %s.tar %s" % (named_dir, export_dir))
 
@@ -942,6 +1006,11 @@ class WSUDOR_GenObject(object):
             return "%s/%s.tar" % (export_dir, named_dir)
 
         else:
+            # check if target exists, and remove if overwrite_export=True
+            if overwrite_export and os.path.exists(os.path.join(*[export_dir, named_dir])):
+                logging.debug("overwrite_export True, and target found, removing...")
+                shutil.rmtree(os.path.join(*[export_dir, named_dir]))
+
             # move to export directory
             os.system("mv %s %s" % (named_dir, export_dir))
 
@@ -994,7 +1063,7 @@ class WSUDOR_GenObject(object):
 
 
     # Solr Indexing
-    def index(self, printOnly=False, commit_on_index=False):
+    def index(self, printOnly=False, commit_on_index=False, run_content_type_specific=True):
 
         # generate human values
         logging.debug("preparing 'human_hash' values...")
@@ -1075,6 +1144,7 @@ class WSUDOR_GenObject(object):
 
         # Add object and datastream sizes
         try:
+            logging.debug("indexing object size")
             size_dict = self.object_size()
             setattr(self.SolrDoc.doc, "obj_size_fedora_i", size_dict['fedora_total_size'][0] )
             setattr(self.SolrDoc.doc, "obj_size_fedora_human", size_dict['fedora_total_size'][1] )
@@ -1125,8 +1195,9 @@ class WSUDOR_GenObject(object):
         Content-types have optional `index_augment()` method that expects already started
         self.SolrDoc.doc that it can augment and add to before update
         '''
-        if getattr(self,'index_augment',False):
-            self.index_augment()
+        if run_content_type_specific:
+            if getattr(self,'index_augment',False):
+                self.index_augment()
 
 
         #######################################################################################
@@ -1508,7 +1579,6 @@ class WSUDOR_GenObject(object):
             return False
 
 
-
     # refresh object
     def refresh(self):
 
@@ -1526,7 +1596,7 @@ class WSUDOR_GenObject(object):
         logging.debug("-------------------- firing objectRefresh --------------------")
 
         # update object size in Solr
-        self.update_object_size()
+        self.object_size(update_self=True, update_constituents=True)
 
         # remove object from Loris cache
         self.removeObjFromCache()
@@ -1788,6 +1858,21 @@ class WSUDOR_GenObject(object):
                 logging.debug("registered with collection %s" % collection)
         except:
             logging.debug("could not affiliate with collection")
+
+
+    # add OAI identifers and set memberships
+    def deregisterOAI(self):
+        logging.debug("deregistering from OAI exposure")
+        logging.debug("%s" % self.ohandle.purge_relationship("http://www.openarchives.org/OAI/2.0/itemID", "oai:digital.library.wayne.edu:%s" % (self.pid)))
+
+        # affiliate with collection set(s)
+        try:
+            collections = self.isMemberOfCollections
+            for collection in collections:
+                logging.debug("%s %s" % (self.ohandle.purge_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isMemberOfOAISet", collection)))
+                logging.debug("deregistered with collection %s" % collection)
+        except:
+            logging.debug("could not de-affiliate with collection")
 
 
     # send Object to Problem Object staging space (i.e. in user_pids table)

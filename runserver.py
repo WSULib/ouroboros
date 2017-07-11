@@ -119,8 +119,9 @@ if __name__ == '__main__':
         fedora_jms_consumer.run()
 
     # fire IndexWorker loop
-    indexer = LoopingCall(IndexRouter.poll)
-    indexer.start(INDEXER_POLL_DELAY, now=False)
+    if INDEXER_AUTOINDEX:
+        indexer = LoopingCall(IndexRouter.poll)
+        indexer.start(INDEXER_POLL_DELAY, now=False)
 
     logging.info('''
                 ::+:/`

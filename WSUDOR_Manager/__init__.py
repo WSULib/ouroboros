@@ -22,6 +22,14 @@ else:
 logging.basicConfig(stream=LOGGING_STREAM, level=LOGGING_LEVEL)
 logging = logging.getLogger('WSUDOR_Manager')
 
+# set logging lower for other libraries
+import logging as pylogging
+pylogging.getLogger('requests').setLevel(pylogging.INFO)
+pylogging.getLogger('eulfedora').setLevel(pylogging.INFO)
+pylogging.getLogger('urllib').setLevel(pylogging.INFO)
+pylogging.getLogger('stompest').setLevel(pylogging.INFO)
+pylogging.getLogger('urllib3').setLevel(pylogging.INFO)
+
 
 ##########################################################################################
 # create app

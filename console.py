@@ -9,11 +9,11 @@ import os
 import rdflib
 import time
 
-print '''
-				::+:/`
-		 :----:+ssoo+:.`
-	  `-:+sssossysoooooo+/-`
-	`:oysyo++ooooo+////+ooss+-`
+logging.info('''
+                ::+:/`
+         :----:+ssoo+:.`
+      `-:+sssossysoooooo+/-`
+    `:oysyo++ooooo+////+ooss+-`
    :ssyy/-`   `..     ..:/+osso:
  `/ssyo:                 `-+:oss+`
  +sso+:                    `//sss+
@@ -25,11 +25,12 @@ osso+o.                  `+//ooysoo
 `+ssssoo:`   ``.-` .-    `-ooosss+`
  `ossso///-.--:.``::. `.:+ooossso`
   `+sossyo++o++::///:/+ooossoss+`
-	-ossssss+oo+sossoosossssso-
-	  ./osssssysyysssssssso/.
-		 `-:++sosyssyyo+:.
+    -ossssss+oo+sossoosossssso-
+      ./osssssysyysssssssso/.
+         `-:++sosyssyyo+:.
 
-  <-- Ouroboros says hissss -->'''
+  <-- Ouroboros says hissss -->
+''')
 
 logging.debug("importing fedora handles")
 fedora_handle = fedoraHandles.fedora_handle

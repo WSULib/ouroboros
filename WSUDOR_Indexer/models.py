@@ -118,7 +118,7 @@ class FedoraJMSWorker(object):
 
 		# debug
 		logging.debug(self.headers)
-		logging.debug(self.body)
+		# logging.debug(self.body) # noisy
 
 		# capture modifications to datastream
 		if self.methodName in ['addDatastream','modifyDatastreamByValue','modifyDatastreamByReference','purgeDatastream']:
@@ -138,15 +138,6 @@ class FedoraJMSWorker(object):
 		if self.methodName in ['addRelationship','purgeRelationship']:
 			self.queue_action = 'index'
 
-		# capture purge
-		'''
-		Perhaps unsurprisingly, this fails.
-		When objects are purged, they cannot be opened to run their own .prune() method.
-		Perhaps .prune() should be included here as well, so it can run seperate from object method?
-		'''
-		if self.methodName in ['purgeObject']:
-			self.queue_action = 'prune'
-
 		# finally, queue object and log
 		if self.queue_action:
 			self.queue_object()
@@ -164,13 +155,17 @@ class FedoraJMSWorker(object):
 		'''
 		Small function to determine which datastream was acted on
 		'''
-		self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
-		logging.debug("datastream %s was acted on" % self.ds)
-		return self.ds
-
-
+		try:
+			self.ds = [c['@term'] for c in self.categories if c['@scheme'] == 'fedora-types:dsID'][0]
+			logging.debug("datastream %s was acted on" % self.ds)
+			return self.ds
+		except:
+			logging.debug("could not determine if a datastream was acted on")
+			return False
+		
+		
 	def queue_object(self):
-		logging.debug("logging PREMIS event")
+		logging.debug("queuing object")
 		IndexRouter.queue_object(self.pid, self.author, 1, self.queue_action)
 
 
@@ -285,10 +280,13 @@ class IndexRouter(object):
 	def alter_queue_action(self, pid, action):
 		# get row
 		iqp = indexer_queue.query.filter_by(pid=pid).first()
-		# alter status
-		iqp.action = action
-		# saved
-		db.session.commit()
+		if iqp:
+			# alter status
+			iqp.action = action
+			# saved
+			db.session.commit()
+		else:
+			logging.debug("row not found to alter, ignoring")
 
 
 	@classmethod
@@ -625,9 +623,6 @@ class PREMISWorker(object):
 
 		# write event
 		premis_client.add_jms_event(jms_worker)
-
-		# save
-		return premis_client.update()
 
 
 

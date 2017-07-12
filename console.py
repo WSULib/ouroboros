@@ -51,6 +51,10 @@ import eulfedora
 
 from WSUDOR_Manager.lmdbHandles import lmdb_env
 
+# import repository
+from WSUDOR_Manager.models import WSUDOR_Repository
+repo = WSUDOR_Repository()
+
 logging.debug("creating MySQL shortcut - `m()` with root password")
 def my():
 	return os.system('mysql -u root -p WSUDOR_Manager')

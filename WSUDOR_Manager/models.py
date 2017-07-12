@@ -13,6 +13,7 @@ import eulfedora
 import json
 import requests
 import hashlib
+import time
 
 # eulxml, used for PREMISClient
 from eulxml.xmlmap import premis
@@ -37,6 +38,107 @@ import pypremis
 ####################################
 app.secret_key = 'WSUDOR'
 ####################################
+
+
+########################################################################
+# WSUDOR_Repository
+########################################################################
+
+class WSUDOR_Repository(object):
+
+	'''
+	Class with methods and attributes that model and represent the WSUDOR repository
+
+	Notes:
+		- method for analyzing most recent verify_checksums() results in PREMIS record
+		- generators for common groups of objects
+			- these could be selectable from Ouroboros find/select objects?
+	'''
+
+	def __init__(self):
+
+		self.localConfig = localConfig
+
+
+	# select all objects in repository
+	def all_objects(self):
+
+		'''
+		returns generator
+		'''
+
+		return fedora_handle.find_objects('*')
+
+
+	def analyze_premis_checksums(self):
+		
+		'''
+		This method retrieves the last verify_checksums() PREMIS event for all objects,
+		and returns results in a structured format
+		'''
+
+		stime = time.time()
+
+		# prepare return dictionary
+		results_dict = {
+			'passed':[],
+			'failed':{},
+			'no_checksum_test':[],
+			'no_premis':[]
+		}
+
+		# loop through objects
+		for obj in self.all_objects():
+
+			# look for PREMIS record
+			if 'PREMIS' in obj.ds_list:
+
+				logging.debug('PREMIS record found for %s' % obj.pid)
+
+				# instantiate PREMISClient
+				pc = PREMISClient(obj.pid)
+
+				# get reversed event list
+				r_events = pc.get_event_list(reverse=True)
+
+				# look for most recent 'verify_checksums' event
+				current_checksum_event = False
+				for event in r_events:
+					if event.eventType == 'verify_checksums':
+						logging.debug("found most recent 'verify_checksums' event, id %s, date %s" % (event.eventIdentifier.get_eventIdentifierValue(), event.get_eventDateTime()))
+						current_checksum_event = event
+						break
+
+				# if found
+				if current_checksum_event:
+					
+					# get outcome
+					outcome_information = current_checksum_event.get_eventOutcomeInformation()[0]
+					outcome = bool(outcome_information.get_eventOutcome())
+
+					# passed
+					if outcome:
+						logging.debug('object passed')
+						results_dict['passed'].append(obj.pid)
+					# failed, include details
+					else:
+						logging.debug('object failed test, including details')
+						outcome_detail = outcome_information.get_eventOutcomeDetail()[0]
+						outcome_detail_dict = json.loads(outcome_detail.get_eventOutcomeDetailNote())
+						results_dict[failed][obj.pid] = outcome_detail_dict
+
+				# else, none found
+				else:
+					results_dict['no_checksum_test'].append(obj.pid)
+
+			# PREMIS record not found, noting
+			else:
+				results_dict['no_premis'].append(obj.pid)
+
+		# return
+		logging.debug('total time elapsed: %s' % (time.time()-stime))
+		return results_dict
+
 
 
 ########################################################################
@@ -659,6 +761,14 @@ class PREMISClient(object):
 		
 		# return using pypremis .to_xml() method
 		return self.premis.to_xml()
+
+
+	def get_event(self, event_id):
+
+		# loop through events, return event
+		for event in self.get_event_list(reverse=True):
+			if event.eventIdentifier.get_eventIdentifierValue() == event_id:
+				return event
 
 
 	def get_event_list(self, reverse=False):

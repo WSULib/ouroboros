@@ -1,0 +1,52 @@
+{% include 'header.html' %}
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>Checksums Reports</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <p>Whenever the scheduled system task <code>repo.analyze_premis_checksums()</code> is run, it generates a report in <code>/reports</code>.  The following reports have been found:</p>
+        <form class="form-horizontal bv-form" id="form" role="form" method="GET" action="/ouroboros/reports/checksums">
+            
+            <div class="col-md-5">
+                <div class="form-group">
+                     
+                    <select class="form-control input-sm" name="report">
+                        
+                            {% for report in checksums_reports %}
+                                <option value="{{report}}">{{report}}</option>
+                            {% endfor %}
+                        
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="submit" class="btn btn-primary" value="Summarize">
+                </div>
+            </div>  
+
+        </form>
+    </div>
+</div>
+
+{% if analysis %}
+<div class="row">
+    <div class="col-md-5">
+        <h4>Analysis for: <code>{{analysis.report}}</code></h4>
+        <table class='table'>
+            <tr>
+                <td>Passed</td>
+                <td><span style="color:green;">{{analysis.data.passed|length}}</span></td>
+            </tr>
+            <tr>
+                <td>Failed</td>
+                <td><span style="color:red;">{{analysis.data.failed|length}}</span> {% if analysis.data.failed|length > 0 %}(<a href="/ouroboros/reports/checksums/report_details/{{analysis.report}}/failed">details</a>){% endif %}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% include 'footer.html' %}

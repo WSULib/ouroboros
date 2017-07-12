@@ -627,10 +627,11 @@ class WSUDOR_GenObject(object):
         # iterate through datastreams
         for ds in self.ohandle.ds_list:
             ds_handle = self.ohandle.getDatastreamObject(ds)
-            verify_dict['datastreams'][ds] = {
-                'checksum':ds_handle.checksum,
-                'valid_checksum':ds_handle.validate_checksum()
-            }
+            if ds_handle.control_group != 'E':
+                verify_dict['datastreams'][ds] = {
+                    'checksum':ds_handle.checksum,
+                    'valid_checksum':ds_handle.validate_checksum()
+                }
         logging.debug(verify_dict)
                 
         # get final verdict

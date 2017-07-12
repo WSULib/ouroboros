@@ -1876,6 +1876,51 @@ def indexing_status_throughput_json():
     return jsonify(return_dict)
 
 
+# Reports
+####################################################################################
+@app.route("/reports", methods=['POST', 'GET'])
+def reports():
+
+    return render_template("reports.html", localConfig=localConfig)
+
+
+@app.route("/reports/checksums", methods=['POST', 'GET'])
+def checksums():
+
+    # get generated reports
+    checksums_reports = [f for f in os.listdir('reports') if f.startswith('checksums_report')]
+    checksums_reports.sort(reverse=True)
+
+    # check for report request
+    report_request = request.args.get('report')
+    if report_request:
+        logging.debug("generating analysis for %s" % report_request)
+        with open('reports/%s' % report_request, 'r') as f:
+            report_dict = json.loads(f.read())
+
+        # prepare analysis
+        analysis = {
+            'report':report_request,
+            'data':report_dict
+        }
+
+    else:
+        analysis = False
+
+    return render_template("checksums_reports.html", localConfig=localConfig, checksums_reports=checksums_reports, analysis=analysis)
+
+
+@app.route("/reports/checksums/report_details/<report>/<report_section>", methods=['POST', 'GET'])
+def checksums_report_details(report, report_section):
+
+    # get report
+    with open('reports/%s' % report, 'r') as f:
+        report_dict = json.loads(f.read())
+
+    # return as jsonify the section from this report
+    return jsonify({report_section:report_dict[report_section]})
+
+
 # Caching
 ####################################################################################
 # caching home

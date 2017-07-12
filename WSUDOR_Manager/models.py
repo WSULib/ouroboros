@@ -113,8 +113,8 @@ class WSUDOR_Repository(object):
 				if current_checksum_event:
 					
 					# get outcome
-					outcome_information = current_checksum_event.get_eventOutcomeInformation()[0]
-					outcome = bool(outcome_information.get_eventOutcome())
+					outcome_information = current_checksum_event.get_eventOutcomeInformation()[0]					
+					outcome = {'True':True,'False':False}[outcome_information.get_eventOutcome()]
 
 					# passed
 					if outcome:
@@ -125,7 +125,7 @@ class WSUDOR_Repository(object):
 						logging.debug('object failed test, including details')
 						outcome_detail = outcome_information.get_eventOutcomeDetail()[0]
 						outcome_detail_dict = json.loads(outcome_detail.get_eventOutcomeDetailNote())
-						results_dict[failed][obj.pid] = outcome_detail_dict
+						results_dict['failed'][obj.pid] = outcome_detail_dict
 
 				# else, none found
 				else:
@@ -135,8 +135,10 @@ class WSUDOR_Repository(object):
 			else:
 				results_dict['no_premis'].append(obj.pid)
 
-		# return
+		# write report and return
 		logging.debug('total time elapsed: %s' % (time.time()-stime))
+		with open('reports/checksums_report_%s.json' % datetime.now().strftime("%Y%m%d-%H%M%S"), 'w') as f:
+			f.write(json.dumps(results_dict))
 		return results_dict
 
 

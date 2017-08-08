@@ -2,17 +2,14 @@ from mysolr import Solr
 import requests
 import localConfig
 
-# set connection through requests
-# session = requests.Session()
+# Solr handles
 
-# Core used for search and retrieval (e.g. powers front-end API)
 # single, primary search core
-solr_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_MANAGE_CORE), version=4)
+solr_handle = Solr('%s/%s' % (localConfig.SOLR_ROOT, localConfig.SOLR_MANAGE_CORE), version=4)
 # Core used for bookreader fulltext
-solr_bookreader_handle = Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, localConfig.SOLR_BOOKREADER_CORE), version=4)
+solr_bookreader_handle = Solr('%s/%s' % (localConfig.SOLR_ROOT, localConfig.SOLR_BOOKREADER_CORE), version=4)
 # Core used for WSUDOR user accounts
-solr_user_handle = Solr('http://%s/solr4/users' % (localConfig.SOLR_HOST), version=4)
-
+solr_user_handle = Solr('%s/users' % (localConfig.SOLR_ROOT), version=4)
 
 def onDemand(core):
-    return Solr('http://%s/solr4/%s' % (localConfig.SOLR_HOST, core), version=4)
+    return Solr('%s/%s' % (localConfig.SOLR_ROOT, core), version=4)

@@ -69,7 +69,7 @@ class WSUDOR_Volume(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest
-	def ingestBag(self,indexObject=True):
+	def ingestBag(self, indexObject=True):
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")		
 
@@ -137,7 +137,7 @@ class WSUDOR_Volume(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			final_save = self.ohandle.save()
 			
 			# finish generic ingest
-			return self.finishIngest()
+			return self.finishIngest(gen_manifest=False, indexObject=indexObject, contentTypeMethods=[])
 
 
 		# exception handling

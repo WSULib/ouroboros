@@ -105,13 +105,14 @@ class BagClass(object):
 			fhand.write(self.MODS)
 
 		# write PREMIS datastream
-		if self.intellectual_type == 'item':
-			with open("%s/PREMIS.xml" % (self.obj_dir), "w") as fhand:
-				# isntantiate PREMISClient
-				pc = models.PREMISClient()
-				for event in json.loads(self.object_row.premis_events):
-					pc.add_event_xml(event)
-				fhand.write(pc.as_string(pretty_print=False))
+		# if self.intellectual_type == 'item':
+		# 	with open("%s/PREMIS.xml" % (self.obj_dir), "w") as fhand:
+				
+		# 		# isntantiate PREMISClient
+		# 		pc = models.PREMISClient()
+		# 		for event in json.loads(self.object_row.premis_events):
+		# 			pc.add_event_xml(event)
+		# 		fhand.write(pc.as_string(pretty_print=False))
 
 		# if collection, write ingest METS to bag
 		if self.intellectual_type == 'collection':

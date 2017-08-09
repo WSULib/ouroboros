@@ -242,13 +242,15 @@ def bagIngest_worker(job_package):
 		return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 
 
+	# ingest locally
 	else:
+
 		# ingest bag
 		try:
 			ingest_bag = bag_handle.ingest()
 			# fire ingestWorkspace callback if checked
 			if 'origin' in job_package['form_data'] and job_package['form_data']['origin'] == 'ingestWorkspace' and ingest_bag == True:
-				logging.debug("firing ingest callback")
+				logging.debug(" ######################### firing ingest callback ######################### ######################### ")
 				actions.actions.ingestBag_callback.apply_async(kwargs={'job_package':job_package}, queue=job_package['username'])
 			return json.dumps({"Ingest Results for %s, PID: %s" % (bag_handle.label.encode('utf-8'), bag_handle.pid):ingest_bag})
 		except Exception, e:

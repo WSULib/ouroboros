@@ -59,7 +59,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# perform ingestTest
-	def validIngestBag(self,indexObject=True):
+	def validIngestBag(self, indexObject=True):
 
 		def report_failure(failure_tuple):
 			if results_dict['verdict'] == True : results_dict['verdict'] = False
@@ -80,8 +80,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	@helpers.timing
-	def ingestBag(self):
+	def ingestBag(self, indexObject=True):
 
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
@@ -268,7 +267,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			final_save = self.ohandle.save()
 
 			# finish generic ingest
-			return self.finishIngest()
+			return self.finishIngest(gen_manifest=False, indexObject=indexObject, contentTypeMethods=[])
 
 
 
@@ -317,6 +316,8 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# content-type specific indexing tasks
 	def index_augment(self):
 
+		logging.debug("######### content-type specific indexing for Document ############")
+
 		# get all PDF's
 		pdf_ds_list = [ 
 			ds for ds in self.ohandle.ds_list 
@@ -324,6 +325,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			and self.ohandle.getDatastreamObject(ds).control_group != 'R'
 			and ds != "FILE"
 		]
+		logging.debug(pdf_ds_list)
 
 		# iterate through and add to list
 		if len(pdf_ds_list) > 0:
@@ -348,6 +350,8 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				# cleanup
 				os.remove(temp_pdf)
 				os.remove(temp_txt)
+
+				logging.debug(ds_stripped_content)
 
 				# add to list
 				self.SolrDoc.doc.int_fullText.append(ds_stripped_content)

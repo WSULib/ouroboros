@@ -67,7 +67,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# perform ingestTest
-	def validIngestBag(self,indexObject=True):
+	def validIngestBag(self, indexObject=True):
 
 		def report_failure(failure_tuple):
 			if results_dict['verdict'] == True : results_dict['verdict'] = False
@@ -96,8 +96,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	@helpers.timing
-	def ingestBag(self):
+	def ingestBag(self, indexObject=True):
 
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
@@ -268,7 +267,7 @@ class WSUDOR_Video(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			final_save = self.ohandle.save()
 
 			# finish generic ingest
-			return self.finishIngest()
+			return self.finishIngest(gen_manifest=False, indexObject=indexObject, contentTypeMethods=[])
 
 
 

@@ -97,8 +97,7 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	@helpers.timing
-	def ingestBag(self):
+	def ingestBag(self, indexObject=True):
 
 		if self.object_type != "bag":
 			raise Exception("WSUDOR_Object instance is not 'bag' type, aborting.")
@@ -285,7 +284,7 @@ class WSUDOR_Audio(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			final_save = self.ohandle.save()
 
 			# finish generic ingest
-			return self.finishIngest()
+			return self.finishIngest(gen_manifest=False, indexObject=indexObject, contentTypeMethods=[])
 
 
 

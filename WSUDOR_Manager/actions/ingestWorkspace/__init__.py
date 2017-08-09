@@ -857,7 +857,7 @@ def createBag_worker(job_package):
 			purge_bags = purge_bags
 		)
 
-		bag_result = bag_class_worker.createBag(job_package)
+		bag_result = bag_class_worker.createBag()
 
 	# finish up with updated values from bag_class_worker
 
@@ -970,8 +970,8 @@ def ingestBag_callback(job_package):
 	logging.debug("Retrieved row: %s / %s" % (o.ingest_id,o.object_title))
 	
 	# set ingested link
-	remote_repo_host = localConfig.REMOTE_REPOSITORIES[job_package['form_data']['dest_repo']]['PUBLIC_HOST']
-	o.ingested = "http://%s/item/%s" % (remote_repo_host, o.pid)
+	remote_repo_host = localConfig.REMOTE_REPOSITORIES[job_package['form_data']['dest_repo']]['PUBLIC_ROOT']
+	o.ingested = "%s/item/%s" % (remote_repo_host, o.pid)
 	# o.ingested = job_package['form_data']['dest_repo']
 	return o._commit()
 

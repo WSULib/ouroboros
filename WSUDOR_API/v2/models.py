@@ -529,7 +529,7 @@ class Search(Resource):
 		logging.debug("Merged parameters for search request:")
 		logging.debug(self.params)
 		self.search_results = solr_handle.search(**self.params)		
-		logging.debug(self.search_results.raw_content)
+		# logging.debug(self.search_results.raw_content)
 		# success
 		if self.search_results.status == 200:
 			if include_item_metadata:

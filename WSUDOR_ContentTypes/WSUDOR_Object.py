@@ -700,8 +700,9 @@ class WSUDOR_GenObject(object):
 
         # add PID to indexer queue with 'hold' action to prevent indexing
         self.add_to_indexer_queue(action='hold')
+        
         # run content-type specific ingest
-        self.ingestBag(indexObject=indexObject)
+        return self.ingestBag(indexObject=indexObject)
 
 
     # generic, simple ingest

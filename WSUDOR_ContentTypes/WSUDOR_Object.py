@@ -1090,8 +1090,8 @@ class WSUDOR_GenObject(object):
 
         # built-ins from ohandle
         self.SolrDoc.doc.obj_label = self.ohandle.label
-        self.SolrDoc.doc.obj_createdDate = self.ohandle.created.isoformat()+"Z"
-        self.SolrDoc.doc.obj_modifiedDate = self.ohandle.modified.isoformat()+"Z"
+        self.SolrDoc.doc.obj_createdDate = "%sZ" % (self.ohandle.created.strftime('%Y-%m-%dT%H:%M:%S.%f'))
+        self.SolrDoc.doc.obj_modifiedDate = "%sZ" % (self.ohandle.modified.strftime('%Y-%m-%dT%H:%M:%S.%f'))
 
         # MODS
         try:

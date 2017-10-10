@@ -1,18 +1,18 @@
-# Mellon book ingestion
-
-'''
-Before you run this class, please note the below instructions:
-Class expects datastreams (epub, pdf) to be placed in folders that match the object DMDID
-Also, expects a cover image called COVER_IMAGE in the same folder
-'''
-
+# Mellon Books bag class
 
 import uuid, json, os
-import mimetypes
 import bagit
+from inc import WSUDOR_bagger
 from lxml import etree
-from WSUDOR_Manager import logging
+from sets import Set
+from WSUDOR_Manager import logging, db, models
 
+'''
+Assumptions:
+1) Abbyy has generated tif, htm, and xml files
+2) These files (along with a pdf and epub) are placed in folders that are named for each object DMDID
+3) Each pdf file has been renamed to PDF_FULL.pdf
+'''
 
 # define required `BagClass` class
 class BagClass(object):
@@ -40,15 +40,13 @@ class BagClass(object):
 		
 		self.purge_bags = purge_bags
 
-		# derived
 		# MODS_handle (parsed with etree)
-		try:
-			MODS_tree = etree.fromstring(self.MODS)
-			MODS_root = MODS_handle.getroot()
-			ns = MODS_root.nsmap
-			MODS_handle = MODS_root.xpath('//mods:mods', namespaces=ns)[0]
-		except:
-			logging.debug("could not parse MODS from DB string")
+		MODS_root = etree.fromstring(self.MODS)	
+		ns = MODS_root.nsmap
+		self.MODS_handle = {
+			"MODS_element" : MODS_root.xpath('//mods:mods', namespaces=ns)[0],
+			"MODS_ns" : ns
+		}
 
 		# future
 		self.objMeta_handle = None
@@ -59,15 +57,19 @@ class BagClass(object):
 			# make root dir
 			os.mkdir(self.obj_dir)
 			# make data dir
-			os.mkdir("/".join([self.obj_dir,"datastreams"]))		
+			os.mkdir("/".join([self.obj_dir,"datastreams"]))
+			# make constituent_objects dir
+			os.mkdir("/".join([self.obj_dir,"constituent_objects"]))
 
 
-
-	def createBag(self):
+	def createBag(self, job_package=False):
 
 		'''
 		Function to create bag given inputs.  Most extensive and complex part of this class.
 		'''
+
+		# list of page nums and datastream filenames tuples
+		page_num_list = []
 
 		# set identifier
 		self.full_identifier = self.DMDID
@@ -75,108 +77,78 @@ class BagClass(object):
 
 		# generate PID
 		self.pid = "wayne:%s" % (self.full_identifier)
+		self.object_row.pid = self.pid
 
 		# write MODS
 		with open("%s/MODS.xml" % (self.obj_dir), "w") as fhand:
-			fhand.write(self.MODS)		
-	
+			fhand.write(self.MODS)
+
+		# get identifier
+		try:
+			identifier = self.MODS_handle['MODS_element'].xpath('//mods:identifier[@type="local"]', namespaces=self.MODS_handle['MODS_ns'])[0].text
+			logging.debug("identifier: %s" % identifier)
+		except:
+			# fall back on self.full_identifier
+			identifier = self.full_identifier
+
+		# get title
+		book_title = self.MODS_handle['MODS_element'].xpath('mods:titleInfo/mods:title',namespaces=self.MODS_handle['MODS_ns'])[0].text
+		logging.debug("full title: %s" % book_title)
+
 		# instantiate object with quick variables
 		objMeta_primer = {
-			"id":"wayne:"+self.full_identifier,
-			"identifier":self.full_identifier,
-			"label":self.object_title,
-			"content_type":self.content_type
+			"id":self.pid,
+			"identifier":identifier,
+			"label":book_title,
+			"content_type":self.content_type,
+			"image_filetype":"tif"
 		}
 
 		# instantiate ObjMeta object
 		self.objMeta_handle = self.ObjMeta(**objMeta_primer)
 
-
-
-		################################################################
-		# set Cover Image
-
-		# set binary files location
-		d = "/".join([self.files_location, self.full_identifier])
-		logging.debug("full path is %s" % d)
-
-		
-		# Identify datastreams folder
-		datastreams_dir = self.obj_dir + "/datastreams"
-
-		# collection art file
-		logging.debug("Looking in: %s" % d)
-		
-		# find cover image
-		m_files = [ binary for binary in os.listdir(d) if binary.startswith('COVER_IMAGE') ]
-
-		if len(m_files) == 1:
-
-			logging.debug("%s" % m_files[0])
-			
-			filename = m_files[0]
-
-			label = "Cover Image"
-			order = 1
-
-			# get extension, ds_id
-			mimetypes.init()
-			ds_id, ext = os.path.splitext(filename)
-
-			# create datastream dictionary
-			ds_dict = {
-				"filename": filename,
-				"ds_id": 'COVER_IMAGE',
-				"mimetype": mimetypes.types_map[ext],
-				"label": label,
-				"internal_relationships": {},
-				'order': order
-			}
-
-			self.objMeta_handle.datastreams.append(ds_dict)
-
-			# make symlinks to datastreams on disk
-			bag_location = datastreams_dir + "/" + filename
-
-			# determine remote_location by parsing filename
-			source = "/".join([ d, filename ])
-			os.symlink(source, bag_location)
-			
-			# set as representative datastream
-			self.objMeta_handle.isRepresentedBy = 'COVER_IMAGE'
-		
-		else:
-			logging.debug("Could not locate Cover Image, skipping.")
-		
-
-		################################################################	
-
-
-		################################################################
-		# Get (non-cover image) datastreams
-
 		# iterate through SORTED binaries and create symlinks and write to objMeta		
 		logging.debug("creating symlinks and writing to objMeta")
 		logging.debug("looking in %s" % self.files_location)
 
-		# get binary_files location
-		binary_files = [ binary for binary in os.listdir(d) if not binary.startswith('COVER_IMAGE') ]
+		# get binary_files location, based on pid
+		if self.files_location.endswith('/'):
+			d = self.files_location[:-1]
+		else:
+			d = self.files_location
+		# tack on pid as directory
+		d += "/" + self.full_identifier
+
+		########################################################################################################################
+		# Aggregate binaries as page dictionaries
+		########################################################################################################################
+		'''
+		Create separate bags for each page
+		Expecting image, html, and altoxml for each page
+		'''
+
+		# aggregate pages before making bags
+		pages = {}
+
+		# set page_num_bump
+		page_num_bump = 0
+
+		# gather files from source directory and sort
+		binary_files = [ binary for binary in os.listdir(d) ]
 		binary_files.sort() #sort
-		num = 0
+
 		for ebook_binary in binary_files:
 
 			# skip some undesirables
-			if ebook_binary == ".DS_Store" or ebook_binary.endswith('bak') or ebook_binary == "Thumbs.db" or ebook_binary.endswith('png') or ebook_binary.startswith('._'):
+			if ebook_binary == ".DS_Store" \
+			or ebook_binary.endswith('bak') \
+			or ebook_binary == "Thumbs.db" \
+			or ebook_binary.endswith('png') \
+			or ebook_binary.startswith('._') \
+			or ebook_binary.endswith('txt'):
 				continue
 
-			# write symlink
-			source = "/".join([ d, ebook_binary ])
-			symlink = "/".join([ self.obj_dir, "datastreams", ebook_binary ])
-			os.symlink(source, symlink)		
-
-			ds_id = ebook_binary.split(".")[0]
-
-			# get mimetype of file
+			# get mimetype and future ds_id of file
 			filetype_hash = {
 				'tiff': ('image/tiff','IMAGE'),
 				'tif': ('image/tiff','IMAGE'),
@@ -187,30 +159,174 @@ class BagClass(object):
 				'html': ('text/html','HTML'),
 				'htm': ('text/html','HTML'),
 				'pdf': ('application/pdf','PDF'),
+				'txt': ('text/plain','TEXT'),
 				'epub': ('application/epub+zip', 'EPUB')
 			}
 			filetype_tuple = filetype_hash[ebook_binary.split(".")[-1]]
+			# determine page num and DS ID
+			page_num = ebook_binary.split(".")[1].lstrip('0')
+			if page_num == '':
+				page_num_bump = 1
+				page_num = '0'
+			try:
+				page_num = int(page_num) + int(page_num_bump)
 
-			# write to datastreams list		
-			ds_dict = {
-				"filename":ebook_binary,
-				"ds_id":ds_id,
-				"mimetype":filetype_tuple[0], # generate dynamically based on file extension
-				"label":ds_id,
-				"internal_relationships":{},
-				'order':num+2 # cover image ds is first in order, so starting at 2 for the subsequent datastreams
+				# push to image num list
+				if filetype_tuple[1] == 'IMAGE':
+					page_num_list.append(page_num)
+
+				# add to pages dictionary
+				if page_num not in pages.keys():
+
+					# write to constituent_objects list		
+					page_dict = {
+						'pid':"%s_Page_%s" % (self.pid, page_num),
+						'directory':"wayne-%s_Page_%s" % (self.full_identifier, page_num),					
+						'order':page_num,
+						'datastreams':[]
+					}
+
+				pages[page_num] = page_dict
+
+				# add to page entry
+				pages[page_num]['datastreams'].append((ebook_binary,filetype_tuple[0],filetype_tuple[1]))
+
+				# DEBUG
+				logging.debug(pages)
+
+			except:
+				# add datastream
+				# write to datastreams list
+				if filetype_tuple[1] == "EPUB":
+					ds_id = filetype_tuple[1]
+					order = 1
+				if filetype_tuple[1] == "PDF":
+					ds_id = ebook_binary.split(".")[0]
+					order = 2
+
+				ds_dict = {
+					"filename":ebook_binary,
+					"ds_id":ds_id,
+					"mimetype":filetype_tuple[0], # generate dynamically based on file extension
+					"label":filetype_tuple[1],
+					"internal_relationships":{},
+					'order':order
+				}
+				self.objMeta_handle.datastreams.append(ds_dict)
+		
+
+
+		########################################################################################################################
+		# Create page bags in SELF/constituent_objects
+		########################################################################################################################
+
+		# create constituent object ObjMeta
+		for page_num in pages.keys():
+
+			# get page dict
+			page_dict = pages[page_num]
+			logging.debug("writing ObjMeta for page %s" % page_num)
+			logging.debug(page_dict)
+
+			# generate page_obj_dir
+			page_obj_dir = "/".join( [self.obj_dir, 'constituent_objects', page_dict['pid'].replace(":","-")] )
+			if not os.path.exists(page_obj_dir):
+				# make root dir
+				os.mkdir(page_obj_dir)
+				# make data dir
+				os.mkdir("/".join([page_obj_dir,"datastreams"]))
+
+			# instantiate object with quick variables
+			book_title_short = (book_title[:100] + '..') if len(book_title) > 100 else book_title
+			objMeta_primer = {
+				"id":page_dict['pid'],
+				"identifier":page_dict['pid'].split(":")[-1],
+				"label":"%s - Page %s" % (book_title_short,page_num),
+				"content_type":'WSUDOR_WSUebook_Page',
+				"directory":page_dict['pid'].replace(":","-"),
+				"order":page_num
 			}
-			self.objMeta_handle.datastreams.append(ds_dict)
-			num = num + 1
 
-		################################################################	
+			# instantiate ObjMeta object
+			page_objMeta_handle = self.ObjMeta(**objMeta_primer)
+			
+			# isRepresentedBy
+			page_objMeta_handle.isRepresentedBy = "IMAGE"
+
+			# write known relationships
+			page_objMeta_handle.object_relationships = [				
+				{
+					"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
+					"object": "info:fedora/False"
+				},
+				{
+					"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel",
+					"object": "info:fedora/CM:WSUebook_Page"
+				},
+				{
+					"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
+					"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
+				},
+				{
+					"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder",
+					"object": str(page_num)
+				},
+				{
+					"predicate": "info:fedora/fedora-system:def/relations-external#isConstituentOf",
+					"object": "info:fedora/%s" % self.pid
+				}
+			]
+
+			# write datastreams from page_dict
+			for datastream in page_dict['datastreams']:
+				logging.debug("working on datastream: %s" % str(datastream))
+				
+				# write symlink
+				source = "/".join([ d, datastream[0] ])
+				symlink = "/".join([ page_obj_dir, "datastreams", datastream[0] ])
+				os.symlink(source, symlink)
+
+				# add datastream
+				# write to datastreams list		
+				ds_dict = {
+					"filename":datastream[0],
+					"ds_id":datastream[2],
+					"mimetype":datastream[1], # generate dynamically based on file extension
+					"label":datastream[2],
+					"internal_relationships":{},
+					'order':page_num
+				}
+				page_objMeta_handle.datastreams.append(ds_dict)
+
+			logging.debug("Page ObjMeta %s" % page_objMeta_handle.toJSON())
+
+			# add to page objMeta to book's constituent_objects
+			self.objMeta_handle.constituent_objects.append(page_objMeta_handle.asDict())
+
+			# write to objMeta.json file 
+			page_objMeta_handle.writeToFile("%s/objMeta.json" % (page_obj_dir))
+			
+			# use WSUDOR bagger (NO MD5 CHECKSUMS)
+			bag = WSUDOR_bagger.make_bag(page_obj_dir, {
+				'Object PID' : page_dict['pid']
+			})
+
+
+		# set isRepresentedBy relationship
+		'''
+		Sort list of page numbers, use lowest.
+		Then, create single datastream for this object
+		'''		
+		page_num_list.sort()
+		logging.debug("book is represented by page num %s" % page_num_list[0])
+		self.objMeta_handle.isRepresentedBy = "%s_Page_%s" % (self.pid, page_num_list[0])
 
 		# write known relationships
 		self.objMeta_handle.object_relationships = [				
 			{
 				"predicate": "info:fedora/fedora-system:def/relations-external#isMemberOfCollection",
-				"object": "info:fedora/wayne:collection%s" % (self.collection_identifier)
-			},			
+				"object": "info:fedora/wayne:collectionWSUebooks"
+			},
 			{
 				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/isDiscoverable",
 				"object": "info:fedora/True"
@@ -222,17 +338,44 @@ class BagClass(object):
 			{
 				"predicate": "http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/hasSecurityPolicy",
 				"object": "info:fedora/wayne:WSUDORSecurity-permit-apia-unrestricted"
-			}		
+			}
 		]
+
+		# if collection identifier is not "Undefined"
+		if self.collection_identifier != "Undefined":
+			self.objMeta_handle.object_relationships.append(
+				{
+					"predicate": "info:fedora/fedora-system:def/relations-external#isMemberOfCollection",
+					"object": "info:fedora/wayne:collection%s" % (self.collection_identifier)
+				}
+			)
+
+		# create symlinks for any binaries that don't fit into pages/constituent objects
+
+			for datastream in self.objMeta_handle.datastreams:
+				logging.debug("working on datastream: %s" % str(datastream['filename']))
+				
+				# write symlink
+				source = "/".join([ d, datastream['filename'] ])
+				symlink = "/".join([ self.obj_dir, "datastreams", datastream['filename'] ])
+				os.symlink(source, symlink)
+
 
 		# write to objMeta.json file 
 		self.objMeta_handle.writeToFile("%s/objMeta.json" % (self.obj_dir))
-
-		# make bag
-		bag = bagit.make_bag(self.obj_dir, {
-			'Collection PID' : "wayne:collection"+self.collection_identifier,
+		
+		# use WSUDOR bagger (NO MD5 CHECKSUMS)
+		bag = WSUDOR_bagger.make_bag(self.obj_dir, {
+			'Collection PID' : "wayne:collectionWSUebooks",
 			'Object PID' : self.pid
-		}, processes=1)
+		})
 
-
+		# because ingestWorkspace() picks up from here, simply return bag location
 		return self.obj_dir
+
+
+
+
+
+
+

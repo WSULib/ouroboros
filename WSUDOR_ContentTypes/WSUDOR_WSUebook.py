@@ -386,6 +386,24 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				except:
 					logging.debug("could not process HTML")
 
+			# EPUB
+			'''
+			Determine if ebook comes with an EPUB file
+			'''
+			EPUB_search = [ ds for ds in self.objMeta['datastreams'] if ds['ds_id'] == 'EPUB' ]
+			if len(EPUB_search) > 0:
+				logging.debug('EPUB found in objMeta, ingesting')
+				ds = EPUB_search[0]
+				ds_handle = eulfedora.models.DatastreamObject(self.ohandle, ds['ds_id'], ds['label'], mimetype=ds['mimetype'], control_group="M")
+				ds_handle.label = ds['label']
+				file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+				logging.debug("looking for path: %s" % file_path)
+				logging.debug(os.path.exists(file_path))
+				ds_handle.content = open(file_path).read()
+				ds_handle.save()
+			else:	
+				logging.debug("could not find EPUB")
+					
 			# full book PDF
 			'''
 			Due to various ingest methods, some books will contain PDF files for each page, and some may not.

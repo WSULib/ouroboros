@@ -116,7 +116,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write explicit RELS-EXT relationships			
 			for relationship in self.objMeta['object_relationships']:
-				logging.debug("Writing relationship: %s %s" (str(relationship['predicate']),str(relationship['object'])))
+				# logging.debug("Writing relationship: %s %s" (str(relationship['predicate']),str(relationship['object'])))
 				self.ohandle.add_relationship(str(relationship['predicate']),str(relationship['object']))
 					
 			# writes derived RELS-EXT

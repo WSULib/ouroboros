@@ -100,7 +100,7 @@ class BagClass(object):
 
 		if len(art_files) == 1:
 
-			logging.debug("%s" % art_files[0])
+			# logging.debug("%s" % art_files[0])
 			
 			filename, remote_location = art_files[0]
 

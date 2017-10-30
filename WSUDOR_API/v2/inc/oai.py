@@ -84,7 +84,6 @@ class OAIProvider(object):
 			None:'http://www.openarchives.org/OAI/2.0/'
 		}
 		self.root_node = etree.Element('OAI-PMH', nsmap=NSMAP)
-		self.root_node.set('{http://www.w3.org/2001/XMLSchema-instance}schemaLocation', 'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd')
 
 		# set responseDate node
 		self.responseDate_node = etree.Element('responseDate')
@@ -93,11 +92,14 @@ class OAIProvider(object):
 		
 		# set request node
 		self.request_node = etree.Element('request')
+		self.request_node.set('{http://www.w3.org/2001/XMLSchema-instance}schemaLocation', 'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd')
 		self.request_node.attrib['verb'] = self.args['verb']
 		if self.args['set']:
 			self.request_node.attrib['set'] = self.args['set']
 		if self.args['metadataPrefix']:
 			self.request_node.attrib['metadataPrefix'] = self.args['metadataPrefix']
+		if self.args['identifier']:
+			self.request_node.attrib['identifier'] = self.args['identifier']
 		self.request_node.text = 'http://digital.library.wayne.edu/api/oai'
 		self.root_node.append(self.request_node)
 
@@ -399,6 +401,7 @@ class OAIRecord(object):
 
 		# init node
 		self.oai_record_node = etree.Element('record')
+		self.oai_record_node.set('{http://www.w3.org/2001/XMLSchema-instance}schemaLocation', 'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd')
 
 		# header node
 		header_node = etree.Element('header')

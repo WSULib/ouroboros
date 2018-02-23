@@ -1069,10 +1069,22 @@ class WSUDOR_GenObject(object):
 
         # generate human values
         logging.debug("preparing 'human_hash' values...")
+        
+        # init "human hash"
         human_hash = {
-            'collections': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:Collection','fl':'id dc_title','rows':1000}).documents },
-            'content_types': { doc['id']: doc['dc_title'][0] for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:ContentModel','fl':'id dc_title','rows':1000}).documents }
+            'collections':{},
+            'content_types':{}
         }
+
+        # loop through collections
+        for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:Collection','fl':'id dc_title','rows':1000}).documents:
+            if 'dc_title' in doc.keys():
+                human_hash['collections'][doc['id']] = doc['dc_title'][0]
+
+        # loop through content models
+        for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:ContentModel','fl':'id dc_title','rows':1000}).documents:
+            if 'dc_title' in doc.keys():
+                human_hash['content_types'][doc['id']] = doc['dc_title'][0]
 
         # update Dublin Core
         try:

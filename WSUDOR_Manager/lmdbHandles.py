@@ -11,4 +11,4 @@ import lmdb
 '''
 multiples of 4096 for map_size (40960000 ~ 40mb)
 '''
-lmdb_env = lmdb.open(localConfig.LMDB_DB_LOCATION, map_size=40960000)
+lmdb_env = lmdb.open(localConfig.LMDB_DB_LOCATION, map_size=localConfig.LMDB_MAP_SIZE)

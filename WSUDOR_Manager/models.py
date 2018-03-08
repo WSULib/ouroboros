@@ -553,6 +553,53 @@ class SolrSearchDoc(object):
 
 
 
+class SolrHumanHash(object):
+
+	'''
+	Class to generate, store, and retrieve Human Hash for Solr
+	'''
+
+	def update(self, return_hash=True):
+
+		'''
+		method to update human hash stored in LMDB
+		'''
+
+		# init "human hash"
+		human_hash = {
+			'collections':{},
+			'content_types':{}
+		}
+
+		# loop through collections
+		for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:Collection','fl':'id dc_title','rows':1000}).documents:
+			if 'dc_title' in doc.keys():
+				human_hash['collections'][doc['id']] = doc['dc_title'][0]
+
+		# loop through content models
+		for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:ContentModel','fl':'id dc_title','rows':1000}).documents:
+			if 'dc_title' in doc.keys():
+				human_hash['content_types'][doc['id']] = doc['dc_title'][0]
+
+		# store in LMDB
+		update_result = LMDBClient.put('human_hash', json.dumps(human_hash), overwrite=True)
+
+		# return
+		if return_hash:
+			return human_hash
+		else:
+			update_result
+
+
+	def retrieve(self):
+
+		return json.loads(LMDBClient.get('human_hash'))
+
+
+########################################################################
+# Supervisor
+########################################################################
+
 # class for Generic Supervisor creation
 class createSupervisorProcess(object):
 

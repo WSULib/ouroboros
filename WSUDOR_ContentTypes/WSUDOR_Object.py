@@ -1067,24 +1067,9 @@ class WSUDOR_GenObject(object):
     # Solr Indexing
     def index(self, printOnly=False, commit_on_index=False, run_content_type_specific=True):
 
-        # generate human values
-        logging.debug("preparing 'human_hash' values...")
-        
-        # init "human hash"
-        human_hash = {
-            'collections':{},
-            'content_types':{}
-        }
-
-        # loop through collections
-        for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:Collection','fl':'id dc_title','rows':1000}).documents:
-            if 'dc_title' in doc.keys():
-                human_hash['collections'][doc['id']] = doc['dc_title'][0]
-
-        # loop through content models
-        for doc in solr_handle.search(**{'q':'rels_hasContentModel\:info\:fedora/CM\:ContentModel','fl':'id dc_title','rows':1000}).documents:
-            if 'dc_title' in doc.keys():
-                human_hash['content_types'][doc['id']] = doc['dc_title'][0]
+        # isntantiate SolrHumanHash (ssh) and retrieve currently stored human hash
+        shh = models.SolrHumanHash()
+        human_hash = shh.retrieve()
 
         # update Dublin Core
         try:
@@ -1185,6 +1170,12 @@ class WSUDOR_GenObject(object):
                 pid = pid.split("/")[1]
                 if pid in human_hash['collections']:
                     human_collections.append(human_hash['collections'][pid])
+                else:
+                    # udpate human hash, retry
+                    logging.debug("Value not found in human_hash, updating in LMDB...")
+                    human_hash = shh.update()
+                    if pid in human_hash['collections']:
+                        human_collections.append(human_hash['collections'][pid])
             # set list
             setattr(self.SolrDoc.doc, "human_isMemberOfCollection", human_collections)
 
@@ -1198,6 +1189,12 @@ class WSUDOR_GenObject(object):
                 pid = pid.split("/")[1]
                 if pid in human_hash['content_types']:
                     human_content_types.append(human_hash['content_types'][pid])
+                else:
+                    # udpate human hash, retry
+                    logging.debug("Value not found in human_hash, updating in LMDB...")
+                    human_hash = shh.update()
+                    if pid in human_hash['content_types']:
+                        human_content_types.append(human_hash['content_types'][pid])
             # set list
             setattr(self.SolrDoc.doc, "human_hasContentModel", human_content_types)
 

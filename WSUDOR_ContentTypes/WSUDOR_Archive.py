@@ -184,7 +184,7 @@ class WSUDOR_Archive(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			for ds in self.objMeta['datastreams']:
 
 				if ds['mimetype'] == "application/octet-stream":
-					rep_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "FILE", "FILE", mimetype="ds['mimetype']", control_group="M")
+					rep_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "FILE", "FILE", mimetype=ds['mimetype'], control_group="M")
 					file_path = self.Bag.path + "/data/datastreams/%s" % ds['filename']
 					rep_handle.label = "FILE"
 					rep_handle.content = open(file_path, 'rb')

@@ -205,6 +205,9 @@ mime_CM_hash = {
 	# Video
 	'video/mp4' : 'WSUDOR_Video',
 
+    # Archive
+    'application/octet-stream' : 'WSUDOR_Archive',
+
 }
 
 

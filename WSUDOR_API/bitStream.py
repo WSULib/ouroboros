@@ -29,7 +29,7 @@ Accepts keys and tokens for access (see doc/bitStream.md)
 # BitStream model to handle bitStream requests
 class BitStream(object):
 
-	def __init__(self, PID, DS, key=None, token=None, download=False):
+	def __init__(self, PID, DS, key=None, token=None, download=False, ext=False):
 
 		# object and datastream
 		self.PID = PID
@@ -45,6 +45,7 @@ class BitStream(object):
 		self.msg = None
 		self.status_code = None
 		self.download = download
+		self.ext = ext
 
 		# stream params
 		self.chunk_step = 1024
@@ -80,9 +81,13 @@ class BitStream(object):
 
 		# if download flag present, add headers that force download and filename
 		if self.download:
-			file_ext = mimetypes.guess_extension(self.obj_ds_handle.mimetype)
-			if file_ext == '.jpe':
-				file_ext = '.jpg'
+			if self.ext:
+				file_ext = ".%s" % self.ext
+			else:
+				file_ext = mimetypes.guess_extension(self.obj_ds_handle.mimetype)
+				if file_ext == '.jpe':
+					file_ext = '.jpg'
+
 			response.headers['Content-Disposition'] = 'attachment; filename=%s%s' % (self.DS, file_ext)
 
 		# return response

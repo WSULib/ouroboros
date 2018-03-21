@@ -157,7 +157,8 @@ opinionated_mimes = {
 		# images
 		"image/jp2":".jp2",
 		"image/jpeg":".jpg",
-		"audio/wav":".wav"
+		"audio/wav":".wav",
+		"application/octet-stream":".iso"
 }   
 
 # push to mimetypes.types_map

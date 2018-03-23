@@ -281,6 +281,7 @@ class WSUDOR_GenObject(object):
             logging.debug("%s" % e)
 
 
+        # initiate IIIF factory and pin to self
         try:
             # initiate IIIF Manifest Factory
             self.iiif_factory = ManifestFactory()
@@ -489,13 +490,14 @@ class WSUDOR_GenObject(object):
         return size_dict
 
 
-    def object_size(self, update_self=False, update_constituents=False):
+    def object_size(self, update_self=False, update_constituents=False, calculate=False):
 
         '''
         returns object size stored in LMDB, if not present, recalculates
         '''
         
         if not update_self:
+            
             # check LMDB
             object_size = models.LMDBClient.get("%s_object_size" % self.pid)
 
@@ -503,9 +505,12 @@ class WSUDOR_GenObject(object):
             if object_size:
                 return json.loads(object_size)
 
-            # if not found, recalculate
+            # if not found, handle
             else:
-                return self.calc_object_size()
+                if calculate:
+                    return self.calc_object_size()
+                else:
+                    return False
         
         else:
             return self.calc_object_size(update_constituents=update_constituents)
@@ -1607,7 +1612,7 @@ class WSUDOR_GenObject(object):
         logging.debug("-------------------- firing objectRefresh --------------------")
 
         # update object size in Solr
-        self.object_size(update_self=True, update_constituents=True)
+        # self.object_size(update_self=True, update_constituents=True)
 
         # remove object from Loris cache
         self.removeObjFromCache()
@@ -2174,6 +2179,37 @@ class WSUDOR_GenObject(object):
                 dsList.append({'id':key, 'role':'derivative'})
 
         return dsList
+
+
+    def retrieveIIIFManifest(self, rewrite_host=localConfig.REMOTE_IIIF_DEFAULT_REWRITE):
+
+        '''
+        Method to retrieve IIIF manifest from another location and use
+        '''
+
+        # attempt retrieval of IIIF manifest
+        r = requests.get(localConfig.REMOTE_IIIF_LOCATION % self.pid)
+
+        # if 200, save 
+        if r.status_code == 200:
+
+            # rewrite host
+            if rewrite_host:
+                manifest = r.content.replace('//%s' % localConfig.REMOTE_IIIF_HOST, '//%s' % localConfig.APP_HOST)
+            else:
+                manifest = r.content
+
+            # save manifest to LMDB database
+            logging.debug("Saving manifest for %s in LMDB database" % self.pid)
+            models.LMDBClient.put('%s_iiif_manifest' % (self.pid), manifest, overwrite=True)
+
+            # return manifest
+            return manifest
+
+        else:
+
+            logging.debug('could not retrieve manifest from %s' % localConfig.REMOTE_IIIF_LOCATION % self.pid)
+            return False
 
 
 

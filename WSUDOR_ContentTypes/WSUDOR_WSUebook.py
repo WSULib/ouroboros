@@ -551,11 +551,18 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 
 	# ingest image type
-	def genIIIFManifest(self, on_demand=False):
+	def genIIIFManifest(self, on_demand=False, create_page_annotation_list=False, attempt_remote_retrieval=localConfig.ATTEMPT_REMOTE):
 
 		'''
 		Currently generates IIIF manifest with one sequence, handful of canvases for each image.
 		'''
+
+		# attempt retrieval
+		if attempt_remote_retrieval:
+			manifest = self.retrieveIIIFManifest()
+			if manifest:
+				logging.debug('found remote IIIF manifest, using!')
+				return manifest
 
 		# Wait until risearch catches up with constituent objects
 		logging.debug("waiting for risearch to catch up...")
@@ -641,16 +648,17 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			annol = cvs.annotationList("%s" % (page_handle.pid))
 
 			# create annotations for HTML and ALTOXML content
-			# HTML
-			anno = annol.annotation()
-			anno.text(ident="https://%s/WSUAPI/bitStream/%s/HTML" % (localConfig.APP_HOST, page_handle.pid), format="text/html")
-			# ALTOXML
-			anno = annol.annotation()
-			anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
+			if create_page_annotation_list:
+				# HTML
+				anno = annol.annotation()
+				anno.text(ident="https://%s/WSUAPI/bitStream/%s/HTML" % (localConfig.APP_HOST, page_handle.pid), format="text/html")
+				# ALTOXML
+				anno = annol.annotation()
+				anno.text(ident="https://%s/WSUAPI/bitStream/%s/ALTOXML" % (localConfig.APP_HOST, page_handle.pid), format="text/xml")
 
-			# save annotationList to LMDB database
-			logging.debug("Saving annotation list for %s in LMDB database" % page_handle.pid)
-			models.LMDBClient.put('%s_iiif_annotation_list' % page_handle.pid, annol.toString(), overwrite=True)
+				# save annotationList to LMDB database
+				logging.debug("Saving annotation list for %s in LMDB database" % page_handle.pid)
+				models.LMDBClient.put('%s_iiif_annotation_list' % page_handle.pid, annol.toString(), overwrite=True)
 
 		# save manifest to LMDB database
 		logging.debug("Saving manifest for %s in LMDB database" % self.pid)
@@ -821,7 +829,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.genIIIFManifest()
 
 		# regen Readux objects
-		self.regenReaduxVirtualObjects()
+		# self.regenReaduxVirtualObjects()
 
 
 	def export_constituents(self, objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export):

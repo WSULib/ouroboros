@@ -150,6 +150,7 @@
 		<div class="col-md-6">
 			<h3><a href="/{{APP_PREFIX}}/datastreamManagement">Datastreams</a></h3>
 
+			{% if object_package.size_dict %}
 			<div id="size">			
 				<canvas id="size_chart" width="400" height="400"></canvas>
 				<script type="text/javascript">
@@ -287,6 +288,9 @@
 				<h3>Fedora Object Size: <strong>{{object_package.size_dict.fedora_total_size.1}}</strong></h3>
 				<h3>WSUDOR Object Size: <strong>{{object_package.size_dict.wsudor_total_size.1}}</strong></h3>
 			</div>
+			{% else %}
+			<h4>Object size not calculated, please run <code>object.object_size(calculate=True)</code></h4>
+			{% endif %}
 			
 
 			<table style="font-size:90%;" style="margin:auto;" class="table">
@@ -302,10 +306,10 @@
 						<td><code>{{ds}}</code></td>
 						<td>{{object_package.datastream_package[ds].label}}</td>
 						<td>{{object_package.datastream_package[ds].mimeType}}</td>
-						{% if object_package.size_dict.datastreams[ds] %}
+						{% if object_package.size_dict and object_package.size_dict.datastreams[ds] %}
 							<td>{{object_package.size_dict.datastreams[ds].1}}</td>
 						{% else %}
-							<td><span style="color:red;">?????</span> (run <code>object.update_object_size()</code>)</td>
+							<td><span style="color:red;">?????</span></td>
 						{% endif %}
 						<td><a target="_blank" href="http://{{localConfig.APP_HOST}}/fedora/objects/{{PIDlet.cPID}}/datastreams/{{ds}}/content">Content Link</a></td>
 					</tr>

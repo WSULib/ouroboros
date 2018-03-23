@@ -1474,6 +1474,19 @@ class LMDBClient(object):
 		return True
 
 
+	@staticmethod
+	def delete(key):
+
+		'''
+		Remove key from LMDB
+		'''
+
+		with lmdb_env.begin(write=True) as txn:
+			return txn.delete(key.encode('utf-8'))
+
+
+
+
 
 
 		

@@ -1093,11 +1093,12 @@ def objPreview(PIDnum):
 
         # Object size and datastreams
         size_dict = obj_handle.object_size()
-        object_package['size_dict'] = size_dict
-        object_package['size_dict_json'] = json.dumps({
-            'datastreams':size_dict['datastreams'],
-            'fedora_total_size':size_dict['fedora_total_size']
-            })
+        if size_dict:
+            object_package['size_dict'] = size_dict
+            object_package['size_dict_json'] = json.dumps({
+                'datastreams':size_dict['datastreams'],
+                'fedora_total_size':size_dict['fedora_total_size']
+                })
 
         # OAI
         OAI_dict = {}

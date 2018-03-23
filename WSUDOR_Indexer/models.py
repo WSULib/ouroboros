@@ -189,11 +189,6 @@ class IndexRouter(object):
 
 		db.session.close()
 
-		# check working table load
-		# working_count = indexer_working.query.count()
-		# if working_count < 100:
-
-
 		# refresh connection every poll
 		query_results = indexer_queue.query \
 			.filter(indexer_queue.timestamp < (datetime.now() - timedelta(seconds=localConfig.INDEXER_ROUTE_DELAY))) \

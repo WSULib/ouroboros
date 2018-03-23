@@ -592,7 +592,11 @@ class WSUDOR_GenObject(object):
         returns list of collections object belongs to
         '''
         if 'rels_isMemberOfCollection' in self.SolrDoc.asDictionary():
-            return self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+            collection_uris = self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
+            if type(collection_uris) == list:
+                return [ coll_pid.split('/')[1] for coll_pid in collection_uris ]
+            else:
+                return collection_uris.split('/')[1]
         else:
             return False
 

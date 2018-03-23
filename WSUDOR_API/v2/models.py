@@ -146,11 +146,31 @@ class Item(Resource):
 			'pid': self.obj.pid,
 			'content_type': ct,
 			'solr_doc': self.obj.SolrDoc.asDictionary(),
-			'collections': self.obj.isMemberOfCollections,
+			'member_of_collections': {
+				'pids':self.obj.isMemberOfCollections
+			},
 			'learning_objects': self.obj.hasLearningObjects,
 			'content_type_specific': self.content_type_specific,
 			'matches': getattr(self.obj.SolrDoc.raw, 'matches', None)
 		}
+
+
+	def get_collection_metadata(self):
+
+		'''
+		Method to include collection metadata for an item
+		'''
+
+		coll_meta_list = {}
+
+		for coll_pid in self.obj.isMemberOfCollections:
+
+			# open collection obj and append solr doc
+			coll_obj = WSUDOR_Object(coll_pid)
+			coll_meta_list[coll_obj.pid] = coll_obj.SolrDoc.asDictionary()
+
+		return coll_meta_list
+
 
 
 class ItemMetadata(Item):
@@ -174,7 +194,14 @@ class ItemMetadata(Item):
 
 		# build and respond
 		response.status_code = 200
+
+		# build base
 		response.body = self.get_item_metadata()
+
+		# include collection metadata
+		response.body['member_of_collections']['metadata'] = self.get_collection_metadata()
+
+		# return
 		return response.generate_response()
 
 

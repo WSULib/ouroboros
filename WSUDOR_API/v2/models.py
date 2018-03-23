@@ -163,11 +163,12 @@ class Item(Resource):
 
 		coll_meta_list = {}
 
-		for coll_pid in self.obj.isMemberOfCollections:
+		if self.obj.isMemberOfCollections:
+			for coll_pid in self.obj.isMemberOfCollections:
 
-			# open collection obj and append solr doc
-			coll_obj = WSUDOR_Object(coll_pid)
-			coll_meta_list[coll_obj.pid] = coll_obj.SolrDoc.asDictionary()
+				# open collection obj and append solr doc
+				coll_obj = WSUDOR_Object(coll_pid)
+				coll_meta_list[coll_obj.pid] = coll_obj.SolrDoc.asDictionary()
 
 		return coll_meta_list
 

@@ -598,7 +598,7 @@ class WSUDOR_GenObject(object):
             else:
                 return collection_uris.split('/')[1]
         else:
-            return False
+            return []
 
 
     # learning objects

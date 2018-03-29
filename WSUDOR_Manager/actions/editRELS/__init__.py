@@ -91,7 +91,7 @@ def editRELS_advanced():
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (PIDlet['cPID'])
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.FEDORA_HOST, PIDlet['cPID'])
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	
@@ -129,7 +129,7 @@ def editRELS_shared():
 
 		# logging.debug(query_statement)
 		
-		base_URL = "http://%s:%s@localhost/fedora/risearch" % (FEDORA_USER, FEDORA_PASSWORD)
+		base_URL = "http://%s:%s@%s/fedora/risearch" % (FEDORA_USER, FEDORA_PASSWORD, localConfig.FEDORA_HOST)
 		payload = {
 			"lang" : "sparql",
 			"query" : query_statement,
@@ -274,7 +274,7 @@ def editRELS_edit_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content".format(PID)
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.FEDORA_HOST, PID)
 	pre_mod_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 
@@ -335,7 +335,7 @@ def editRELS_regex_worker(job_package):
 
 	# Raw Datastream via Fedora API
 	###############################################################	
-	raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/RELS-EXT/content" % (PID)
+	raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/RELS-EXT/content" % (localConfig.FEDORA_HOST, PID)
 	raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
 	###############################################################
 	

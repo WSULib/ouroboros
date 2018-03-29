@@ -1137,6 +1137,7 @@ class ObjHierarchy(object):
 
 		# if not overwriting, determine if in LMDB
 		if not overwrite:
+			
 			# check for object hierarchy in LMDB	
 			stored_object_hierarchy = LMDBClient.get('%s_object_hierarchy' % self.pid)
 

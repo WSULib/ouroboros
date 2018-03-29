@@ -284,7 +284,7 @@ class WSUDOR_Document(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		pass
 
 
-	# ingest image type
+	# generate preview datastream
 	def genPreview(self):
 
 		# writing FILE datastream

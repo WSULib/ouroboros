@@ -55,7 +55,7 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		}
 
 		# content-type methods run and returned to API
-		self.public_api_additions = []
+		self.public_api_additions = [self.object_hierarchy]
 
 		# OAIexposed (on ingest, register OAI identifier)
 		self.OAIexposed = False

@@ -432,7 +432,7 @@ class Search(Resource):
 			'fl': [ "id", "mods*", "dc*", "rels*", "human*", "obj*", "last_modified"],
 			'facet': True,
 			'facet.mincount': 1,
-			'facet.limit': -1,
+			'facet.limit': 10,
 			'facet.field': [
 				"rels_hasContentModel",
 				"rels_isMemberOfCollection",  	
@@ -447,7 +447,7 @@ class Search(Resource):
 				"dc_title"
 			],
 			'facet.sort': 'count', # default facet sorting to count
-			'f.facet_mods_year.facet.sort': 'index', # sort mods_year by index (year)
+			'f.facet_mods_year.facet.sort': 'count', # sort mods_year by index (year)
 			'wt': 'json',
 		}
 
@@ -508,6 +508,7 @@ class Search(Resource):
 		parser.add_argument('fl', type=str, action='append', help='expecting field limiter (fl) (multiple)')
 		parser.add_argument('facet.field', type=str, action='append', help='expecting field to return as facet (multiple)')
 		parser.add_argument('facet.field[]', type=str, action='append', help='expecting field to return as facet (multiple) - bracket form')
+		parser.add_argument('facet.limit', type=int, help='expecting integer to limit facet results')
 		parser.add_argument('sort', type=str, help='expecting field to sort by') # add multiple for tiered sorting?
 		parser.add_argument('rows', type=int, help='expecting integer for number of rows to return')
 		parser.add_argument('start', type=int, help='expecting integer for where to start in results')
@@ -706,6 +707,9 @@ class Collections(Search):
 		self.params['fq'] = []
 		self.params['fq'].append('rels_hasContentModel:info\:fedora/CM\:Collection')
 		self.params['fq'].append('rels_isPrimaryCollection:True')
+
+		# set rows 1000
+		self.params['rows'] = 1000
 
 		# execute query
 		self.execute_search()

@@ -102,7 +102,12 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# write POLICY datastream (NOTE: 'E' management type required, not 'R')
 			logging.debug("Using policy: %s" % self.objMeta['policy'])
-			policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
+
+			# handle policy
+			if "info:fedora/" in self.objMeta['policy']:
+				policy_suffix = self.objMeta['policy'].split("info:fedora/")[1]
+			else:
+				policy_suffix = self.objMeta['policy']
 			policy_handle = eulfedora.models.DatastreamObject(self.ohandle,"POLICY", "POLICY", mimetype="text/xml", control_group="E")
 			policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
 			policy_handle.label = "POLICY"

@@ -159,6 +159,9 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			if ds['ds_id'] == 'ALTOXML':
 				logging.debug("processing ALTO...")
 				self.processALTOXML(ds)
+			if ds['ds_id'] == 'TEXT':
+				logging.debug("processing TEXT...")
+				self.processTEXT(ds)
 			if ds['ds_id'] == 'PDF':
 				try:
 					logging.debug("processing PDF...")
@@ -418,6 +421,16 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		logging.debug("Looking for: %s" % file_path)
 		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'ALTOXML', 'ALTOXML', mimetype=ds['mimetype'], control_group='M')
 		generic_handle.label = 'ALTOXML'
+		generic_handle.content = open(file_path)
+		generic_handle.save()
+
+
+	def processTEXT(self, ds):
+		logging.debug("Processing plain TEXT")
+		file_path = self.Bag.path + "/data/datastreams/" + ds['filename']
+		logging.debug("Looking for: %s" % file_path)
+		generic_handle = eulfedora.models.FileDatastreamObject(self.ohandle, 'TEXT', 'TEXT', mimetype=ds['mimetype'], control_group='M')
+		generic_handle.label = 'TEXT'
 		generic_handle.content = open(file_path)
 		generic_handle.save()
 

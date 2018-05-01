@@ -52,9 +52,7 @@ api.add_resource(models.UserWhoami, '/user/<string:username>/whoami', endpoint='
 # Integrated OAI-PMH server
 api.add_resource(models.OAIServer, '/oai', endpoint='oai')
 
-# TESTING
-api.add_resource(models.HelloWorld, '/hello/<string:name>', endpoint='helloworld')
-api.add_resource(models.ArgParsing, '/goober', endpoint='goober_integrity')
+
 
 
 

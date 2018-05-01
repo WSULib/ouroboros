@@ -1410,7 +1410,10 @@ def routeIndexer():
 @roles.auth(['admin','metadata','view'])
 def selectObjects(task='find'):
 
-    return render_template("selectObjects.html", task=task, localConfig=localConfig)
+    # get username from session
+    username = session['username']
+
+    return render_template("selectObjects.html", task=task, localConfig=localConfig, username=username)
 
 
 @app.route("/selectObjects/solr.json", methods=['POST', 'GET'])
@@ -1519,11 +1522,6 @@ def workspace_json():
 
     # get username from session
     username = session['username']
-
-    # gen group list
-    # user_pid_groups = db.session.query(models.user_pids).filter(models.user_pids.username == username).group_by("group_name")
-    # group_names = [ each.group_name.encode('ascii','ignore') for each in user_pid_groups ]
-    # logging.debug(group_names)
 
     user_pid_groups = db.session.query(models.user_pids).with_entities(models.user_pids.username, models.user_pids.group_name).filter(models.user_pids.username == username).group_by(models.user_pids.group_name)
     group_names = [ each.group_name.encode('ascii','ignore') for each in user_pid_groups ]
@@ -1749,7 +1747,7 @@ def cron_indexing():
     IndexRouter.queue_modified(username='cron', priority=1, action='index')
     return jsonify({
         'time_started':time.time()
-        })
+    })
     
 
 @app.route("/indexing/status", methods=['POST', 'GET'])

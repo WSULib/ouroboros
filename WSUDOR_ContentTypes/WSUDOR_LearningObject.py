@@ -51,7 +51,7 @@ class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		}
 
 		# content-type methods run and returned to API
-		self.public_api_additions = []
+		self.public_api_additions = [self.object_hierarchy]
 
 		# OAIexposed (on ingest, register OAI identifier)
 		self.OAIexposed = True
@@ -199,6 +199,25 @@ class WSUDOR_LearningObject(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	def genIIIFManifest(self, iiif_manifest_factory_instance, identifier, getParams):
 
 		pass
+
+
+	# generate preview datastream
+	def genPreview(self):
+
+		# writing FILE datastream
+		deriv_PDF = "/tmp/Ouroboros/"+str(uuid.uuid4())+".pdf"
+		with open(deriv_PDF, 'w') as f:
+			file_handle = self.ohandle.getDatastreamObject('FILE')
+			f.write(file_handle.content)
+
+		temp_filename = "/tmp/Ouroboros/"+str(uuid.uuid4())+".jpg"
+		os.system('convert -thumbnail 960x960 -background white %s[0] %s' % (deriv_PDF, temp_filename))
+		preview_handle = eulfedora.models.FileDatastreamObject(self.ohandle, "PREVIEW", "PREVIEW", mimetype="image/jpeg", control_group='M')
+		preview_handle.label = "PREVIEW"
+		preview_handle.content = open(temp_filename)
+		preview_handle.save()
+		os.system('rm %s' % (temp_filename))
+		os.system('rm %s' % (deriv_PDF))
 
 
 

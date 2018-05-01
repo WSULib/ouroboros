@@ -59,17 +59,16 @@ class BitStream(object):
 		self.obj_handle = fedora_handle.get_object(self.PID)
 		self.obj_ds_handle = self.obj_handle.getDatastreamObject(self.DS)
 
-		logging.debug('init bitStream request: %s' % str(self.__dict__))
-		logging.debug('fedora credentials: %s/%s' % (fedora_handle.username, fedora_handle.password))
+		logging.debug('init bitStream request: %s' % str(self.__dict__))		
 
 		# determine auth
-		# try:
-		self.auth = self._determine_auth()
-		# except Exception, e:
-		# 	logging.debug(e)
-		# 	self.msg = "authorization failed"
-		# 	self.status_code = 500
-		# 	self.auth = False
+		try:
+			self.auth = self._determine_auth()
+		except Exception, e:
+			logging.debug(e)
+			self.msg = "authorization failed"
+			self.status_code = 500
+			self.auth = False
 
 	
 	# return custom message and HTTP status code

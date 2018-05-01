@@ -123,8 +123,8 @@ def removeUserPIDs(username, PIDs):
 
 
 def getSelPIDs(username=False):
-	if not username:
-		username = session['username']
+	if not username:		
+		username = session['username']		
 	userSelectedPIDs = models.user_pids.query.filter_by(username=username,status=True)	
 	PIDlist = [PID.PID for PID in userSelectedPIDs]
 	return PIDlist

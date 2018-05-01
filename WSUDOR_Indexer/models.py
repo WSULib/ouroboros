@@ -54,7 +54,7 @@ class FedoraJMSConsumer(object):
 
 	@defer.inlineCallbacks
 	def run(self):
-		client = Stomp(self.config)
+		client = Stomp(self.config)		
 		yield client.connect()
 		headers = {
 			# client-individual mode is necessary for concurrent processing
@@ -62,10 +62,8 @@ class FedoraJMSConsumer(object):
 			# the maximal number of messages the broker will let you work on at the same time
 			'activemq.prefetchSize': '100',
 		}
-
 		client.subscribe(self.QUEUE, headers, listener=SubscriptionListener(self.consume, onMessageFailed=self.error))
-
-		try:			
+		try:
 			client = yield client.disconnected
 		except StompConnectionError:
 			logging.debug("FedoraJMSConsumer: reconnecting")

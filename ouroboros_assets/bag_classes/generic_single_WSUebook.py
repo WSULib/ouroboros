@@ -126,8 +126,7 @@ class BagClass(object):
 			or ebook_binary.endswith('bak') \
 			or ebook_binary == "Thumbs.db" \
 			or ebook_binary.endswith('png') \
-			or ebook_binary.startswith('._') \
-			or ebook_binary.endswith('txt'):
+			or ebook_binary.startswith('._'):			
 				continue
 
 			# write symlink
@@ -145,7 +144,8 @@ class BagClass(object):
 				'xml': ('text/xml','ALTOXML'),
 				'html': ('text/html','HTML'),
 				'htm': ('text/html','HTML'),
-				'pdf': ('application/pdf','PDF')
+				'pdf': ('application/pdf','PDF'),
+				'txt': ('text/plain','TEXT')
 			}
 			filetype_tuple = filetype_hash[ebook_binary.split(".")[-1]] 		
 			

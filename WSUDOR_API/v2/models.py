@@ -291,6 +291,7 @@ class ItemPreview(Item):
 
 		# get image/loris params from object's preview() method
 		loris_args = self.obj.previewImage()
+		logging.debug(loris_args)
 
 		# use ItemLoris to return bits
 		return ItemLoris().get(*loris_args)

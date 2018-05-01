@@ -3,6 +3,7 @@
 import time
 import json
 import pickle
+import pdb
 import sys
 from uuid import uuid4
 import unicodedata
@@ -1053,7 +1054,7 @@ def objPreview(PIDnum):
     logging.debug("generating information about: %s" % PIDlet['cPID'])
 
     # WSUDOR handle
-    obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PIDlet['cPID'])
+    obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(PIDlet['cPID'])    
 
     # if obj_handle is false, abort
     if not obj_handle:
@@ -1062,7 +1063,7 @@ def objPreview(PIDnum):
     # else, continue
     else:
         # General Metadata
-        solr_params = {'q':utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
+        solr_params = {'q':'id:%s' % utilities.escapeSolrArg(PIDlet['cPID']), 'rows':1}
         solr_results = solr_handle.search(**solr_params)
         if solr_results.total_results == 0:
             return "Selected objects don't appear to exist."

@@ -437,6 +437,23 @@ class WSUDOR_Collection(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				break
 
 		self.indexReaduxVirtualObjects(action='index')
+
+
+	# create dictionary comprehensive of all associated images
+	def previewImage(self):
+
+		'''
+		Return image/loris params for API to render
+			- pid, datastream, region, size, rotation, quality, format
+		'''
+
+		# if PREVIEW datastream exists, use
+		if 'PREVIEW' in self.ohandle.ds_list:
+			return (self.pid, 'PREVIEW', 'full', 'full', 0, 'default', 'jpg')
+
+		# else, default to WSUDORThumbnails
+		else:
+			return ('wayne:WSUDORThumbnails', 'NoPhoto', 'full', 'full', 0, 'default', 'jpg')
 		
 
 		

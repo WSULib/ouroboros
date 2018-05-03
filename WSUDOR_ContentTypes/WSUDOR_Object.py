@@ -1584,7 +1584,13 @@ class WSUDOR_GenObject(object):
 
         # clear from fedora resolver cache
         try:
-            logging.debug("removing instance: %s" % ident)
+
+            # remove tiles
+            tiles_dir = "%s/%s" % (image_cache, ident)
+            logging.debug("removing tiles at: %s" % tiles_dir)
+            shutil.rmtree(tiles_dir)
+            
+            # remove downloaded source
             file_structure = ''
             ident_hash = hashlib.md5(quote_plus(ident)).hexdigest()
             file_structure_list = [ident_hash[0:2]] + [ident_hash[i:i+3] for i in range(2, len(ident_hash), 3)]
@@ -1594,6 +1600,7 @@ class WSUDOR_GenObject(object):
             logging.debug("removing dir: %s" % final_file_structure)
             shutil.rmtree(final_file_structure)
             return True
+            
         except:
             logging.debug("could not remove from fedora resolver cache")
             return False

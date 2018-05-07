@@ -716,6 +716,9 @@ class Collections(Search):
 		# set rows 1000
 		self.params['rows'] = 1000
 
+		# sort alphabetically
+		self.params['sort'] = 'dc_title_sorting asc'
+
 		# execute query
 		self.execute_search()
 

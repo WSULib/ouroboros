@@ -194,6 +194,10 @@ class WSUDOR_Image(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# create derivatives and write datastreams
 			for ds in self.objMeta['datastreams']:
 
+				# fix long labels
+				if len(ds['label']) > 200:
+					ds['label'] = "%s..." % ds['label'][:200]
+
 				if "skip_processing" not in ds:
 					logging.debug("Processing derivative")
 					file_path = self.Bag.path + "/data/datastreams/" + ds['filename']

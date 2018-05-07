@@ -167,9 +167,12 @@ class Item(Resource):
 		if self.obj.isMemberOfCollections:
 			for coll_pid in self.obj.isMemberOfCollections:
 
-				# open collection obj and append solr doc
-				coll_obj = WSUDOR_Object(coll_pid)
-				coll_meta_list[coll_obj.pid] = coll_obj.SolrDoc.asDictionary()
+				try:
+					# open collection obj and append solr doc
+					coll_obj = WSUDOR_Object(coll_pid)
+					coll_meta_list[coll_obj.pid] = coll_obj.SolrDoc.asDictionary()
+				except:
+					logging.debug('claims to be part of collection, but could not retrieve collection metadata')
 
 		return coll_meta_list
 

@@ -2045,13 +2045,19 @@ def objAccess(pid):
     object_package['datastream_package'] = ds_list
 
     # Object size and datastreams
-    size_dict = obj_handle.object_size()
+    if request.args.get('calc_object_size', default=False):
+        size_dict = obj_handle.object_size(calculate=True)
+    else:
+        size_dict = obj_handle.object_size()
     logging.debug(size_dict)
-    object_package['size_dict'] = size_dict
-    object_package['size_dict_json'] = json.dumps({
-        'datastreams':size_dict['datastreams'],
-        'fedora_total_size':size_dict['fedora_total_size']
-        })
+    if size_dict:
+        object_package['size_dict'] = size_dict
+        object_package['size_dict_json'] = json.dumps({
+            'datastreams':size_dict['datastreams'],
+            'fedora_total_size':size_dict['fedora_total_size']
+            })
+    else:
+        object_package['size_dict'] = False
 
     # OAI
     OAI_dict = {}

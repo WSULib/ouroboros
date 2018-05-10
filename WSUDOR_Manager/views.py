@@ -2011,6 +2011,33 @@ def objAccess(pid):
 
     object_package = {}
 
+    if request.method == 'POST':
+        # eulfedora
+        import eulfedora
+        obj_ohandle = fedora_handle.get_object(pid)
+
+        # Raw Datastream via Fedora API
+        ############################################################### 
+        raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/MODS/content".format(pid)
+        raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")    
+        ###############################################################
+        
+        # get new MODS from form
+        new_MODS = request.form['raw_xml']
+
+        # construct DS object
+        DS_handle = eulfedora.models.DatastreamObject(obj_ohandle, "MODS", "MODS", control_group="X")   
+
+        # mimetype
+        DS_handle.mimetype = "text/xml"
+
+        # content       
+        DS_handle.content = new_MODS  
+
+        # save constructed object
+        # DS_handle.save()
+        object_package['mods_successful_update'] = True
+
     # WSUDOR handle
     obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
 
@@ -2081,12 +2108,21 @@ def objAccess(pid):
     object_package['OAI_package'] = OAI_dict
     logging.debug(object_package['OAI_package'])
 
+    # Raw Datastream via Fedora API
+    ############################################################### 
+    raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/MODS/content" % (pid)
+    raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
+    object_package['mods_data'] = raw_xml
+    logging.debug(object_package['mods_data'])
+    ###############################################################
+
     # bitStream tokens
     object_package['bitStream_tokens'] = BitStream.genAllTokens(pid, localConfig.BITSTREAM_KEY)
 
     # RENDER
     logging.debug(object_package['solr_package'])
     return render_template("admin_object_access.html", pid=pid, object_package=object_package, localConfig=localConfig)
+
 
 
 

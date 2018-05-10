@@ -334,6 +334,28 @@
 
 <div class="row">
 	<div class="col-md-10">
+		{% if object_package.mods_successful_update %}
+			<div class="alert alert-success alert-dismissible show" role="alert">
+			  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+			    <span aria-hidden="true" style="margin-left: -2em; display: block;">&times;</span>
+			  </button>
+				<strong>MODS has been Updated!</strong>
+			</div>
+		{% endif %}
+		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/admin_object_overview/{{pid}}">
+			<h3>MODS Editor</h3>
+			<div class="col-md-3">
+				<div class="form-group">
+					<textarea name="raw_xml" cols="100" rows="20">{{object_package.mods_data}}</textarea>
+				</div>	
+				<input type="submit" class="btn btn-primary" value="Update MODS">
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-10">
 		<h3>RDF Relationships</h3>
 		<p>RDF relationships are the "glue" that hold digital objects together in Fedora Commons.  These relationships describe what collections objects belong to, what objects are related, etc.  You can view these raw RDF relationships below by clicking the button below.</p>
 		<p><a class="btn btn-warning" href="#" onclick="$('.rdf_relationships').slideToggle(); return false;">show RDF relationships</a></p>

@@ -2016,12 +2016,6 @@ def objAccess(pid):
         import eulfedora
         obj_ohandle = fedora_handle.get_object(pid)
 
-        # Raw Datastream via Fedora API
-        ############################################################### 
-        raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/MODS/content".format(pid)
-        raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")    
-        ###############################################################
-        
         # get new MODS from form
         new_MODS = request.form['raw_xml']
 
@@ -2035,7 +2029,7 @@ def objAccess(pid):
         DS_handle.content = new_MODS  
 
         # save constructed object
-        # DS_handle.save()
+        DS_handle.save()
         object_package['mods_successful_update'] = True
 
     # WSUDOR handle

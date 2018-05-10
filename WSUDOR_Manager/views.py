@@ -2110,7 +2110,7 @@ def objAccess(pid):
 
     # Raw Datastream via Fedora API
     ############################################################### 
-    raw_xml_URL = "http://localhost/fedora/objects/%s/datastreams/MODS/content" % (pid)
+    raw_xml_URL = "http://%s/fedora/objects/%s/datastreams/MODS/content" % (localConfig.FEDORA_HOST, pid)
     raw_xml = requests.get(raw_xml_URL).text.encode("utf-8")
     object_package['mods_data'] = raw_xml
     logging.debug(object_package['mods_data'])

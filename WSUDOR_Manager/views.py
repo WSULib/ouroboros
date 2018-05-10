@@ -2010,6 +2010,8 @@ def solrReaduxDoc(pid, action):
 def objAccess(pid):
 
     object_package = {}
+    # WSUDOR handle
+    obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
 
     if request.method == 'POST':
         # eulfedora
@@ -2030,11 +2032,9 @@ def objAccess(pid):
 
         # save constructed object
         DS_handle.save()
+        obj_handle.index()
         object_package['mods_successful_update'] = True
-
-    # WSUDOR handle
-    obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
-
+    
     # General Metadata
     # solr_params = {'q':utilities.escapeSolrArg(pid), 'rows':1}
     # solr_results = solr_handle.search(**solr_params)

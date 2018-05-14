@@ -344,9 +344,9 @@
 		{% endif %}
 		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/admin_object_overview/{{pid}}">
 			<h3>MODS Editor</h3>
-			<div class="col-md-3">
+			<div class="col-md-12">
 				<div class="form-group">
-					<textarea name="raw_xml" cols="100" rows="20">{{object_package.mods_data}}</textarea>
+					<textarea name="raw_xml" style="width:100%" cols="100" rows="20">{{object_package.mods_data}}</textarea>
 				</div>	
 				<input type="submit" class="btn btn-primary" value="Update MODS">
 			</div>

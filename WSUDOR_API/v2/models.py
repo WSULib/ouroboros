@@ -3,6 +3,7 @@
 
 # python modules
 import pdb
+import re
 import time
 
 # Ouroboros config
@@ -62,6 +63,39 @@ class ResponseObject(object):
 
 
 	def generate_response(self):
+
+		# check for precision return
+		parser = reqparse.RequestParser(bundle_errors=True)
+		parser.add_argument('cherrypick', type=str, default=False)
+		args = parser.parse_args()		
+
+		# if cherrypick present, return cherrypick of full API response
+		if args['cherrypick']:
+
+			# get hops			
+			hops = args['cherrypick'].split(".")
+
+			# compile regex
+			ai_regex = re.compile(r'(.+?)\[([0-9]+)\]')
+
+			# loop through hops
+			for hop in hops:
+
+				# check to see if ends with array index
+				ai_check = re.match(ai_regex, hop)
+				if ai_check:
+					self.body = self.body.get(ai_check.group(1), False)
+					if self.body == False:
+						break
+					try:
+						self.body = self.body[int(ai_check.group(2))]
+					except IndexError:
+						self.body = False
+
+				else:
+					self.body = self.body.get(hop, False)
+					if self.body == False:
+						break
 
 		return {
 			'header':{

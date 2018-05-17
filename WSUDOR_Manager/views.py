@@ -2014,26 +2014,43 @@ def objAccess(pid):
     obj_handle = WSUDOR_ContentTypes.WSUDOR_Object(pid)
 
     if request.method == 'POST':
-        # eulfedora
-        import eulfedora
-        obj_ohandle = fedora_handle.get_object(pid)
 
-        # get new MODS from form
-        new_MODS = request.form['raw_xml']
+        # well-formed check
+        try:
+            from lxml import etree
+            xml = request.form['raw_xml']
+            parser = etree.XMLParser()
+            doc = etree.fromstring(xml, parser=parser)
+            wellformed = True
 
-        # construct DS object
-        DS_handle = eulfedora.models.DatastreamObject(obj_ohandle, "MODS", "MODS", control_group="X")   
+        except etree.XMLSyntaxError:
+            wellformed = False
 
-        # mimetype
-        DS_handle.mimetype = "text/xml"
 
-        # content       
-        DS_handle.content = new_MODS  
+        if wellformed == True:
+            # eulfedora
+            import eulfedora
+            obj_ohandle = fedora_handle.get_object(pid)
 
-        # save constructed object
-        DS_handle.save()
-        obj_handle.index()
-        object_package['mods_successful_update'] = True
+            # get new MODS from form
+            new_MODS = request.form['raw_xml']
+
+            # construct DS object
+            DS_handle = eulfedora.models.DatastreamObject(obj_ohandle, "MODS", "MODS", control_group="X")   
+
+            # mimetype
+            DS_handle.mimetype = "text/xml"
+
+            # content       
+            DS_handle.content = new_MODS  
+
+            # save constructed object
+            DS_handle.save()
+            obj_handle.index()
+            object_package['mods_successful_update'] = True
+
+        else:
+           object_package['mods_successful_update'] = False
     
     # General Metadata
     # solr_params = {'q':utilities.escapeSolrArg(pid), 'rows':1}

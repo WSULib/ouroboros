@@ -331,15 +331,21 @@
 <!-- <div class="row">
 	
 </div> -->
-
 <div class="row">
 	<div class="col-md-10">
-		{% if object_package.mods_successful_update %}
+		{% if object_package.mods_successful_update == True %}
 			<div class="alert alert-success alert-dismissible show" role="alert">
 			  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
 			    <span aria-hidden="true" style="margin-left: -2em; display: block;">&times;</span>
 			  </button>
 				<strong>MODS has been Updated!</strong>
+			</div>
+		{% elif object_package.mods_successful_update == False %}
+			<div class="alert alert-danger alert-dismissible show" role="alert">
+			  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+			    <span aria-hidden="true" style="margin-left: -2em; display: block;">&times;</span>
+			  </button>
+				<strong>Invalid XML. Changes have been reverted!</strong>
 			</div>
 		{% endif %}
 		<form class="form-horizontal" id="form" role="form" method="POST" action="/{{APP_PREFIX}}/admin_object_overview/{{pid}}">

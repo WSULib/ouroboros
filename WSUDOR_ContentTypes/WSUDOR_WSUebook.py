@@ -14,6 +14,8 @@ from bs4 import BeautifulSoup
 import requests
 import rdflib
 from collections import defaultdict, OrderedDict
+import tempfile
+import textract
 
 # library for working with LOC BagIt standard
 import bagit
@@ -854,6 +856,108 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 		# export constituents
 		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export)
+
+
+	def extract_raw_text(self, method='pdf', save_to_object=True):
+
+		'''
+		Method to extract raw text from book
+			- user can request method
+			- but falls back on 'altoxml' if 'pdf' fails
+			- and vice versa
+		'''
+
+		# extract
+		if method == 'altoxml':
+			raw_text = self._extract_text_altoxml()
+
+		elif method == 'pdf':
+			raw_text = self._extract_text_pdf()
+
+		# save as TEXT datastream
+		if raw_text != None and save_to_object:
+			logging.debug('write raw text to TEXT datastream')			
+			text_handle = eulfedora.models.DatastreamObject(self.ohandle, 'TEXT', 'TEXT', mimetype='text/plain', control_group="M")
+			text_handle.label = 'TEXT'						
+			text_handle.content = raw_text
+			text_handle.save()
+
+		# return
+		return raw_text
+
+
+	def _extract_text_altoxml(self):
+
+		# extract raw text from ALTOXML
+		# from Readux: https://github.com/ecds/readux/blob/50a895dcf7d64b753a07808e9be218cab3682850/readux/books/models.py#L448-L459
+
+		logging.debug('extract raw text for %s via ALTOXML' % self.pid)
+
+		# set local blank fulltext
+		book_text = ''
+
+		# loop through constituents
+		for num, page in self.pages_from_rels.items():
+			if 'ALTOXML' in page.ds_list.keys():
+
+				logging.debug('extracting text from page %s' % num)
+
+				# retrieve and parse with BS4
+				xmlsoup = BeautifulSoup(page.getDatastreamObject('ALTOXML').content.serialize())
+
+				# get page text
+				page_text = '\n'.join((' '.join(s['content'] for s in line.find_all('string'))) for line in xmlsoup.find_all('textline'))
+
+				# append to object
+				book_text += ("\n"+page_text)
+
+		return book_text
+
+
+	def _extract_text_pdf(self, method='pdfminer'):
+
+		logging.debug('extract raw text for %s via PDF text extraction' % self.pid)
+
+		# if has full PDF
+		if 'PDF_FULL' in self.ohandle.ds_list.keys():
+
+			# create temp file
+			f = tempfile.mkstemp(suffix='.pdf')
+
+			# write PDF to temp file
+			with open(f[1], 'wb') as f_handle:
+				f_handle.write(self.ohandle.getDatastreamObject('PDF_FULL').content)
+
+			# parse with textract
+			book_text = textract.process(f[1], method=method)
+
+			# if pdfminer used, tendency to include double blank spaces, and trailing whitespace
+			# 	- convert doubles to singles, and rstrip
+			if method == 'pdfminer':
+					logging.debug('making adjustments for pdfminer parser')
+					book_text = book_text.replace('  ',' ')
+					book_text = book_text.replace(' \n','\n')
+
+			# remove tempfile
+			os.remove(f[1])		
+
+		return book_text
+
+
+	def raw_text(self):
+
+		'''
+		Return raw text for book
+			- if datastream does not exist, attempt to extract, save, and return
+		'''
+
+		if 'TEXT' in self.ohandle.ds_list.keys():
+			text_handle = self.ohandle.getDatastreamObject('TEXT')
+			return text_handle.content
+
+		else:
+			raw_text = self.extract_raw_text()
+			return raw_text
 
 
 

@@ -886,18 +886,23 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return raw_text
 
 
-	def _extract_text_altoxml(self):
+	def _extract_text_altoxml(self, page_list=None):
 
 		# extract raw text from ALTOXML
 		# from Readux: https://github.com/ecds/readux/blob/50a895dcf7d64b753a07808e9be218cab3682850/readux/books/models.py#L448-L459
 
 		logging.debug('extract raw text for %s via ALTOXML' % self.pid)
 
+		# prepare list of pages to work on
+		pages = self.pages_from_rels.items()			
+		if page_list:			
+			pages = [ (page_num, pages[page_num][1]) for page_num in page_list ]
+
 		# set local blank fulltext
 		book_text = ''
 
 		# loop through constituents
-		for num, page in self.pages_from_rels.items():
+		for num, page in pages:
 			if 'ALTOXML' in page.ds_list.keys():
 
 				logging.debug('extracting text from page %s' % num)
@@ -958,6 +963,19 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		else:
 			raw_text = self.extract_raw_text()
 			return raw_text
+
+
+	def extract_page_range_raw_text(self, page_list):
+
+		'''
+		Method to extract raw text from ALTOXML
+		'''
+
+		# return page text from ALTOXML
+		return self._extract_text_altoxml(page_list=page_list)
+
+
+
 
 
 

@@ -37,6 +37,11 @@ api.add_resource(models.ItemCanvasIIIF, '/item/<string:pid>/iiif/canvas/<string:
 api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/annotation_list', endpoint='item_iiif_annotation_list', defaults={'annotation_list': True}) # iiif annotation list for item
 api.add_resource(models.ItemHierarchy, '/item/<string:pid>/hierarchy', endpoint='item_hierarchy', defaults={'include_uris': True}) # return object hierarchy
 
+# Content-Type Specific
+# WSUebooks
+api.add_resource(models.ItemWSUebookRawText, '/item/<string:pid>/text', endpoint='wsuebook_raw_text') # raw text from wsuebook
+api.add_resource(models.ItemWSUebookPageRangeRawText, '/item/<string:pid>/text/page/<string:page_range>', endpoint='wsuebook_page_range_raw_text') # raw text from wsuebook page range
+
 # Collection
 api.add_resource(models.Collections, '/collections', endpoint='collections')
 api.add_resource(models.CollectionMetadata, '/collection/<string:pid>', endpoint='collection_metadata') # collection metadata∞

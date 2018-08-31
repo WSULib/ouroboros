@@ -450,6 +450,59 @@ class ItemHierarchy(Item):
 		return response.generate_response()
 
 
+# Items - WSUebook
+#################################################################################
+class ItemWSUebookRawText(Item):
+
+	'''
+	desc: Returns raw text from WSUebook
+	'''
+
+	def __init__(self, *args, **kwargs):
+		pass
+
+	def get(self, pid):		
+
+		# init Item
+		super( ItemWSUebookRawText, self ).__init__(pid, skip_load=False)
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# get raw text
+		raw_text = self.obj.raw_text()
+
+		# return response
+		return Response(raw_text, mimetype='text/plain')
+
+
+class ItemWSUebookPageRangeRawText(Item):
+
+	'''
+	desc: Returns raw text from WSUebook
+	'''
+
+	def __init__(self, *args, **kwargs):
+		pass
+
+	def get(self, pid, page_range):		
+
+		# init Item
+		super( ItemWSUebookPageRangeRawText, self ).__init__(pid, skip_load=False)
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# get page range
+		page_range = list(utilities.parseIntSet(nputstr=page_range))
+
+		# get raw text
+		raw_text = self.obj.extract_page_range_raw_text(page_range)
+
+		# return response
+		return Response(raw_text, mimetype='text/plain')
+
+
 # Search
 #################################################################################
 class Search(Resource):

@@ -1015,6 +1015,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			pb = etree.Element('pb')
 			pb.set('n','%s' % num)
 			pb.set('facs','https://digidev3.library.wayne.edu/loris/fedora:%s_Page_%s|JP2/full/,1700/0/default.jpg' % (self.pid, num))
+			pb.text = ' '
 			div.append(pb)
 			
 			# init p_text

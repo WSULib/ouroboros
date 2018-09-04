@@ -503,10 +503,50 @@ class ItemAnalysis(Item):
 				# get page num
 				page_num = int(page_div.attrib['n'])
 
-				# prepend thumbnail
-				thumb = etree.Element('img')
-				thumb.set('src','https://digidev3.library.wayne.edu/loris/fedora:%s_Page_%s|THUMBNAIL/full/full/0/default.jpg' % (self.obj.pid, page_num))
-				page_div.insert(0, thumb)
+				# wrap in row
+				row = etree.Element('div')
+				row.set('class','row')
+
+				# create text div
+				text_div = etree.Element('div')
+				text_div.set('class','col-md-6')
+
+				# add "see page image" link
+				img_link = etree.Element('p')
+				img_link.set('class','page_img_link')
+				img_link.set('data','%s' % page_num)
+				img_link.text = '[see page image]'
+				text_div.append(img_link)
+
+				# grab all children and move to text
+				children = page_div.getchildren()
+				for child in children:
+					text_div.append(child)
+
+				# append to page_div
+				row.append(text_div)
+
+				# create page image div
+				image_div = etree.Element('div')
+				image_div.set('class','col-md-6')
+
+				# create image tag
+				img = etree.Element('img')
+				img.set('id','img_%s' % page_num)
+				img.set('data','https://digidev3.library.wayne.edu/loris/fedora:%s_Page_%s|JP2/full/full/0/default.jpg' % (self.obj.pid, page_num))
+				img.set('class','page_image')
+				image_div.append(img)
+				
+				# append to pagediv
+				row.append(image_div)
+
+				# append row
+				page_div.append(row)
+
+				# append <hr>
+				hr = etree.Element('hr')
+				hr.set('class','hr_page_break')
+				page_div.append(hr)
 
 			response.body['analysis']['tei_as_html'] = etree.tostring(tei_xml)
 

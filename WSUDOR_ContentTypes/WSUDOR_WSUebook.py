@@ -16,6 +16,7 @@ import rdflib
 from collections import defaultdict, OrderedDict
 import tempfile
 import textract
+from lxml import etree
 
 # library for working with LOC BagIt standard
 import bagit
@@ -858,23 +859,21 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		self.export_constituents(objMeta, bag_root, data_root, datastreams_root, tarball, preserve_relationships, overwrite_export)
 
 
-	def extract_raw_text(self, method='pdf', save_to_object=True):
+	def extract_raw_text(self, save_to_object=True, page_list=None):
 
 		'''
 		Method to extract raw text from book
-			- user can request method
-			- but falls back on 'altoxml' if 'pdf' fails
-			- and vice versa
+			- sets TEXT datasteram with raw text
+			- sets TEI datastream with raw text as minimally encoded TEI
 		'''
 
-		# extract
-		if method == 'altoxml':
-			raw_text = self._extract_text_altoxml()
+		# extract		
+		page_text_dict = self._extract_text_altoxml(page_list=page_list)
 
-		elif method == 'pdf':
-			raw_text = self._extract_text_pdf()
+		# concatenate pages as raw text
+		raw_text = '\n'.join([ text for num,text in page_text_dict.items() ])
 
-		# save as TEXT datastream
+		# store as datastream
 		if raw_text != None and save_to_object:
 			logging.debug('write raw text to TEXT datastream')			
 			text_handle = eulfedora.models.DatastreamObject(self.ohandle, 'TEXT', 'TEXT', mimetype='text/plain', control_group="M")
@@ -882,14 +881,30 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			text_handle.content = raw_text
 			text_handle.save()
 
+		# encode as TEI
+		tei = self._encode_raw_text_as_tei(page_text_dict)
+
+		# store as datastream
+		if tei != None and save_to_object:
+			logging.debug('write TEI to TEI datastream')			
+			text_handle = eulfedora.models.DatastreamObject(self.ohandle, 'TEI', 'TEI', mimetype='text/xml', control_group="M")
+			text_handle.label = 'TEI'						
+			text_handle.content = tei
+			text_handle.save()
+
 		# return
-		return raw_text
+		return (raw_text, tei)
 
 
 	def _extract_text_altoxml(self, page_list=None):
 
-		# extract raw text from ALTOXML
-		# from Readux: https://github.com/ecds/readux/blob/50a895dcf7d64b753a07808e9be218cab3682850/readux/books/models.py#L448-L459
+		'''
+		Method to extract raw text from ALTOXML datastreams for each page
+		inspiried by Readux: https://github.com/ecds/readux/blob/50a895dcf7d64b753a07808e9be218cab3682850/readux/books/models.py#L448-L459
+
+		Returns:
+			(OrderedDict): {pagenum (int):rawtext (str)},...
+		'''
 
 		logging.debug('extract raw text for %s via ALTOXML' % self.pid)
 
@@ -899,10 +914,11 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			pages = [ (page_num, pages[page_num][1]) for page_num in page_list ]
 
 		# set local blank fulltext
-		book_text = ''
+		page_text_dict = OrderedDict()
 
-		# loop through constituents
+		# loop through constituents, adding raw text to dictionary
 		for num, page in pages:
+			
 			if 'ALTOXML' in page.ds_list.keys():
 
 				logging.debug('extracting text from page %s' % num)
@@ -914,9 +930,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				page_text = '\n'.join((' '.join(s['content'] for s in line.find_all('string'))) for line in xmlsoup.find_all('textline'))
 
 				# append to object
-				book_text += ("\n"+page_text)
+				page_text_dict[num] = page_text
 
-		return book_text
+		return page_text_dict
 
 
 	def _extract_text_pdf(self, method='pdfminer'):
@@ -949,6 +965,74 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return book_text
 
 
+	def _encode_raw_text_as_tei(self, page_text_dict):
+
+		'''
+		Method to encode paginated raw text as simple TEI
+		'''
+
+		# init root node
+		tei_root = etree.Element('TEI', nsmap={
+			'tei':'http://www.tei-c.org/ns/1.0',
+			'xs':'http://www.w3.org/2001/XMLSchema'
+		})
+
+		# set attributes		
+		tei_root.set('xmlns','http://www.tei-c.org/ns/1.0')
+
+		# init and append header
+		teiHeader = etree.fromstring('''<teiHeader>
+	<fileDesc>
+		<titleStmt>
+			<title> </title>
+		</titleStmt>
+		<publicationStmt>
+			<idno> </idno>
+		</publicationStmt>       
+		<sourceDesc>
+			<bibl> </bibl>
+		</sourceDesc>
+	</fileDesc>
+</teiHeader>''')
+		tei_root.append(teiHeader)		
+
+		# init text and body node
+		text = etree.SubElement(tei_root, 'text')		
+		body = etree.SubElement(text, 'body')		
+
+		# loop through pages and write as <div>s
+		for num, page_text in page_text_dict.items():
+
+			# bump num
+			num = num + 1
+			
+			# init div
+			div = etree.Element('div')
+			div.set('type','page')
+			div.set('n','%s' % num)
+
+			# init p_image
+			pb = etree.Element('pb')
+			pb.set('n','%s' % num)
+			pb.set('facs','https://digidev3.library.wayne.edu/loris/fedora:%s_Page_%s|JP2/full/,1700/0/default.jpg' % (self.pid, num))
+			div.append(pb)
+			
+			# init p_text
+			try:			
+				encoded_page_text = page_text.replace("\n","<lb/>")
+				p_text = etree.fromstring('<p>%s</p>' % encoded_page_text)			
+			except:
+				p_text = etree.Element('p')
+			div.append(p_text)
+
+			# attach			
+			body.append(div)
+
+		# return serialized
+		return etree.tostring(tei_root)
+
+
+
 	def raw_text(self):
 
 		'''
@@ -956,23 +1040,24 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			- if datastream does not exist, attempt to extract, save, and return
 		'''
 
-		if 'TEXT' in self.ohandle.ds_list.keys():
+		if 'TEXT' in self.ohandle.ds_list.keys() and 'TEI' in self.ohandle.ds_list.keys():
 			text_handle = self.ohandle.getDatastreamObject('TEXT')
-			return text_handle.content
+			tei_handle = self.ohandle.getDatastreamObject('TEI')
+			return (text_handle.content, tei_handle.content.serialize())
 
 		else:
-			raw_text = self.extract_raw_text()
-			return raw_text
+			raw_text_output = self.extract_raw_text()
+			return raw_text_output
 
 
-	def extract_page_range_raw_text(self, page_list):
+	# def extract_page_range_raw_text(self, page_list):
 
-		'''
-		Method to extract raw text from ALTOXML
-		'''
+	# 	'''
+	# 	Method to extract raw text from ALTOXML
+	# 	'''
 
-		# return page text from ALTOXML
-		return self._extract_text_altoxml(page_list=page_list)
+	# 	# return page text from ALTOXML
+	# 	return self._extract_text_altoxml(page_list=page_list)
 
 
 

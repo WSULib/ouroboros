@@ -2,6 +2,7 @@
 # WSUDOR_API : models.py
 
 # python modules
+from lxml import etree
 import pdb
 import re
 import time
@@ -421,7 +422,7 @@ class ItemCanvasIIIF(Item):
 class ItemHierarchy(Item):
 
 	'''
-	desc: Returns datastream via loris	
+	desc: JSON response of item hierarchy
 	'''
 
 	def __init__(self, *args, **kwargs):
@@ -447,6 +448,69 @@ class ItemHierarchy(Item):
 		# build and respond
 		response.status_code = 200
 		response.body = hierarchy
+		return response.generate_response()
+
+
+class ItemAnalysis(Item):
+
+	'''
+	desc: return information to support object analysis
+	'''
+
+	def __init__(self, *args, **kwargs):
+		self.content_type_specific = {}
+
+
+	def get(self, pid):
+
+		# init Item
+		super( ItemAnalysis, self ).__init__(pid)
+
+		# init ResponseObject
+		response = ResponseObject()
+
+		# build and respond
+		response.status_code = 200
+
+		# build base
+		response.body = self.get_item_metadata()
+
+		# add analysis section
+		response.body['analysis'] = {}
+
+		# handle ebooks		
+		if self.obj.content_type == 'WSUDOR_WSUebook':
+
+			# get raw_text and tei
+			raw_text,tei = self.obj.raw_text()
+
+			# prepare tei_as_html
+			# replace <lb> with <br>
+			tei = tei.replace('<lb/>','<br/>')
+
+			# get page divs
+			tei_xml = etree.fromstring(tei)
+			nsmap = tei_xml.nsmap.copy()
+			try:
+				nsmap.pop(None)
+			except:
+				pass
+			page_divs = tei_xml.xpath('//tei:text//tei:div', namespaces=nsmap)
+
+			# loop through
+			for page_div in page_divs:
+
+				# get page num
+				page_num = int(page_div.attrib['n'])
+
+				# prepend thumbnail
+				thumb = etree.Element('img')
+				thumb.set('src','https://digidev3.library.wayne.edu/loris/fedora:%s_Page_%s|THUMBNAIL/full/full/0/default.jpg' % (self.obj.pid, page_num))
+				page_div.insert(0, thumb)
+
+			response.body['analysis']['tei_as_html'] = etree.tostring(tei_xml)
+
+		# return
 		return response.generate_response()
 
 

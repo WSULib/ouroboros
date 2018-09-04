@@ -911,7 +911,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# prepare list of pages to work on
 		pages = self.pages_from_rels.items()			
 		if page_list:			
-			pages = [ (page_num, pages[page_num][1]) for page_num in page_list ]
+			pages = [ (pages[page_num][0], pages[page_num][1]) for page_num in page_list ]
 
 		# set local blank fulltext
 		page_text_dict = OrderedDict()
@@ -1004,7 +1004,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		for num, page_text in page_text_dict.items():
 
 			# bump num
-			num = num + 1
+			# num = num + 1
 			
 			# init div
 			div = etree.Element('div')

@@ -518,7 +518,7 @@ class ItemAnalysis(Item):
 				img_link.text = '[see page image]'
 				text_div.append(img_link)
 
-				# grab all children and move to text
+				# grab all children and move to text				
 				children = page_div.getchildren()
 				for child in children:
 					text_div.append(child)
@@ -530,10 +530,11 @@ class ItemAnalysis(Item):
 				image_div = etree.Element('div')
 				image_div.set('class','col-md-6')
 
-				# create image tag
+				# create image tag with facs attrib from pb
+				pb = text_div.find('{http://www.tei-c.org/ns/1.0}pb')				
 				img = etree.Element('img')
-				img.set('id','img_%s' % page_num)
-				img.set('data','https://digidev3.library.wayne.edu/loris/fedora:%s_Page_%s|JP2/full/full/0/default.jpg' % (self.obj.pid, page_num))
+				img.set('id','img_%s' % pb.attrib['n'])
+				img.set('data', pb.attrib['facs'])
 				img.set('class','page_image')
 				image_div.append(img)
 				

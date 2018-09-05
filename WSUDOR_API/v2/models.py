@@ -482,7 +482,7 @@ class ItemAnalysis(Item):
 		if self.obj.content_type == 'WSUDOR_WSUebook':
 
 			# get raw_text and tei
-			raw_text,tei = self.obj.raw_text()
+			raw_text, tei = self.obj.raw_text()
 
 			# prepare tei_as_html
 			# replace <lb> with <br>
@@ -498,10 +498,14 @@ class ItemAnalysis(Item):
 			page_divs = tei_xml.xpath('//tei:text//tei:div', namespaces=nsmap)
 
 			# loop through
+			page_list = []
 			for page_div in page_divs:
 
 				# get page num
 				page_num = int(page_div.attrib['n'])
+
+				# append to page list
+				page_list.append(page_num)
 
 				# wrap in row
 				row = etree.Element('div')
@@ -509,13 +513,13 @@ class ItemAnalysis(Item):
 
 				# create text div
 				text_div = etree.Element('div')
-				text_div.set('class','col-md-6')
+				text_div.set('class','col-md-5')
 
 				# add "see page image" link
 				img_link = etree.Element('p')
 				img_link.set('class','page_img_link')
 				img_link.set('data','%s' % page_num)
-				img_link.text = '[see page image]'
+				img_link.text = 'Page %s - [see page image]' % page_num
 				text_div.append(img_link)
 
 				# grab all children and move to text				
@@ -528,15 +532,17 @@ class ItemAnalysis(Item):
 
 				# create page image div
 				image_div = etree.Element('div')
-				image_div.set('class','col-md-6')
+				image_div.set('class','col-md-7')
 
 				# create image tag with facs attrib from pb
-				pb = text_div.find('{http://www.tei-c.org/ns/1.0}pb')				
-				img = etree.Element('img')
+				pb = text_div.find('{http://www.tei-c.org/ns/1.0}pb')
+				img_container = etree.Element('div')
+				img_container.set('id','img_%s_container' % pb.attrib['n'])
+				img = etree.SubElement(img_container, 'img')
 				img.set('id','img_%s' % pb.attrib['n'])
 				img.set('data', pb.attrib['facs'])
 				img.set('class','page_image')
-				image_div.append(img)
+				image_div.append(img_container)
 				
 				# append to pagediv
 				row.append(image_div)
@@ -550,6 +556,7 @@ class ItemAnalysis(Item):
 				page_div.append(hr)
 
 			response.body['analysis']['tei_as_html'] = etree.tostring(tei_xml)
+			response.body['analysis']['page_list'] = page_list
 
 		# return
 		return response.generate_response()
@@ -566,7 +573,7 @@ class ItemWSUebookRawText(Item):
 	def __init__(self, *args, **kwargs):
 		pass
 
-	def get(self, pid):		
+	def get(self, pid, raw_text_type):
 
 		# init Item
 		super( ItemWSUebookRawText, self ).__init__(pid, skip_load=False)
@@ -575,37 +582,18 @@ class ItemWSUebookRawText(Item):
 		response = ResponseObject()
 
 		# get raw text
-		raw_text = self.obj.raw_text()
+		raw_text_tuple = self.obj.raw_text()
+
+		if raw_text_type == 'raw':
+			raw_text = raw_text_tuple[0]
+			mimetype = 'text/plain'
+		elif raw_text_type == 'tei':
+			raw_text = raw_text_tuple[1]
+			mimetype = 'text/xml'
 
 		# return response
-		return Response(raw_text, mimetype='text/plain')
+		return Response(raw_text, mimetype=mimetype)
 
-
-class ItemWSUebookPageRangeRawText(Item):
-
-	'''
-	desc: Returns raw text from WSUebook
-	'''
-
-	def __init__(self, *args, **kwargs):
-		pass
-
-	def get(self, pid, page_range):		
-
-		# init Item
-		super( ItemWSUebookPageRangeRawText, self ).__init__(pid, skip_load=False)
-
-		# init ResponseObject
-		response = ResponseObject()
-
-		# get page range
-		page_range = list(utilities.parseIntSet(nputstr=page_range))
-
-		# get raw text
-		raw_text = self.obj.extract_page_range_raw_text(page_range)
-
-		# return response
-		return Response(raw_text, mimetype='text/plain')
 
 
 # Search

@@ -40,8 +40,7 @@ api.add_resource(models.ItemAnalysis, '/item/<string:pid>/analysis', endpoint='i
 
 # Content-Type Specific
 # WSUebooks
-api.add_resource(models.ItemWSUebookRawText, '/item/<string:pid>/text', endpoint='wsuebook_raw_text') # raw text from wsuebook
-api.add_resource(models.ItemWSUebookPageRangeRawText, '/item/<string:pid>/text/page/<string:page_range>', endpoint='wsuebook_page_range_raw_text') # raw text from wsuebook page range
+api.add_resource(models.ItemWSUebookRawText, '/item/<string:pid>/text/<string:raw_text_type>', endpoint='wsuebook_raw_text') # raw text from wsuebook
 
 # Collection
 api.add_resource(models.Collections, '/collections', endpoint='collections')

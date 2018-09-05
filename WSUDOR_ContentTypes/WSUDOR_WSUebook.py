@@ -1003,9 +1003,6 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		# loop through pages and write as <div>s
 		for num, page_text in page_text_dict.items():
 
-			# bump num
-			# num = num + 1
-			
 			# init div
 			div = etree.Element('div')
 			div.set('type','page')
@@ -1014,7 +1011,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			# init p_image
 			pb = etree.Element('pb')
 			pb.set('n','%s' % num)
-			pb.set('facs','https://digidev3.library.wayne.edu/loris/fedora:%s_Page_%s|JP2/full/,1700/0/default.jpg' % (self.pid, num))
+			pb.set('facs','https://%s/item/%s_Page_%s/loris/JP2/full/full/0/default.jpg' % (localConfig.APP_HOST, self.pid, num))
 			pb.text = ' '
 			div.append(pb)
 			

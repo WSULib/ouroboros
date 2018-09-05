@@ -6,6 +6,7 @@ from lxml import etree
 import pdb
 import re
 import time
+import urllib
 
 # Ouroboros config
 import localConfig
@@ -555,8 +556,10 @@ class ItemAnalysis(Item):
 				hr.set('class','hr_page_break')
 				page_div.append(hr)
 
+			# set to response body
 			response.body['analysis']['tei_as_html'] = etree.tostring(tei_xml)
 			response.body['analysis']['page_list'] = page_list
+			response.body['analysis']['encoded_raw_text_url'] = urllib.quote_plus('https://%s/%s/item/%s/text/raw' % (localConfig.APP_HOST, localConfig.WSUDOR_API_PREFIX, self.obj.pid))
 
 		# return
 		return response.generate_response()

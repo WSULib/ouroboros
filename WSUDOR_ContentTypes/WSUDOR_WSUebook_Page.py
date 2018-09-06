@@ -73,7 +73,7 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 	# ingest
 	def ingestBag(self, indexObject=False):
 
-		self.ohandle = fedora_handle.get_object(self.objMeta['id'],create=True)
+		self.ohandle = fedora_handle.get_object(self.objMeta['id'], create=True)
 		self.ohandle.save()
 
 		# set base properties of object
@@ -179,77 +179,6 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		return self.finishIngest(gen_manifest=False, indexObject=indexObject, contentTypeMethods=[])
 
 
-	
-	# def ingest(self, book_obj, page_num):
-
-	# 	'''
-	# 	overrides .ingest() method from WSUDOR_Object
-	# 	'''
-
-	# 	# set book_obj to self
-	# 	self.book_obj = book_obj
-
-	# 	# using parent book, get datastreams from objMeta
-	# 	page_dict = self.book_obj.normalized_pages_from_objMeta[page_num]
-
-	# 	# new pid
-	# 	npid = "wayne:%s_Page_%s" % (self.book_obj.pid.split(":")[1], page_num)
-	# 	logging.debug("Page pid: %s" % npid)
-	# 	self.pid = npid
-
-	# 	# set status as hold
-	# 	self.add_to_indexer_queue(action='hold')
-
-	# 	# creating new self	
-	# 	self.ohandle = fedora_handle.get_object(npid)
-	# 	if self.ohandle.exists:
-	# 		fedora_handle.purge_object(self.ohandle)
-	# 	self.ohandle = fedora_handle.get_object(npid, create=True)
-	# 	self.ohandle.save()
-
-	# 	# label
-	# 	self.ohandle.label = "%s - Page %s" % (self.book_obj.ohandle.label, page_num)
-
-	# 	# write POLICY datastream
-	# 	# NOTE: 'E' management type required, not 'R'
-	# 	logging.debug("Using policy: %s" % self.book_obj.objMeta['policy'])
-	# 	policy_suffix = self.book_obj.objMeta['policy'].split("info:fedora/")[1]
-	# 	policy_handle = eulfedora.models.DatastreamObject(self.ohandle, "POLICY", "POLICY", mimetype="text/xml", control_group="E")
-	# 	policy_handle.ds_location = "http://localhost/fedora/objects/%s/datastreams/POLICY_XML/content" % (policy_suffix)
-	# 	policy_handle.label = "POLICY"
-	# 	policy_handle.save()
-
-	# 	# for each file type in pages dict, pass page obj and process
-	# 	for ds in page_dict:
-
-	# 		if ds['ds_id'].startswith('IMAGE'):
-	# 			logging.debug("processing image...")
-	# 			self.processImage(ds)
-
-	# 		if ds['ds_id'].startswith('HTML'):
-	# 			logging.debug("processing HTML...")
-	# 			self.processHTML(ds)
-
-	# 		if ds['ds_id'].startswith('ALTOXML'):
-	# 			logging.debug("processing ALTO...")
-	# 			self.processALTOXML(ds)
-
-	# 	# write RDF relationships
-	# 	self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#hasContentModel", "info:fedora/CM:WSUebook_Page")
-	# 	self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/preferredContentModel", "info:fedora/CM:WSUebook_Page")
-	# 	self.ohandle.add_relationship("info:fedora/fedora-system:def/relations-external#isConstituentOf", "info:fedora/%s" % self.book_obj.ohandle.pid)
-	# 	self.ohandle.add_relationship("http://digital.library.wayne.edu/fedora/objects/wayne:WSUDOR-Fedora-Relations/datastreams/RELATIONS/content/pageOrder", page_num)
-
-	# 	# save page object
-	# 	self.ohandle.save()
-
-	# 	# set status as hold
-	# 	self.alter_in_indexer_queue('forget')
-
-	# 	# return
-	# 	return True
-
-
 	def ingestMissingPage(self, book_obj, page_num, from_bag=True):
 
 		# set book_obj to self
@@ -314,16 +243,17 @@ class WSUDOR_WSUebook_Page(WSUDOR_ContentTypes.WSUDOR_GenObject):
 		if not exists:
 
 			if from_bag:
+
 				# read first page in book for general size
-				first_page_dict = self.book_obj.pages_from_objMeta[self.book_obj.pages_from_objMeta.keys()[0]]
-				for ds in first_page_dict:
+				first_page_dict = self.book_obj.pages_from_objMeta[self.book_obj.pages_from_objMeta.keys()[0]][0]
+				for ds in first_page_dict['datastreams']:
 					if ds['ds_id'].startswith('IMAGE'):
-						file_path = self.book_obj.Bag.path + "/data/datastreams/" + ds['filename']
+						file_path = "%s/data/constituent_objects/%s/data/datastreams/%s" % (self.book_obj.Bag.path, first_page_dict['directory'], ds['filename'])
 						logging.debug("looking for dimensions from this file: %s" % file_path)
 						with Image.open(file_path) as im:
 							width, height = im.size
 							self.faux_width, self.faux_height = im.size # save for use in ALTOXML
-							logging.debug("dimensions: %s %s" (width,height))
+							logging.debug("dimensions: %s %s" % (width,height))
 
 			# get dimensions from iiif_manifest
 			if not from_bag:

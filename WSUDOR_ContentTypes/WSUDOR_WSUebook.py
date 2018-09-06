@@ -17,6 +17,8 @@ from collections import defaultdict, OrderedDict
 import tempfile
 import textract
 from lxml import etree
+import pdb
+from xml.sax import saxutils
 
 # library for working with LOC BagIt standard
 import bagit
@@ -331,7 +333,7 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 
 			# PAGES
 			########################################################################################################
-			# iterate through anticipated missing pages and create missing page objects
+			# # iterate through anticipated missing pages and create missing page objects
 			# for page_num in self.normalized_missing_pages_from_objMeta:
 			# 	page_obj = WSUDOR_ContentTypes.WSUDOR_WSUebook_Page()
 			# 	page_obj.ingestMissingPage(self, page_num)
@@ -929,6 +931,9 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 				# get page text
 				page_text = '\n'.join((' '.join(s['content'] for s in line.find_all('string'))) for line in xmlsoup.find_all('textline'))
 
+				# escape XML entities
+				page_text = saxutils.escape(page_text)
+
 				# append to object
 				page_text_dict[num] = page_text
 
@@ -1016,10 +1021,12 @@ class WSUDOR_WSUebook(WSUDOR_ContentTypes.WSUDOR_GenObject):
 			div.append(pb)
 			
 			# init p_text
-			try:			
-				encoded_page_text = page_text.replace("\n","<lb/>")
-				p_text = etree.fromstring('<p>%s</p>' % encoded_page_text)			
+			try:
+				encoded_page_text = page_text.replace("\n","<lb/>")			
+				p_text = etree.fromstring('<p>%s</p>' % encoded_page_text)
 			except:
+				logging.debug('error was had writing TEI XML for page')
+				logging.debug(encoded_page_text)
 				p_text = etree.Element('p')
 			div.append(p_text)
 

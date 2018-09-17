@@ -2238,6 +2238,10 @@ class WSUDOR_GenObject(object):
             iiif_related_handle = self.ohandle.getDatastreamObject('IIIF_RELATED')
             return iiif_related_handle.content
 
+        else:
+
+            return None
+
 
 
 

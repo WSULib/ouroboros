@@ -591,6 +591,7 @@ class WSUDOR_GenObject(object):
         '''
         returns list of collections object belongs to
         '''
+
         if 'rels_isMemberOfCollection' in self.SolrDoc.asDictionary():
             collection_uris = self.SolrDoc.asDictionary()['rels_isMemberOfCollection']
             if type(collection_uris) == list:
@@ -2221,6 +2222,21 @@ class WSUDOR_GenObject(object):
 
             logging.debug('could not retrieve manifest from %s' % localConfig.REMOTE_IIIF_LOCATION % self.pid)
             return False
+
+
+    def get_related_iiif_items(self):
+
+        '''
+        Method to generate IIIF manifest of related items
+            - checks for datastream IIIF_RELATED
+        '''
+
+        if 'IIIF_RELATED' in self.ohandle.ds_list:
+
+            logging.debug('related IIIF manifest found, returning')
+
+            iiif_related_handle = self.ohandle.getDatastreamObject('IIIF_RELATED')
+            return iiif_related_handle.content
 
 
 

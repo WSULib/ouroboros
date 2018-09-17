@@ -33,6 +33,7 @@ api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>
 api.add_resource(models.ItemLoris, '/item/<string:pid>/loris/<string:datastream>/info.json', endpoint='item_loris_json') # returns item datastream via Loris
 api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif', endpoint='item_iiif') # iiif manifest for item
 api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/manifest.json', endpoint='item_iiif_manifest') # iiif manifest for item
+api.add_resource(models.ItemIIIFRelatedCollection, '/item/<string:pid>/iiif/related_collection_manifest.json', endpoint='item_iiif_related_collection_manifest') # related item collection iiif manifest for item
 api.add_resource(models.ItemCanvasIIIF, '/item/<string:pid>/iiif/canvas/<string:canvas>.json', endpoint='canvas_iiif_manifest') # iiif manifest for item
 api.add_resource(models.ItemIIIF, '/item/<string:pid>/iiif/annotation_list', endpoint='item_iiif_annotation_list', defaults={'annotation_list': True}) # iiif annotation list for item
 api.add_resource(models.ItemHierarchy, '/item/<string:pid>/hierarchy', endpoint='item_hierarchy', defaults={'include_uris': True}) # return object hierarchy

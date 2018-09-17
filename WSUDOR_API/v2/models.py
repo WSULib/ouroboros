@@ -3,6 +3,7 @@
 
 # python modules
 from lxml import etree
+import json
 import pdb
 import re
 import time
@@ -395,6 +396,28 @@ class ItemIIIF(Item):
 
 		else:
 			return iiif_manifest(pid)
+
+
+class ItemIIIFRelatedCollection(Item):
+
+	'''
+	desc: Generates IIIF manifest of related items, returned as Collection Manifest
+		- https://iiif.io/api/presentation/2.1/#collection
+		- https://github.com/ProjectMirador/mirador/wiki/Configuration-Guides#manifests
+	'''
+
+	def __init__(self, *args, **kwargs):
+		pass
+
+	def get(self, pid, annotation_list=False):
+
+		# init Item
+		super( ItemIIIFRelatedCollection, self ).__init__(pid, skip_load=False)
+
+		# get related items as IIIF Collection manifest
+		iiif_related = self.obj.get_related_iiif_items()
+
+		return Response(iiif_related, mimetype='application/json')
 
 
 class ItemCanvasIIIF(Item):
